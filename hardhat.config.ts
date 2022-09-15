@@ -2,15 +2,18 @@ import * as dotenv from 'dotenv';
 import { task } from 'hardhat/config';
 import * as taskNames from 'hardhat/builtin-tasks/task-names';
 import fs from 'fs';
+
+import '@ethereum-waffle/chai';
+import '@nomicfoundation/hardhat-chai-matchers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
-import '@ethereum-waffle/chai';
-import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
+import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 import 'solidity-docgen';
+
 
 dotenv.config();
 
