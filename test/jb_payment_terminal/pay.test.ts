@@ -475,6 +475,9 @@ describe('JBPayoutRedemptionPaymentTerminal::pay(...)', function () {
             })
             .returns();
 
+        const initialBalanceOne = await ethers.provider.getBalance(mockJbPayDelegate.address);
+        const initialBalanceTwo = await ethers.provider.getBalance(mockJbPayDelegate2.address);
+
         const tx = await jbEthPaymentTerminal
             .connect(caller)
             .pay(
@@ -488,6 +491,7 @@ describe('JBPayoutRedemptionPaymentTerminal::pay(...)', function () {
                 METADATA,
                 { value: ETH_TO_PAY },
             );
+        await tx.wait();
 
         // AssertionError: expected [ …(9), …(9) ] to equal { …(9) }
         await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay');
@@ -554,10 +558,11 @@ describe('JBPayoutRedemptionPaymentTerminal::pay(...)', function () {
                 caller.address,
             );
 
-        await expect(tx).to.changeEtherBalances(
-            [mockJbPayDelegate, mockJbPayDelegate2],
-            [ETH_TO_PAY.div(4), ETH_TO_PAY.div(2)],
-        );
+        const subsequentBalanceOne = await ethers.provider.getBalance(mockJbPayDelegate.address);
+        expect(subsequentBalanceOne.sub(initialBalanceOne).eq(ETH_TO_PAY.div(4))).to.be.true;
+
+        const subsequentBalanceTwo = await ethers.provider.getBalance(mockJbPayDelegate2.address);
+        expect(subsequentBalanceTwo.sub(initialBalanceTwo).eq(ETH_TO_PAY.div(2))).to.be.true;
     });
 
     it('Should work with eth terminal with non msg.value amount sent', async function () {
