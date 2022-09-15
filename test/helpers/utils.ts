@@ -56,21 +56,24 @@ export async function impersonateAccount(
 
 /**
  * Set the ETH balance of a given address
+ * 
  * @param {string} address
- * @param {ethers.BigNumber} balance
+ * @param {number} balance
  */
 export async function setBalance(
     address,
-    balance = ethers.BigNumber.from('0x1000000000000000000000'),
+    balance?: number
 ) {
-    balance = ethers.BigNumber.from(balance);
-    await network.provider.send('hardhat_setBalance', [address, balance.toHexString()]);
+    const hexValue = balance ? ethers.BigNumber.from(balance).toHexString() : '0x1000000000000000000000';
+    await network.provider.send('hardhat_setBalance', [address, hexValue]);
 }
 
 /**
  * Deploy a test JBToken contract
+ * 
  * @param {string} name
  * @param {string} symbol
+ * @param {number} projectId
  * @return {ethers.Contract}
  */
 export async function deployJbToken(name, symbol, projectId) {
@@ -84,7 +87,7 @@ export async function deployJbToken(name, symbol, projectId) {
  * @return {date}
  */
 export async function daysFromNow(days) {
-    let date = await getTimestamp();
+    const date = await getTimestamp();
     return date.add(days * 24 * 60 * 60);
 }
 
