@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
@@ -14,7 +15,7 @@ import '../libraries/JBTokens.sol';
  *
  * @dev based on OpenZeppelin finance/PaymentSplitter.sol v4.7.0
  */
-contract MixedPaymentSplitter {
+contract MixedPaymentSplitter is Ownable {
   //*********************************************************************//
   // --------------------------- custom events ------------------------- //
   //*********************************************************************//
@@ -39,7 +40,7 @@ contract MixedPaymentSplitter {
   error PAYMENT_FAILURE();
   error NO_SHARE();
   error NOTHING_DUE();
-  error DUPLICATE_PAYEE();
+  error INVALID_SHARE_TOTAL();
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -93,13 +94,15 @@ contract MixedPaymentSplitter {
    * @param _projects Juicebox project ids to send payment portion to.
    * @param _shares Share assignment in the same order as payees and projects parameters.
    * @param _jbxDirectory Juicebox directory contract
+   * @param _owner Admin of this contract
    */
   constructor(
     string memory _name,
     address[] memory _payees,
     uint256[] memory _projects,
     uint256[] memory _shares,
-    IJBDirectory _jbxDirectory
+    IJBDirectory _jbxDirectory,
+    address _owner
   ) {
     if (_payees.length == 0 && _projects.length == 0) {
       revert INVALID_LENGTH();
@@ -129,6 +132,8 @@ contract MixedPaymentSplitter {
       _addProject(_projects[i], _shares[_payees.length + i]);
       ++i;
     }
+
+    _transferOwnership(_owner);
   }
 
   //*********************************************************************//
@@ -300,6 +305,18 @@ contract MixedPaymentSplitter {
   }
 
   //*********************************************************************//
+  // -------------------- priviledged transactions --------------------- //
+  //*********************************************************************//
+
+  function addPayee(address _account, uint256 _shares) external onlyOwner {
+    _addPayee(_account, _shares);
+  }
+
+  function addPayee(uint256 _projectId, uint256 _shares) external onlyOwner {
+    _addProject(_projectId, _shares);
+  }
+
+  //*********************************************************************//
   // ---------------------- private transactions ----------------------- //
   //*********************************************************************//
 
@@ -321,12 +338,14 @@ contract MixedPaymentSplitter {
     }
 
     uint256 k = uint256(uint160(_account));
-    if (shares[k] != 0) {
-      revert DUPLICATE_PAYEE();
-    }
 
     shares[k] = _shares;
     assignedShares += _shares;
+
+    if (assignedShares > SHARE_WHOLE) {
+      revert INVALID_SHARE_TOTAL();
+    }
+
     emit PayeeAdded(_account, _shares);
   }
 
@@ -344,12 +363,14 @@ contract MixedPaymentSplitter {
     }
 
     uint256 k = _projectId << 160;
-    if (shares[k] != 0) {
-      revert DUPLICATE_PAYEE();
+
+    shares[k] += _shares;
+    assignedShares += _shares;
+
+    if (assignedShares > SHARE_WHOLE) {
+      revert INVALID_SHARE_TOTAL();
     }
 
-    shares[k] = _shares;
-    assignedShares += _shares;
     emit ProjectAdded(_projectId, _shares);
   }
 }
