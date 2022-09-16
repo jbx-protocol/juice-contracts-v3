@@ -10,6 +10,7 @@
     "version": "1.0.1",
     "license": "MIT",
     "dependencies": {
+        "@chainlink/contracts": "^0.4.1",
         "@openzeppelin/contracts": "^4.7.3",
         "@openzeppelin/contracts-upgradeable": "^4.7.3",
         "@paulrberg/contracts": "^3.7.0",
@@ -17,7 +18,6 @@
         "@uniswap/v3-periphery": "^1.4.1"
     },
     "devDependencies": {
-        "@chainlink/contracts": "^0.4.1",
         "@defi-wonderland/smock": "^2.3.0",
         "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
         "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
