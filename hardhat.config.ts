@@ -14,8 +14,14 @@ import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 import 'solidity-docgen';
 
-
 dotenv.config();
+
+const INFURA_API_KEY = process.env.INFURA_API_KEY;
+const ALCHEMY_MAINNET_URL = process.env.ALCHEMY_MAINNET_URL;
+const ALCHEMY_MAINNET_KEY = process.env.ALCHEMY_MAINNET_API_KEY;
+const REPORT_GAS = process.env.REPORT_GAS;
+const COINMARKETCAP_KEY = process.env.COINMARKETCAP_API_KEY;
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
 const defaultNetwork = 'hardhat';
 
@@ -30,13 +36,19 @@ function mnemonic() {
     return '';
 }
 
-const infuraId = process.env.INFURA_ID;
+const infuraId = process.env.INFURA_ID || INFURA_API_KEY;
 
 module.exports = {
     defaultNetwork,
     networks: {
         hardhat: {
+            forking: {
+                url: `${ALCHEMY_MAINNET_URL}/${ALCHEMY_MAINNET_KEY}`,
+                blockNumber: 15416229,
+                enabled: false
+            },
             allowUnlimitedContractSize: true,
+            blockGasLimit: 100_000_000
         },
         localhost: {
             url: 'http://localhost:8545',
@@ -73,19 +85,27 @@ module.exports = {
             },
         },
     },
-    mocha: {
-        bail: false,
-        timeout: 12000,
+    contractSizer: {
+        alphaSort: true,
+        disambiguatePaths: false,
+        runOnCompile: true,
+        strict: false
     },
     gasReporter: {
+        enabled: REPORT_GAS !== undefined,
         currency: 'USD',
-        // gasPrice: 21,
-        enabled: !!process.env.REPORT_GAS,
+        gasPrice: 30,
         showTimeSpent: true,
+        coinmarketcap: COINMARKETCAP_KEY
     },
     etherscan: {
-        apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        apiKey: ETHERSCAN_API_KEY
     },
+    mocha: {
+        timeout: 30 * 60 * 1000,
+        bail: false
+    },
+    docgen: {}
 };
 
 // List details of deployer account.
