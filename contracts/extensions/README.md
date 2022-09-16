@@ -8,7 +8,9 @@ The code here attempts to follow some conventions to make code reviews easier.
 
 - Function arguments start with an underscore.
 - Storage parameters do not start with an underscore regardless of visibility.
+- Constants in storage are all caps.
 - `revert` is used instead of `require`.
+- Error names are capitalized in snake case.
 - `for` loops increment at the end as `++i` and test for continuation with `!=`.
 - Solidity version is defined with a caret, currently as `^0.8.6`.
 
@@ -31,6 +33,18 @@ Allows listing NFTs with a starting price, a reserve price and an auction durati
 An automated DAI treasury that will convert incoming Ether into DAI on Uniswap. This contract is an implementation of `IJBFundingCycleDataSource`,
   `IJBPayDelegate` and `IJBRedemptionDelegate` providing deposit and withdraw functionality as part of a [Funding Cycle](#) via `didPay` and `didRedeem`. This contract is meant to be shared across all projects on the platform that would like to diversify some their holdings from Ether into DAI.
 
+### Deployer
+
+An upgradeable proxy contract to deploy reusable system components like NFTs, payment processors, etc.
+
+### JBRoleManager
+
+A contract to enable a dynamic access control mechanism. While conceptually similar to `JBOperatorStore`, JBRoleManager allows on-the-fly creation of project-specific roles, their assignment to users and validation.
+
+### LogPublisher
+
+A generic contract to push events to the log.
+
 ### MixedPaymentSplitter
 
 Based on OpenZeppelin finance/PaymentSplitter.sol v4.7.0, this contract allows registered parties to claim Ether or ERC20 token balances held by the Splitter instance prorated to their share. Registered parties can be EOAs, smart contracts or Juicebox projects.
@@ -39,7 +53,15 @@ Based on OpenZeppelin finance/PaymentSplitter.sol v4.7.0, this contract allows r
 
 #### NFToken
 
-blah
+An ERC721 NFT contract with extra features like mint periods, mint caps, ability to set asset revelation. It also provides a flexible mint pricing mechanism, two examples are provided. The NFT represents IPFS-based assets.
+
+#### BalancePriceResolver
+
+This contract calculates the NFT mint price based on the user's current NFT balance. It has options to allow for free initial, subsequent or repeated mints. It's based on `SupplyPriceResolver` and inherits the tier-based pricing functions if the per-user mint conditions are not met.
+
+#### SupplyPriceResolver
+
+This contract can be used together with an NFT contract to generate the mint price based on current NFT supply. The contract accepts a multiplier which increases the price for each tier defined up to a certain price cap. This increase can be linear or exponential.
 
 ### NFT Rewards
 
@@ -47,7 +69,7 @@ Juicebox rewards project contributors with ERC20 tokens, the contracts here allo
 
 ### PaymentProcessor
 
-This contract is meant to be a proxy that receives payments and forwards them to the preconfigured Juicebox project. The proxy can accept payment in ERC20 tokens and optionally liquidate them. The proxy also optionally allows payment in case of project misconfiguration.
+This contract is meant to be a proxy that receives payments and forwards them to the pre-configured Juicebox project. The proxy can accept payment in ERC20 tokens and optionally liquidate them. The proxy also optionally allows payment in case of project misconfiguration.
 
 ### Utils
 
