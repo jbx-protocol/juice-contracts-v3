@@ -111,7 +111,7 @@ export function dateInSeconds(date) {
 }
 
 /**
- * Returns a mock FundingCyleMetadata packed into a BigNumber
+ * Returns a mock FundingCycleMetadata packed into a BigNumber
  * @summary Should mirror the bit logic in JBFundingCycleMetadataResolver.sol.
  * @param {custom obj} e.g. packFundingCycleMetadata({ reservedRate: 3500, pausePay: 1 })
  * @return {ethers.BigNumber}
