@@ -9,6 +9,16 @@ import './MixedPaymentSplitterFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v002 is Deployer_v001 {
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
+  function initialize() public virtual override reinitializer(2) {
+    __Ownable_init();
+    __UUPSUpgradeable_init();
+  }
+
   function deployMixedPaymentSplitter(
     string memory _name,
     address[] memory _payees,

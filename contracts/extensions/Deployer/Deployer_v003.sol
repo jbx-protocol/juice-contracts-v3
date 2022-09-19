@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import '../Auctions/DutchAuction.sol';
+import '../Auctions/EnglishAuction.sol';
 import './Deployer_v002.sol';
 import './AuctionsFactory.sol';
 
@@ -9,8 +11,26 @@ import './AuctionsFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v003 is Deployer_v002 {
+  DutchAuctionHouse private dutchAuctionSource;
+  EnglishAuctionHouse private englishAuctionSource;
+
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
+  function initialize(
+    DutchAuctionHouse _dutchAuctionSource,
+    EnglishAuctionHouse _englishAuctionSource
+  ) public virtual reinitializer(3) {
+    __Ownable_init();
+    __UUPSUpgradeable_init();
+
+    dutchAuctionSource = _dutchAuctionSource;
+    englishAuctionSource = _englishAuctionSource;
+  }
+
   function deployDutchAuction(
-    address _source,
     uint256 _projectId,
     IJBPaymentTerminal _feeReceiver,
     uint256 _feeRate,
@@ -20,7 +40,7 @@ contract Deployer_v003 is Deployer_v002 {
     IJBDirectory _directory
   ) external returns (address auction) {
     auction = AuctionsFactory.createDutchAuction(
-      _source,
+      address(dutchAuctionSource),
       _projectId,
       _feeReceiver,
       _feeRate,
@@ -34,7 +54,6 @@ contract Deployer_v003 is Deployer_v002 {
   }
 
   function deployEnglishAuction(
-    address _source,
     uint256 _projectId,
     IJBPaymentTerminal _feeReceiver,
     uint256 _feeRate,
@@ -43,7 +62,7 @@ contract Deployer_v003 is Deployer_v002 {
     IJBDirectory _directory
   ) external returns (address auction) {
     auction = AuctionsFactory.createEnglishAuction(
-      _source,
+      address(englishAuctionSource),
       _projectId,
       _feeReceiver,
       _feeRate,

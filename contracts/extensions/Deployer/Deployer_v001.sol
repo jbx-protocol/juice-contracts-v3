@@ -16,7 +16,12 @@ import './NFTokenFactory.sol';
 contract Deployer_v001 is Initializable, OwnableUpgradeable, UUPSUpgradeable {
   event Deployment(string contractType, address contractAddress);
 
-  function initialize() public initializer {
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
+  function initialize() public virtual initializer {
     __Ownable_init();
     __UUPSUpgradeable_init();
   }
