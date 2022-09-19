@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+// import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import '../../interfaces/IJBDirectory.sol';
 import '../../libraries/JBConstants.sol';
@@ -67,13 +69,19 @@ interface IDutchAuctionHouse {
   function removeAuthorizedSeller(address) external;
 }
 
-struct AuctionData {
+struct DutchAuctionData {
   uint256 info; // seller, duration
   uint256 prices;
   uint256 bid;
 }
 
-contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, IDutchAuctionHouse {
+contract DutchAuctionHouse is
+  AccessControl,
+  JBSplitPayerUtil,
+  ReentrancyGuard,
+  IDutchAuctionHouse,
+  Initializable
+{
   bytes32 public constant AUTHORIZED_SELLER_ROLE = keccak256('AUTHORIZED_SELLER_ROLE');
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -99,7 +107,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
   /**
     @notice Collection of active auctions.
    */
-  mapping(bytes32 => AuctionData) public auctions;
+  mapping(bytes32 => DutchAuctionData) public auctions;
 
   /**
     @notice Juicebox splits for active auctions.
@@ -111,7 +119,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
    */
   uint256 public deploymentOffset;
 
-  uint256 public immutable projectId;
+  uint256 public projectId;
   IJBPaymentTerminal public feeReceiver;
   IJBDirectory public directory;
   uint256 public settings; // periodDuration(64), allowPublicAuctions(bool), feeRate (32)
@@ -128,7 +136,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
 
     @dev feeReceiver addToBalanceOf will be called to send fees.
    */
-  constructor(
+  function initialize(
     uint256 _projectId,
     IJBPaymentTerminal _feeReceiver,
     uint256 _feeRate,
@@ -136,7 +144,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
     uint256 _periodDuration,
     address _owner,
     IJBDirectory _directory
-  ) {
+  ) public initializer {
     deploymentOffset = block.timestamp;
 
     projectId = _projectId;
@@ -177,7 +185,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
     }
 
     bytes32 auctionId = keccak256(abi.encodePacked(address(collection), item));
-    AuctionData memory auctionDetails = auctions[auctionId];
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
 
     if (auctionDetails.info != 0) {
       revert AUCTION_EXISTS();
@@ -200,7 +208,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
       auctionPrices |= uint256(uint96(endingPrice)) << 96;
       auctionPrices |= uint256(uint64(expiration)) << 192;
 
-      auctions[auctionId] = AuctionData(auctionInfo, auctionPrices, 0);
+      auctions[auctionId] = DutchAuctionData(auctionInfo, auctionPrices, 0);
     }
 
     uint256 length = saleSplits.length;
@@ -225,7 +233,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
     string calldata _memo
   ) external payable override nonReentrant {
     bytes32 auctionId = keccak256(abi.encodePacked(collection, item));
-    AuctionData memory auctionDetails = auctions[auctionId];
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
 
     if (auctionDetails.info == 0) {
       revert INVALID_AUCTION();
@@ -272,7 +280,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
     string calldata _memo
   ) external override nonReentrant {
     bytes32 auctionId = keccak256(abi.encodePacked(collection, item));
-    AuctionData memory auctionDetails = auctions[auctionId];
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
 
     if (auctionDetails.info == 0) {
       revert INVALID_AUCTION();
@@ -348,7 +356,7 @@ contract DutchAuctionHouse is AccessControl, JBSplitPayerUtil, ReentrancyGuard, 
     returns (uint256 price)
   {
     bytes32 auctionId = keccak256(abi.encodePacked(collection, item));
-    AuctionData memory auctionDetails = auctions[auctionId];
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
 
     if (auctionDetails.info == 0) {
       revert INVALID_AUCTION();
