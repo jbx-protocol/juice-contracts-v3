@@ -30,7 +30,9 @@ describe('DutchAuctionHouse tests', () => {
         });
         const dutchAuctionHouse = await dutchAuctionHouseFactory
             .connect(deployer)
-            .deploy(projectId, feeReceiverTerminal.address, feeRate, allowPublicAuctions, pricingPeriodDuration, deployer.address, directory.address);
+            .deploy();
+        await dutchAuctionHouse.deployed();
+        dutchAuctionHouse.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicAuctions, pricingPeriodDuration, deployer.address, directory.address)
 
         const tokenFactory = await ethers.getContractFactory('MockERC721', deployer);
         const token = await tokenFactory.connect(deployer).deploy();

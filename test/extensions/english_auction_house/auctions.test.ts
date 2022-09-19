@@ -27,16 +27,9 @@ describe('EnglishAuctionHouse tests', () => {
 
         const englishAuctionHouseFactory = await ethers.getContractFactory('EnglishAuctionHouse', { signer: deployer });
 
-        const englishAuctionHouse = await englishAuctionHouseFactory
-            .connect(deployer)
-            .deploy(
-                projectId,
-                feeReceiverTerminal.address,
-                feeRate,
-                allowPublicAuctions,
-                deployer.address,
-                directory.address
-            );
+        const englishAuctionHouse = await englishAuctionHouseFactory.connect(deployer).deploy();
+        await englishAuctionHouse.deployed();
+        englishAuctionHouse.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicAuctions, deployer.address, directory.address)
 
         const tokenFactory = await ethers.getContractFactory('MockERC721', deployer);
         const token = await tokenFactory.connect(deployer).deploy();
