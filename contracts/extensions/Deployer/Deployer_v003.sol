@@ -5,7 +5,7 @@ import './Deployer_v002.sol';
 import './AuctionsFactory.sol';
 
 /**
- * @notice
+ * @notice This version of the deployer adds the ability to create DutchAuctionHouse and EnglishAuctionHouse contracts.
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v003 is Deployer_v002 {
@@ -18,8 +18,8 @@ contract Deployer_v003 is Deployer_v002 {
     uint256 _periodDuration,
     address _owner,
     IJBDirectory _directory
-  ) external returns (address) {
-    address s = AuctionsFactory.createDutchAuction(
+  ) external returns (address auction) {
+    auction = AuctionsFactory.createDutchAuction(
       _source,
       _projectId,
       _feeReceiver,
@@ -30,9 +30,7 @@ contract Deployer_v003 is Deployer_v002 {
       _directory
     );
 
-    emit Deployment('DutchAuctionHouse', s);
-
-    return s;
+    emit Deployment('DutchAuctionHouse', auction);
   }
 
   function deployEnglishAuction(
@@ -43,8 +41,8 @@ contract Deployer_v003 is Deployer_v002 {
     bool _allowPublicAuctions,
     address _owner,
     IJBDirectory _directory
-  ) external returns (address) {
-    address s = AuctionsFactory.createEnglishAuction(
+  ) external returns (address auction) {
+    auction = AuctionsFactory.createEnglishAuction(
       _source,
       _projectId,
       _feeReceiver,
@@ -54,8 +52,6 @@ contract Deployer_v003 is Deployer_v002 {
       _directory
     );
 
-    emit Deployment('EnglishAuctionHouse', s);
-
-    return s;
+    emit Deployment('EnglishAuctionHouse', auction);
   }
 }

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-// import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
 import '../../interfaces/IJBDirectory.sol';
@@ -370,6 +369,12 @@ contract EnglishAuctionHouse is
 
   function removeAuthorizedSeller(address _seller) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     _revokeRole(AUTHORIZED_SELLER_ROLE, _seller);
+  }
+
+  function supportsInterface(bytes4 _interfaceId) public view override returns (bool) {
+    return
+      _interfaceId == type(IEnglishAuctionHouse).interfaceId ||
+      super.supportsInterface(_interfaceId);
   }
 
   // TODO: consider admin functions to recover eth & token balances
