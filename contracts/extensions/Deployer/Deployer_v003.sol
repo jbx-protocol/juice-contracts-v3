@@ -11,8 +11,8 @@ import './AuctionsFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v003 is Deployer_v002 {
-  DutchAuctionHouse private dutchAuctionSource;
-  EnglishAuctionHouse private englishAuctionSource;
+  DutchAuctionHouse internal dutchAuctionSource;
+  EnglishAuctionHouse internal englishAuctionSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
