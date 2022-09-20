@@ -38,8 +38,7 @@ describe('Deployer tests', () => {
             libraries: { NFTokenFactory: nfTokenFactoryLibrary.address },
             signer: deployer
         });
-        deployerProxy = await upgrades.deployProxy(deployerFactory, { kind: 'uups' });
-        deployerProxy.connect(deployer).initialize();
+        deployerProxy = await upgrades.deployProxy(deployerFactory, { kind: 'uups', initializer: 'initialize' });
     });
 
     it('Deploy NFToken via Deployer', async () => {
@@ -82,9 +81,7 @@ describe('Deployer tests', () => {
             signer: deployer
         });
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups' });
-
-        await expect(deployerProxy.connect(deployer).initialize()).not.to.be.reverted;
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize' } });
     });
 
     it('Deploy MixedPaymentSplitter via Deployer', async () => {
@@ -139,8 +136,6 @@ describe('Deployer tests', () => {
             signer: deployer
         });
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups' });
-
         const dutchAuctionHouseFactory = await ethers.getContractFactory('DutchAuctionHouse', { signer: deployer });
         const sourceDutchAuctionHouse = await dutchAuctionHouseFactory.connect(deployer).deploy();
         await sourceDutchAuctionHouse.deployed();
@@ -149,7 +144,7 @@ describe('Deployer tests', () => {
         const sourceEnglishAuctionHouse = await englishAuctionHouseFactory.connect(deployer).deploy();
         await sourceEnglishAuctionHouse.deployed();
 
-        await expect(deployerProxy.connect(deployer)['initialize(address,address)'](sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address)).not.to.be.reverted;
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address] } });
     });
 
     it('Deploy DutchAuctionHouse via Deployer', async () => {

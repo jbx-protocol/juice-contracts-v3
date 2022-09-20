@@ -14,7 +14,7 @@ library AuctionsFactory {
   error INVALID_SOURCE_CONTRACT();
 
   function createDutchAuction(
-    address _source, // DutchAuctionHouse
+    address _source,
     uint256 _projectId,
     IJBPaymentTerminal _feeReceiver,
     uint256 _feeRate,
@@ -40,7 +40,7 @@ library AuctionsFactory {
   }
 
   function createEnglishAuction(
-    address _source, // EnglishAuctionHouse
+    address _source,
     uint256 _projectId,
     IJBPaymentTerminal _feeReceiver,
     uint256 _feeRate,
