@@ -60,8 +60,8 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
    * @param _maxAuctions Maximum number of auctions to perform automatically, 0 for no limit.
    * @param _auctionDuration Auction duration in seconds.
    * @param _projectId Juicebox project id, used to transfer auction proceeds.
-   * @param  _jbxDirectory Juicebox directory, used to transfer auction proceeds to the correct terminal.
-   * @param  _token Token contract to operate on.
+   * @param _jbxDirectory Juicebox directory, used to transfer auction proceeds to the correct terminal.
+   * @param _token Token contract to operate on.
    */
   constructor(
     uint256 _maxAuctions,
@@ -159,6 +159,10 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
   function recoverToken(address _account, uint256 _tokenId) external nonReentrant onlyOwner {
     token.transferFrom(address(this), _account, _tokenId);
   }
+
+  //*********************************************************************//
+  // ---------------------- private transactions ----------------------- //
+  //*********************************************************************//
 
   function startNewAuction() private {
     if (maxAuctions != 0 && completedAuctions == maxAuctions) {
