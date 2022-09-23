@@ -1,4 +1,4 @@
-# Movement extensions for Juicebox v2
+# Extensions for Juicebox v2
 
 This is a collection of contracts providing extra functionality on top of Juicebox v2 that is fully integrated with the rest of the platform.
 
