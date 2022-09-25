@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
+import { BigNumber } from 'ethers';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import * as helpers from '@nomicfoundation/hardhat-network-helpers';
@@ -7,7 +8,7 @@ import * as helpers from '@nomicfoundation/hardhat-network-helpers';
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
 
-describe('EnglishAuctionMachine tests', () => {
+describe('DutchAuctionMachine tests', () => {
     const jbxJbTokensEth = '0x000000000000000000000000000000000000EEEe';
 
     let deployer: SignerWithAddress;
@@ -17,7 +18,7 @@ describe('EnglishAuctionMachine tests', () => {
     let terminal: any;
 
     let basicToken: any;
-    let englishAuctionMachine: any;
+    let dutchAuctionMachine: any;
 
     const basicBaseUri = 'ipfs://hidden';
     const basicBaseUriRevealed = 'ipfs://revealed/';
@@ -69,37 +70,60 @@ describe('EnglishAuctionMachine tests', () => {
     });
 
     before('Initialize Auction Machine', async () => {
-        const englishAuctionMachineFactory = await ethers.getContractFactory('EnglishAuctionMachine');
-        englishAuctionMachine = await englishAuctionMachineFactory.connect(deployer)
-            .deploy(10, 60 * 60, basicProjectId, directory.address, basicToken.address);
+        const auctionCap = 10;
+        const auctionDuration = 60 * 60;
+        const periodDuration = 600;
+        const priceMultiplier = 10;
 
-        await basicToken.connect(deployer).addMinter(englishAuctionMachine.address);
+        const dutchAuctionMachineFactory = await ethers.getContractFactory('DutchAuctionMachine');
+        dutchAuctionMachine = await dutchAuctionMachineFactory.connect(deployer)
+            .deploy(auctionCap, auctionDuration, periodDuration, priceMultiplier, basicProjectId, directory.address, basicToken.address);
+
+        await basicToken.connect(deployer).addMinter(dutchAuctionMachine.address);
     });
 
     it('Create first contract by placing a valid bid', async () => {
         expect(await basicToken.totalSupply()).to.equal(0);
 
-        await englishAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice });
+        await dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice });
 
         expect(await basicToken.totalSupply()).to.equal(1);
-        expect(await basicToken.balanceOf(englishAuctionMachine.address)).to.equal(1);
+        expect(await basicToken.balanceOf(dutchAuctionMachine.address)).to.equal(1);
     });
 
     it('Increase bid', async () => {
-        expect(await englishAuctionMachine.timeLeft()).to.be.greaterThan(0);
+        expect(await dutchAuctionMachine.timeLeft()).to.be.greaterThan(0);
 
-        await englishAuctionMachine.connect(accounts[1]).bid({ value: basicUnitPrice.mul(2) });
+        await dutchAuctionMachine.connect(accounts[1]).bid({ value: basicUnitPrice.mul(2) });
     });
 
     it('Complete auction', async () => {
         const now = await helpers.time.latest();
-        const remaining = await englishAuctionMachine.timeLeft();
+        const remaining = await dutchAuctionMachine.timeLeft();
         await helpers.time.increaseTo(remaining.add(now).add(60));
 
-        await englishAuctionMachine.settle();
+        await dutchAuctionMachine.settle();
 
         expect(await basicToken.totalSupply()).to.equal(2);
-        expect(await basicToken.balanceOf(englishAuctionMachine.address)).to.equal(1);
+        expect(await basicToken.balanceOf(dutchAuctionMachine.address)).to.equal(1);
         expect(await basicToken.balanceOf(accounts[1].address)).to.equal(1);
+    });
+
+    it('Place bids', async () => {
+        await expect(dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.div(2) })).to.be.reverted;
+        await expect(dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.mul(2) })).not.to.be.reverted;
+        await expect(dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.mul(2) })).to.be.reverted;
+    });
+
+    it('Check price', async () => {
+        const auctionDuration = 60 * 60;
+        const periodDuration = 600;
+        const priceMultiplier = 10;
+        const maxPrice = basicUnitPrice.mul(priceMultiplier);
+
+        let now = await helpers.time.latest();
+        let remaining = await dutchAuctionMachine.timeLeft();
+        let price = (await dutchAuctionMachine.currentPrice()) as BigNumber;
+        expect(price).to.equal(maxPrice);
     });
 });

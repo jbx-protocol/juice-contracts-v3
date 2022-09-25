@@ -166,7 +166,7 @@ contract DutchAuctionHouse is
     @param collection ERC721 contract.
     @param item Token id to list.
     @param startingPrice Starting price for the auction from which it will drop.
-    @param endingPrice Minimum pride for the auction at which it will end at exipration time.
+    @param endingPrice Minimum price for the auction at which it will end at exipration time.
     @param expiration Seconds, offset from deploymentOffset, at which the auction concludes.
     @param saleSplits Juicebox splits collection that will receive auction proceeds.
    */
@@ -289,6 +289,7 @@ contract DutchAuctionHouse is
     uint256 minSettlePrice = currentPrice(collection, item);
 
     if (lastBidAmount < minSettlePrice) {
+      // NOTE: return token back to seller
       collection.transferFrom(address(this), address(uint160(auctionDetails.info)), item);
 
       emit ConcludeAuction(
