@@ -26,7 +26,7 @@ In addition to setting a bounded mint period, which can be modified after deploy
 
 It's possible to store a provenance hash in the contract. It can be set only once using `setProvenanceHash(string memory _provenanceHash)`.
 
-By default token mint price is the value of unitPrice set in the constructor. It can be changed with `updateUnitPrice(uint256 _unitPrice)` at any time to any value by a caller with the `DEFAULT_ADMIN_ROLE` permission. For advanced pricing calculation there is an option to associate a price resolver contract. This is done with `updatePriceResolver(INFTPriceResolver _priceResolver)`. Several sample implementations are provided, They are described in detail below.
+By default token mint price is the value of unitPrice set in the constructor. It can be changed with `updateUnitPrice(uint256 _unitPrice)` at any time to any value by a caller with the `DEFAULT_ADMIN_ROLE` permission. For advanced pricing calculation there is an option to associate a price resolver contract. This is done with `updatePriceResolver(INFTPriceResolver _priceResolver)`. Several sample implementations are provided, They are described in detail below. It is possible to set price resolver to `address(0)`. If the token is to have perpetual free mints setting both price resolver and unitPrice to 0 is the most cost-effective way to do it.
 
 Several other features are available. `setContractURI(string memory _contractUri)` can change the OpenSea metadata uri. Mint can be paused and resumed with `setPause(bool pause)`. `mintFor(address _account)` is an admin mint function gated with `MINTER_ROLE` role that allows unbounded mints to arbitrary accounts limited only by maxSupply. Minters can be added and removed by an account with `DEFAULT_ADMIN_ROLE` permission using `addMinter(address _account)` and `removeMinter(address _account)`. These two functions are used by the "Auction Machine" contracts described below. Lastly there is a function to recover ERC20 token balances – `transferTokenBalance(IERC20 token, address to, uint256 amount)`.
 
@@ -39,6 +39,8 @@ This contract is exactly like NFToken, but instead of a constructor collects par
 ## SupplyPriceResolver
 
 This contract can be used together with an NFT contract to generate the mint price based on current NFT supply. The contract accepts a multiplier which increases the price for each tier defined up to a certain price cap. This increase can be linear or exponential.
+
+Note that the per-user mint limit is enforced in NFToken, not in this price resolver.
 
 The constructor arguments are as follows.
 
@@ -55,6 +57,8 @@ The contract is immutable, parameters cannot be changed after deployment. `NFTok
 ## BalancePriceResolver
 
 This contract calculates the NFT mint price based on the user's current NFT balance. It has options to allow for free initial, subsequent or repeated mints. It's based on `SupplyPriceResolver` and inherits the tier-based pricing functions if the per-user mint conditions are not met.
+
+Note that the per-user mint limit is enforced in NFToken, not in this price resolver.
 
 The constructor parameters introduces here in addition to what `SupplyPriceResolver` already has are:
 

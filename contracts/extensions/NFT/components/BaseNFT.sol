@@ -81,13 +81,9 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
   uint256 public unitPrice;
   uint256 public mintAllowance;
   string public provenanceHash;
-  mapping(address => bool) public acceptableTokens;
-  bool immediateTokenLiquidation;
-  uint256 tokenPriceMargin = 10_000; // in bps
   uint128 public mintPeriodStart;
   uint128 public mintPeriodEnd;
 
-  mapping(address => uint256) public claimedMerkleAllowance;
   uint256 public totalSupply;
 
   /**
@@ -159,6 +155,14 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
    */
   function ownerOf(uint256 _tokenId) public view override returns (address owner) {
     owner = _ownerOf[_tokenId];
+  }
+
+  function getMintPrice(address _minter) external view returns (uint256) {
+    if (address(priceResolver) == address(0)) {
+      return unitPrice;
+    }
+
+    return priceResolver.getPriceWithParams(address(this), _minter, totalSupply + 1, '');
   }
 
   //*********************************************************************//
