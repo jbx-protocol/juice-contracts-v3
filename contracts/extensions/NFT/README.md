@@ -2,6 +2,17 @@
 
 This is a collection of contracts for publishing ERC721 NFTs with additional functionality for pricing and sales. The contract (ERC721FU.sol) is based on the Rari Capital ERC721 implementation but removes the constructor to enable upgradeability. BaseNFT.sol extends that functionality with Juicebox integration, basic pricing and distribution features. The simplest functionality is implemented in NFToken.sol
 
+Contracts in this section are (alphabetically):
+
+- components/BaseNFT - Abstract opinionated ERC721 functionality with Juicebox integration.
+- components/ERC721FU - Abstract baseline ERC721 functionality.
+- [BalancePriceResolver](#balancepriceresolver) - NFT pricing contract based on address balance.
+- [DutchActionMachine](#dutchactionmachine) - Perpetual NFT minting Dutch auction.
+- [EnglishAuctionMachine](#englishauctionmachine) - Perpetual NFT minting English auction.
+- [NFToken](#nftoken) - Deployable NFT contract.
+- [NFUToken](#nfutoken) - Deployable, upgradeable NFT contract.
+- [SupplyPriceResolver](#supplypriceresolver) - NFT pricing contract based on total supply.
+
 ## NFToken
 
 The constructor takes several parameters.
@@ -73,3 +84,11 @@ The functionality is built on top of the `SupplyPriceResolver` and if the initia
 ## MerklePriceResolver
 
 Coming Soon™️.
+
+## DutchActionMachine
+
+TBD
+
+## EnglishAuctionMachine
+
+TBD
