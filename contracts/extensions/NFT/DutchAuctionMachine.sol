@@ -170,6 +170,10 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
   }
 
   function currentPrice() public view returns (uint256 price) {
+    if (auctionExpiration < block.timestamp) {
+      return 0;
+    }
+
     uint256 startTime = auctionExpiration - auctionDuration;
     uint256 periods = auctionDuration / periodDuration;
     uint256 periodPrice = (startingPrice - endingPrice) / periods;

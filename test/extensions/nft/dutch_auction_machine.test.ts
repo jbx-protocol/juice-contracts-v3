@@ -73,7 +73,7 @@ describe('DutchAuctionMachine tests', () => {
         const auctionCap = 10;
         const auctionDuration = 60 * 60;
         const periodDuration = 600;
-        const priceMultiplier = 10;
+        const priceMultiplier = 6;
 
         const dutchAuctionMachineFactory = await ethers.getContractFactory('DutchAuctionMachine');
         dutchAuctionMachine = await dutchAuctionMachineFactory.connect(deployer)
@@ -118,12 +118,17 @@ describe('DutchAuctionMachine tests', () => {
     it('Check price', async () => {
         const auctionDuration = 60 * 60;
         const periodDuration = 600;
-        const priceMultiplier = 10;
+        const priceMultiplier = 6;
         const maxPrice = basicUnitPrice.mul(priceMultiplier);
 
         let now = await helpers.time.latest();
         let remaining = await dutchAuctionMachine.timeLeft();
         let price = (await dutchAuctionMachine.currentPrice()) as BigNumber;
         expect(price).to.equal(maxPrice);
+
+        const periodPriceDifference = maxPrice.sub(basicUnitPrice).div(Math.floor(auctionDuration / periodDuration))
+        await helpers.time.increaseTo(now + periodDuration + 10);
+        price = (await dutchAuctionMachine.currentPrice()) as BigNumber;
+        expect(price).to.equal(maxPrice.sub(periodPriceDifference));
     });
 });
