@@ -23,10 +23,10 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
   /** @notice Duration of auctions in seconds. */
   uint256 public auctionDuration;
 
-  /** @notice xxx */
+  /** @notice Price drop period duration.  */
   uint256 public periodDuration;
 
-  /** @notice xxx */
+  /** @notice Price multiplier to determine the starting (high) price. */
   uint256 public maxPriceMultiplier;
 
   /** @notice Juicebox project id that will receive auction proceeds */
@@ -65,11 +65,11 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
    * - Transfer the token to the auction winner.
    * - Repeat until maxAuctions is spent.
    *
-   * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `function transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction reserve price. transferFrom will be called to transfer the token to the auction winner if any.
+   * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `function transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction starting price. `transferFrom` will be called to transfer the token to the auction winner if any.
    *
    * @param _maxAuctions Maximum number of auctions to perform automatically, 0 for no limit.
    * @param _auctionDuration Auction duration in seconds.
-   * @param _periodDuration Price reduction period in secnds.
+   * @param _periodDuration Price reduction period in seconds.
    * @param _maxPriceMultiplier Starting price multiplier. Token unit price is multiplied by this value to become the auction starting price.
    * @param _projectId Juicebox project id, used to transfer auction proceeds.
    * @param _jbxDirectory Juicebox directory, used to transfer auction proceeds to the correct terminal.
@@ -185,6 +185,12 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
   // -------------------- priviledged transactions --------------------- //
   //*********************************************************************//
 
+  /**
+   * @notice Sends tokens owned by this contract, from failed auctions, to the given address.
+   *
+   * @param _account Address to transfer the token to.
+   * @param _tokenId Token id of NFT to transfer.
+   */
   function recoverToken(address _account, uint256 _tokenId) external nonReentrant onlyOwner {
     token.transferFrom(address(this), _account, _tokenId);
   }

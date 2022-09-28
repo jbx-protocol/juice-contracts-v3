@@ -157,6 +157,12 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
   // -------------------- priviledged transactions --------------------- //
   //*********************************************************************//
 
+  /**
+   * @notice Sends tokens owned by this contract, from failed auctions, to the given address.
+   *
+   * @param _account Address to transfer the token to.
+   * @param _tokenId Token id of NFT to transfer.
+   */
   function recoverToken(address _account, uint256 _tokenId) external nonReentrant onlyOwner {
     token.transferFrom(address(this), _account, _tokenId);
   }

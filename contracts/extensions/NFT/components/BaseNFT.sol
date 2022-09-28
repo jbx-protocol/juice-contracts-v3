@@ -17,6 +17,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
   using Strings for uint256;
 
   bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
+  bytes32 public constant REVEALER_ROLE = keccak256('REVEALER_ROLE');
 
   /**
    * @notice NFT provenance hash reassignment prohibited.
@@ -308,6 +309,14 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     _revokeRole(MINTER_ROLE, _account);
   }
 
+  function addRevealer(address _account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    _grantRole(REVEALER_ROLE, _account);
+  }
+
+  function removeRevealer(address _account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    _revokeRole(REVEALER_ROLE, _account);
+  }
+
   /**
    * @notice Set provenance hash.
    *
@@ -357,7 +366,8 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
    *
    * @dev URI must include the trailing slash.
    */
-  function setBaseURI(string memory _baseUri, bool _reveal) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function setBaseURI(string memory _baseUri, bool _reveal) external onlyRole(REVEALER_ROLE) {
+    // TODO: revealer role
     if (isRevealed && !_reveal) {
       revert ALREADY_REVEALED();
     }

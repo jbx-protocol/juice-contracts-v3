@@ -54,5 +54,6 @@ contract NFUToken is BaseNFT, Initializable {
 
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(MINTER_ROLE, msg.sender);
+    _grantRole(REVEALER_ROLE, msg.sender);
   }
 }
