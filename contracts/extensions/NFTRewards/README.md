@@ -1,4 +1,4 @@
-# JBX Contribution NFT Reward Mechanism
+# Juicebox Contribution ("Pay") NFT Reward Mechanism
 
 ## Motivation
 

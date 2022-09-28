@@ -1,6 +1,6 @@
-# Movement extensions for Juicebox v2
+# DAOLABS extensions for Juicebox v2
 
-This is a collection of contracts providing extra functionality on top of Juicebox v3 that is fully integrated with the rest of the platform.
+This is a collection of additional contracts providing functionality on top of Juicebox v3 that is fully integrated with the rest of the platform.
 
 ## Contracts
 
