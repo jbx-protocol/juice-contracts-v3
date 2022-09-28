@@ -87,8 +87,12 @@ Coming Soon™️.
 
 ## DutchActionMachine
 
-TBD
+Coming Soon™️.
 
 ## EnglishAuctionMachine
 
-TBD
+Coming Soon™️.
+
+## MintPassMachine
+
+Coming Soon™️.
