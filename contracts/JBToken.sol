@@ -156,7 +156,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     @notice
     Approves an account to spend tokens on the `msg.sender`s behalf.
 
-    @param _projectId the ID of the project to which the token belongs.
+    @param _projectId the ID of the project to which the token belongs. This is ignored.
     @param _spender The address that will be spending tokens on the `msg.sender`s behalf.
     @param _amount The amount the `_spender` is allowed to spend.
   */
@@ -174,7 +174,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     @notice
     Transfer tokens to an account.
     
-    @param _projectId The ID of the project to which the token belongs.
+    @param _projectId The ID of the project to which the token belongs. This is ignored.
     @param _to The destination address.
     @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
   */
@@ -192,7 +192,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     @notice
     Transfer tokens between accounts.
 
-    @param _projectId The ID of the project to which the token belongs.
+    @param _projectId The ID of the project to which the token belongs. This is ignored.
     @param _from The originating address.
     @param _to The destination address.
     @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
