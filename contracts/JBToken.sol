@@ -156,7 +156,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     @notice
     Approves an account to spend tokens on the `msg.sender`s behalf.
 
-    @param _projectId the ID of the project to which the token belongs. This is ignored.
+    @param _projectId the ID of the project to which the token belongs.
     @param _spender The address that will be spending tokens on the `msg.sender`s behalf.
     @param _amount The amount the `_spender` is allowed to spend.
   */
@@ -165,7 +165,8 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _spender,
     uint256 _amount
   ) external override {
-    _projectId; // Prevents unused var compiler and natspec complaints.
+    // Can't transfer for a wrong project.
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     approve(_spender, _amount);
   }
