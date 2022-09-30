@@ -23,7 +23,7 @@ interface IJBToken {
   ) external;
 
   function approve(
-    uint256,
+    uint256 _projectId,
     address _spender,
     uint256 _amount
   ) external;

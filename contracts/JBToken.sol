@@ -125,7 +125,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     uint256 _amount
   ) external override onlyOwner {
     // Can't mint for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     return _mint(_account, _amount);
   }
@@ -147,7 +147,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     uint256 _amount
   ) external override onlyOwner {
     // Can't burn for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     return _burn(_account, _amount);
   }
@@ -165,8 +165,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _spender,
     uint256 _amount
   ) external override {
-    // Can't approve for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    _projectId; // Prevents unused var compiler and natspec complaints.
 
     approve(_spender, _amount);
   }
@@ -184,8 +183,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _to,
     uint256 _amount
   ) external override {
-    // Can't transfer for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    _projectId; // Prevents unused var compiler and natspec complaints.
 
     transfer(_to, _amount);
   }
@@ -205,8 +203,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _to,
     uint256 _amount
   ) external override {
-    // Can't transfer for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    _projectId; // Prevents unused var compiler and natspec complaints.
 
     transferFrom(_from, _to, _amount);
   }
