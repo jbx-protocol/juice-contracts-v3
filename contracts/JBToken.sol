@@ -165,7 +165,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _spender,
     uint256 _amount
   ) external override {
-    // Can't transfer for a wrong project.
+    // Can't approve for a wrong project.
     if (_projectId != projectId) revert BAD_PROJECT();
 
     approve(_spender, _amount);
