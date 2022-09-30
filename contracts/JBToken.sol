@@ -174,7 +174,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     @notice
     Transfer tokens to an account.
     
-    @param _projectId The ID of the project to which the token belongs. This is ignored.
+    @param _projectId The ID of the project to which the token belongs.
     @param _to The destination address.
     @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
   */
@@ -183,7 +183,8 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _to,
     uint256 _amount
   ) external override {
-    _projectId; // Prevents unused var compiler and natspec complaints.
+    // Can't transfer for a wrong project.
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     transfer(_to, _amount);
   }
@@ -192,7 +193,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     @notice
     Transfer tokens between accounts.
 
-    @param _projectId The ID of the project to which the token belongs. This is ignored.
+    @param _projectId The ID of the project to which the token belongs.
     @param _from The originating address.
     @param _to The destination address.
     @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
@@ -203,7 +204,8 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     address _to,
     uint256 _amount
   ) external override {
-    _projectId; // Prevents unused var compiler and natspec complaints.
+    // Can't transfer for a wrong project.
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     transferFrom(_from, _to, _amount);
   }
