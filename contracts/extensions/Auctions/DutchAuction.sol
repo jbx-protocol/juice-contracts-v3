@@ -291,7 +291,7 @@ contract DutchAuctionHouse is
   /**
    * @notice This trustless method removes the burden of distributing auction proceeds to the seller-configured splits from the buyer (or anyone else) calling settle().
    */
-  function distributeProceeds(IERC721 _collection, uint256 _item) external override {
+  function distributeProceeds(IERC721 _collection, uint256 _item) external override nonReentrant {
     bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
     DutchAuctionData memory auctionDetails = auctions[auctionId];
 
