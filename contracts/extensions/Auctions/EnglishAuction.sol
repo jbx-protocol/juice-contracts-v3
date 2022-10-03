@@ -22,6 +22,7 @@ interface IEnglishAuctionHouse is INFTAuction {
     uint256 item,
     uint256 startingPrice,
     uint256 reservePrice,
+    uint256 expiration,
     string memo
   );
 }
@@ -167,7 +168,15 @@ contract EnglishAuctionHouse is
 
     collection.transferFrom(msg.sender, address(this), item);
 
-    emit CreateEnglishAuction(msg.sender, collection, item, startingPrice, reservePrice, _memo); // TODO: reserve price, expiration
+    emit CreateEnglishAuction(
+      msg.sender,
+      collection,
+      item,
+      startingPrice,
+      reservePrice,
+      expiration,
+      _memo
+    ); // TODO: expiration
   }
 
   /**
@@ -203,7 +212,7 @@ contract EnglishAuctionHouse is
       payable(address(uint160(auctionDetails.bid))).transfer(currentBidAmount);
     } else {
       uint256 startingPrice = uint256(uint96(auctionDetails.prices));
-
+      // TODO: consider allowing this as a means of caputuring market info
       if (startingPrice > msg.value) {
         revert INVALID_BID();
       }
@@ -242,16 +251,57 @@ contract EnglishAuctionHouse is
 
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
-    if (lastBidAmount >= reservePrice) {
-      uint256 balance = lastBidAmount;
-      uint256 fee = PRBMath.mulDiv(balance, uint32(settings), JBConstants.SPLITS_TOTAL_PERCENT);
-      feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, _memo, '');
+    if (reservePrice < lastBidAmount) {
+      address buyer = address(uint160(auctionDetails.bid));
 
-      unchecked {
-        balance -= fee;
+      collection.transferFrom(address(this), buyer, item);
+
+      emit ConcludeAuction(auctionDetails.seller, buyer, collection, item, lastBidAmount, _memo);
+    } else {
+      collection.transferFrom(address(this), auctionDetails.seller, item);
+
+      if (lastBidAmount != 0) {
+        payable(address(uint160(auctionDetails.bid))).transfer(lastBidAmount);
       }
 
-      if (auctionSplits[auctionId].length > 0) {
+      delete auctions[auctionId];
+      delete auctionSplits[auctionId];
+
+      emit ConcludeAuction(auctionDetails.seller, address(0), collection, item, 0, _memo);
+    }
+  }
+
+  /**
+   * @notice This trustless method removes the burden of distributing auction proceeds to the seller-configured splits from the buyer (or anyone else) calling settle().
+   */
+  function distributeProceeds(IERC721 _collection, uint256 _item) external override {
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    EnglishAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.seller == address(0)) {
+      revert INVALID_AUCTION();
+    }
+
+    uint256 expiration = uint256(uint64(auctionDetails.prices >> 192));
+    if (block.timestamp < deploymentOffset + expiration) {
+      revert AUCTION_IN_PROGRESS();
+    }
+
+    uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
+    uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
+    if (reservePrice < lastBidAmount) {
+      uint256 balance = lastBidAmount;
+      if (uint32(settings) != 0) {
+        // feeRate > 0
+        uint256 fee = PRBMath.mulDiv(balance, uint32(settings), JBConstants.SPLITS_TOTAL_PERCENT);
+        feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, '', '');
+
+        unchecked {
+          balance -= fee;
+        }
+      }
+
+      if (auctionSplits[auctionId].length != 0) {
         balance = payToSplits(
           auctionSplits[auctionId],
           balance,
@@ -265,35 +315,33 @@ contract EnglishAuctionHouse is
         payable(auctionDetails.seller).transfer(balance);
       }
 
-      address buyer = address(uint160(auctionDetails.bid));
+      if (_collection.ownerOf(_item) == address(this)) {
+        address buyer = address(uint160(auctionDetails.bid));
+        _collection.transferFrom(address(this), buyer, _item);
+      }
 
-      collection.transferFrom(address(this), buyer, item);
-
-      emit ConcludeAuction(auctionDetails.seller, buyer, collection, item, lastBidAmount, _memo);
-    } else {
-      collection.transferFrom(address(this), auctionDetails.seller, item);
-
-      emit ConcludeAuction(auctionDetails.seller, address(0), collection, item, 0, _memo);
+      delete auctions[auctionId];
+      delete auctionSplits[auctionId];
     }
-
-    delete auctions[auctionId];
-    delete auctionSplits[auctionId];
   }
 
   /**
-   * @notice This trustless method removes the burden of distributing auction proceeds to the seller-configured splits from the buyer (or anyone else) calling settle().
+   * @notice Returns current bid for a given item even if it is below the reserve.
    */
-  function distributeProceeds(IERC721 _collection, uint256 _item) external override {
-    // TODO
-  }
-
-  function currentPrice(IERC721 collection, uint256 item)
+  function currentPrice(IERC721 _collection, uint256 _item)
     public
     view
     override
     returns (uint256 price)
   {
-    price = 0; // TODO
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    EnglishAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.seller == address(0)) {
+      revert INVALID_AUCTION();
+    }
+
+    price = uint256(uint96(auctionDetails.bid >> 160));
   }
 
   /**
@@ -316,6 +364,12 @@ contract EnglishAuctionHouse is
     }
 
     delete auctionSplits[auctionId];
+
+    uint256 length = _saleSplits.length;
+    for (uint256 i = 0; i != length; ) {
+      auctionSplits[auctionId].push(_saleSplits[i]);
+      ++i;
+    }
   }
 
   /**
