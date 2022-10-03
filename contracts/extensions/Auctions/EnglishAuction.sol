@@ -290,29 +290,35 @@ contract EnglishAuctionHouse is
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
     if (reservePrice < lastBidAmount) {
-      uint256 balance = lastBidAmount;
       if (uint32(settings) != 0) {
         // feeRate > 0
-        uint256 fee = PRBMath.mulDiv(balance, uint32(settings), JBConstants.SPLITS_TOTAL_PERCENT);
+        uint256 fee = PRBMath.mulDiv(
+          lastBidAmount,
+          uint32(settings),
+          JBConstants.SPLITS_TOTAL_PERCENT
+        );
         feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, '', '');
 
         unchecked {
-          balance -= fee;
+          lastBidAmount -= fee;
         }
       }
 
       if (auctionSplits[auctionId].length != 0) {
-        balance = payToSplits(
+        lastBidAmount = payToSplits(
           auctionSplits[auctionId],
-          balance,
+          lastBidAmount,
           JBTokens.ETH,
           18,
           directory,
           0,
           payable(address(0))
         );
+        if (lastBidAmount > 0) {
+          payable(auctionDetails.seller).transfer(lastBidAmount);
+        }
       } else {
-        payable(auctionDetails.seller).transfer(balance);
+        payable(auctionDetails.seller).transfer(lastBidAmount);
       }
 
       if (_collection.ownerOf(_item) == address(this)) {
@@ -324,6 +330,8 @@ contract EnglishAuctionHouse is
       delete auctionSplits[auctionId];
     }
   }
+
+  // TODO: consider an acceptLowBid function for the seller to execute after auction expiration
 
   /**
    * @notice Returns current bid for a given item even if it is below the reserve.
@@ -375,7 +383,7 @@ contract EnglishAuctionHouse is
   /**
    * @notice Change fee rate, admin only.
    *
-   * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
+   * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1_000_000_000).
    */
   function setFeeRate(uint256 _feeRate) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     if (_feeRate > FEE_RATE_CAP) {
