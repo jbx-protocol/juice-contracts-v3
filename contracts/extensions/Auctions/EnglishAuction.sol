@@ -209,7 +209,7 @@ contract EnglishAuctionHouse is
         revert INVALID_BID();
       }
 
-      payable(address(uint160(auctionDetails.bid))).transfer(currentBidAmount);
+      address(uint160(auctionDetails.bid)).call{value: currentBidAmount, gas: 2300}('');
     } else {
       uint256 startingPrice = uint256(uint96(auctionDetails.prices));
       // TODO: consider allowing this as a means of caputuring market info
