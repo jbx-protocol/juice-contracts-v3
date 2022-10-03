@@ -251,7 +251,7 @@ contract EnglishAuctionHouse is
 
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
-    if (reservePrice < lastBidAmount) {
+    if (reservePrice <= lastBidAmount) {
       address buyer = address(uint160(auctionDetails.bid));
 
       collection.transferFrom(address(this), buyer, item);
@@ -289,7 +289,7 @@ contract EnglishAuctionHouse is
 
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
-    if (reservePrice < lastBidAmount) {
+    if (reservePrice <= lastBidAmount) {
       if (uint32(settings) != 0) {
         // feeRate > 0
         uint256 fee = PRBMath.mulDiv(

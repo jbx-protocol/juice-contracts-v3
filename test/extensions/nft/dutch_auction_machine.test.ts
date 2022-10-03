@@ -109,6 +109,16 @@ describe('DutchAuctionMachine tests', () => {
         expect(await basicToken.balanceOf(accounts[1].address)).to.equal(1);
     });
 
+    it('Complete auction before expiration', async () => {
+        await dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.mul(7) });
+
+        await dutchAuctionMachine.settle();
+
+        expect(await basicToken.totalSupply()).to.equal(3);
+        expect(await basicToken.balanceOf(dutchAuctionMachine.address)).to.equal(1);
+        expect(await basicToken.balanceOf(accounts[0].address)).to.equal(1);
+    });
+
     it('Place bids', async () => {
         await expect(dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.div(2) })).to.be.reverted;
         await expect(dutchAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.mul(2) })).not.to.be.reverted;
@@ -122,7 +132,6 @@ describe('DutchAuctionMachine tests', () => {
         const maxPrice = basicUnitPrice.mul(priceMultiplier);
 
         let now = await helpers.time.latest();
-        let remaining = await dutchAuctionMachine.timeLeft();
         let price = (await dutchAuctionMachine.currentPrice()) as BigNumber;
         expect(price).to.equal(maxPrice);
 

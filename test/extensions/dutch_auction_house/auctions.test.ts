@@ -1,9 +1,8 @@
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
-
 
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
@@ -300,18 +299,6 @@ describe('DutchAuctionHouse tests', () => {
         await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: endPrice });
 
         expect(dutchAuctionHouse.connect(accounts[1]).distributeProceeds(token.address, tokenId)).to.be.revertedWithCustomError(dutchAuctionHouse, 'INVALID_PRICE');
-    });
-
-    it(`settle() success: refund invalid bid`, async () => {
-        const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
-        await mintCreate();
-
-        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + auctionDuration + 10]);
-        await ethers.provider.send("evm_mine", []);
-
-        await dutchAuctionHouse.connect(accounts[1]).settle(token.address, tokenId);
-
-        expect(await token.ownerOf(tokenId)).to.equal(tokenOwner.address);
     });
 
     it(`settle() success: split payments`, async () => {

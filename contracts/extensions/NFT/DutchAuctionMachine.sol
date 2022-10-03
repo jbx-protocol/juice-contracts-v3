@@ -118,37 +118,25 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
   }
 
   function settle() external payable nonReentrant {
-    if (auctionExpiration > block.timestamp) {
+    if (auctionExpiration > block.timestamp && currentPrice() > currentBid) {
       revert AUCTION_ACTIVE();
     }
 
-    if (currentBidder != address(0) && currentBid >= endingPrice) {
-      // auction concluded with a valid bid, settle
-
+    if (currentBid >= currentPrice()) {
+      // auction reached a valid bid, settle
       IJBPaymentTerminal terminal = jbxDirectory.primaryTerminalOf(jbxProjectId, JBTokens.ETH);
-      terminal.pay(
-        jbxProjectId,
-        currentBid,
-        JBTokens.ETH,
-        currentBidder,
-        0,
-        false,
-        string(abi.encodePacked('')),
-        ''
-      ); // TODO: send relevant memo to terminal
+      terminal.pay(jbxProjectId, currentBid, JBTokens.ETH, currentBidder, 0, false, '', ''); // TODO: send relevant memo to terminal
 
-      unchecked {
-        ++completedAuctions;
-      }
       token.transferFrom(address(this), currentBidder, currentTokenId);
 
       emit AuctionEnded(currentBidder, currentBid, address(token), currentTokenId);
-    } else {
-      // auction concluded without a valid bid
+    }
+    //  else if (auctionExpiration < block.timestamp) {
+    // auction concluded without a valid bid
+    // }
 
-      unchecked {
-        ++completedAuctions;
-      }
+    unchecked {
+      ++completedAuctions;
     }
 
     currentBidder = address(0);
@@ -170,8 +158,8 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
   }
 
   function currentPrice() public view returns (uint256 price) {
-    if (auctionExpiration < block.timestamp) {
-      return 0;
+    if (currentTokenId != 0 && auctionExpiration < block.timestamp) {
+      return endingPrice;
     }
 
     uint256 startTime = auctionExpiration - auctionDuration;
