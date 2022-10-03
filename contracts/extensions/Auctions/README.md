@@ -36,11 +36,13 @@ The auction starts immediately on successful execution of this function. Ownersh
 
 Creating an auction fires the `CreateDutchAuction` event. There is no internal auction index, it is expected that auction state would be picked up from events. There is a public `auctions` map where the key is defined as `keccak256(abi.encodePacked(address(collection), item))`.
 
-Note that improperly configured splits, for example attempting to send Ether to a project with a misconfigured terminal, will prevent auction settlement.
+Note that improperly configured splits, for example attempting to send Ether to a project with a misconfigured terminal, will prevent auction settlement. To mitigate this an `updateAuctionSplits` function is present that can be called by the auction creator.
 
 ### Bidding on and ending Dutch Auctions
 
 This auction contract will accept the highest bid for an item as long as it is above the ending price. Meaning that interested parties can register their interest before the price is at the bid amount. If this happens, the auction still needs to be settled manually when enough periods pass to hit the desired price. To get the current price call `currentPrice(IERC721 collection, uint256 item)`. This method will calculate the number of elapsed periods and return the reduced item price accordingly. Place bids by calling `bid(IERC721 collection, uint256 item, string calldata _memo)` which will generate an event, `PlaceBid`, with the provided arguments.
+
+Dutch auctions can be settled ahead of expiration if the required price is met.
 
 Auction settlement is trustless and is performed by `settle(IERC721 collection, uint256 item, string calldata _memo)`. The last parameter is optional text that would get published with the settlement event (`ConcludeAuction`).
 
@@ -77,7 +79,7 @@ The auction starts immediately on successful execution of this function. Ownersh
 
 Creating an auction fires the `CreateEnglishAuction` event. There is no internal auction index, it is expected that auction state would be picked up from events. There is a public `auctions` map where the key is defined as `keccak256(abi.encodePacked(address(collection), item))`.
 
-Note that improperly configured splits, for example attempting to send Ether to a project with a misconfigured terminal, will prevent auction settlement.
+Note that improperly configured splits, for example attempting to send Ether to a project with a misconfigured terminal, will prevent auction settlement. To mitigate this an `updateAuctionSplits` function is present that can be called by the auction creator.
 
 ### Bidding on and ending English Auctions
 
