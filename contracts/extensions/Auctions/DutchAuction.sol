@@ -306,7 +306,13 @@ contract DutchAuctionHouse is
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 minSettlePrice = currentPrice(_collection, _item);
 
-    if (minSettlePrice < lastBidAmount) {
+    if (minSettlePrice > lastBidAmount) {
+      // nothing to distribute no valid bid
+      revert INVALID_PRICE();
+    }
+
+    if (_collection.ownerOf(_item) == address(this)) {
+      // proceeds can be collected, but we still own the token, send it to the bidder
       address buyer = address(uint160(auctionDetails.bid));
       _collection.transferFrom(address(this), buyer, _item);
     }
