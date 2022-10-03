@@ -28,7 +28,7 @@ Call `create` to start an auction and pass the following arguments:
 - item: Token id to list.
 - startingPrice: Starting price for the auction from which it will drop.
 - endingPrice: Minimum price for the auction at which it will end at expiration time.
-- expiration: Seconds, offset from deploymentOffset, at which the auction concludes.
+- duration: Auction duration in seconds.
 - saleSplits: Juicebox splits collection that will receive auction proceeds.
 - memo: Memo to publish in the auction creation event.
 

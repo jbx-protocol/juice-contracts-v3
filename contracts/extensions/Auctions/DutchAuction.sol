@@ -120,7 +120,7 @@ contract DutchAuctionHouse is
    * @param item Token id to list.
    * @param startingPrice Starting price for the auction from which it will drop.
    * @param endingPrice Minimum price for the auction at which it will end at expiration time.
-   * @param expiration Seconds, offset from deploymentOffset, at which the auction concludes.
+   * @param _duration Seconds, offset from deploymentOffset, at which the auction concludes.
    * @param saleSplits Juicebox splits collection that will receive auction proceeds.
    * @param _memo Text to publish as part of the creation event.
    */
@@ -129,7 +129,7 @@ contract DutchAuctionHouse is
     uint256 item,
     uint256 startingPrice,
     uint256 endingPrice,
-    uint256 expiration,
+    uint256 _duration,
     JBSplit[] calldata saleSplits,
     string calldata _memo
   ) external override nonReentrant {
@@ -161,7 +161,7 @@ contract DutchAuctionHouse is
 
       uint256 auctionPrices = uint256(uint96(startingPrice));
       auctionPrices |= uint256(uint96(endingPrice)) << 96;
-      auctionPrices |= uint256(uint64(expiration)) << 192;
+      auctionPrices |= uint256(uint64(block.timestamp - deploymentOffset + _duration)) << 192;
 
       auctions[auctionId] = DutchAuctionData(auctionInfo, auctionPrices, 0);
     }
@@ -179,7 +179,7 @@ contract DutchAuctionHouse is
       item,
       startingPrice,
       endingPrice,
-      expiration,
+      block.timestamp + _duration,
       _memo
     );
   }
@@ -272,10 +272,6 @@ contract DutchAuctionHouse is
       if (block.timestamp > deploymentOffset + expiration) {
         // NOTE: return token back to seller after auction expiration if highest bid was below settlement price
         collection.transferFrom(address(this), address(uint160(auctionDetails.info)), item);
-
-        if (lastBidAmount != 0) {
-          payable(address(uint160(auctionDetails.bid))).transfer(lastBidAmount);
-        }
 
         delete auctions[auctionId];
         delete auctionSplits[auctionId];
