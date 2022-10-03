@@ -22,12 +22,13 @@ interface IDutchAuctionHouse is INFTAuction {
     uint256 item,
     uint256 startingPrice,
     uint256 endingPrice,
+    uint256 expiration,
     string memo
   );
 }
 
 struct DutchAuctionData {
-  uint256 info; // seller, duration
+  uint256 info; // seller, start time
   uint256 prices;
   uint256 bid;
 }
@@ -40,6 +41,7 @@ contract DutchAuctionHouse is
   Initializable
 {
   bytes32 public constant AUTHORIZED_SELLER_ROLE = keccak256('AUTHORIZED_SELLER_ROLE');
+
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
@@ -171,7 +173,15 @@ contract DutchAuctionHouse is
 
     collection.transferFrom(msg.sender, address(this), item);
 
-    emit CreateDutchAuction(msg.sender, collection, item, startingPrice, endingPrice, _memo);
+    emit CreateDutchAuction(
+      msg.sender,
+      collection,
+      item,
+      startingPrice,
+      endingPrice,
+      expiration,
+      _memo
+    );
   }
 
   /**
@@ -207,7 +217,7 @@ contract DutchAuctionHouse is
       payable(address(uint160(auctionDetails.bid))).transfer(currentBidAmount);
     } else {
       uint256 endingPrice = uint256(uint96(auctionDetails.prices >> 96));
-
+      // TODO: consider allowing this as a means of caputuring market info
       if (endingPrice > msg.value) {
         revert INVALID_BID();
       }
@@ -218,11 +228,13 @@ contract DutchAuctionHouse is
 
     auctions[auctionId].bid = newBid;
 
+    // TODO: consider allowing a bid over the current minimum price to tranfer the token immediately without calling settle
+
     emit PlaceBid(msg.sender, collection, item, msg.value, _memo);
   }
 
   /**
-   * @notice Settles the auction after expiration if no valid bids were received by sending the item back to the seller. If a valid bid matches the current price at the time of settle call, the item is sent to the bidder and the proceeds are distributed.
+   * @notice Settles the auction after expiration if no valid bids were received by sending the item back to the seller. If a valid bid matches the current price at the time of settle call, the item is sent to the bidder. Proceeds will be distributed separately by calling `distributeProceeds`.
    *
    * @param collection ERC721 contract.
    * @param item Token id to settle.
@@ -242,71 +254,99 @@ contract DutchAuctionHouse is
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 minSettlePrice = currentPrice(collection, item);
 
-    if (lastBidAmount < minSettlePrice) {
-      // NOTE: return token back to seller
-      collection.transferFrom(address(this), address(uint160(auctionDetails.info)), item);
+    if (minSettlePrice < lastBidAmount) {
+      address buyer = address(uint160(auctionDetails.bid));
+
+      collection.transferFrom(address(this), buyer, item);
 
       emit ConcludeAuction(
         address(uint160(auctionDetails.info)),
-        address(0),
+        buyer,
         collection,
         item,
-        0,
+        lastBidAmount,
         _memo
       );
-
-      delete auctions[auctionId];
-      delete auctionSplits[auctionId];
-
-      return;
-    }
-
-    uint256 balance = lastBidAmount;
-    // TODO: check if feeRate is 0
-    uint256 fee = PRBMath.mulDiv(balance, uint32(settings), JBConstants.SPLITS_TOTAL_PERCENT);
-    feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, _memo, '');
-
-    unchecked {
-      balance -= fee;
-    }
-
-    // TODO: separate item delivery from payment.
-    // TODO: allow split modification because this can forever lock proceeds of an auction
-
-    if (auctionSplits[auctionId].length > 0) {
-      balance = payToSplits(
-        auctionSplits[auctionId],
-        balance,
-        JBTokens.ETH,
-        18,
-        directory,
-        0,
-        payable(address(0))
-      );
     } else {
-      payable(address(uint160(auctionDetails.info))).transfer(balance);
+      uint256 expiration = uint256(uint64(auctionDetails.prices >> 192));
+      if (block.timestamp > deploymentOffset + expiration) {
+        // NOTE: return token back to seller after auction expiration if highest bid was below settlement price
+        collection.transferFrom(address(this), address(uint160(auctionDetails.info)), item);
+
+        if (lastBidAmount != 0) {
+          payable(address(uint160(auctionDetails.bid))).transfer(lastBidAmount);
+        }
+
+        delete auctions[auctionId];
+        delete auctionSplits[auctionId];
+
+        emit ConcludeAuction(
+          address(uint160(auctionDetails.info)),
+          address(0),
+          collection,
+          item,
+          0,
+          _memo
+        );
+      }
     }
-
-    address buyer = address(uint160(auctionDetails.bid));
-
-    collection.transferFrom(address(this), buyer, item);
-
-    emit ConcludeAuction(
-      address(uint160(auctionDetails.info)),
-      buyer,
-      collection,
-      item,
-      lastBidAmount,
-      _memo
-    );
   }
 
   /**
    * @notice This trustless method removes the burden of distributing auction proceeds to the seller-configured splits from the buyer (or anyone else) calling settle().
    */
   function distributeProceeds(IERC721 _collection, uint256 _item) external override {
-    // TODO
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.info == 0) {
+      revert INVALID_AUCTION();
+    }
+
+    uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
+    uint256 minSettlePrice = currentPrice(_collection, _item);
+
+    if (minSettlePrice < lastBidAmount) {
+      address buyer = address(uint160(auctionDetails.bid));
+      _collection.transferFrom(address(this), buyer, _item);
+    }
+
+    if (uint32(settings) != 0) {
+      // feeRate > 0
+      uint256 fee = PRBMath.mulDiv(
+        lastBidAmount,
+        uint32(settings),
+        JBConstants.SPLITS_TOTAL_PERCENT
+      );
+      feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, '', '');
+
+      unchecked {
+        lastBidAmount -= fee;
+      }
+    }
+
+    if (auctionSplits[auctionId].length != 0) {
+      lastBidAmount = payToSplits(
+        auctionSplits[auctionId],
+        lastBidAmount,
+        JBTokens.ETH,
+        18,
+        directory,
+        0,
+        payable(address(0))
+      );
+      if (lastBidAmount > 0) {
+        payable(address(uint160(auctionDetails.info))).transfer(lastBidAmount);
+      }
+    } else {
+      payable(address(uint160(auctionDetails.info))).transfer(lastBidAmount);
+    }
+
+    delete auctions[auctionId];
+    delete auctionSplits[auctionId];
   }
+
+  // TODO: consider an acceptLowBid function for the seller to execute after auction expiration
 
   /**
    * @notice Returns the current price for an items subject to the price range and elapsed duration.
@@ -346,7 +386,24 @@ contract DutchAuctionHouse is
     uint256 _item,
     JBSplit[] calldata _saleSplits
   ) external override {
-    // TODO
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.info == 0) {
+      revert INVALID_AUCTION();
+    }
+
+    if (address(uint160(auctionDetails.info)) != msg.sender) {
+      revert NOT_AUTHORIZED();
+    }
+
+    delete auctionSplits[auctionId];
+
+    uint256 length = _saleSplits.length;
+    for (uint256 i = 0; i != length; ) {
+      auctionSplits[auctionId].push(_saleSplits[i]);
+      ++i;
+    }
   }
 
   /**
