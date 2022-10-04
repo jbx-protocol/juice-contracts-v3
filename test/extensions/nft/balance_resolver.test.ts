@@ -70,10 +70,14 @@ describe('BalancePriceResolver tests', () => {
     });
 
     it('Assign linear price resolver, fee 1st, n/2 until 2 free', async () => {
+        const freeSample = true
+        const nthFree = 2;
+        const freeMintCap = 2;
+
         const balancePriceResolverFactory = await ethers.getContractFactory('BalancePriceResolver');
         balancePriceResolver = await balancePriceResolverFactory
             .connect(deployer)
-            .deploy(basicUnitPrice, true, 2, 2, priceCap, PriceFunction.LINEAR, 2, 10);
+            .deploy(basicUnitPrice, freeSample, nthFree, freeMintCap, priceCap, PriceFunction.LINEAR, 2, 10);
 
         await expect(basicToken.connect(accounts[0]).updatePriceResolver(balancePriceResolver.address))
             .to.be.reverted;
@@ -84,33 +88,35 @@ describe('BalancePriceResolver tests', () => {
     });
 
     it('Get price for 1st token', async () => {
-        expect(await balancePriceResolver.getPrice(basicToken.address, accounts[0].address, 0))
+        const minter = accounts[0];
+        expect(await balancePriceResolver.getPrice(basicToken.address, minter.address, 0))
             .to.equal(0);
 
-        await basicToken.connect(accounts[0])['mint()']();
+        await basicToken.connect(minter)['mint()']();
         expect(await basicToken.balanceOf(accounts[0].address)).to.equal(1);
 
-        expect(await balancePriceResolver.getPrice(basicToken.address, accounts[0].address, 0))
+        expect(await balancePriceResolver.getPrice(basicToken.address, minter.address, 0))
             .to.equal(0);
     });
 
     it('Free nth mint: 2', async () => {
-        await basicToken.connect(accounts[0])['mint()']();
-        expect(await basicToken.balanceOf(accounts[0].address)).to.equal(2);
+        const minter = accounts[0];
+        await basicToken.connect(minter)['mint()']();
+        expect(await basicToken.balanceOf(minter.address)).to.equal(2);
     });
 
     it('Free nth mint: 4', async () => {
-        await basicToken.connect(accounts[0])['mint()']({value: basicUnitPrice});
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
 
         expect(await balancePriceResolver.getPriceWithParams(basicToken.address, accounts[0].address, 0, '0x00'))
             .to.equal(0);
 
         await basicToken.connect(accounts[0])['mint()']();
-        
+
         expect(await basicToken.balanceOf(accounts[0].address)).to.equal(4);
 
-        await basicToken.connect(accounts[0])['mint()']({value: basicUnitPrice});
-        await basicToken.connect(accounts[0])['mint()']({value: basicUnitPrice});
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
         expect(await basicToken.balanceOf(accounts[0].address)).to.equal(6);
     });
 
@@ -132,5 +138,39 @@ describe('BalancePriceResolver tests', () => {
 
         await expect(basicToken.connect(deployer).updatePriceResolver(balancePriceResolver.address))
             .not.to.be.reverted;
+    });
+
+    it('Assign linear price resolver, no free mints', async () => {
+        const freeSample = false
+        const nthFree = 0;
+        const freeMintCap = 0;
+
+        const balancePriceResolverFactory = await ethers.getContractFactory('BalancePriceResolver');
+        balancePriceResolver = await balancePriceResolverFactory
+            .connect(deployer)
+            .deploy(basicUnitPrice, freeSample, nthFree, freeMintCap, priceCap, PriceFunction.LINEAR, 2, 10);
+
+        await basicToken.connect(deployer).updatePriceResolver(balancePriceResolver.address);
+
+        expect(await basicToken.priceResolver()).to.equal(balancePriceResolver.address);
+    });
+
+    it('Paid mints', async () => {
+        const minter = accounts[1];
+
+        let price = (await balancePriceResolver.getPrice(basicToken.address, minter.address, 0)) as BigNumber;
+        expect(price.toNumber()).not.to.equal(0);
+
+        await basicToken.connect(minter)['mint()']({ value: price });
+        expect(await basicToken.balanceOf(minter.address)).to.equal(1);
+
+        price = (await balancePriceResolver.getPrice(basicToken.address, minter.address, 0)) as BigNumber;
+        expect(price).not.to.equal(0);
+
+        await basicToken.connect(minter)['mint()']({ value: price });
+        expect(await basicToken.balanceOf(minter.address)).to.equal(2);
+
+        price = (await balancePriceResolver.getPrice(basicToken.address, minter.address, 0)) as BigNumber;
+        expect(price).not.to.equal(0);
     });
 });

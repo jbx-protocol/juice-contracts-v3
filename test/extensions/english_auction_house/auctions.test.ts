@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
+import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
@@ -27,16 +28,9 @@ describe('EnglishAuctionHouse tests', () => {
 
         const englishAuctionHouseFactory = await ethers.getContractFactory('EnglishAuctionHouse', { signer: deployer });
 
-        const englishAuctionHouse = await englishAuctionHouseFactory
-            .connect(deployer)
-            .deploy(
-                projectId,
-                feeReceiverTerminal.address,
-                feeRate,
-                allowPublicAuctions,
-                deployer.address,
-                directory.address
-            );
+        const englishAuctionHouse = await englishAuctionHouseFactory.connect(deployer).deploy();
+        await englishAuctionHouse.deployed();
+        englishAuctionHouse.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicAuctions, deployer.address, directory.address)
 
         const tokenFactory = await ethers.getContractFactory('MockERC721', deployer);
         const token = await tokenFactory.connect(deployer).deploy();
@@ -88,7 +82,7 @@ describe('EnglishAuctionHouse tests', () => {
             englishAuctionHouse
                 .connect(tokenOwner)
                 .create(token.address, tokenId, basePrice, 0, auctionDuration, [], '')
-        ).to.emit(englishAuctionHouse, 'CreateEnglishAuction').withArgs(tokenOwner.address, token.address, tokenId, basePrice, '');
+        ).to.emit(englishAuctionHouse, 'CreateEnglishAuction').withArgs(tokenOwner.address, token.address, tokenId, basePrice, 0, anyValue, '');
     });
 
     it(`create() fail: not token owner`, async () => {
@@ -263,13 +257,14 @@ describe('EnglishAuctionHouse tests', () => {
         const expectedProceeds = reservePrice.sub(expectedFee);
 
         const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
-        const tx = englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
 
+        let tx = await englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
         await expect(tx)
             .to.emit(englishAuctionHouse, 'ConcludeAuction')
             .withArgs(tokenOwner.address, accounts[0].address, token.address, tokenId, reservePrice, '');
-        await expect(await tx)
-            .to.changeEtherBalance(tokenOwner, expectedProceeds);
+
+        tx = await englishAuctionHouse.connect(accounts[3]).distributeProceeds(token.address, tokenId);
+        await expect(tx).to.changeEtherBalance(tokenOwner, expectedProceeds);
 
         const endingBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
         expect(endingBalance).to.be.greaterThan(initialBalance);
@@ -289,19 +284,38 @@ describe('EnglishAuctionHouse tests', () => {
         const expectedProceeds = reservePrice.sub(expectedFee).div(2);
 
         const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
-        const tx = englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
 
+        let tx = await englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
         await expect(tx)
             .to.emit(englishAuctionHouse, 'ConcludeAuction')
             .withArgs(tokenOwner.address, accounts[0].address, token.address, tokenId, reservePrice, '');
-        await expect(await tx)
-            .to.changeEtherBalances([tokenOwner, accounts[2], accounts[3]], [0, expectedProceeds, expectedProceeds]);
+
+        tx = await englishAuctionHouse.connect(accounts[0]).distributeProceeds(token.address, tokenId);
+        await expect(tx).to.changeEtherBalances([tokenOwner, accounts[2], accounts[3]], [0, expectedProceeds, expectedProceeds]);
 
         const endingBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
         expect(endingBalance.sub(initialBalance)).to.equal(expectedFee);
     });
 
-    it(`settle() success: return`, async () => {
+    it(`settle()/distributeProceeds() fail: auction in progress/reserve not met`, async () => {
+        const { accounts, englishAuctionHouse, splits, token, tokenOwner } = await setup();
+
+        await token.connect(tokenOwner).approve(englishAuctionHouse.address, tokenId);
+        await englishAuctionHouse.connect(tokenOwner).create(token.address, tokenId, basePrice, reservePrice, auctionDuration, splits, '');
+        await englishAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: basePrice });
+
+        await expect(englishAuctionHouse.connect(accounts[0]).distributeProceeds(token.address, tokenId))
+            .to.be.revertedWithCustomError(englishAuctionHouse, 'AUCTION_IN_PROGRESS');
+
+        await ethers.provider.send("evm_increaseTime", [auctionDuration + 1]);
+        await ethers.provider.send("evm_mine", []);
+
+        let tx = await englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
+        await expect(tx).to.changeEtherBalances([accounts[0]], [basePrice]);
+
+    });
+
+    it(`settle() success: return token to seller`, async () => {
         const { accounts, englishAuctionHouse, token, tokenOwner } = await setup();
 
         await create(token, englishAuctionHouse, tokenOwner);
@@ -310,11 +324,10 @@ describe('EnglishAuctionHouse tests', () => {
         await ethers.provider.send("evm_increaseTime", [auctionDuration + 1]);
         await ethers.provider.send("evm_mine", []);
 
-        await expect(
-            englishAuctionHouse
-                .connect(accounts[1])
-                .settle(token.address, tokenId, '')
-        ).to.emit(englishAuctionHouse, 'ConcludeAuction').withArgs(tokenOwner.address, ethers.constants.AddressZero, token.address, tokenId, 0, '');
+        let tx = englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
+        await expect(await tx)
+            .to.emit(englishAuctionHouse, 'ConcludeAuction').withArgs(tokenOwner.address, ethers.constants.AddressZero, token.address, tokenId, 0, '');
+        await expect(await tx).to.changeEtherBalance(accounts[0], basePrice);
     });
 
     it(`settle() fail: auction in progress`, async () => {

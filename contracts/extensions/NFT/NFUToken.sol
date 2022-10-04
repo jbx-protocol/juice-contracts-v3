@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+
 import '../../interfaces/IJBDirectory.sol';
 import './components/BaseNFT.sol';
 
-contract NFToken is BaseNFT {
+contract NFUToken is BaseNFT, Initializable {
   //*********************************************************************//
-  // -------------------------- constructor ---------------------------- //
+  // -------------------------- initializer ---------------------------- //
   //*********************************************************************//
 
   /**
@@ -24,7 +26,7 @@ contract NFToken is BaseNFT {
    * @param _mintPeriodStart Start of the minting period in seconds.
    * @param _mintPeriodEnd End of the minting period in seconds.
    */
-  constructor(
+  function initialize(
     string memory _name,
     string memory _symbol,
     string memory _baseUri,
@@ -36,7 +38,7 @@ contract NFToken is BaseNFT {
     uint256 _mintAllowance,
     uint128 _mintPeriodStart,
     uint128 _mintPeriodEnd
-  ) {
+  ) public initializer {
     name = _name;
     symbol = _symbol;
 

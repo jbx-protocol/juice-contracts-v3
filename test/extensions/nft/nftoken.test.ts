@@ -82,6 +82,8 @@ describe('NFToken tests', () => {
         await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice.sub(1000) }))
             .to.be.revertedWithCustomError(basicToken, 'INCORRECT_PAYMENT');
 
+        expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
+
         await basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
         await basicToken.connect(accounts[4])['mint()']({ value: basicUnitPrice });
         expect(await basicToken.balanceOf(accounts[0].address)).to.equal(1);
