@@ -290,6 +290,12 @@ contract EnglishAuctionHouse is
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
     if (reservePrice <= lastBidAmount) {
+      if (_collection.ownerOf(_item) == address(this)) {
+        // proceeds can be collected, but we still own the token, send it to the bidder
+        address buyer = address(uint160(auctionDetails.bid));
+        _collection.transferFrom(address(this), buyer, _item);
+      }
+
       if (uint32(settings) != 0) {
         // feeRate > 0
         uint256 fee = PRBMath.mulDiv(
@@ -304,6 +310,8 @@ contract EnglishAuctionHouse is
         }
       }
 
+      delete auctions[auctionId];
+
       if (auctionSplits[auctionId].length != 0) {
         lastBidAmount = payToSplits(
           auctionSplits[auctionId],
@@ -314,20 +322,14 @@ contract EnglishAuctionHouse is
           0,
           payable(address(0))
         );
+        delete auctionSplits[auctionId];
+
         if (lastBidAmount > 0) {
           payable(auctionDetails.seller).transfer(lastBidAmount);
         }
       } else {
         payable(auctionDetails.seller).transfer(lastBidAmount);
       }
-
-      if (_collection.ownerOf(_item) == address(this)) {
-        address buyer = address(uint160(auctionDetails.bid));
-        _collection.transferFrom(address(this), buyer, _item);
-      }
-
-      delete auctions[auctionId];
-      delete auctionSplits[auctionId];
     }
   }
 

@@ -327,6 +327,8 @@ contract DutchAuctionHouse is
       }
     }
 
+    delete auctions[auctionId];
+
     if (auctionSplits[auctionId].length != 0) {
       lastBidAmount = payToSplits(
         auctionSplits[auctionId],
@@ -337,15 +339,15 @@ contract DutchAuctionHouse is
         0,
         payable(address(0))
       );
+
+      delete auctionSplits[auctionId];
+
       if (lastBidAmount > 0) {
         payable(address(uint160(auctionDetails.info))).transfer(lastBidAmount);
       }
     } else {
       payable(address(uint160(auctionDetails.info))).transfer(lastBidAmount);
     }
-
-    delete auctions[auctionId];
-    delete auctionSplits[auctionId];
   }
 
   // TODO: consider an acceptLowBid function for the seller to execute after auction expiration
