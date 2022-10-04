@@ -176,4 +176,76 @@ describe('Deployer tests', () => {
         // const auctionDuration = 60 * 60;
         // const feeDenominator = 1_000_000_000;
     });
+
+    it('Deploy Deployer_v004 as upgrade to v003', async () => {
+        const nfTokenFactoryFactory = await ethers.getContractFactory('NFTokenFactory', deployer);
+        const nfTokenFactoryLibrary = await nfTokenFactoryFactory.connect(deployer).deploy();
+
+        const mixedPaymentSplitterFactoryFactory = await ethers.getContractFactory('MixedPaymentSplitterFactory', deployer);
+        const mixedPaymentSplitterFactoryLibrary = await mixedPaymentSplitterFactoryFactory.connect(deployer).deploy();
+
+        const auctionsFactoryFactory = await ethers.getContractFactory('AuctionsFactory', deployer);
+        const auctionsFactoryFactoryLibrary = await auctionsFactoryFactory.connect(deployer).deploy();
+
+        const nfuTokenFactoryFactory = await ethers.getContractFactory('NFUTokenFactory', deployer);
+        const nfuTokenFactoryLibrary = await nfuTokenFactoryFactory.connect(deployer).deploy();
+
+        const deployerFactory = await ethers.getContractFactory('Deployer_v004', {
+            libraries: {
+                NFTokenFactory: nfTokenFactoryLibrary.address,
+                MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibrary.address,
+                AuctionsFactory: auctionsFactoryFactoryLibrary.address,
+                NFUTokenFactory: nfuTokenFactoryLibrary.address
+            },
+            signer: deployer
+        });
+
+        const dutchAuctionHouseFactory = await ethers.getContractFactory('DutchAuctionHouse', { signer: deployer });
+        const sourceDutchAuctionHouse = await dutchAuctionHouseFactory.connect(deployer).deploy();
+        await sourceDutchAuctionHouse.deployed();
+
+        const englishAuctionHouseFactory = await ethers.getContractFactory('EnglishAuctionHouse', { signer: deployer });
+        const sourceEnglishAuctionHouse = await englishAuctionHouseFactory.connect(deployer).deploy();
+        await sourceEnglishAuctionHouse.deployed();
+
+        const nfuTokenFactory = await ethers.getContractFactory('NFUToken', { signer: deployer });
+        const nfuToken = await nfuTokenFactory.connect(deployer).deploy();
+        await nfuToken.deployed();
+
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address] } });
+    });
+
+    it('Create cloned NFTs', async () => {
+        const now = await helpers.time.latest();
+        const nfuTokenFactory = await ethers.getContractFactory('NFUToken', { signer: deployer });
+
+        const name = 'Test NFT'
+        const symbol = 'NFT';
+        const baseUri = 'ipfs://hidden';
+        const baseUriRevealed = 'ipfs://revealed/';
+        const contractUri = 'ipfs://metadata';
+        const projectId = 99;
+        const unitPrice = ethers.utils.parseEther('0.001');
+        const maxSupply = 20;
+        const mintAllowance = 2
+        const mintPeriodStart = Math.floor(now + 60 * 60);
+        const mintPeriodEnd = Math.floor(now + 24 * 60 * 60);
+
+        let tx = await deployerProxy.connect(deployer).deployNFUToken(deployer.address, name + ' A', symbol + 'A', baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
+        let receipt = await tx.wait();
+
+        let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        const tokenA = await nfuTokenFactory.attach(contractAddress);
+        tokenA.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
+
+        tx = await deployerProxy.connect(deployer).deployNFUToken(deployer.address, name + ' B', symbol + 'B', baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
+        receipt = await tx.wait();
+
+        [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        const tokenB = await nfuTokenFactory.attach(contractAddress);
+        tokenB.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
+
+        expect(await tokenA.symbol()).to.equal(symbol + 'A');
+        expect(await tokenB.symbol()).to.equal(symbol + 'B');
+    });
 });

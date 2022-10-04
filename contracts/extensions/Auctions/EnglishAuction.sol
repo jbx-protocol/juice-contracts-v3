@@ -13,57 +13,18 @@ import '../../structs/JBSplit.sol';
 
 import '../Utils/JBSplitPayerUtil.sol';
 
-interface IEnglishAuctionHouse {
+import './INFTAuction.sol';
+
+interface IEnglishAuctionHouse is INFTAuction {
   event CreateEnglishAuction(
     address seller,
     IERC721 collection,
     uint256 item,
     uint256 startingPrice,
-    string memo
-  );
-
-  event PlaceBid(address bidder, IERC721 collection, uint256 item, uint256 bidAmount, string memo);
-
-  event ConcludeAuction(
-    address seller,
-    address bidder,
-    IERC721 collection,
-    uint256 item,
-    uint256 closePrice,
-    string memo
-  );
-
-  function create(
-    IERC721 collection,
-    uint256 item,
-    uint256 startingPrice,
     uint256 reservePrice,
     uint256 expiration,
-    JBSplit[] calldata saleSplits,
-    string calldata _memo
-  ) external;
-
-  function bid(
-    IERC721,
-    uint256,
-    string calldata _memo
-  ) external payable;
-
-  function settle(
-    IERC721 collection,
-    uint256 item,
-    string calldata _memo
-  ) external;
-
-  function setFeeRate(uint256) external;
-
-  function setAllowPublicAuctions(bool) external;
-
-  function setFeeReceiver(IJBPaymentTerminal) external;
-
-  function addAuthorizedSeller(address) external;
-
-  function removeAuthorizedSeller(address) external;
+    string memo
+  );
 }
 
 struct EnglishAuctionData {
@@ -85,18 +46,10 @@ contract EnglishAuctionHouse is
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
 
-  error AUCTION_EXISTS();
-  error INVALID_AUCTION();
   error AUCTION_IN_PROGRESS();
-  error AUCTION_ENDED();
-  error INVALID_BID();
-  error INVALID_PRICE();
-  error INVALID_DURATION();
-  error INVALID_FEERATE();
-  error NOT_AUTHORIZED();
 
   /**
-    @notice Fee rate cap set to 10%.
+   * @notice Fee rate cap set to 10%.
    */
   uint256 public constant FEE_RATE_CAP = 100000000;
 
@@ -125,11 +78,12 @@ contract EnglishAuctionHouse is
   uint256 public settings; // allowPublicAuctions(bool), feeRate (32)
 
   /**
-   * @notice
+   * @notice Contract initializer to make deployment more flexible.
    *
    * @param _projectId Project that manages this auction contract.
    * @param _feeReceiver An instance of IJBPaymentTerminal which will get auction fees.
    * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
+   * @param _allowPublicAuctions A flag to allow anyone to create an auction on this contract rather than only accounts with the `AUTHORIZED_SELLER_ROLE` permission.
    * @param _owner Contract admin if, should be msg.sender or another address.
    * @param _directory JBDirectory instance to enable JBX integration.
    *
@@ -146,7 +100,7 @@ contract EnglishAuctionHouse is
     deploymentOffset = block.timestamp;
 
     projectId = _projectId;
-    feeReceiver = _feeReceiver;
+    feeReceiver = _feeReceiver; // TODO: lookup instead
     settings = setBoolean(_feeRate, 32, _allowPublicAuctions);
     directory = _directory;
 
@@ -167,6 +121,7 @@ contract EnglishAuctionHouse is
    * @param reservePrice Reserve price at which the item will be sold once the auction expires. Below this price, the item will be returned to the seller.
    * @param expiration Seconds, offset from deploymentOffset, at which the auction concludes.
    * @param saleSplits Juicebox splits collection that will receive auction proceeds.
+   * @param _memo Text to publish as part of the creation event.
    */
   function create(
     IERC721 collection,
@@ -213,7 +168,15 @@ contract EnglishAuctionHouse is
 
     collection.transferFrom(msg.sender, address(this), item);
 
-    emit CreateEnglishAuction(msg.sender, collection, item, startingPrice, _memo);
+    emit CreateEnglishAuction(
+      msg.sender,
+      collection,
+      item,
+      startingPrice,
+      reservePrice,
+      expiration,
+      _memo
+    ); // TODO: expiration
   }
 
   /**
@@ -246,10 +209,10 @@ contract EnglishAuctionHouse is
         revert INVALID_BID();
       }
 
-      payable(address(uint160(auctionDetails.bid))).transfer(currentBidAmount);
+      address(uint160(auctionDetails.bid)).call{value: currentBidAmount, gas: 2300}('');
     } else {
       uint256 startingPrice = uint256(uint96(auctionDetails.prices));
-
+      // TODO: consider allowing this as a means of caputuring market info
       if (startingPrice > msg.value) {
         revert INVALID_BID();
       }
@@ -288,29 +251,7 @@ contract EnglishAuctionHouse is
 
     uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
     uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
-    if (lastBidAmount >= reservePrice) {
-      uint256 balance = lastBidAmount;
-      uint256 fee = PRBMath.mulDiv(balance, uint32(settings), JBConstants.SPLITS_TOTAL_PERCENT);
-      feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, _memo, '');
-
-      unchecked {
-        balance -= fee;
-      }
-
-      if (auctionSplits[auctionId].length > 0) {
-        balance = payToSplits(
-          auctionSplits[auctionId],
-          balance,
-          JBTokens.ETH,
-          18,
-          directory,
-          0,
-          payable(address(0))
-        );
-      } else {
-        payable(auctionDetails.seller).transfer(balance);
-      }
-
+    if (reservePrice <= lastBidAmount) {
       address buyer = address(uint160(auctionDetails.bid));
 
       collection.transferFrom(address(this), buyer, item);
@@ -319,17 +260,130 @@ contract EnglishAuctionHouse is
     } else {
       collection.transferFrom(address(this), auctionDetails.seller, item);
 
+      if (lastBidAmount != 0) {
+        payable(address(uint160(auctionDetails.bid))).transfer(lastBidAmount);
+      }
+
+      delete auctions[auctionId];
+      delete auctionSplits[auctionId];
+
       emit ConcludeAuction(auctionDetails.seller, address(0), collection, item, 0, _memo);
     }
+  }
 
-    delete auctions[auctionId];
+  /**
+   * @notice This trustless method removes the burden of distributing auction proceeds to the seller-configured splits from the buyer (or anyone else) calling settle().
+   */
+  function distributeProceeds(IERC721 _collection, uint256 _item) external override nonReentrant {
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    EnglishAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.seller == address(0)) {
+      revert INVALID_AUCTION();
+    }
+
+    uint256 expiration = uint256(uint64(auctionDetails.prices >> 192));
+    if (block.timestamp < deploymentOffset + expiration) {
+      revert AUCTION_IN_PROGRESS();
+    }
+
+    uint256 lastBidAmount = uint256(uint96(auctionDetails.bid >> 160));
+    uint256 reservePrice = uint256(uint96(auctionDetails.prices >> 96));
+    if (reservePrice <= lastBidAmount) {
+      if (uint32(settings) != 0) {
+        // feeRate > 0
+        uint256 fee = PRBMath.mulDiv(
+          lastBidAmount,
+          uint32(settings),
+          JBConstants.SPLITS_TOTAL_PERCENT
+        );
+        feeReceiver.addToBalanceOf{value: fee}(projectId, fee, JBTokens.ETH, '', '');
+
+        unchecked {
+          lastBidAmount -= fee;
+        }
+      }
+
+      if (auctionSplits[auctionId].length != 0) {
+        lastBidAmount = payToSplits(
+          auctionSplits[auctionId],
+          lastBidAmount,
+          JBTokens.ETH,
+          18,
+          directory,
+          0,
+          payable(address(0))
+        );
+        if (lastBidAmount > 0) {
+          payable(auctionDetails.seller).transfer(lastBidAmount);
+        }
+      } else {
+        payable(auctionDetails.seller).transfer(lastBidAmount);
+      }
+
+      if (_collection.ownerOf(_item) == address(this)) {
+        address buyer = address(uint160(auctionDetails.bid));
+        _collection.transferFrom(address(this), buyer, _item);
+      }
+
+      delete auctions[auctionId];
+      delete auctionSplits[auctionId];
+    }
+  }
+
+  // TODO: consider an acceptLowBid function for the seller to execute after auction expiration
+
+  /**
+   * @notice Returns current bid for a given item even if it is below the reserve.
+   */
+  function currentPrice(IERC721 _collection, uint256 _item)
+    public
+    view
+    override
+    returns (uint256 price)
+  {
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    EnglishAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.seller == address(0)) {
+      revert INVALID_AUCTION();
+    }
+
+    price = uint256(uint96(auctionDetails.bid >> 160));
+  }
+
+  /**
+   * @notice A way to update auction splits in case current configuration cannot be processed correctly. Can only be executed by the seller address.
+   */
+  function updateAuctionSplits(
+    IERC721 _collection,
+    uint256 _item,
+    JBSplit[] calldata _saleSplits
+  ) external override {
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    EnglishAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.seller == address(0)) {
+      revert INVALID_AUCTION();
+    }
+
+    if (auctionDetails.seller != msg.sender) {
+      revert NOT_AUTHORIZED();
+    }
+
     delete auctionSplits[auctionId];
+
+    uint256 length = _saleSplits.length;
+    for (uint256 i = 0; i != length; ) {
+      auctionSplits[auctionId].push(_saleSplits[i]);
+      ++i;
+    }
   }
 
   /**
    * @notice Change fee rate, admin only.
    *
-   * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
+   * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1_000_000_000).
    */
   function setFeeRate(uint256 _feeRate) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     if (_feeRate > FEE_RATE_CAP) {
