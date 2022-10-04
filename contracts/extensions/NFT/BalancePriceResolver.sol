@@ -47,7 +47,7 @@ contract BalancePriceResolver is SupplyPriceResolver {
     } else if (
       nthFree != 0 &&
       (minterBalance + 1) % nthFree == 0 &&
-      ((freeMintCap > 0 && minterBalance + 1 <= nthFree * freeMintCap) || freeMintCap == 0)
+      ((freeMintCap > 0 && minterBalance + 1 <= nthFree * freeMintCap))
     ) {
       price = 0;
     } else {

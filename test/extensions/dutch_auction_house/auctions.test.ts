@@ -1,44 +1,55 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
 
 describe('DutchAuctionHouse tests', () => {
-    const projectId = 1;
+    const projectId = 2;
     const startPrice = ethers.utils.parseEther('2');
     const endPrice = ethers.utils.parseEther('1');
-    const tokenId = 1;
-    const auctionDuration = 60 * 60;
+    let tokenId = 1;
+    const auctionDuration = 100 * 60;
     const feeRate = 5_000_000; // 0.5%
     const pricingPeriodDuration = 5 * 60; // seconds
     const feeDenominator = 1_000_000_000;
-    const allowPublicAuctions = true;
 
-    async function setup() {
-        let [deployer, tokenOwner, ...accounts] = await ethers.getSigners();
+    let deployer: SignerWithAddress
+    let tokenOwner: SignerWithAddress
+    let accounts: SignerWithAddress[];
+    let dutchAuctionHouse: any;
+    let token: any;
+    let feeReceiverTerminal: any;
+    let splits: any[];
+    let partialSplits: any[];
+
+    before(async () => {
+        const allowPublicAuctions = true;
+
+        [deployer, tokenOwner, ...accounts] = await ethers.getSigners();
+
+        feeReceiverTerminal = await deployMockContract(deployer, jbTerminal.abi);
+        await feeReceiverTerminal.mock.addToBalanceOf.returns();
 
         const directory = await deployMockContract(deployer, jbDirectory.abi);
-        const feeReceiverTerminal = await deployMockContract(deployer, jbTerminal.abi);
-
-        await feeReceiverTerminal.mock.addToBalanceOf.returns();
         await directory.mock.isTerminalOf.withArgs(projectId, feeReceiverTerminal.address).returns(true);
 
         const dutchAuctionHouseFactory = await ethers.getContractFactory('DutchAuctionHouse', {
             signer: deployer
         });
-        const dutchAuctionHouse = await dutchAuctionHouseFactory
+        dutchAuctionHouse = await dutchAuctionHouseFactory
             .connect(deployer)
             .deploy();
         await dutchAuctionHouse.deployed();
-        dutchAuctionHouse.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicAuctions, pricingPeriodDuration, deployer.address, directory.address)
+        await dutchAuctionHouse.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicAuctions, pricingPeriodDuration, deployer.address, directory.address);
 
         const tokenFactory = await ethers.getContractFactory('MockERC721', deployer);
-        const token = await tokenFactory.connect(deployer).deploy();
-        await token.connect(deployer).mint(tokenOwner.address, tokenId);
+        token = await tokenFactory.connect(deployer).deploy();
 
-        const splits = [
+        splits = [
             {
                 preferClaimed: true,
                 preferAddToBalance: true,
@@ -59,36 +70,53 @@ describe('DutchAuctionHouse tests', () => {
             }
         ];
 
-        return {
-            deployer,
-            accounts,
-            tokenOwner,
-            dutchAuctionHouse,
-            token,
-            feeReceiverTerminal,
-            splits
-        };
+        partialSplits = [
+            {
+                preferClaimed: true,
+                preferAddToBalance: true,
+                percent: 100_000_000,
+                projectId: 0,
+                beneficiary: accounts[2].address,
+                lockedUntil: 0,
+                allocator: ethers.constants.AddressZero
+            },
+            {
+                preferClaimed: true,
+                preferAddToBalance: true,
+                percent: 200_000_000,
+                projectId: 0,
+                beneficiary: accounts[3].address,
+                lockedUntil: 0,
+                allocator: ethers.constants.AddressZero
+            }
+        ];
+    });
+
+    async function mint(owner = tokenOwner) {
+        ++tokenId;
+        await token.connect(deployer).mint(owner.address, tokenId);
     }
 
-    async function create(token, dutchAuctionHouse, tokenOwner) {
-        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, tokenId);
-        await dutchAuctionHouse.connect(tokenOwner).create(token.address, tokenId, startPrice, endPrice, auctionDuration, [], '');
+    async function mintCreate(owner = tokenOwner) {
+        await mint(owner);
+        await token.connect(owner).approve(dutchAuctionHouse.address, tokenId);
+        await dutchAuctionHouse.connect(owner).create(token.address, tokenId, startPrice, endPrice, auctionDuration, [], '');
     }
 
-    it(`create() success`, async () => {
-        const { dutchAuctionHouse, token, tokenOwner } = await setup();
-
+    it(`create() without splits`, async () => {
+        await mint();
         await token.connect(tokenOwner).approve(dutchAuctionHouse.address, tokenId);
 
         await expect(
             dutchAuctionHouse
                 .connect(tokenOwner)
                 .create(token.address, tokenId, startPrice, endPrice, auctionDuration, [], '')
-        ).to.emit(dutchAuctionHouse, 'CreateDutchAuction').withArgs(tokenOwner.address, token.address, tokenId, startPrice, '');
+        ).to.emit(dutchAuctionHouse, 'CreateDutchAuction').withArgs(tokenOwner.address, token.address, tokenId, startPrice, endPrice, anyValue, '');
     });
 
     it(`create() fail: not token owner`, async () => {
-        const { accounts, dutchAuctionHouse, token } = await setup();
+        ++tokenId;
+        await token.connect(deployer).mint(tokenOwner.address, tokenId);
 
         await expect(
             dutchAuctionHouse
@@ -98,10 +126,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`create() fail: auction already exists`, async () => {
-        const { dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, 1);
-        await dutchAuctionHouse.connect(tokenOwner).create(token.address, tokenId, startPrice, endPrice, auctionDuration, [], '');
+        await mintCreate();
 
         await expect(
             dutchAuctionHouse
@@ -111,9 +136,8 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`create() fail: invalid price`, async () => {
-        const { dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, 1);
+        await mint();
+        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, tokenId);
 
         await expect(
             dutchAuctionHouse
@@ -123,9 +147,8 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`create() fail: invalid price`, async () => {
-        const { dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, 1);
+        await mint();
+        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, tokenId);
 
         await expect(
             dutchAuctionHouse
@@ -135,8 +158,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`create() fail: no public auctions`, async () => {
-        const { deployer, dutchAuctionHouse, token, tokenOwner } = await setup();
-
         await dutchAuctionHouse.connect(deployer).setAllowPublicAuctions(false);
 
         await expect(
@@ -144,12 +165,12 @@ describe('DutchAuctionHouse tests', () => {
                 .connect(tokenOwner)
                 .create(token.address, tokenId, startPrice, endPrice, auctionDuration, [], '')
         ).to.be.revertedWith('NOT_AUTHORIZED()');
+
+        await dutchAuctionHouse.connect(deployer).setAllowPublicAuctions(true);
     });
 
     it(`bid() success: initial`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await expect(
             dutchAuctionHouse
@@ -159,9 +180,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`bid() success: increase bid`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
         await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: endPrice });
 
         await expect(
@@ -172,9 +191,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`bid() fail: invalid price`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await expect(
             dutchAuctionHouse
@@ -184,9 +201,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`bid() fail: invalid price, below current bid`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
         await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: startPrice });
 
         await expect(
@@ -197,9 +212,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`bid() fail: invalid price, at current`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
         await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: endPrice });
 
         await expect(
@@ -210,9 +223,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`bid() fail: invalid auction`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await expect(
             dutchAuctionHouse
@@ -222,12 +233,10 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`bid() fail: auction ended`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
         const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
-        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + auctionDuration + 120]);
+        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + auctionDuration + 10]);
         await ethers.provider.send("evm_mine", []);
 
         await expect(
@@ -237,26 +246,25 @@ describe('DutchAuctionHouse tests', () => {
         ).to.be.revertedWith('AUCTION_ENDED()');
     });
 
-    it(`settle() success: sale`, async () => {
-        const { accounts, dutchAuctionHouse, feeReceiverTerminal, token, tokenOwner } = await setup();
-
+    it(`settle()/distributeProceeds() success: sale`, async () => {
         const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
         await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: startPrice });
 
-        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + pricingPeriodDuration * 2 + 120]);
+        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + pricingPeriodDuration * 2 + 10]);
         await ethers.provider.send("evm_mine", []);
 
         const expectedFee = startPrice.mul(feeRate).div(feeDenominator);
         const expectedProceeds = startPrice.sub(expectedFee);
 
         const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
-        const tx = dutchAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
+        let tx = dutchAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
 
         await expect(tx)
             .to.emit(dutchAuctionHouse, 'ConcludeAuction')
             .withArgs(tokenOwner.address, accounts[0].address, token.address, tokenId, startPrice, '');
 
+        tx = dutchAuctionHouse.connect(accounts[1]).distributeProceeds(token.address, tokenId);
         await expect(await tx)
             .to.changeEtherBalance(tokenOwner, expectedProceeds);
 
@@ -264,11 +272,40 @@ describe('DutchAuctionHouse tests', () => {
         expect(endingBalance).to.be.greaterThan(initialBalance);
     });
 
-    it(`settle() success: split payments`, async () => {
-        const { accounts, dutchAuctionHouse, splits, token, tokenOwner, feeReceiverTerminal } = await setup();
+    it(`distributeProceeds() success: sale`, async () => {
+        const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
+        await mintCreate();
+        await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: startPrice });
 
+        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + pricingPeriodDuration * 2 + 10]);
+        await ethers.provider.send("evm_mine", []);
+
+        const expectedFee = startPrice.mul(feeRate).div(feeDenominator);
+        const expectedProceeds = startPrice.sub(expectedFee);
+
+        const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
+
+        let tx = dutchAuctionHouse.connect(accounts[1]).distributeProceeds(token.address, tokenId);
+        await expect(await tx)
+            .to.changeEtherBalance(tokenOwner, expectedProceeds);
+
+        const endingBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
+        expect(endingBalance).to.be.greaterThan(initialBalance);
+        expect(await token.ownerOf(tokenId)).to.equal(accounts[0].address);
+    });
+
+    it(`distributeProceeds() fail: invalid price`, async () => {
+        await mintCreate();
+        await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: endPrice });
+
+        expect(dutchAuctionHouse.connect(accounts[1]).distributeProceeds(token.address, tokenId)).to.be.revertedWithCustomError(dutchAuctionHouse, 'INVALID_PRICE');
+    });
+
+    it(`settle() success: split payments`, async () => {
+        await mint();
         await token.connect(tokenOwner).approve(dutchAuctionHouse.address, tokenId);
         await dutchAuctionHouse.connect(tokenOwner).create(token.address, tokenId, startPrice, endPrice, auctionDuration, splits, '');
+
         await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: startPrice });
 
         await ethers.provider.send("evm_increaseTime", [auctionDuration + 1]);
@@ -278,11 +315,12 @@ describe('DutchAuctionHouse tests', () => {
         const expectedProceeds = startPrice.sub(expectedFee).div(2);
 
         const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
-        const tx = dutchAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
-
+        let tx = dutchAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
         await expect(tx)
             .to.emit(dutchAuctionHouse, 'ConcludeAuction')
             .withArgs(tokenOwner.address, accounts[0].address, token.address, tokenId, startPrice, '');
+
+        tx = dutchAuctionHouse.connect(accounts[1]).distributeProceeds(token.address, tokenId);
         await expect(await tx)
             .to.changeEtherBalances([tokenOwner, accounts[2], accounts[3]], [0, expectedProceeds, expectedProceeds]);
 
@@ -290,11 +328,36 @@ describe('DutchAuctionHouse tests', () => {
         expect(endingBalance.sub(initialBalance)).to.equal(expectedFee);
     });
 
-    it(`settle() success: return`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
+    it(`settle() success: partial split payments`, async () => {
+        await mint();
+        await token.connect(tokenOwner).approve(dutchAuctionHouse.address, tokenId);
+        await dutchAuctionHouse.connect(tokenOwner).create(token.address, tokenId, startPrice, endPrice, auctionDuration, partialSplits, '');
 
+        await dutchAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: startPrice });
+
+        await ethers.provider.send("evm_increaseTime", [auctionDuration + 1]);
+        await ethers.provider.send("evm_mine", []);
+
+        const expectedFee = startPrice.mul(feeRate).div(feeDenominator);
+        const expectedProceeds = startPrice.sub(expectedFee).div(10);
+
+        const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
+        let tx = dutchAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, '');
+        await expect(tx)
+            .to.emit(dutchAuctionHouse, 'ConcludeAuction')
+            .withArgs(tokenOwner.address, accounts[0].address, token.address, tokenId, startPrice, '');
+
+        tx = dutchAuctionHouse.connect(accounts[1]).distributeProceeds(token.address, tokenId);
+        await expect(await tx)
+            .to.changeEtherBalances([tokenOwner, accounts[2], accounts[3]], [expectedProceeds.mul(7), expectedProceeds, expectedProceeds.mul(2)]);
+
+        const endingBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
+        expect(endingBalance.sub(initialBalance)).to.equal(expectedFee);
+    });
+
+    it(`settle() success: return token`, async () => {
         const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + auctionDuration + 120]);
         await ethers.provider.send("evm_mine", []);
@@ -307,9 +370,7 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`settle() fail: invalid auction`, async () => {
-        const { accounts, dutchAuctionHouse, token, tokenOwner } = await setup();
-
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await expect(
             dutchAuctionHouse
@@ -318,14 +379,20 @@ describe('DutchAuctionHouse tests', () => {
         ).to.be.revertedWith('INVALID_AUCTION()');
     });
 
-    it(`currentPrice()`, async () => {
-        const { dutchAuctionHouse, token, tokenOwner } = await setup();
+    it('update splits', async () => {
+        await mintCreate();
 
+        await expect(dutchAuctionHouse.connect(accounts[0]).updateAuctionSplits(token.address, tokenId, [])).to.be.revertedWithCustomError(dutchAuctionHouse, 'NOT_AUTHORIZED');
+        await expect(dutchAuctionHouse.connect(accounts[0]).updateAuctionSplits(token.address, tokenId + 10, [])).to.be.revertedWithCustomError(dutchAuctionHouse, 'INVALID_AUCTION');
+        await dutchAuctionHouse.connect(tokenOwner).updateAuctionSplits(token.address, tokenId, splits);
+    });
+
+    it(`currentPrice()`, async () => {
         const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
         await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + 60]);
         await ethers.provider.send("evm_mine", []);
 
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + pricingPeriodDuration - 10]);
         await ethers.provider.send("evm_mine", []);
@@ -337,13 +404,11 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`currentPrice() fail: invalid auction`, async () => {
-        const { dutchAuctionHouse, token, tokenOwner } = await setup();
-
         const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
         await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + 60]);
         await ethers.provider.send("evm_mine", []);
 
-        await create(token, dutchAuctionHouse, tokenOwner);
+        await mintCreate();
 
         await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + pricingPeriodDuration - 10]);
         await ethers.provider.send("evm_mine", []);
@@ -351,8 +416,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setFeeRate() success`, async () => {
-        const { deployer, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(deployer)
@@ -361,8 +424,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setFeeRate() failure: fee rate too high`, async () => {
-        const { deployer, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(deployer)
@@ -371,8 +432,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setFeeRate() failure: not admin`, async () => {
-        const { accounts, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(accounts[0])
@@ -381,8 +440,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setAllowPublicAuctions() success`, async () => {
-        const { deployer, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(deployer)
@@ -391,8 +448,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setAllowPublicAuctions() failure: not admin`, async () => {
-        const { accounts, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(accounts[0])
@@ -401,8 +456,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setFeeReceiver() success`, async () => {
-        const { accounts, deployer, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(deployer)
@@ -411,8 +464,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`setFeeReceiver() failure: `, async () => {
-        const { accounts, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(accounts[0])
@@ -421,8 +472,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`addAuthorizedSeller() success`, async () => {
-        const { accounts, deployer, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(deployer)
@@ -431,8 +480,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`addAuthorizedSeller() failure: `, async () => {
-        const { accounts, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(accounts[0])
@@ -441,8 +488,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`removeAuthorizedSeller() success`, async () => {
-        const { accounts, deployer, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(deployer)
@@ -451,8 +496,6 @@ describe('DutchAuctionHouse tests', () => {
     });
 
     it(`removeAuthorizedSeller() failure: not admin`, async () => {
-        const { accounts, dutchAuctionHouse } = await setup();
-
         await expect(
             dutchAuctionHouse
                 .connect(accounts[0])
