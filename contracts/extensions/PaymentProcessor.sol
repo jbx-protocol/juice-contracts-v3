@@ -19,7 +19,7 @@ import './TokenLiquidator.sol';
  *
  * This contract is functionally similar to JBETHERC20ProjectPayer, but it adds several useful features. This contract can accept a token and liquidate it on Uniswap if an appropriate terminal doesn't exist. This contract can be configured accept and retain the payment if certain failures occur, like funding cycle misconfiguration. This contract expects to have access to a project terminal for Eth and WETH. WETH terminal will be used to submit liquidation proceeds.
  */
-contract PaymentProcessor is JBOperatable {
+contract PaymentProcessor is JBOperatable, ReentrancyGuard {
   error PAYMENT_FAILURE();
   error INVALID_ADDRESS();
   error INVALID_AMOUNT();
@@ -87,7 +87,11 @@ contract PaymentProcessor is JBOperatable {
    * @param _memo Memo for the payment, can be blank, will be forwarded to the Juicebox terminal for event publication.
    * @param _metadata Metadata for the payment, can be blank, will be forwarded to the Juicebox terminal for event publication.
    */
-  function processPayment(string memory _memo, bytes memory _metadata) external payable {
+  function processPayment(string memory _memo, bytes memory _metadata)
+    external
+    payable
+    nonReentrant
+  {
     _processPayment(jbxProjectId, _memo, _metadata);
   }
 
@@ -110,7 +114,7 @@ contract PaymentProcessor is JBOperatable {
     uint256 _minValue,
     string memory _memo,
     bytes memory _metadata
-  ) external {
+  ) external nonReentrant {
     TokenSettings memory settings = tokenPreferences[_token];
     if (settings.accept) {
       _processPayment(
@@ -190,6 +194,7 @@ contract PaymentProcessor is JBOperatable {
    */
   function transferBalance(address payable _destination, uint256 _amount)
     external
+    nonReentrant
     requirePermissionAllowingOverride(
       jbxProjects.ownerOf(jbxProjectId),
       jbxProjectId,
@@ -223,6 +228,7 @@ contract PaymentProcessor is JBOperatable {
     uint256 _amount
   )
     external
+    nonReentrant
     requirePermissionAllowingOverride(
       jbxProjects.ownerOf(jbxProjectId),
       jbxProjectId,
