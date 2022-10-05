@@ -2,12 +2,14 @@
     "goerli": {
         "NFTokenFactory": "0xC5C84a7D79d36Ba7DfD688Ba606E5341D3C8373f",
         "DeployerProxy": "0x4Bb3808DD3552959C6B8Bc8a5D03B0D578914B96",
-        "DeployerProxyVersion": 4,
+        "DeployerProxyVersion": 5,
         "MixedPaymentSplitterFactory": "0xE318458f3425B55F75C8f7758298e69fF35180e9",
         "AuctionsFactory": "0xdF06dE5988454Dfd7ec2c213b9612f8e1430ca3F",
         "DutchAuctionHouse": "0xBD3837768D83c2f48568ffB3C544171174cDE9aD",
         "EnglishAuctionHouse": "0xa607042af5849b25cf9bE368c74FF2fa7b383100",
         "NFUTokenFactory": "0x3978383ae995B0C767C9c83538F01240052497d7",
-        "NFUToken": "0x1c3aC9FCe732f93931A839C541CfA3175B50a4EC"
+        "NFUToken": "0x1c3aC9FCe732f93931A839C541CfA3175B50a4EC",
+        "PaymentProcessorFactory": "0x30EBBF18CC7286105E0d02Cb06ee78684AFF722c",
+        "TokenLiquidator": "0x0003fCcD5860CBC57e5181740b2D5649E5c5cb13"
     }
 }
