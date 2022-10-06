@@ -173,7 +173,7 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
       ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
         tokenIn: address(_token),
         tokenOut: WETH9,
-        fee: 3000,
+        fee: uniswapPoolFee,
         recipient: address(this),
         deadline: block.timestamp,
         amountIn: _amount,
@@ -186,7 +186,7 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
       ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
         tokenIn: address(_token),
         tokenOut: WETH9,
-        fee: 3000,
+        fee: uniswapPoolFee,
         recipient: address(this),
         deadline: block.timestamp,
         amountOut: _minValue,
