@@ -278,7 +278,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
   //*********************************************************************//
 
   /**
-   * @notice Priviledged operation callable by accounts with MINTER_ROLE permission to mint the next NFT id to the provided address.
+   * @notice Privileged operation callable by accounts with MINTER_ROLE permission to mint the next NFT id to the provided address.
    */
   function mintFor(address _account)
     external

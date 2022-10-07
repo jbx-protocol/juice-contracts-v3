@@ -18,22 +18,22 @@ There are two functions, `deployDutchAuction` and `deployEnglishAuction` that wi
 
 `deployDutchAuction`:
 
-- projectId
-- feeReceiver
-- feeRate
-- allowPublicAuctions
-- periodDuration
-- owner
-- directory
+- projectId: Project that manages this auction contract.
+- feeReceiver: An instance of IJBPaymentTerminal which will get auction fees.
+- feeRate: Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
+- allowPublicAuctions: A flag to allow anyone to create an auction on this contract rather than only accounts with the `AUTHORIZED_SELLER_ROLE` permission.
+- periodDuration: Number of seconds for each pricing period for price reduction.
+- owner: Contract admin.
+- directory: JBDirectory instance to enable JBX integration.
 
 `deployEnglishAuction`
 
-- projectId,
-- feeReceiver,
-- feeRate,
-- allowPublicAuctions,
-- owner,
-- directory
+- projectId: Project that manages this auction contract.
+- feeReceiver: An instance of IJBPaymentTerminal which will get auction fees.
+- feeRate: Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
+- allowPublicAuctions: A flag to allow anyone to create an auction on this contract rather than only accounts with the `AUTHORIZED_SELLER_ROLE` permission.
+- owner: Contract admin.
+- directory: JBDirectory instance to enable JBX integration.
 
 ## NFTs
 
@@ -41,13 +41,25 @@ The first version of the deployer introduced the ability to create NFT contracts
 
 Version four of the deployer added the option of deploying a cloned NFT in `NFUTokenFactory`. `deployNFUToken` takes the necessary arguments but omits `mintPeriodStart` and `mintPeriodEnd` which can be set by the NFT admin after deployment if needed. Contracts created via this process are storage proxies that forward function calls with `delegatecall`. This is a lower fee option compared to the one above.
 
-## Payment Splitter
+## Mixed Payment Splitter
 
 Deployer version two added the option to deploy a `MixedPaymentSplitter` contract. This is a full copy and it's done via `deployMixedPaymentSplitter` function which calls into `MixedPaymentSplitterFactory`. The parameters are below, for more details see the top-level readme of the extensions directory.
 
-- name
-- payees
-- projects
-- shares
-- jbxDirectory
-- owner
+- name: Name for this split configuration.
+- payees: List of payable addresses to send payment portion to.
+- projects: List of Juicebox project ids to send payment portion to.
+- shares: Share assignment in the same order as payees and projects parameters. Must be the same length as `payees` and `projects` combined Share total is 1_000_000.
+- jbxDirectory: Juicebox directory contract
+- owner: Admin of the contract.
+
+## Payment Processor
+
+This contract serves as a proxy between the payer and the Juicebox platform. It allows payment acceptance in case of Juicebox project misconfiguration. It allows acceptance of ERC20 tokens via liquidation even if there is no corresponding Juicebox payment terminal. There should be one of these per project that is interested in this functionality.
+
+- jbxDirectory: Juicebox directory.
+- jbxOperatorStore: Juicebox operator store.
+- jbxProjects: Juicebox project registry.
+- liquidator: Platform liquidator contract. An instance of `TokenLiquidator`, advanced users are welcome to provider their own implementation. as described in `ITokenLiquidator`.
+- jbxProjectId: Juicebox project id to pay into.
+- ignoreFailures: If payment forwarding to the Juicebox terminal fails, Ether will be retained in this contract and ERC20 tokens will be processed per stored instructions. Setting this to false will `revert` failed payment operations.
+- defaultLiquidation: Setting this to true will automatically attempt to convert the incoming ERC20 tokens into WETH via Uniswap unless there are specific settings for the given token. Setting it to false will attempt to send the tokens to an appropriate Juicebox terminal, on failure, _ignoreFailures will be followed.

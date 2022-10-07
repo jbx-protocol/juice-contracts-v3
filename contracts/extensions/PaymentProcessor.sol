@@ -50,7 +50,7 @@ contract PaymentProcessor is JBOperatable, ReentrancyGuard {
    * @param _jbxProjects Juicebox project registry.
    * @param _liquidator Platform liquidator contract.
    * @param _jbxProjectId Juicebox project id to pay into.
-   * @param _ignoreFailures If payment forwarding to the Juicebox terminal fails, Ether will be ratained in this contract and ERC20 tokens will be processed per stored instructions. Setting this to false will `revert` failed payment operations.
+   * @param _ignoreFailures If payment forwarding to the Juicebox terminal fails, Ether will be retained in this contract and ERC20 tokens will be processed per stored instructions. Setting this to false will `revert` failed payment operations.
    * @param _defaultLiquidation Setting this to true will automatically attempt to convert the incoming ERC20 tokens into WETH via Uniswap unless there are specific settings for the given token. Setting it to false will attempt to send the tokens to an appropriate Juicebox terminal, on failure, _ignoreFailures will be followed.
    */
   constructor(

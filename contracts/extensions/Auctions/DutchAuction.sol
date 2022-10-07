@@ -83,7 +83,7 @@ contract DutchAuctionHouse is
    * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
    * @param _allowPublicAuctions A flag to allow anyone to create an auction on this contract rather than only accounts with the `AUTHORIZED_SELLER_ROLE` permission.
    * @param _periodDuration Number of seconds for each pricing period.
-   * @param _owner Contract admin if, should be msg.sender or another address.
+   * @param _owner Contract admin. Granted admin and seller roles.
    * @param _directory JBDirectory instance to enable JBX integration.
    *
    * @dev feeReceiver addToBalanceOf will be called to send fees.
