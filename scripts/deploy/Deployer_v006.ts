@@ -18,7 +18,7 @@ async function main() {
             }),
             new winston.transports.File({
                 level: 'debug',
-                filename: 'log/deploy/Deployer_v005.log',
+                filename: 'log/deploy/Deployer_v006.log',
                 handleExceptions: true,
                 maxsize: (5 * 1024 * 1024), // 5 mb
                 maxFiles: 5
@@ -27,7 +27,7 @@ async function main() {
     });
 
     ///
-    logger.info(`deploying Deployer_v005 to ${hre.network.name}`);
+    logger.info(`deploying Deployer_v006 to ${hre.network.name}`);
 
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
@@ -43,6 +43,8 @@ async function main() {
     const sourceEnglishAuctionHouseAddress = deploymentAddresses[hre.network.name]['EnglishAuctionHouse'];
     const nfuTokenFactoryLibraryAddress = deploymentAddresses[hre.network.name]['NFUTokenFactory'];
     const sourceNFUTokenAddress = deploymentAddresses[hre.network.name]['NFUToken'];
+    const paymentProcessorFactoryLibraryAddress = deploymentAddresses[hre.network.name]['PaymentProcessorFactory'];
+    const sourceTokenLiquidatorAddress = deploymentAddresses[hre.network.name]['TokenLiquidator'];
 
     const jbxDirectoryAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBDirectory.json`).toString())['address'];
     const jbxOperatorStoreAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBOperatorStore.json`).toString())['address'];
@@ -83,6 +85,16 @@ async function main() {
         return;
     }
 
+    if (!paymentProcessorFactoryLibraryAddress || paymentProcessorFactoryLibraryAddress.length === 0) {
+        logger.error(`could not find previous deployment of PaymentProcessorFactory in ${deploymentAddressLog} under ['${hre.network.name}']['PaymentProcessorFactory']`);
+        return;
+    }
+
+    if (!sourceTokenLiquidatorAddress || sourceTokenLiquidatorAddress.length === 0) {
+        logger.error(`could not find previous deployment of TokenLiquidator in ${deploymentAddressLog} under ['${hre.network.name}']['TokenLiquidator']`);
+        return;
+    }
+
     if (!jbxDirectoryAddress || jbxDirectoryAddress.length === 0) {
         logger.error(`could not find previous deployment of JBDirectory for '${hre.network.name}`);
         return;
@@ -106,36 +118,32 @@ async function main() {
     logger.info(`found existing deployment of EnglishAuctionHouse at ${sourceEnglishAuctionHouseAddress}`);
     logger.info(`found existing deployment of NFUTokenFactory at ${nfuTokenFactoryLibraryAddress}`);
     logger.info(`found existing deployment of NFUToken at ${sourceNFUTokenAddress}`);
+    logger.info(`found existing deployment of PaymentProcessorFactory at ${paymentProcessorFactoryLibraryAddress}`);
+    logger.info(`found existing deployment of TokenLiquidator at ${sourceTokenLiquidatorAddress}`);
     logger.info(`found existing deployment of JBDirectory at ${jbxDirectoryAddress}`);
     logger.info(`found existing deployment of JBOperatorStore at ${jbxOperatorStoreAddress}`);
     logger.info(`found existing deployment of JBProjects at ${jbxProjectsAddress}`);
 
-    const paymentProcessorFactory = await ethers.getContractFactory('PaymentProcessorFactory', deployer);
-    const paymentProcessorFactoryLibrary = await paymentProcessorFactory.connect(deployer).deploy();
+    const nftRewardDataSourceFactory = await ethers.getContractFactory('NFTRewardDataSourceFactory', deployer);
+    const nftRewardDataSourceFactoryLibrary = await nftRewardDataSourceFactory.connect(deployer).deploy();
 
-    const deployerFactory = await ethers.getContractFactory('Deployer_v005', {
+    const deployerFactory = await ethers.getContractFactory('Deployer_v006', {
         libraries: {
             NFTokenFactory: nfTokenFactoryLibraryAddress,
             MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibraryAddress,
             AuctionsFactory: auctionsFactoryFactoryLibraryAddress,
             NFUTokenFactory: nfuTokenFactoryLibraryAddress,
-            PaymentProcessorFactory: paymentProcessorFactoryLibrary.address
+            PaymentProcessorFactory: paymentProcessorFactoryLibraryAddress,
+            NFTRewardDataSourceFactory: nftRewardDataSourceFactoryLibrary.address
         },
         signer: deployer
     });
 
-    const feeBps = 250;
-    const uniswapPoolFee = 3000;
-    const tokenLiquidatorFactory = await ethers.getContractFactory('TokenLiquidator', { signer: deployer });
-    const tokenLiquidator = await tokenLiquidatorFactory.connect(deployer).deploy(jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, feeBps, uniswapPoolFee);
-    await tokenLiquidator.deployed();
-
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, tokenLiquidator.address] } });
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, sourceTokenLiquidatorAddress] } });
     await deployerProxy.deployed();
     logger.info(`deployed to ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
 
-    deploymentAddresses[hre.network.name]['PaymentProcessorFactory'] = paymentProcessorFactoryLibrary.address;
-    deploymentAddresses[hre.network.name]['TokenLiquidator'] = tokenLiquidator.address;
+    deploymentAddresses[hre.network.name]['NFTRewardDataSourceFactory'] = nftRewardDataSourceFactoryLibrary.address;
     deploymentAddresses[hre.network.name]['DeployerProxyVersion'] = 5;
     fs.writeFileSync(deploymentAddressLog, JSON.stringify(deploymentAddresses, undefined, 4));
 }
@@ -145,4 +153,4 @@ main().catch((error) => {
     process.exitCode = 1;
 });
 
-// npx hardhat run scripts/deploy/Deployer_v005.ts --network goerli
+// npx hardhat run scripts/deploy/Deployer_v006.ts --network goerli

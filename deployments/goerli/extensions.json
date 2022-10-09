@@ -10,6 +10,7 @@
         "NFUTokenFactory": "0x3978383ae995B0C767C9c83538F01240052497d7",
         "NFUToken": "0x1c3aC9FCe732f93931A839C541CfA3175B50a4EC",
         "PaymentProcessorFactory": "0x30EBBF18CC7286105E0d02Cb06ee78684AFF722c",
-        "TokenLiquidator": "0x0003fCcD5860CBC57e5181740b2D5649E5c5cb13"
+        "TokenLiquidator": "0x0003fCcD5860CBC57e5181740b2D5649E5c5cb13",
+        "NFTRewardDataSourceFactory": "0x5e320db5fA9B3069275964cd6FC0348e0ec1b076"
     }
 }
