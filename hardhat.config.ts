@@ -12,6 +12,8 @@ import 'hardhat-deploy';
 import 'solidity-coverage';
 import 'solidity-docgen';
 
+import { deployments } from 'hardhat';
+
 dotenv.config();
 
 type ProviderNetwork = 'localhost' | 'hardhat';
