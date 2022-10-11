@@ -10,6 +10,7 @@ out
 cache
 artifacts
 deployments/localhost/**
+typechain-types
 
 # Mac OSX
 .DS_Store
