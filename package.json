@@ -55,6 +55,6 @@
         "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
     },
     "engines": {
-        "node": "^16.14.2"
+        "node": ">=14.20.1"
     }
 }
