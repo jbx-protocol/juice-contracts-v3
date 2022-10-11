@@ -14,7 +14,9 @@ import 'solidity-docgen';
 
 dotenv.config();
 
-const defaultNetwork = 'hardhat';
+type ProviderNetwork = 'localhost' | 'hardhat';
+
+const defaultNetwork: ProviderNetwork = 'hardhat';
 
 function mnemonic() {
     try {
