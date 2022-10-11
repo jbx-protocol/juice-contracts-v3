@@ -53,5 +53,8 @@
         "clean": "rimraf ./cache && rimraf ./artifacts",
         "compile": "yarn clean && hardhat compile",
         "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
+    },
+    "engines": {
+        "node": "^16.14.2"
     }
 }
