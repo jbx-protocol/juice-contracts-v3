@@ -12,8 +12,6 @@ import 'hardhat-deploy';
 import 'solidity-coverage';
 import 'solidity-docgen';
 
-import { deployments } from 'hardhat';
-
 dotenv.config();
 
 type ProviderNetwork = 'localhost' | 'hardhat';
@@ -93,7 +91,7 @@ task('deploy-ballot', 'Deploy a buffer ballot of a given duration')
     .addParam('duration', 'Set the ballot duration (in seconds)')
     .setAction(async (taskArgs, hre) => {
         try {
-            const { deploy } = deployments;
+            const { deploy } = hre.deployments;
             const [deployer] = await hre.ethers.getSigners();
 
             const JBReconfigurationBufferBallot = await deploy('JBReconfigurationBufferBallot', {
