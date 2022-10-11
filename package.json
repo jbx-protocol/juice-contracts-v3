@@ -30,7 +30,7 @@
         "ethereum-waffle": "^3.4.4",
         "ethers": "^5.7.1",
         "glob": "^8.0.3",
-        "hardhat": "^2.11.2",
+        "hardhat": "~2.10.2",
         "hardhat-contract-sizer": "^2.6.1",
         "hardhat-deploy": "^0.11.15",
         "hardhat-deploy-ethers": "^0.3.0-beta.13",
