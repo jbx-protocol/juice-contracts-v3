@@ -11,7 +11,7 @@ require('solidity-coverage');
 
 dotenv.config();
 
-const defaultNetwork = 'localhost';
+const defaultNetwork = 'hardhat';
 
 function mnemonic() {
   try {
@@ -58,7 +58,7 @@ module.exports = {
     },
   },
   solidity: {
-    version: '0.8.16',
+    version: '0.8.14',
     settings: {
       optimizer: {
         enabled: true,
@@ -68,7 +68,7 @@ module.exports = {
     },
   },
   mocha: {
-    bail: true,
+    bail: false,
     timeout: 12000,
   },
   gasReporter: {
