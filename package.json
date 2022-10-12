@@ -26,6 +26,7 @@
         "@types/node": "^12.20.55",
         "chai": "^4.3.6",
         "dotenv": "^16.0.2",
+        "esm": "3.2.25",
         "ethereum-waffle": "^3.4.4",
         "ethers": "^5.7.1",
         "glob": "^8.0.3",
