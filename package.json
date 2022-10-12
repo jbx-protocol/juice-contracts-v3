@@ -15,7 +15,7 @@
         "@paulrberg/contracts": "^3.7.0"
     },
     "devDependencies": {
-        "@defi-wonderland/smock": "^2.3.0",
+        "@defi-wonderland/smock": "2.2.0",
         "@nomiclabs/hardhat-ethers": "^2.1.1",
         "@nomiclabs/hardhat-etherscan": "^3.1.0",
         "@nomiclabs/hardhat-waffle": "^2.0.3",
@@ -26,7 +26,6 @@
         "@types/node": "^12.20.55",
         "chai": "^4.3.6",
         "dotenv": "^16.0.2",
-        "esm": "3.2.25",
         "ethereum-waffle": "^3.4.4",
         "ethers": "^5.7.1",
         "glob": "^8.0.3",
@@ -48,8 +47,9 @@
     "scripts": {
         "chain": "hardhat node",
         "account": "hardhat account",
-        "test": "mocha './test/**/*.test.{js,ts}' -r esm --timeout 12000",
-        "coverage": "node --require esm ./node_modules/.bin/hardhat coverage --network hardhat",
+        "pretest": "hardhat compile",
+        "test": "mocha './test/**/*.test.{js,ts}' -r ts-node/register --timeout 12000 --bail false",
+        "coverage": "hardhat coverage --network hardhat",
         "clean": "rimraf ./cache && rimraf ./artifacts",
         "compile": "yarn clean && hardhat compile",
         "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""

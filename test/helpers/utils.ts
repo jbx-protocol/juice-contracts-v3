@@ -1,4 +1,5 @@
 import { ethers, network } from 'hardhat';
+import { BigNumber } from 'ethers';
 
 /**
  * Grabs timestamp from Block or latest
@@ -62,7 +63,7 @@ export async function impersonateAccount(
  */
 export async function setBalance(
     address,
-    balance?: number
+    balance?: number | BigNumber
 ) {
     const hexValue = balance ? ethers.BigNumber.from(balance).toHexString() : '0x1000000000000000000000';
     await network.provider.send('hardhat_setBalance', [address, hexValue]);
@@ -124,26 +125,26 @@ export function packFundingCycleMetadata({
         allowSetController, // boolean
         pauseTransfer, // boolean
     } = {
-        allowSetTerminals: 0, // boolean
-        allowSetController: 0, // boolean
-        pauseTransfer: 0
+        allowSetTerminals: false, // boolean
+        allowSetController: false, // boolean
+        pauseTransfer: false
     },
     reservedRate = 0, // percentage
     redemptionRate = 10000, // percentage
     ballotRedemptionRate = 10000, // percentage
-    pausePay = 0, // boolean
-    pauseDistributions = 0, // boolean
-    pauseRedeem = 0, // boolean
-    pauseBurn = 0, // boolean
-    allowMinting = 0, // boolean
-    allowTerminalMigration = 0, // boolean
-    allowControllerMigration = 0, // boolean
-    holdFees = 0, // boolean
-    preferClaimedTokenOverride = 0, // boolean
-    useTotalOverflowForRedemptions = 0, // boolean
-    useDataSourceForPay = 0, // boolean
-    useDataSourceForRedeem = 0, // boolean
-    dataSource = 0, // address
+    pausePay = false, // boolean
+    pauseDistributions = false, // boolean
+    pauseRedeem = false, // boolean
+    pauseBurn = false, // boolean
+    allowMinting = false, // boolean
+    allowTerminalMigration = false, // boolean
+    allowControllerMigration = false, // boolean
+    holdFees = false, // boolean
+    preferClaimedTokenOverride = false, // boolean
+    useTotalOverflowForRedemptions = false, // boolean
+    useDataSourceForPay = false, // boolean
+    useDataSourceForRedeem = false, // boolean
+    dataSource = `0x${'0'.repeat(40)}`, // address
     metadata = 0, // uint256
 } = {}) {
     const one = ethers.BigNumber.from(1);

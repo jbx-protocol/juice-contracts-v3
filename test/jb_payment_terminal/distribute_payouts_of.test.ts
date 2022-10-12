@@ -528,7 +528,7 @@ describe('JBPayoutRedemptionPaymentTerminal::distributePayoutsOf(...)', function
                     weight: 0,
                     discountRate: 0,
                     ballot: ethers.constants.AddressZero,
-                    metadata: packFundingCycleMetadata({ holdFees: 1 }),
+                    metadata: packFundingCycleMetadata({ holdFees: true }),
                 },
                 AMOUNT_DISTRIBUTED,
             );
@@ -1768,7 +1768,7 @@ describe('JBPayoutRedemptionPaymentTerminal::distributePayoutsOf(...)', function
             weight: 0,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }),
+            metadata: packFundingCycleMetadata({ holdFees: true }),
         };
 
         await mockJBPaymentTerminalStore.mock.recordDistributionFor
@@ -1873,7 +1873,7 @@ describe('JBPayoutRedemptionPaymentTerminal::distributePayoutsOf(...)', function
             weight: 0,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }),
+            metadata: packFundingCycleMetadata({ holdFees: true }),
         };
 
         await mockJBPaymentTerminalStore.mock.recordDistributionFor
@@ -2270,7 +2270,7 @@ describe('JBPayoutRedemptionPaymentTerminal::distributePayoutsOf(...)', function
             weight: 0,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }),
+            metadata: packFundingCycleMetadata({ holdFees: true }),
         };
 
         await mockJBPaymentTerminalStore.mock.recordDistributionFor
