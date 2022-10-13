@@ -127,7 +127,7 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
             weight: 0,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }),
+            metadata: packFundingCycleMetadata({ holdFees: true }),
         };
 
         await mockJbDirectory.mock.isTerminalOf
@@ -158,7 +158,7 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
                     weight: 0,
                     discountRate: 0,
                     ballot: ethers.constants.AddressZero,
-                    metadata: packFundingCycleMetadata({ holdFees: 1 }),
+                    metadata: packFundingCycleMetadata({ holdFees: true }),
                 },
                 AMOUNT,
             );
@@ -323,7 +323,7 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
 
         await jbEthPaymentTerminal
             .connect(caller)
-            .addToBalanceOf(PROJECT_ID, AMOUNT + 1, ETH_ADDRESS, MEMO, METADATA, { value: AMOUNT });
+            .addToBalanceOf(PROJECT_ID, AMOUNT.add(1), ETH_ADDRESS, MEMO, METADATA, { value: AMOUNT });
     });
     it('Should work with non-eth terminal if no value is sent', async function () {
         const { caller, JBERC20PaymentTerminal, mockToken, mockJBPaymentTerminalStore } = await setup();
@@ -476,7 +476,7 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
                     weight: 0,
                     discountRate: 0,
                     ballot: ethers.constants.AddressZero,
-                    metadata: packFundingCycleMetadata({ holdFees: 1 }),
+                    metadata: packFundingCycleMetadata({ holdFees: true }),
                 },
                 AMOUNT.div(2),
             );
@@ -582,7 +582,7 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
                     weight: 0,
                     discountRate: 0,
                     ballot: ethers.constants.AddressZero,
-                    metadata: packFundingCycleMetadata({ holdFees: 1 }),
+                    metadata: packFundingCycleMetadata({ holdFees: true }),
                 },
                 AMOUNT,
             );

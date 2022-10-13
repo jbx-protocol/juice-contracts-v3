@@ -7,7 +7,7 @@
         "type": "git",
         "url": "https://github.com/jbx-protocol/juice-contracts-v3"
     },
-    "version": "1.0.1",
+    "version": "2.0.2",
     "license": "MIT",
     "dependencies": {
         "@chainlink/contracts": "^0.4.1",
@@ -18,7 +18,7 @@
         "@uniswap/v3-periphery": "^1.4.1"
     },
     "devDependencies": {
-        "@defi-wonderland/smock": "^2.3.0",
+        "@defi-wonderland/smock": "2.2.0",
         "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
         "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
         "@nomiclabs/hardhat-ethers": "^2.1.1",
@@ -36,7 +36,7 @@
         "ethereum-waffle": "^3.4.4",
         "ethers": "^5.7.1",
         "glob": "^8.0.3",
-        "hardhat": "^2.11.2",
+        "hardhat": "~2.10.2",
         "hardhat-contract-sizer": "^2.6.1",
         "hardhat-deploy": "^0.11.15",
         "hardhat-deploy-ethers": "^0.3.0-beta.13",
@@ -55,13 +55,14 @@
     "scripts": {
         "chain": "hardhat node",
         "account": "hardhat account",
-        "test": "mocha './test/**/*.test.js' -r esm",
-        "coverage": "node --require esm ./node_modules/.bin/hardhat coverage --network hardhat",
+        "pretest": "hardhat compile",
+        "test": "mocha './test/**/*.test.ts' -r ts-node/register --timeout 12000 --bail false",
+        "coverage": "hardhat coverage --network hardhat",
         "clean": "rimraf ./cache && rimraf ./artifacts",
         "compile": "yarn clean && hardhat compile",
         "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
     },
     "engines": {
-        "node": "^16.17.1"
+        "node": ">=14.20.1"
     }
 }
