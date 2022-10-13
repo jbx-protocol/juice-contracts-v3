@@ -678,7 +678,7 @@ describe('JBPayoutRedemptionPaymentTerminal::useAllowanceOf(...)', function () {
             weight: WEIGHT,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }), // Hold fees
+            metadata: packFundingCycleMetadata({ holdFees: true }), // Hold fees
         };
 
         await mockJBPaymentTerminalStore.mock.recordUsedAllowanceOf
@@ -786,7 +786,7 @@ describe('JBPayoutRedemptionPaymentTerminal::useAllowanceOf(...)', function () {
             weight: WEIGHT,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }), // Hold fees
+            metadata: packFundingCycleMetadata({ holdFees: true }), // Hold fees
         };
 
         await mockJBPaymentTerminalStore.mock.recordUsedAllowanceOf
@@ -898,7 +898,7 @@ describe('JBPayoutRedemptionPaymentTerminal::useAllowanceOf(...)', function () {
             weight: WEIGHT,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 }), // Hold fees
+            metadata: packFundingCycleMetadata({ holdFees: true }), // Hold fees
         };
 
         await mockJBPaymentTerminalStore.mock.recordUsedAllowanceOf
