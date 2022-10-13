@@ -283,7 +283,7 @@ describe('Forked Payment Processor (fail errors, liquidate) Tests', () => {
             weight: 0,
             discountRate: 0,
             ballot: ethers.constants.AddressZero,
-            metadata: packFundingCycleMetadata({ holdFees: 1 })
+            metadata: packFundingCycleMetadata({ holdFees: true })
         };
 
         await mockJBPaymentTerminalStore.mock.recordPaymentFrom.returns(
