@@ -236,7 +236,7 @@ describe('NFToken tests', () => {
     });
 
     it('Set OperatorFilter', async () => {
-        const operatorFilterFactory = await ethers.getContractFactory('FilterFactory');
+        const operatorFilterFactory = await ethers.getContractFactory('OperatorFilter');
         const operatorFilter = await operatorFilterFactory.connect(deployer).deploy();
 
         await expect(basicToken.connect(accounts[0]).updateOperatorFilter(operatorFilter.address)).to.be.reverted;

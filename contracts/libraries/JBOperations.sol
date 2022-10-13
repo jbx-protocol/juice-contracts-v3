@@ -20,4 +20,6 @@ library JBOperations {
   uint256 public constant SET_PRIMARY_TERMINAL = 16;
   uint256 public constant USE_ALLOWANCE = 17;
   uint256 public constant SET_SPLITS = 18;
+  uint256 public constant MANAGE_PAYMENTS = 1001;
+  uint256 public constant MANAGE_ROLES = 1002;
 }
