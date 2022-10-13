@@ -366,7 +366,7 @@ contract NFTRewardDataSourceDelegate is
   }
 
   /**
-   * @notice This function is intenteded to allow NFT management for non-transferrable NFTs where the holder is unable to perform any action on the token, so we let the admin of the contract burn them.
+   * @notice This function is intended to allow NFT management for non-transferrable NFTs where the holder is unable to perform any action on the token, so we let the admin of the contract burn them.
    */
   function burn(address _account, uint256 _tokenId) external override onlyOwner {
     if (transferrable) {

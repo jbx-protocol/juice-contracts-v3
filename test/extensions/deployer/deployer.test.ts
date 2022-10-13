@@ -248,4 +248,53 @@ describe('Deployer tests', () => {
         expect(await tokenA.symbol()).to.equal(symbol + 'A');
         expect(await tokenB.symbol()).to.equal(symbol + 'B');
     });
+
+    it('Deploy Deployer_v005 as upgrade to v004', async () => {
+        const nfTokenFactoryFactory = await ethers.getContractFactory('NFTokenFactory', deployer);
+        const nfTokenFactoryLibrary = await nfTokenFactoryFactory.connect(deployer).deploy();
+
+        const mixedPaymentSplitterFactoryFactory = await ethers.getContractFactory('MixedPaymentSplitterFactory', deployer);
+        const mixedPaymentSplitterFactoryLibrary = await mixedPaymentSplitterFactoryFactory.connect(deployer).deploy();
+
+        const auctionsFactoryFactory = await ethers.getContractFactory('AuctionsFactory', deployer);
+        const auctionsFactoryFactoryLibrary = await auctionsFactoryFactory.connect(deployer).deploy();
+
+        const nfuTokenFactoryFactory = await ethers.getContractFactory('NFUTokenFactory', deployer);
+        const nfuTokenFactoryLibrary = await nfuTokenFactoryFactory.connect(deployer).deploy();
+
+        const paymentProcessorFactory = await ethers.getContractFactory('PaymentProcessorFactory', deployer);
+        const paymentProcessorFactoryLibrary = await paymentProcessorFactory.connect(deployer).deploy();
+
+        const deployerFactory = await ethers.getContractFactory('Deployer_v005', {
+            libraries: {
+                NFTokenFactory: nfTokenFactoryLibrary.address,
+                MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibrary.address,
+                AuctionsFactory: auctionsFactoryFactoryLibrary.address,
+                NFUTokenFactory: nfuTokenFactoryLibrary.address,
+                PaymentProcessorFactory: paymentProcessorFactoryLibrary.address
+            },
+            signer: deployer
+        });
+
+        const dutchAuctionHouseFactory = await ethers.getContractFactory('DutchAuctionHouse', { signer: deployer });
+        const sourceDutchAuctionHouse = await dutchAuctionHouseFactory.connect(deployer).deploy();
+        await sourceDutchAuctionHouse.deployed();
+
+        const englishAuctionHouseFactory = await ethers.getContractFactory('EnglishAuctionHouse', { signer: deployer });
+        const sourceEnglishAuctionHouse = await englishAuctionHouseFactory.connect(deployer).deploy();
+        await sourceEnglishAuctionHouse.deployed();
+
+        const nfuTokenFactory = await ethers.getContractFactory('NFUToken', { signer: deployer });
+        const nfuToken = await nfuTokenFactory.connect(deployer).deploy();
+        await nfuToken.deployed();
+
+        const feeBps = 250;
+        const uniswapPoolFee = 3000;
+        const tokenLiquidatorFactory = await ethers.getContractFactory('TokenLiquidator', { signer: deployer });
+        const tokenLiquidator = await tokenLiquidatorFactory.connect(deployer)
+            .deploy(ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero, feeBps, uniswapPoolFee);
+        await tokenLiquidator.deployed();
+
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address, tokenLiquidator.address] } });
+    });
 });

@@ -19,7 +19,7 @@ import './TokenLiquidator.sol';
  *
  * This contract is functionally similar to JBETHERC20ProjectPayer, but it adds several useful features. This contract can accept a token and liquidate it on Uniswap if an appropriate terminal doesn't exist. This contract can be configured accept and retain the payment if certain failures occur, like funding cycle misconfiguration. This contract expects to have access to a project terminal for Eth and WETH. WETH terminal will be used to submit liquidation proceeds.
  */
-contract PaymentProcessor is JBOperatable {
+contract PaymentProcessor is JBOperatable, ReentrancyGuard {
   error PAYMENT_FAILURE();
   error INVALID_ADDRESS();
   error INVALID_AMOUNT();
@@ -50,7 +50,7 @@ contract PaymentProcessor is JBOperatable {
    * @param _jbxProjects Juicebox project registry.
    * @param _liquidator Platform liquidator contract.
    * @param _jbxProjectId Juicebox project id to pay into.
-   * @param _ignoreFailures If payment forwarding to the Juicebox terminal fails, Ether will be ratained in this contract and ERC20 tokens will be processed per stored instructions. Setting this to false will `revert` failed payment operations.
+   * @param _ignoreFailures If payment forwarding to the Juicebox terminal fails, Ether will be retained in this contract and ERC20 tokens will be processed per stored instructions. Setting this to false will `revert` failed payment operations.
    * @param _defaultLiquidation Setting this to true will automatically attempt to convert the incoming ERC20 tokens into WETH via Uniswap unless there are specific settings for the given token. Setting it to false will attempt to send the tokens to an appropriate Juicebox terminal, on failure, _ignoreFailures will be followed.
    */
   constructor(
@@ -87,7 +87,11 @@ contract PaymentProcessor is JBOperatable {
    * @param _memo Memo for the payment, can be blank, will be forwarded to the Juicebox terminal for event publication.
    * @param _metadata Metadata for the payment, can be blank, will be forwarded to the Juicebox terminal for event publication.
    */
-  function processPayment(string memory _memo, bytes memory _metadata) external payable {
+  function processPayment(string memory _memo, bytes memory _metadata)
+    external
+    payable
+    nonReentrant
+  {
     _processPayment(jbxProjectId, _memo, _metadata);
   }
 
@@ -110,7 +114,7 @@ contract PaymentProcessor is JBOperatable {
     uint256 _minValue,
     string memory _memo,
     bytes memory _metadata
-  ) external {
+  ) external nonReentrant {
     TokenSettings memory settings = tokenPreferences[_token];
     if (settings.accept) {
       _processPayment(
@@ -190,6 +194,7 @@ contract PaymentProcessor is JBOperatable {
    */
   function transferBalance(address payable _destination, uint256 _amount)
     external
+    nonReentrant
     requirePermissionAllowingOverride(
       jbxProjects.ownerOf(jbxProjectId),
       jbxProjectId,
@@ -223,6 +228,7 @@ contract PaymentProcessor is JBOperatable {
     uint256 _amount
   )
     external
+    nonReentrant
     requirePermissionAllowingOverride(
       jbxProjects.ownerOf(jbxProjectId),
       jbxProjectId,

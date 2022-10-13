@@ -84,7 +84,7 @@ contract EnglishAuctionHouse is
    * @param _feeReceiver An instance of IJBPaymentTerminal which will get auction fees.
    * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
    * @param _allowPublicAuctions A flag to allow anyone to create an auction on this contract rather than only accounts with the `AUTHORIZED_SELLER_ROLE` permission.
-   * @param _owner Contract admin if, should be msg.sender or another address.
+   * @param _owner Contract admin. Granted admin and seller roles.
    * @param _directory JBDirectory instance to enable JBX integration.
    *
    * @dev feeReceiver addToBalanceOf will be called to send fees.
@@ -115,28 +115,28 @@ contract EnglishAuctionHouse is
    *
    * @dev WARNING, if using a JBSplits collection, make sure each of the splits is properly configured. The default project and default reciever during split processing is set to 0 and will therefore result in loss of funds if the split doesn't provide sufficient instructions.
    *
-   * @param collection ERC721 contract.
+   * @param _collection ERC721 contract.
    * @param item Token id to list.
    * @param startingPrice Minimum auction price. 0 is a valid price.
    * @param reservePrice Reserve price at which the item will be sold once the auction expires. Below this price, the item will be returned to the seller.
-   * @param expiration Seconds, offset from deploymentOffset, at which the auction concludes.
-   * @param saleSplits Juicebox splits collection that will receive auction proceeds.
+   * @param _duration Seconds from block time at which the auction concludes.
+   * @param _saleSplits Juicebox splits collection that will receive auction proceeds.
    * @param _memo Text to publish as part of the creation event.
    */
   function create(
-    IERC721 collection,
+    IERC721 _collection,
     uint256 item,
     uint256 startingPrice,
     uint256 reservePrice,
-    uint256 expiration,
-    JBSplit[] calldata saleSplits,
+    uint256 _duration,
+    JBSplit[] calldata _saleSplits,
     string calldata _memo
   ) external override nonReentrant {
     if (!getBoolean(settings, 32) && !hasRole(AUTHORIZED_SELLER_ROLE, msg.sender)) {
       revert NOT_AUTHORIZED();
     }
 
-    bytes32 auctionId = keccak256(abi.encodePacked(address(collection), item));
+    bytes32 auctionId = keccak256(abi.encodePacked(address(_collection), item));
     EnglishAuctionData memory auctionDetails = auctions[auctionId];
 
     if (auctionDetails.seller != address(0)) {
@@ -151,46 +151,54 @@ contract EnglishAuctionHouse is
       revert INVALID_PRICE();
     }
 
+    uint256 expiration = block.timestamp - deploymentOffset + _duration;
+
     if (expiration > type(uint64).max) {
       revert INVALID_DURATION();
     }
 
-    uint256 auctionPrices = uint256(uint96(startingPrice));
-    auctionPrices |= uint256(uint96(reservePrice)) << 96;
-    auctionPrices |= uint256(uint64(expiration)) << 192;
+    {
+      // scope to reduce stack depth
+      uint256 auctionPrices = uint256(uint96(startingPrice));
+      auctionPrices |= uint256(uint96(reservePrice)) << 96;
+      auctionPrices |= uint256(uint64(expiration)) << 192;
 
-    auctions[auctionId] = EnglishAuctionData(msg.sender, auctionPrices, 0);
-
-    uint256 length = saleSplits.length;
-    for (uint256 i = 0; i < length; i += 1) {
-      auctionSplits[auctionId].push(saleSplits[i]);
+      auctions[auctionId] = EnglishAuctionData(msg.sender, auctionPrices, 0);
     }
 
-    collection.transferFrom(msg.sender, address(this), item);
+    uint256 length = _saleSplits.length;
+    for (uint256 i = 0; i < length; ) {
+      auctionSplits[auctionId].push(_saleSplits[i]);
+      unchecked {
+        ++i;
+      }
+    }
+
+    _collection.transferFrom(msg.sender, address(this), item);
 
     emit CreateEnglishAuction(
       msg.sender,
-      collection,
+      _collection,
       item,
       startingPrice,
       reservePrice,
       expiration,
       _memo
-    ); // TODO: expiration
+    );
   }
 
   /**
    * @notice Places a bid on an existing auction. Refunds previous bid if needed.
    *
-   * @param collection ERC721 contract.
-   * @param item Token id to bid on.
+   * @param _collection ERC721 contract.
+   * @param _item Token id to bid on.
    */
   function bid(
-    IERC721 collection,
-    uint256 item,
+    IERC721 _collection,
+    uint256 _item,
     string calldata _memo
   ) external payable override nonReentrant {
-    bytes32 auctionId = keccak256(abi.encodePacked(collection, item));
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
     EnglishAuctionData memory auctionDetails = auctions[auctionId];
 
     if (auctionDetails.seller == address(0)) {
@@ -223,7 +231,7 @@ contract EnglishAuctionHouse is
 
     auctions[auctionId].bid = newBid;
 
-    emit PlaceBid(msg.sender, collection, item, msg.value, _memo);
+    emit PlaceBid(msg.sender, _collection, _item, msg.value, _memo);
   }
 
   /**
@@ -355,7 +363,7 @@ contract EnglishAuctionHouse is
   }
 
   /**
-   * @notice A way to update auction splits in case current configuration cannot be processed correctly. Can only be executed by the seller address.
+   * @notice A way to update auction splits in case current configuration cannot be processed correctly. Can only be executed by the seller address. Setting an empty collection will send auction proceeds, less fee, to the seller account.
    */
   function updateAuctionSplits(
     IERC721 _collection,

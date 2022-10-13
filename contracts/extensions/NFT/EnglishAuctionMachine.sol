@@ -163,7 +163,7 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
    * @param _account Address to transfer the token to.
    * @param _tokenId Token id of NFT to transfer.
    */
-  function recoverToken(address _account, uint256 _tokenId) external nonReentrant onlyOwner {
+  function recoverToken(address _account, uint256 _tokenId) external onlyOwner {
     token.transferFrom(address(this), _account, _tokenId);
   }
 

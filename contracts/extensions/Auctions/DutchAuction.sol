@@ -83,7 +83,7 @@ contract DutchAuctionHouse is
    * @param _feeRate Fee percentage expressed in terms of JBConstants.SPLITS_TOTAL_PERCENT (1000000000).
    * @param _allowPublicAuctions A flag to allow anyone to create an auction on this contract rather than only accounts with the `AUTHORIZED_SELLER_ROLE` permission.
    * @param _periodDuration Number of seconds for each pricing period.
-   * @param _owner Contract admin if, should be msg.sender or another address.
+   * @param _owner Contract admin. Granted admin and seller roles.
    * @param _directory JBDirectory instance to enable JBX integration.
    *
    * @dev feeReceiver addToBalanceOf will be called to send fees.
@@ -110,7 +110,7 @@ contract DutchAuctionHouse is
   }
 
   /**
-   * @notice Creates a new auction for an item from an ERC721 contract. This is a Dutch auction which begins at startingPrice and drops in equal increments to endingPrice by exipration. Price reduction happens at the interval specified in periodDuration. Number of periods is determined automatically and price decrement is the price difference over number of periods.
+   * @notice Creates a new auction for an item from an ERC721 contract. This is a Dutch auction which begins at startingPrice and drops in equal increments to endingPrice by exipration. Price reduction happens at the interval specified in periodDuration. Number of periods is determined automatically and price decrement is the price difference over number of periods. Generates a "CreateDutchAuction" event.
    *
    * @dev startingPrice and endingPrice must each fit into uint96.
    *
@@ -120,7 +120,7 @@ contract DutchAuctionHouse is
    * @param item Token id to list.
    * @param startingPrice Starting price for the auction from which it will drop.
    * @param endingPrice Minimum price for the auction at which it will end at expiration time.
-   * @param _duration Seconds, offset from deploymentOffset, at which the auction concludes.
+   * @param _duration Seconds from block time at which the auction concludes.
    * @param saleSplits Juicebox splits collection that will receive auction proceeds.
    * @param _memo Text to publish as part of the creation event.
    */
@@ -185,7 +185,7 @@ contract DutchAuctionHouse is
   }
 
   /**
-   * @notice Places a bid on an existing auction. Refunds previous bid if needed. The contract will only store the highest bid. The bid can be below current price in anticipation of the auction eventually reaching that price. The bid must be at or above the end price.
+   * @notice Places a bid on an existing auction. Refunds previous bid if needed. The contract will only store the highest bid. The bid can be below current price in anticipation of the auction eventually reaching that price. The bid must be at or above the end price. Generates a "PlaceBid" event.
    *
    * @param collection ERC721 contract.
    * @param item Token id to bid on.
@@ -234,7 +234,7 @@ contract DutchAuctionHouse is
   }
 
   /**
-   * @notice Settles the auction after expiration if no valid bids were received by sending the item back to the seller. If a valid bid matches the current price at the time of settle call, the item is sent to the bidder. Proceeds will be distributed separately by calling `distributeProceeds`.
+   * @notice Settles the auction after expiration if no valid bids were received by sending the item back to the seller. If a valid bid matches the current price at the time of settle call, the item is sent to the bidder. Proceeds will be distributed separately by calling `distributeProceeds`. Generates a "ConcludeAuction" event.
    *
    * @param collection ERC721 contract.
    * @param item Token id to settle.
@@ -383,7 +383,7 @@ contract DutchAuctionHouse is
   }
 
   /**
-   * @notice A way to update auction splits in case current configuration cannot be processed correctly. Can only be executed by the seller address.
+   * @notice A way to update auction splits in case current configuration cannot be processed correctly. Can only be executed by the seller address. Setting an empty collection will send auction proceeds, less fee, to the seller account.
    */
   function updateAuctionSplits(
     IERC721 _collection,
@@ -406,7 +406,9 @@ contract DutchAuctionHouse is
     uint256 length = _saleSplits.length;
     for (uint256 i = 0; i != length; ) {
       auctionSplits[auctionId].push(_saleSplits[i]);
-      ++i;
+      unchecked {
+        ++i;
+      }
     }
   }
 

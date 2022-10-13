@@ -10,7 +10,7 @@ describe('Vesting Tests', () => {
     before(async () => {
         [deployer, ...accounts] = await ethers.getSigners();
 
-        const vestingFactory = await ethers.getContractFactory('VestTokens');
+        const vestingFactory = await ethers.getContractFactory('VestingPlanManager');
         vesting = await vestingFactory.connect(deployer).deploy();
         await vesting.deployed();
 
@@ -36,8 +36,6 @@ describe('Vesting Tests', () => {
     });
 
     it('Simple Path', async () => {
-        mockToken.connect(deployer).approve(vesting.address, '1000');
-
         const headLevel = await ethers.provider.getBlockNumber();
         const headBlock = await ethers.provider.getBlock(headLevel);
 
@@ -51,6 +49,17 @@ describe('Vesting Tests', () => {
 
         const initialSponsorBalance = await mockToken.balanceOf(deployer.address);
 
+        await expect(vesting.connect(deployer).create(
+            accounts[0].address,
+            mockToken.address,
+            0,
+            cliffSeconds,
+            vestingPeriodSeconds,
+            periods,
+            'Simple Vest'
+        )).to.be.revertedWithCustomError(vesting, 'INVALID_CONFIGURATION');
+
+        mockToken.connect(deployer).approve(vesting.address, '1000');
         await expect(vesting.connect(deployer).create(
             accounts[0].address,
             mockToken.address,
@@ -70,7 +79,9 @@ describe('Vesting Tests', () => {
             vestingPeriodSeconds,
             periods,
             'Simple Vest'
-        )).to.be.revertedWith('DUPLICATE_CONFIGURATION()')
+        )).to.be.revertedWith('DUPLICATE_CONFIGURATION()');
+
+        await expect(vesting.connect(accounts[1]).terminate(planId)).to.be.revertedWithCustomError(vesting, 'UNAUTHORIZED');
 
         const updatedSponsorBalance = await mockToken.balanceOf(deployer.address);
 
@@ -187,6 +198,14 @@ describe('Vesting Tests', () => {
 
         expect(await mockToken.balanceOf(accounts[1].address)).to.equal(Number(initialRecipientBalance) + periodicGrant * 6);
         expect(await mockToken.balanceOf(deployer.address)).to.equal(Number(initialSponsorBalance) - periodicGrant * 6);
+    });
+
+    it('Misc Errors', async () => {
+        await expect(vesting.unvestedBalance(1)).to.be.revertedWithCustomError(vesting, 'INVALID_PLAN');
+        await expect(vesting.planDetails(1)).to.be.revertedWithCustomError(vesting, 'INVALID_PLAN');
+        await expect(vesting.distribute(1)).to.be.revertedWithCustomError(vesting, 'INVALID_PLAN');
+        await expect(vesting.terminate(1)).to.be.revertedWithCustomError(vesting, 'INVALID_PLAN');
+
     });
 });
 

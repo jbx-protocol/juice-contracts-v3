@@ -89,12 +89,14 @@ contract MixedPaymentSplitter is Ownable {
   //*********************************************************************//
 
   /**
+   * @dev It's possible to deploy this contract with partial subscription and then call addPayee to bring it to full 100%.
+   *
    * @param _name Name for this split configuration.
    * @param _payees Payable addresses to send payment portion to.
    * @param _projects Juicebox project ids to send payment portion to.
-   * @param _shares Share assignment in the same order as payees and projects parameters.
+   * @param _shares Share assignment in the same order as payees and projects parameters. Share total is 1_000_000.
    * @param _jbxDirectory Juicebox directory contract
-   * @param _owner Admin of this contract
+   * @param _owner Admin of the contract.
    */
   constructor(
     string memory _name,
@@ -315,6 +317,8 @@ contract MixedPaymentSplitter is Ownable {
   function addPayee(uint256 _projectId, uint256 _shares) external onlyOwner {
     _addProject(_projectId, _shares);
   }
+
+  function withdraw() external onlyOwner {}
 
   //*********************************************************************//
   // ---------------------- private transactions ----------------------- //
