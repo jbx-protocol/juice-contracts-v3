@@ -41,6 +41,10 @@ The first version of the deployer introduced the ability to create NFT contracts
 
 Version four of the deployer added the option of deploying a cloned NFT in `NFUTokenFactory`. `deployNFUToken` takes the necessary arguments but omits `mintPeriodStart` and `mintPeriodEnd` which can be set by the NFT admin after deployment if needed. Contracts created via this process are storage proxies that forward function calls with `delegatecall`. This is a lower fee option compared to the one above.
 
+## NFT Rewards
+
+The 6th iteration of the deployer
+
 ## Mixed Payment Splitter
 
 Deployer version two added the option to deploy a `MixedPaymentSplitter` contract. This is a full copy and it's done via `deployMixedPaymentSplitter` function which calls into `MixedPaymentSplitterFactory`. The parameters are below, for more details see the top-level readme of the extensions directory.
@@ -62,4 +66,8 @@ This contract serves as a proxy between the payer and the Juicebox platform. It 
 - liquidator: Platform liquidator contract. An instance of `TokenLiquidator`, advanced users are welcome to provider their own implementation. as described in `ITokenLiquidator`.
 - jbxProjectId: Juicebox project id to pay into.
 - ignoreFailures: If payment forwarding to the Juicebox terminal fails, Ether will be retained in this contract and ERC20 tokens will be processed per stored instructions. Setting this to false will `revert` failed payment operations.
-- defaultLiquidation: Setting this to true will automatically attempt to convert the incoming ERC20 tokens into WETH via Uniswap unless there are specific settings for the given token. Setting it to false will attempt to send the tokens to an appropriate Juicebox terminal, on failure, _ignoreFailures will be followed.
+- defaultLiquidation: Setting this to true will automatically attempt to convert the incoming ERC20 tokens into WETH via Uniswap unless there are specific settings for the given token. Setting it to false will attempt to send the tokens to an appropriate Juicebox terminal, on failure, `ignoreFailures` will be followed.
+
+## Vesting Plan Manager
+
+///

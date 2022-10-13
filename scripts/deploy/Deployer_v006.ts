@@ -1,4 +1,4 @@
-; import * as dotenv from "dotenv";
+import * as dotenv from "dotenv";
 import * as fs from 'fs';
 import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
