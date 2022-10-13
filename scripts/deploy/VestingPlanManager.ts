@@ -37,6 +37,8 @@ async function main() {
     await vestingPlanManager.deployed();
     logger.info(`deployed to ${vestingPlanManager.address} in ${vestingPlanManager.deployTransaction.hash}`);
 
+    // TODO: verify contract
+
     const deploymentAddressLog = `./deployments/${hre.network.name}/extensions.json`;
     const deploymentAddresses = JSON.parse(fs.readFileSync(deploymentAddressLog).toString());
     deploymentAddresses[hre.network.name]['VestingPlanManager'] = vestingPlanManager.address;
