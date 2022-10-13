@@ -41,4 +41,7 @@ jobs:
           steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --prefer-offline
       - name: Run unit tests
+        env:
+            NODE_OPTIONS: "--max-old-space-size=8192"
         run: yarn test
+
