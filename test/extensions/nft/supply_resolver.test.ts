@@ -87,8 +87,8 @@ describe('SupplyPriceResolver tests', () => {
     });
 
     it('Get 2nd tier price', async () => {
-        await basicToken.connect(accounts[0])['mint()']({value: basicUnitPrice});
-        await basicToken.connect(accounts[0])['mint()']({value: basicUnitPrice});
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
 
         expect(await supplyPriceResolver.getPrice(basicToken.address, ethers.constants.AddressZero, 0))
             .to.equal(basicUnitPrice.mul(2));
@@ -125,24 +125,24 @@ describe('SupplyPriceResolver tests', () => {
         let currentSupply = (await basicToken.totalSupply() as BigNumber).toNumber();
         let expectedPrice = basicUnitPrice.mul(multiplier ** Math.floor(currentSupply / tierSize));
 
-        await expect(basicToken.connect(accounts[0])['mint()']({value: expectedPrice}))
+        await expect(basicToken.connect(accounts[0])['mint()']({ value: expectedPrice }))
             .not.to.be.reverted;
 
         expectedPrice = basicUnitPrice.mul(multiplier ** Math.floor(currentSupply / tierSize));
 
         currentSupply = (await basicToken.totalSupply() as BigNumber).toNumber();
-        await expect(basicToken.connect(accounts[0])['mint()']({value: expectedPrice}))
+        await expect(basicToken.connect(accounts[0])['mint()']({ value: expectedPrice }))
             .not.to.be.reverted;
     });
 
     it('Mint at price cap', async () => {
         let expectedPrice = (await supplyPriceResolver.getPrice(basicToken.address, ethers.constants.AddressZero, 0)) as BigNumber;
-        while(expectedPrice.lt(priceCap)){
+        while (expectedPrice.lt(priceCap)) {
+            await basicToken.connect(accounts[0])['mint()']({ value: expectedPrice });
             expectedPrice = await supplyPriceResolver.getPriceWithParams(basicToken.address, ethers.constants.AddressZero, 0, '0x00');
-            basicToken.connect(accounts[0])['mint()']({value: expectedPrice});
         }
 
-        await expect(basicToken.connect(accounts[0])['mint()']({value: priceCap}))
+        await expect(basicToken.connect(accounts[0])['mint()']({ value: priceCap }))
             .not.to.be.reverted;
     });
 });
