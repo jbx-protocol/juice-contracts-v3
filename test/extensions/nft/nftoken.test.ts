@@ -242,8 +242,8 @@ describe('NFToken tests', () => {
         await expect(basicToken.connect(accounts[0]).updateOperatorFilter(operatorFilter.address)).to.be.reverted;
         await expect(basicToken.connect(deployer).updateOperatorFilter(operatorFilter.address)).not.to.be.reverted;
 
-        await expect(operatorFilter.connect(accounts[0]).registerAddress(accounts[5])).to.be.reverted;
-        operatorFilter.connect(deployer).registerAddress(accounts[5]);
+        await expect(operatorFilter.connect(accounts[0]).registerAddress(accounts[5].address, true)).to.be.reverted;
+        operatorFilter.connect(deployer).registerAddress(accounts[5].address, true);
 
         // operatorFilter.connect(deployer).registerCodeHash(...);
         // basicToken.connect(accounts[0]).transferFrom(...)
