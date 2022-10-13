@@ -10,7 +10,8 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '../../../interfaces/IJBDirectory.sol';
 import '../../../interfaces/IJBPaymentTerminal.sol';
 import '../../../libraries/JBTokens.sol';
-import './../INFTPriceResolver.sol';
+import '../INFTPriceResolver.sol';
+import '../IOperatorFilter.sol';
 import './ERC721FU.sol';
 
 abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
@@ -58,6 +59,8 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
 
   error MINTING_PAUSED();
 
+  error CALLER_BLOCKED();
+
   /**
    * @notice Prevents minting outside of the mint period if set. Can be set only to have a start or only and end date.
    */
@@ -72,20 +75,29 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
 
     _;
   }
+  /**
+   * @notice Prevents minting by blocked addresses and contracts hashes.
+   */
+  modifier callerNotBlocked(address account) {
+    if (address(operatorFilter) != address(0) && !operatorFilter.mayTransfer(account)) {
+      revert CALLER_BLOCKED();
+    }
+
+    _;
+  }
 
   IJBDirectory jbxDirectory;
   uint256 jbxProjectId;
-
-  string public baseUri;
-  string public contractUri;
   uint256 public maxSupply;
   uint256 public unitPrice;
   uint256 public mintAllowance;
-  string public provenanceHash;
   uint128 public mintPeriodStart;
   uint128 public mintPeriodEnd;
-
   uint256 public totalSupply;
+
+  string public baseUri;
+  string public contractUri;
+  string public provenanceHash;
 
   /**
    * @notice Revealed flag.
@@ -107,6 +119,45 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
   uint16 public royaltyRate;
 
   INFTPriceResolver public priceResolver;
+  IOperatorFilter public operatorFilter;
+
+  //*********************************************************************//
+  // ----------------------------- ERC721 ------------------------------ //
+  //*********************************************************************//
+
+  /**
+   * @dev Override to apply callerNotBlocked modifier in case there is an OperatorFilter set
+   */
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _id
+  ) public virtual override callerNotBlocked(msg.sender) {
+    super.transferFrom(_from, _to, _id);
+  }
+
+  /**
+   * @dev Override to apply callerNotBlocked modifier in case there is an OperatorFilter set
+   */
+  function safeTransferFrom(
+    address _from,
+    address _to,
+    uint256 _id
+  ) public virtual override callerNotBlocked(msg.sender) {
+    super.safeTransferFrom(_from, _to, _id);
+  }
+
+  /**
+   * @dev Override to apply callerNotBlocked modifier in case there is an OperatorFilter set
+   */
+  function safeTransferFrom(
+    address _from,
+    address _to,
+    uint256 _id,
+    bytes calldata _data
+  ) public virtual override callerNotBlocked(msg.sender) {
+    super.safeTransferFrom(_from, _to, _id, _data);
+  }
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
@@ -181,6 +232,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     virtual
     nonReentrant
     onlyDuringMintPeriod
+    callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
     if (totalSupply == maxSupply) {
@@ -211,6 +263,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     virtual
     nonReentrant
     onlyDuringMintPeriod
+    callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
     if (totalSupply == maxSupply) {
@@ -359,6 +412,13 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     onlyRole(DEFAULT_ADMIN_ROLE)
   {
     priceResolver = _priceResolver;
+  }
+
+  function updateOperatorFilter(IOperatorFilter _operatorFilter)
+    external
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+    operatorFilter = _operatorFilter;
   }
 
   /**

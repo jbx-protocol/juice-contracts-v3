@@ -234,4 +234,18 @@ describe('NFToken tests', () => {
         await expect(basicToken.connect(accounts[4])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
     });
+
+    it('Set OperatorFilter', async () => {
+        const operatorFilterFactory = await ethers.getContractFactory('FilterFactory');
+        const operatorFilter = await operatorFilterFactory.connect(deployer).deploy();
+
+        await expect(basicToken.connect(accounts[0]).updateOperatorFilter(operatorFilter.address)).to.be.reverted;
+        await expect(basicToken.connect(deployer).updateOperatorFilter(operatorFilter.address)).not.to.be.reverted;
+
+        await expect(operatorFilter.connect(accounts[0]).registerAddress(accounts[5])).to.be.reverted;
+        operatorFilter.connect(deployer).registerAddress(accounts[5]);
+
+        // operatorFilter.connect(deployer).registerCodeHash(...);
+        // basicToken.connect(accounts[0]).transferFrom(...)
+    });
 });
