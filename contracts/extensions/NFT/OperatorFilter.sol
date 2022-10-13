@@ -10,7 +10,7 @@ import './IOperatorFilter.sol';
  *
  * @dev Based on https://github.com/archipelago-art/erc721-operator-filter/blob/main/contracts/BlacklistOperatorFilter.sol
  */
-contract BlacklistOperatorFilter is Ownable, IOperatorFilter {
+contract OperatorFilter is Ownable, IOperatorFilter {
   mapping(address => bool) public blockedAddresses;
   mapping(bytes32 => bool) public blockedCodeHashes;
 
