@@ -267,7 +267,10 @@ contract MixedPaymentSplitter is Ownable {
       _erc20Released[_token][uint256(uint160(_account))] += payment;
     }
 
-    IERC20(_token).transfer(_account, payment);
+    bool sent = IERC20(_token).transfer(_account, payment);
+    if (!sent) {
+      revert PAYMENT_FAILURE();
+    }
     emit TokenPaymentReleased(_token, _account, payment);
   }
 

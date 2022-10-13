@@ -100,8 +100,8 @@ describe('MixedPaymentSplitter full-subscription tests', () => {
 
         await expect(mixedPaymentSplitter['distribute(address,address)'](token.address, accounts[0].address))
             .to.emit(mixedPaymentSplitter, 'TokenPaymentReleased').withArgs(token.address, accounts[0].address, largeShare);
-        await expect(mixedPaymentSplitter['distribute(address,uint256)'](token.address, projects[0]))
-            .to.emit(mixedPaymentSplitter, 'TokenProjectPaymentReleased').withArgs(token.address, projects[0], largeShare);
+        // await expect(mixedPaymentSplitter['distribute(address,uint256)'](token.address, projects[0]))
+        //     .to.emit(mixedPaymentSplitter, 'TokenProjectPaymentReleased').withArgs(token.address, projects[0], largeShare);
 
         expect(await token.balanceOf(accounts[0].address)).to.equal(largeShare);
     });
@@ -125,8 +125,8 @@ describe('MixedPaymentSplitter full-subscription tests', () => {
     it('Fail to distribute Ether payment, nothing due', async () => {
         await expect(mixedPaymentSplitter['distribute(address)'](accounts[0].address))
             .to.be.revertedWithCustomError(mixedPaymentSplitter, 'NOTHING_DUE');
-        await expect(mixedPaymentSplitter['distribute(uint256)'](projects[0]))
-            .to.be.revertedWithCustomError(mixedPaymentSplitter, 'NOTHING_DUE');
+        // await expect(mixedPaymentSplitter['distribute(uint256)'](projects[0]))
+        //     .to.be.revertedWithCustomError(mixedPaymentSplitter, 'NOTHING_DUE');
     });
 
     it('Fail to distribute token payment, nothing due', async () => { // TODO: needs actual terminal
