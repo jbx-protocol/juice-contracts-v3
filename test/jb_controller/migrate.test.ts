@@ -152,10 +152,8 @@ describe('JBController::migrate(...)', function () {
 
         let tx = jbController.connect(projectOwner).migrate(PROJECT_ID, mockJbController.address);
 
-        await expect(tx)
-            .to.emit(jbController, 'Migrate')
-            .withArgs(PROJECT_ID, mockJbController.address, projectOwner.address)
-            .and.to.not.emit(jbController, 'DistributeReservedTokens');
+        await expect(tx).to.emit(jbController, 'Migrate').withArgs(PROJECT_ID, mockJbController.address, projectOwner.address);
+        await expect(tx).not.to.emit(jbController, 'DistributeReservedTokens');
 
         expect(await jbController.reservedTokenBalanceOf(PROJECT_ID, 10000)).to.equal(0);
     });

@@ -301,14 +301,11 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
             .withArgs(PROJECT_ID, AMOUNT.add(feeNetAmount))
             .returns();
 
-        expect(
-            await jbEthPaymentTerminal
-                .connect(caller)
-                .addToBalanceOf(PROJECT_ID, AMOUNT, ETH_ADDRESS, MEMO, METADATA, { value: AMOUNT }),
-        )
-            .to.emit(jbEthPaymentTerminal, 'AddToBalance')
-            .withArgs(PROJECT_ID, AMOUNT, 0 /*refunded fee*/, MEMO, METADATA, caller.address)
-            .and.to.not.emit(jbEthPaymentTerminal, 'RefundHeldFees');
+        let tx = jbEthPaymentTerminal.connect(caller)
+            .addToBalanceOf(PROJECT_ID, AMOUNT, ETH_ADDRESS, MEMO, METADATA, { value: AMOUNT });
+        await expect(tx).to.emit(jbEthPaymentTerminal, 'AddToBalance')
+            .withArgs(PROJECT_ID, AMOUNT, 0 /*refunded fee*/, MEMO, METADATA, caller.address);
+        await expect(tx).not.to.emit(jbEthPaymentTerminal, 'RefundHeldFees');
 
         let heldFeeAfter = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
