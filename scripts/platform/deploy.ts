@@ -1,7 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import * as dotenv from "dotenv";
 import * as fs from 'fs';
-import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
@@ -41,7 +40,7 @@ async function deployContract(contractName: string, constructorArgs: any[], depl
         if (constructorArgs.length > 0) { message += ` with args: '${constructorArgs.join(',')}'`; }
         logger.info(message);
 
-        const contractFactory = await ethers.getContractFactory(contractName, deployer);
+        const contractFactory = await hre.ethers.getContractFactory(contractName, deployer);
         const contractInstance = await contractFactory.connect(deployer).deploy(...constructorArgs);
         await contractInstance.deployed();
 
@@ -76,7 +75,7 @@ async function deployVerifyContract(contractName: string, constructorArgs: any[]
     }
 }
 
-async function deployVerifyRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress) {
+async function deployVerifyRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, recordAs?: string) {
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
     let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
 
@@ -87,11 +86,21 @@ async function deployVerifyRecordContract(contractName: string, constructorArgs:
 
     const deployVerifyResult = await deployVerifyContract(contractName, constructorArgs, deployer);
 
-    deploymentAddresses[hre.network.name][contractName] = {
-        address: deployVerifyResult.address,
-        args: constructorArgs,
-        abi: [],
-        verified: deployVerifyResult.verified
+    if (recordAs !== undefined) {
+        deploymentAddresses[hre.network.name][recordAs] = {
+            address: deployVerifyResult.address,
+            type: contractName,
+            args: constructorArgs,
+            abi: [], // TODO
+            verified: deployVerifyResult.verified
+        }
+    } else {
+        deploymentAddresses[hre.network.name][contractName] = {
+            address: deployVerifyResult.address,
+            args: constructorArgs,
+            abi: [], // TODO
+            verified: deployVerifyResult.verified
+        }
     }
 
     fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentAddresses, undefined, 4))
@@ -108,6 +117,17 @@ function getContractRecord(contractName: string) {
     return deploymentAddresses[hre.network.name][contractName];
 }
 
+function getConstant(valueName: string) {
+    const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
+    let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
+
+    if (deploymentAddresses[hre.network.name][valueName] === undefined) {
+        throw new Error(`no constant value for ${valueName} on ${hre.network.name}`);
+    }
+
+    return deploymentAddresses[hre.network.name]['constants'][valueName];
+}
+
 async function main() {
     dotenv.config();
 
@@ -118,7 +138,7 @@ async function main() {
 
     logger.info(`deploying DAOLABS Juicebox v3 fork to ${hre.network.name}`);
 
-    const [deployer] = await ethers.getSigners();
+    const [deployer] = await hre.ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
 
     await deployVerifyRecordContract('JBETHERC20ProjectPayerDeployer', [], deployer);
@@ -128,7 +148,7 @@ async function main() {
     await deployVerifyRecordContract('JBProjects', [], deployer);
 
     const transactionCount = await deployer.getTransactionCount();
-    const expectedFundingCycleStoreAddress = ethers.utils.getContractAddress({ from: deployer.address, nonce: transactionCount + 1 });
+    const expectedFundingCycleStoreAddress = hre.ethers.utils.getContractAddress({ from: deployer.address, nonce: transactionCount + 1 });
     const jbOperatorStoreAddress = getContractRecord('JBOperatorStore').address;
     const jbProjectsAddress = getContractRecord('JBProjects').address;
     await deployVerifyRecordContract('JBDirectory', [jbOperatorStoreAddress, jbProjectsAddress, expectedFundingCycleStoreAddress, deployer.address], deployer);
@@ -150,7 +170,15 @@ async function main() {
 
     await deployVerifyRecordContract('JBCurrencies', [], deployer);
 
+    const jbCurrencies_ETH = getConstant['JBCurrencies_ETH'];
+    const jbSingleTokenPaymentTerminalStoreAddress = getContractRecord('JBSingleTokenPaymentTerminalStore').address;
+    await deployVerifyRecordContract('JBETHPaymentTerminal', [jbCurrencies_ETH, jbOperatorStoreAddress, jbProjectsAddress, jbDirectoryAddress, jbSplitStoreAddress, jbPricesAddress, jbSingleTokenPaymentTerminalStoreAddress,
+        deployer.address], deployer);
 
+    const daySeconds = 60 * 60 * 24;
+    await deployVerifyRecordContract('JBReconfigurationBufferBallot', [daySeconds], deployer, 'JB1DayReconfigurationBufferBallot');
+    await deployVerifyRecordContract('JBReconfigurationBufferBallot', [daySeconds * 3], deployer, 'JB3DayReconfigurationBufferBallot');
+    await deployVerifyRecordContract('JBReconfigurationBufferBallot', [daySeconds * 7], deployer, 'JB7DayReconfigurationBufferBallot');
 }
 
 main().catch((error) => {
