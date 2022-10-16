@@ -47,7 +47,7 @@ async function deployContract(contractName: string, constructorArgs: any[], depl
     }
 }
 
-async function deployRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, recordAs?: string) {
+export async function deployRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, recordAs?: string) {
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
     let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
 
@@ -73,7 +73,7 @@ async function deployRecordContract(contractName: string, constructorArgs: any[]
     fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentAddresses, undefined, 4));
 }
 
-function getContractRecord(contractName: string) {
+export function getContractRecord(contractName: string) {
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
     let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
 
@@ -81,18 +81,27 @@ function getContractRecord(contractName: string) {
         throw new Error(`no deployment record for ${contractName} on ${hre.network.name}`);
     }
 
-    return deploymentAddresses[hre.network.name][contractName];
+    const record = deploymentAddresses[hre.network.name][contractName];
+    if (typeof record['abi'] === 'string') {
+        record['abi'] = JSON.parse(record['abi']);
+    }
+
+    return record;
 }
 
-function getPlatformConstant(valueName: string): any {
+export function getPlatformConstant(valueName: string, defaultValue?: any): any {
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
     let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
 
-    if (deploymentAddresses['constants'][valueName] === undefined) {
-        throw new Error(`no constant value for ${valueName} on ${hre.network.name}`);
+    if (deploymentAddresses['constants'][valueName] !== undefined) {
+        return deploymentAddresses['constants'][valueName];
     }
 
-    return deploymentAddresses['constants'][valueName];
+    if (defaultValue !== undefined) {
+        return defaultValue;
+    }
+
+    throw new Error(`no constant value for ${valueName} on ${hre.network.name}`);
 }
 
 async function main() {

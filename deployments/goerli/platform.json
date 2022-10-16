@@ -6406,10 +6406,76 @@
             ],
             "verified": false,
             "type": "JBReconfigurationBufferBallot"
+        },
+        "JBChainlinkV3PriceFeed": {
+            "address": "0x812C323D031Aa9312A331cF772906fa336b18735",
+            "args": [
+                "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
+            ],
+            "abi": [
+                {
+                    "type": "constructor",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_feed"
+                        }
+                    ]
+                },
+                {
+                    "type": "error",
+                    "name": "INCOMPLETE_ROUND",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "NEGATIVE_PRICE",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "STALE_PRICE",
+                    "inputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "currentPrice",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_decimals"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "feed",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                }
+            ],
+            "verified": false
         }
     },
     "constants": {
         "JBCurrencies_ETH": 1,
-        "JBCurrencies_USD": 2
+        "JBCurrencies_USD": 2,
+        "chainlinkV2UsdEthPriceFeed": "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
     }
 }
