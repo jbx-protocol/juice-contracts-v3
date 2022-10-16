@@ -26,7 +26,7 @@ const logger = winston.createLogger({
         }),
         new winston.transports.File({
             level: 'debug',
-            filename: 'log/deploy/VestingPlanManager.log',
+            filename: 'log/deploy/platform.log',
             handleExceptions: true,
             maxsize: (5 * 1024 * 1024), // 5 mb
             maxFiles: 5
@@ -36,7 +36,7 @@ const logger = winston.createLogger({
 
 async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress): Promise<DeployResult> {
     try {
-        let message = `deploying ${contractName} as ${deployer.address}`;
+        let message = `deploying ${contractName}`;
         if (constructorArgs.length > 0) { message += ` with args: '${constructorArgs.join(',')}'`; }
         logger.info(message);
 
@@ -46,7 +46,7 @@ async function deployContract(contractName: string, constructorArgs: any[], depl
 
         logger.info(`deployed to ${contractInstance.address} in ${contractInstance.deployTransaction.hash}`);
 
-        return { address: '', opHash: '' };
+        return { address: contractInstance.address, opHash: contractInstance.deployTransaction.hash };
     } catch (err) {
         logger.error(`failed to deploy ${contractName}`, err);
         throw err;
@@ -57,7 +57,9 @@ async function deployVerifyContract(contractName: string, constructorArgs: any[]
     const deploymentResult = await deployContract(contractName, constructorArgs, deployer);
 
     try {
+        logger.info('verifying contract with Etherscan');
         await hre.run('verify:verify', { address: deploymentResult.address, constructorArguments: constructorArgs });
+        logger.info('verification complete');
 
         return {
             address: deploymentResult.address,
@@ -65,7 +67,7 @@ async function deployVerifyContract(contractName: string, constructorArgs: any[]
             verified: true
         }
     } catch (err) {
-        logger.error(`failed to verify ${contractName}`, err);
+        logger.error(`failed to verify ${contractName} with Etherscan`, err);
 
         return {
             address: deploymentResult.address,
@@ -133,7 +135,7 @@ async function main() {
 
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
     if (!fs.existsSync(deploymentLogPath)) {
-        fs.writeFileSync(deploymentLogPath, '{}');
+        fs.writeFileSync(deploymentLogPath, `{ "${hre.network.name}": { } }`);
     }
 
     logger.info(`deploying DAOLABS Juicebox v3 fork to ${hre.network.name}`);
@@ -144,12 +146,13 @@ async function main() {
     await deployVerifyRecordContract('JBETHERC20ProjectPayerDeployer', [], deployer);
     await deployVerifyRecordContract('JBETHERC20SplitsPayerDeployer', [], deployer);
     await deployVerifyRecordContract('JBOperatorStore', [], deployer);
-    await deployVerifyRecordContract('JBPrices', [], deployer);
-    await deployVerifyRecordContract('JBProjects', [], deployer);
+    await deployVerifyRecordContract('JBPrices', [deployer.address], deployer);
+
+    const jbOperatorStoreAddress = getContractRecord('JBOperatorStore').address;
+    await deployVerifyRecordContract('JBProjects', [jbOperatorStoreAddress], deployer);
 
     const transactionCount = await deployer.getTransactionCount();
     const expectedFundingCycleStoreAddress = hre.ethers.utils.getContractAddress({ from: deployer.address, nonce: transactionCount + 1 });
-    const jbOperatorStoreAddress = getContractRecord('JBOperatorStore').address;
     const jbProjectsAddress = getContractRecord('JBProjects').address;
     await deployVerifyRecordContract('JBDirectory', [jbOperatorStoreAddress, jbProjectsAddress, expectedFundingCycleStoreAddress, deployer.address], deployer);
 

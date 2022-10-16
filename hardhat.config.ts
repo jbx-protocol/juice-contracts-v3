@@ -22,20 +22,22 @@ const ALCHEMY_MAINNET_KEY = process.env.ALCHEMY_MAINNET_API_KEY;
 const REPORT_GAS = process.env.REPORT_GAS;
 const COINMARKETCAP_KEY = process.env.COINMARKETCAP_API_KEY;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 type ProviderNetwork = 'localhost' | 'hardhat';
 
 const defaultNetwork: ProviderNetwork = 'hardhat';
 
-function mnemonic() {
-    try {
-        return fs.readFileSync('./mnemonic.txt').toString().trim();
-    } catch (e) {
-        if (defaultNetwork !== 'localhost') {
-            console.log('☢️ WARNING: No mnemonic file created for a deploy account.');
-        }
+function accountSeed() {
+    if (PRIVATE_KEY !== undefined) {
+        return [PRIVATE_KEY];
+    } else if (fs.existsSync('./mnemonic.txt')) {
+        return { mnemonic: fs.readFileSync('./mnemonic.txt').toString().trim() };
+    } else if (defaultNetwork !== 'localhost') {
+        console.log('☢️ WARNING: No mnemonic file created for a deploy account.');
     }
-    return '';
+
+    return { mnemonic: '' };
 }
 
 const infuraId = process.env.INFURA_ID || INFURA_API_KEY;
@@ -58,15 +60,11 @@ module.exports = {
         },
         goerli: {
             url: 'https://goerli.infura.io/v3/' + infuraId,
-            accounts: {
-                mnemonic: mnemonic(),
-            },
+            accounts: accountSeed()
         },
         mainnet: {
             url: 'https://mainnet.infura.io/v3/' + infuraId,
-            accounts: {
-                mnemonic: mnemonic(),
-            },
+            accounts: accountSeed()
         },
     },
     namedAccounts: {
