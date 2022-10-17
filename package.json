@@ -60,7 +60,8 @@
         "coverage": "hardhat coverage --network hardhat",
         "clean": "rimraf ./cache && rimraf ./artifacts",
         "compile": "yarn clean && hardhat compile",
-        "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
+        "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\"",
+        "slither": "hardhat clean && slither . 2> slither.out"
     },
     "engines": {
         "node": ">=14.20.1"

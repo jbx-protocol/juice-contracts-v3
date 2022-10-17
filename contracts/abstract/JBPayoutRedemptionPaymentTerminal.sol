@@ -1117,7 +1117,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
           // Trigger the allocator's `allocate` function.
           // If this terminal's token is ETH, send it in msg.value.
-          _split.allocator.allocate{value: token == JBTokens.ETH ? _netPayoutAmount : 0}(_data);
+          uint256 amount = token == JBTokens.ETH ? _netPayoutAmount : 0;
+          _split.allocator.allocate{value: amount}(_data);
 
           // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
