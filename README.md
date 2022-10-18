@@ -26,11 +26,11 @@ To deploy the extra components... \[TBD\]
 
 ### forge
 
-Forge is an awesome unit testing tool for solidity smart contracts from [Foundry](https://github.com/gakonst/foundry). Some Juicebox tests use it. Install it with `curl -L https://foundry.paradigm.xyz | sh`. Then run it as `forge test`. Forge is a fast-moving project, to update to the latest run `foundryup`. If you add new functionality it may be necessary to run `git submodule update --init` to install additional dependencies, but this step is not required for the code here. For more see [The Forge-Book](https://onbjerg.github.io/foundry-book/forge).
+Forge is an awesome unit testing tool for solidity smart contracts from [Foundry](https://github.com/gakonst/foundry). Some [Juicebox tests](./contracts/system_tests/) use it. Install it with `curl -L https://foundry.paradigm.xyz | sh`. Then run it as `forge test`. Forge is a fast-moving project, to update to the latest run `foundryup`. If you add new functionality it may be necessary to run `git submodule update --init` to install additional dependencies, but this step is not required for the code here. For more see [The Forge-Book](https://onbjerg.github.io/foundry-book/forge).
 
 ### slither
 
-This project uses [slither] for static analysis. To install it run `pip3 install slither-analyzer`. You may need to install `solc` as a stand-alone tool. To do use use:
+This project uses [slither](https://github.com/crytic/slither) for static analysis. To install it run `pip3 install slither-analyzer`. You may need to install `solc` as a stand-alone tool. To do use use:
 
 ```bash
 brew update
