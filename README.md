@@ -1,99 +1,55 @@
-# juice-contracts-v3
+# DAO LABS Juicebox v3 Fork
 
-Protocol overview, architecture, and API documentation: https://info.juicebox.money/dev/
-## Develop
+This repo is a fork of the [Juicebox protocol](https://github.com/jbx-protocol/juice-contracts-v3). For an overview, architecture, and API documentation see [juicebox.money](https://info.juicebox.money/dev/).
 
-### Unit Tests
+## Differences
 
-To run the unit tests suite (in Javascript), you'll need to run `yarn install` first then manually run Hardhat in order to enable ESM support:
+This repo provides [extra functionality built on Juicebox](./contracts/extensions/), adheres more closely to the latest hardhat conventions, uses more up-to-date dependencies, uses typescript for chai unit tests and simplifies the build process.
 
-```bash
-node --require esm ./node_modules/.bin/hardhat test --network hardhat
-```
+## Developing
 
-Alternatively, you can run a local Hardhat node in another terminal using
+After cloning run `yarn` or `npm i` to install dependencies. Some instructions below are macOS-specific, but will work with some modification in other environments.
 
-```bash
-yarn chain --network hardhat
-```
+This is a hardhat project you should be able to run hardhat commands directly like `npx hardhat test`, `npx hardhat compile`, etc. There is extensive code coverage that you can check with `npx hardhat coverage`. You can also run unit tests from node with `yarn test` or `npm test`.
 
-then run the following:
+Code coverage may run out of memory, feed it more with `export NODE_OPTIONS=--max-old-space-size=8192`.
 
-```bash
-yarn test
-```
+These commands will require a .env file to be placed at the root of the project. An example is [included](./.example.env). DAO LABS uses a combination of Infura and Alchemy infrastructure, you can modify [hardhat config](./hardhat.config.ts) to use only one.
 
-It might happens that Hardhat cannot resolve custom error (test failing on "Expecter nameOfTheError() but reverted
-without a reason string"), just restart yarn chain.
+## Deploying
 
-### System Tests
+There are two sets of deployment scripts, one for the core platform in [scripts/platform](.scripts/platform/) and another set for the extended features in [scripts/deploy/](.scripts/deploy/). To deploy the core platform run `npx hardhat run scripts/platform/deploy.ts --network goerli` then `npx hardhat run scripts/platform/configure.ts --network goerli` and `npx hardhat run scripts/platform/verify.ts --network goerli`. The configure and verify steps can be run in parallel. The verification step is optional, it publishes the contract code to etherscan. It's worth reviewing the configuration script to make sure it's in line with what you require.
 
-End-to-end tests have been written in Solidity, using Foundry.
+To deploy the extra components... \[TBD\]
 
-To get set up:
+## Extras
 
-1. Install [Foundry](https://github.com/gakonst/foundry).
+### forge
+
+Forge is an awesome unit testing tool for solidity smart contracts from [Foundry](https://github.com/gakonst/foundry). Some Juicebox tests use it. Install it with `curl -L https://foundry.paradigm.xyz | sh`. Then run it as `forge test`. Forge is a fast-moving project, to update to the latest run `foundryup`. If you add new functionality it may be necessary to run `git submodule update --init` to install additional dependencies, but this step is not required for the code here. For more see [The Forge-Book](https://onbjerg.github.io/foundry-book/forge).
+
+### slither
+
+This project uses [slither] for static analysis. To install it run `pip3 install slither-analyzer`. You may need to install `solc` as a stand-alone tool. To do use use:
 
 ```bash
-curl -L https://foundry.paradigm.xyz | sh
+brew update
+brew upgrade
+brew tap ethereum/ethereum
+brew install solidity
 ```
 
-2. Install external lib(s)
+You can run slither with `npm run slither` or as `npx hardhat clean && slither .`. Hardhat clean is a required step as of Oct 2022.
 
-```bash
-git submodule update --init
-```
+### Contributing
 
-3. Run tests:
+We welcome PRs and make an effort to stay current with the original project. We make minimally invasive changes to the source contracts. New functionality inside `/extensions` follows these conventions:
 
-```bash
-forge test
-```
-
-4. Update Foundry periodically:
-
-```bash
-foundryup
-```
-
-Resources:
-
-- [The Forge-Book](https://onbjerg.github.io/foundry-book/forge)
-
-### Coverage
-
-To check current unit tests coverage:
-
-```bash
-node --require esm ./node_modules/.bin/hardhat coverage --network hardhat
-```
-
-A few notes:
-
-- Hardhat doesn't support [esm](https://nodejs.org/api/esm.html) yet, hence running manually with node.
-- We are currently using a forked version of [solidity-coverage](https://www.npmjs.com/package/solidity-coverage) that includes optimizer settings. Ideally we will move to the maintained version after this is fixed on their end.
-- Juicebox V3 codebase being quite large, Solidity Coverage might run out of memory if you modify/add parts to it. Please check [Solidity-coverage FAQ](https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md) in order to address the issue.
-
-## Deploy
-
-Juicebox uses the [Hardhat Deploy](https://github.com/wighawag/hardhat-deploy) plugin to deploy contracts to a given network. But before using it, you must create a `./mnemonic.txt` file containing the mnemonic phrase of the wallet used to deploy. You can generate a new mnemonic using [this tool](https://github.com/itinance/mnemonics). Generate a mnemonic at your own risk.
-
-Then, to execute the `./deploy/deploy.js` script, run the following:
-
-```bash
-npx hardhat deploy --network $network
-```
-
-\_You'll likely want to set the optimizer runs to 10000 in `./hardhat.config.js` before deploying to prevent contract size errors. The preset value of 1000000 is necessary for hardhat to run unit tests successfully. Bug about this opened [here](https://github.com/NomicFoundation/hardhat/issues/2657#issuecomment-1113890401).
-
-Contract artifacts will be outputted to `./deployments/$network/**` and should be checked in to the repo.
-
-## Verification
-
-To verify the contracts on [Etherscan](https://etherscan.io), make sure you have an `ETHERSCAN_API_KEY` set in your `./.env` file. Then run the following:
-
-```bash
-npx hardhat --network $network etherscan-verify
-```
-
-This will verify all of the deployed contracts in `./deployments`.
+- Function arguments start with an underscore.
+- Storage parameters do not start with an underscore regardless of visibility.
+- Functions dealing with Ether transfer are marked as `nonReentrant`.
+- Use `revert` with named errors instead of `require`.
+- `for` loops increment at the end as `++i` and test for continuation with `!=`.
+- Solidity version is defined with a caret, currently as `^0.8.0`.
+- Use Typescript instead of JavaScript.
+- Use Hardhat when possible unless there is good reason not to.
