@@ -18,7 +18,7 @@ These commands will require a .env file to be placed at the root of the project.
 
 ## Deploying
 
-There are two sets of deployment scripts, one for the core platform in [scripts/platform](.scripts/platform/) and another set for the extended features in [scripts/deploy/](.scripts/deploy/). To deploy the core platform run `npx hardhat run scripts/platform/deploy.ts --network goerli` then `npx hardhat run scripts/platform/configure.ts --network goerli` and `npx hardhat run scripts/platform/verify.ts --network goerli`. The configure and verify steps can be run in parallel. The verification step is optional, it publishes the contract code to etherscan. It's worth reviewing the configuration script to make sure it's in line with what you require.
+There are two sets of deployment scripts, one for the core platform in [scripts/platform](./scripts/platform/) and another set for the extended features in [scripts/deploy/](./scripts/deploy/). To deploy the core platform run `npx hardhat run scripts/platform/deploy.ts --network goerli` then `npx hardhat run scripts/platform/configure.ts --network goerli` and `npx hardhat run scripts/platform/verify.ts --network goerli`. The configure and verify steps can be run in parallel. The verification step is optional, it publishes the contract code to etherscan. It's worth reviewing the configuration script to make sure it's in line with what you require.
 
 To deploy the extra components... \[TBD\]
 
