@@ -22,10 +22,20 @@ contract OperatorFilter is Ownable, IOperatorFilter {
     return true;
   }
 
+  /**
+   * Registers an address to block from performing NFT operations.
+   */
   function registerAddress(address _account, bool _blocked) external override onlyOwner {
+    if (!_blocked) {
+      delete blockedAddresses[_account];
+    }
+
     blockedAddresses[_account] = _blocked;
   }
 
+  /**
+   * Registers a contract codehash (`address.codehash`) to prevent NFT operations for a range of contracts rather than registring one address at a time.
+   */
   function registerCodeHash(bytes32 _codeHash, bool _blocked) external override onlyOwner {
     if (_codeHash != keccak256('')) {
       blockedCodeHashes[_codeHash] = _blocked;

@@ -46,7 +46,7 @@ contract TieredPriceResolver is IPriceResolver {
    */
   constructor(
     address _contributionToken,
-    uint256 _mintCap,
+    uint256 _mintCap, // TODO: reconsider this and use token.MaxSupply instead
     uint256 _userMintCap,
     RewardTier[] memory _tiers
   ) {

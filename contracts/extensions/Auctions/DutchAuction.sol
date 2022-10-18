@@ -214,7 +214,7 @@ contract DutchAuctionHouse is
         revert INVALID_BID();
       }
 
-      address(uint160(auctionDetails.bid)).call{value: currentBidAmount, gas: 2300}('');
+      address(uint160(auctionDetails.bid)).call{value: currentBidAmount, gas: 2300}(''); // ignores the result to prevent higher bids from being placed by malicious contracts
     } else {
       uint256 endingPrice = uint256(uint96(auctionDetails.prices >> 96));
       // TODO: consider allowing this as a means of caputuring market info
