@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IJBRoleManager {
+interface IRoleManager {
   event AddRole(uint256 indexed _projectId, string _role);
   event RemoveRole(uint256 indexed _projectId, string _role);
   event GrantRole(uint256 indexed _projectId, string _role, address _account);

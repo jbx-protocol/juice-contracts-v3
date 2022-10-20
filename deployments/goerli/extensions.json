@@ -12,6 +12,7 @@
         "PaymentProcessorFactory": "0x30EBBF18CC7286105E0d02Cb06ee78684AFF722c",
         "TokenLiquidator": "0x0003fCcD5860CBC57e5181740b2D5649E5c5cb13",
         "NFTRewardDataSourceFactory": "0x5e320db5fA9B3069275964cd6FC0348e0ec1b076",
-        "VestingPlanManager": "0xe1203ed05EB8FdFee742Da1baC39C26f5cdbF11d"
+        "VestingPlanManager": "0xe1203ed05EB8FdFee742Da1baC39C26f5cdbF11d",
+        "RoleManager": "0xc98654D587707c3E4cfFb4E83a4A7C196B9d8448"
     }
 }
