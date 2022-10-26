@@ -29,15 +29,15 @@ interface IDaiTreasuryDelegate {
 }
 
 /**
-  @title Automated DAI treasury
-
-  @notice Converts ether sent to it into WETH and swaps it for DAI, then mints a token balance to the sender for the amount of DAI that it received. The redeem workflow will burn these tokens and return ether to the sender.
-
-  @notice Intended usecase is for other projects to use a SplitPayer to send some portion of their deposits here as a diversification strategy instead of holding all contributions as ether.
-
-  @dev This contract will mint & burn share tokens via JBController. Tokens are issued and burned 1:1 to the amount of underlying token, in this case DAI. As an example, if 1 ether is sent into didPay, it will be wrapped into WETH and swapped for DAI. If WETH/DAI rate is 2000, the caller will get 2000 tokens.
-
-  @dev This contract will own the DAI balance until it's redeemed back into ether and sent out.
+ * @title Automated DAI treasury
+ *
+ * @notice Converts ether sent to it into WETH and swaps it for DAI, then mints a token balance to the sender for the amount of DAI that it received. The redeem workflow will burn these tokens and return ether to the sender.
+ *
+ * @notice Intended usecase is for other projects to use a SplitPayer to send some portion of their deposits here as a diversification strategy instead of holding all contributions as ether.
+ *
+ * @dev This contract will mint & burn share tokens via JBController. Tokens are issued and burned 1:1 to the amount of underlying token, in this case DAI. As an example, if 1 ether is sent into didPay, it will be wrapped into WETH and swapped for DAI. If WETH/DAI rate is 2000, the caller will get 2000 tokens.
+ *
+ * @dev This contract will own the DAI balance until it's redeemed back into ether and sent out.
  */
 contract DaiTreasuryDelegate is
   IDaiTreasuryDelegate,
@@ -56,7 +56,7 @@ contract DaiTreasuryDelegate is
   //*********************************************************************//
 
   /**
-    @notice JBController reference to directly manage project token balances.
+   * @notice JBController reference to directly manage project token balances.
    */
   IJBController private immutable _jbxController;
 
@@ -87,11 +87,11 @@ contract DaiTreasuryDelegate is
   //*********************************************************************//
 
   /**
-    @notice IJBPayDelegate implementation
-
-    @notice Will swap incoming ether via WETH into DAI using Uniswap v3 and mint project tokens via JBController in the same amount as the DAI received from the swap so it can be later redeemed 1:1. It's expected to be called by a terminal of a different project looking to diversify some ether holdings into DAI.
-
-    @dev The function is expected to be able to pull an allowance from the calling terminal for the amount in _data.amount.
+   * @notice IJBPayDelegate implementation
+   *
+   * @notice Will swap incoming ether via WETH into DAI using Uniswap v3 and mint project tokens via JBController in the same amount as the DAI received from the swap so it can be later redeemed 1:1. It's expected to be called by a terminal of a different project looking to diversify some ether holdings into DAI.
+   *
+   * @dev The function is expected to be able to pull an allowance from the calling terminal for the amount in _data.amount.
    */
   function didPay(JBDidPayData calldata _data) public payable override {
     (IJBAllowanceTerminal(msg.sender)).useAllowanceOf(
@@ -130,13 +130,13 @@ contract DaiTreasuryDelegate is
   }
 
   /**
-    @notice IJBRedemptionDelegate implementation
-
-    @notice This function will swap the a portion of the owned DAI balance in the same amount as _data.amount, convert the resulting WETH into ether and send it back to the beneficiary defined in the params.
-
-    @dev _data.amount will be validated against the project token. _data.amount will be burned from the caller via JBController.
-
-    @dev JBPayoutRedemptionPaymentTerminal would have burned the tokens before calling this function.
+   * @notice IJBRedemptionDelegate implementation
+   *
+   * @notice This function will swap the a portion of the owned DAI balance in the same amount as _data.amount, convert the resulting WETH into ether and send it back to the beneficiary defined in the params.
+   *
+   * @dev _data.amount will be validated against the project token. _data.amount will be burned from the caller via JBController.
+   *
+   * @dev JBPayoutRedemptionPaymentTerminal would have burned the tokens before calling this function.
    */
   function didRedeem(JBDidRedeemData calldata _data) public payable override {
     _dai.approve(address(_swapRouter), _data.projectTokenCount);
@@ -159,10 +159,10 @@ contract DaiTreasuryDelegate is
   }
 
   /**
-    @notice IJBFundingCycleDataSource implementation
-
-    @dev This function returns 0 weight because didPay will mint tokens via JBController. The reason for this is that weight is used as a multiplier in JBTerminal.pay and the token amount minted needs to match the exact DAI balance received from the swap.
-    */
+   * @notice IJBFundingCycleDataSource implementation
+   *
+   * @dev This function returns 0 weight because didPay will mint tokens via JBController. The reason for this is that weight is used as a multiplier in JBTerminal.pay and the token amount minted needs to match the exact DAI balance received from the swap.
+   */
   function payParams(JBPayParamsData calldata _data)
     public
     view
@@ -183,9 +183,9 @@ contract DaiTreasuryDelegate is
   }
 
   /**
-    @notice IJBFundingCycleDataSource implementation
-
-    @dev This function returns 0 weight because JBTerminal.redeemTokensOf uses it as a multiplier, but we need to burn the exact amount of tokens being redeemed via a swap from DAI back into ether. didRedeem will perform the burn.
+   * @notice IJBFundingCycleDataSource implementation
+   *
+   * @dev This function returns 0 weight because JBTerminal.redeemTokensOf uses it as a multiplier, but we need to burn the exact amount of tokens being redeemed via a swap from DAI back into ether. didRedeem will perform the burn.
    */
   function redeemParams(JBRedeemParamsData calldata _data)
     public
@@ -202,7 +202,7 @@ contract DaiTreasuryDelegate is
   }
 
   /**
-    @notice IERC165 implementation
+   *@notice IERC165  implementation
    */
   function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
     return
@@ -212,8 +212,8 @@ contract DaiTreasuryDelegate is
   }
 
   /**
-    @dev didPay() receives ether from the terminal to wrap & send to the pool.
-  */
+   * @dev didPay() receives ether from the terminal to wrap & send to the pool.
+   */
   // solhint-disable-next-line no-empty-blocks
   receive() external payable override {}
 }

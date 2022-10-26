@@ -3,7 +3,7 @@ import { ethers } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
-import { deployRecordContract } from '../lib/lib';
+import { deployRecordContract, getContractRecord } from '../lib/lib';
 
 async function main() {
     dotenv.config();
@@ -19,7 +19,7 @@ async function main() {
             }),
             new winston.transports.File({
                 level: 'debug',
-                filename: 'log/deploy/VestingPlanManager.log',
+                filename: 'log/deploy/DaiTreasuryDelegate.log',
                 handleExceptions: true,
                 maxsize: (5 * 1024 * 1024), // 5 mb
                 maxFiles: 5
@@ -28,12 +28,14 @@ async function main() {
     });
 
     ///
-    logger.info(`deploying VestingPlanManager to ${hre.network.name}`);
+    logger.info(`deploying DaiTreasuryDelegate to ${hre.network.name}`);
 
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
 
-    deployRecordContract('VestingPlanManager', [deployer.address], deployer, 'VestingPlanManager', `./deployments/${hre.network.name}/extensions.json`);
+    const jbControllerAddress = getContractRecord('JBController').address;
+
+    deployRecordContract('DaiTreasuryDelegate', [jbControllerAddress], deployer, 'DaiTreasuryDelegate', `./deployments/${hre.network.name}/extensions.json`);
 }
 
 main().catch((error) => {
@@ -41,4 +43,4 @@ main().catch((error) => {
     process.exitCode = 1;
 });
 
-// npx hardhat run scripts/deploy/VestingPlanManager.ts --network goerli
+// npx hardhat run scripts/deploy/DaiTreasuryDelegate.ts --network goerli

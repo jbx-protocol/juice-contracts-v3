@@ -1,108 +1,6 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import * as fs from 'fs';
 import * as hre from 'hardhat';
-import * as winston from 'winston';
-
-type DeployResult = {
-    address: string,
-    abi: string,
-    opHash: string
-}
-
-const logger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(info => { return `${info.timestamp}|${info.level}|${info.message}`; })
-    ),
-    transports: [
-        new winston.transports.Console({
-            level: 'info'
-        }),
-        new winston.transports.File({
-            level: 'debug',
-            filename: 'log/deploy/platform.log',
-            handleExceptions: true,
-            maxsize: (5 * 1024 * 1024), // 5 mb
-            maxFiles: 5
-        })
-    ]
-});
-
-async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress): Promise<DeployResult> {
-    try {
-        let message = `deploying ${contractName}`;
-        if (constructorArgs.length > 0) { message += ` with args: '${constructorArgs.join(',')}'`; }
-        logger.info(message);
-
-        const contractFactory = await hre.ethers.getContractFactory(contractName, deployer);
-        const contractInstance = await contractFactory.connect(deployer).deploy(...constructorArgs);
-        await contractInstance.deployed();
-
-        logger.info(`deployed to ${contractInstance.address} in ${contractInstance.deployTransaction.hash}`);
-
-        return { address: contractInstance.address, abi: contractFactory.interface.format('json') as string, opHash: contractInstance.deployTransaction.hash };
-    } catch (err) {
-        logger.error(`failed to deploy ${contractName}`, err);
-        throw err;
-    }
-}
-
-export async function deployRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, recordAs?: string) {
-    const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
-    let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
-
-    const key = recordAs === undefined ? contractName : recordAs;
-    if (deploymentAddresses[hre.network.name][key] !== undefined) {
-        logger.info(`${key} already exists on ${hre.network.name} at ${deploymentAddresses[hre.network.name][key]['address']}`);
-        return;
-    }
-
-    const deploymentResult = await deployContract(contractName, constructorArgs, deployer);
-
-    deploymentAddresses[hre.network.name][key] = {
-        address: deploymentResult.address,
-        args: constructorArgs,
-        abi: JSON.parse(deploymentResult.abi),
-        verified: false
-    };
-
-    if (recordAs !== undefined) {
-        deploymentAddresses[hre.network.name][key]['type'] = contractName;
-    }
-
-    fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentAddresses, undefined, 4));
-}
-
-export function getContractRecord(contractName: string) {
-    const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
-    let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
-
-    if (deploymentAddresses[hre.network.name][contractName] === undefined) {
-        throw new Error(`no deployment record for ${contractName} on ${hre.network.name}`);
-    }
-
-    const record = deploymentAddresses[hre.network.name][contractName];
-    if (typeof record['abi'] === 'string') {
-        record['abi'] = JSON.parse(record['abi']);
-    }
-
-    return record;
-}
-
-export function getPlatformConstant(valueName: string, defaultValue?: any): any {
-    const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
-    let deploymentAddresses = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
-
-    if (deploymentAddresses['constants'][valueName] !== undefined) {
-        return deploymentAddresses['constants'][valueName];
-    }
-
-    if (defaultValue !== undefined) {
-        return defaultValue;
-    }
-
-    throw new Error(`no constant value for ${valueName} on ${hre.network.name}`);
-}
+import { deployRecordContract, getContractRecord, getPlatformConstant, logger } from '../lib/lib';
 
 async function main() {
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
@@ -110,7 +8,7 @@ async function main() {
         fs.writeFileSync(deploymentLogPath, `{ "${hre.network.name}": { }, "constants": { } }`);
     }
 
-    logger.info(`deploying DAOLABS Juicebox v3 fork to ${hre.network.name}`);
+    logger.info(`deploying DAOLABS Juicebox v3, core platform, fork to ${hre.network.name}`);
 
     const [deployer] = await hre.ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
@@ -154,6 +52,16 @@ async function main() {
     await deployRecordContract('JBReconfigurationBufferBallot', [daySeconds], deployer, 'JB1DayReconfigurationBufferBallot');
     await deployRecordContract('JBReconfigurationBufferBallot', [daySeconds * 3], deployer, 'JB3DayReconfigurationBufferBallot');
     await deployRecordContract('JBReconfigurationBufferBallot', [daySeconds * 7], deployer, 'JB7DayReconfigurationBufferBallot');
+
+    logger.info('deployment complete');
+    logger.info('deploying DAOLABS extensions');
+
+    const jbControllerAddress = getContractRecord('JBSplitsStore').address;
+    await deployRecordContract('DaiTreasuryDelegate', [jbControllerAddress], deployer);
+
+    await deployRecordContract('RoleManager', [jbDirectoryAddress, jbOperatorStoreAddress, jbProjectsAddress, deployer.address], deployer);
+
+    await deployRecordContract('VestingPlanManager', [], deployer);
 
     logger.info('deployment complete');
 }

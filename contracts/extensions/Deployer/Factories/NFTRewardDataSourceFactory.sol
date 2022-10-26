@@ -12,7 +12,7 @@ import '../../interfaces/IPriceResolver.sol';
 import '../../interfaces/IToken721UriResolver.sol';
 
 /**
- * @notice Deployes instances of NFTRewardDataSourceDelegate and supporting contracts.
+ * @notice Deploys instances of NFTRewardDataSourceDelegate and supporting contracts.
  */
 library NFTRewardDataSourceFactory {
   function createOpenTieredTokenUriResolver(string memory _baseUri) public returns (address) {

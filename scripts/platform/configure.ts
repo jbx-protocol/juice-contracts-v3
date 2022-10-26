@@ -1,28 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import * as hre from 'hardhat';
-import * as winston from 'winston';
 
-import { deployRecordContract, getContractRecord, getPlatformConstant } from './deploy';
-
-const logger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(info => { return `${info.timestamp}|${info.level}|${info.message}`; })
-    ),
-    transports: [
-        new winston.transports.Console({
-            level: 'info'
-        }),
-        new winston.transports.File({
-            level: 'debug',
-            filename: 'log/deploy/platform.log',
-            handleExceptions: true,
-            maxsize: (5 * 1024 * 1024), // 5 mb
-            maxFiles: 5
-        })
-    ]
-});
+import { deployRecordContract, getContractRecord, getPlatformConstant, logger } from '../lib/lib';
 
 async function miscConfiguration(deployer: SignerWithAddress) {
     const jbDirectoryRecord = getContractRecord('JBDirectory');
@@ -137,7 +117,7 @@ async function deployParentProject(deployer: SignerWithAddress) {
         const platformOwnerAddress = getPlatformConstant('platformOwner', deployer.address);
 
         const domain = 0;
-        const projectMetadataCID = ''
+        const projectMetadataCID = getPlatformConstant('projectMetadataCID', '');
         const projectMetadata = [projectMetadataCID, domain];
 
         const protocolLaunchDate = getPlatformConstant('protocolLaunchDate', Math.floor(Date.now() / 1000) - 10);

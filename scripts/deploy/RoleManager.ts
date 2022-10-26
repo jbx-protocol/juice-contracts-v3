@@ -1,8 +1,10 @@
 import * as dotenv from "dotenv";
 import * as fs from 'fs';
-import { ethers, upgrades } from 'hardhat';
+import { ethers } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
+
+import { deployRecordContract, getContractRecord } from '../lib/lib';
 
 async function main() {
     dotenv.config();
@@ -32,28 +34,11 @@ async function main() {
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
 
-    const jbxDirectoryAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBDirectory.json`).toString())['address'];
-    const jbxOperatorStoreAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBOperatorStore.json`).toString())['address'];
-    const jbxProjectsAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBProjects.json`).toString())['address'];
+    const jbxDirectoryAddress = getContractRecord('JBController').address;
+    const jbxOperatorStoreAddress = getContractRecord('JBController').address;
+    const jbxProjectsAddress = getContractRecord('JBController').address;
 
-    const RoleManagerFactory = await ethers.getContractFactory('RoleManager', deployer);
-    const RoleManager = await RoleManagerFactory.connect(deployer).deploy(jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, deployer.address);
-    await RoleManager.deployed();
-    logger.info(`deployed to ${RoleManager.address} in ${RoleManager.deployTransaction.hash}`);
-
-    try {
-        logger.info(`verifying RoleManager at ${RoleManager.address} with Etherscan`);
-        await hre.run('verify:verify', { address: RoleManager.address, constructorArguments: [jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, deployer.address] });
-        logger.info('verification complete');
-
-    } catch (err) {
-        logger.error(`failed to verify ${RoleManager.address} with Etherscan`, err);
-    }
-
-    const deploymentAddressLog = `./deployments/${hre.network.name}/extensions.json`;
-    const deploymentAddresses = JSON.parse(fs.readFileSync(deploymentAddressLog).toString());
-    deploymentAddresses[hre.network.name]['RoleManager'] = RoleManager.address;
-    fs.writeFileSync(deploymentAddressLog, JSON.stringify(deploymentAddresses, undefined, 4));
+    deployRecordContract('RoleManager', [jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, deployer.address], deployer, 'RoleManager', `./deployments/${hre.network.name}/extensions.json`)
 }
 
 main().catch((error) => {

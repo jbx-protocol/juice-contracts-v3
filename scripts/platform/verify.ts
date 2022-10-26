@@ -1,25 +1,7 @@
 import * as fs from 'fs';
 import * as hre from 'hardhat';
-import * as winston from 'winston';
 
-const logger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(info => { return `${info.timestamp}|${info.level}|${info.message}`; })
-    ),
-    transports: [
-        new winston.transports.Console({
-            level: 'info'
-        }),
-        new winston.transports.File({
-            level: 'debug',
-            filename: 'log/deploy/platform.log',
-            handleExceptions: true,
-            maxsize: (5 * 1024 * 1024), // 5 mb
-            maxFiles: 5
-        })
-    ]
-});
+import { logger } from '../lib/lib';
 
 async function verifyContract(contractName: string, contractAddress: string, constructorArgs: any[]): Promise<boolean> {
     try {
