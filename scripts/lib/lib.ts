@@ -25,13 +25,13 @@ export const logger = winston.createLogger({
 });
 
 
-async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress): Promise<DeployResult> {
+async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, libraries: { [key: string]: string } = {}): Promise<DeployResult> {
     try {
         let message = `deploying ${contractName}`;
         if (constructorArgs.length > 0) { message += ` with args: '${constructorArgs.join(',')}'`; }
         logger.info(message);
 
-        const contractFactory = await hre.ethers.getContractFactory(contractName, deployer);
+        const contractFactory = await hre.ethers.getContractFactory(contractName, { libraries, signer: deployer });
         const contractInstance = await contractFactory.connect(deployer).deploy(...constructorArgs);
         await contractInstance.deployed();
 
@@ -44,7 +44,7 @@ async function deployContract(contractName: string, constructorArgs: any[], depl
     }
 }
 
-export async function deployRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, recordAs?: string, logPath = `./deployments/${hre.network.name}/platform.json`) {
+export async function deployRecordContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, recordAs?: string, logPath = `./deployments/${hre.network.name}/platform.json`, libraries: { [key: string]: string } = {}) {
     let deploymentAddresses = JSON.parse(fs.readFileSync(logPath).toString());
 
     const key = recordAs === undefined ? contractName : recordAs;
@@ -53,7 +53,7 @@ export async function deployRecordContract(contractName: string, constructorArgs
         return;
     }
 
-    const deploymentResult = await deployContract(contractName, constructorArgs, deployer);
+    const deploymentResult = await deployContract(contractName, constructorArgs, deployer, libraries);
 
     deploymentAddresses[hre.network.name][key] = {
         address: deploymentResult.address,

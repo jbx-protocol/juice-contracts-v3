@@ -4,6 +4,8 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
+import { deployRecordContract, getContractRecord } from '../lib/lib';
+
 async function main() {
     dotenv.config();
 
@@ -29,74 +31,23 @@ async function main() {
     ///
     logger.info(`deploying Deployer_v005 to ${hre.network.name}`);
 
+    const deploymentLogPath = `./deployments/${hre.network.name}/extensions.json`;
+
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
 
-    const deploymentAddressLog = `./deployments/${hre.network.name}/extensions.json`;
-    const deploymentAddresses = JSON.parse(fs.readFileSync(deploymentAddressLog).toString());
+    const deployerProxyAddress = getContractRecord('DeployerProxy', deploymentLogPath).address;
+    const nfTokenFactoryLibraryAddress = getContractRecord('NFTokenFactory', deploymentLogPath).address;
+    const mixedPaymentSplitterFactoryLibraryAddress = getContractRecord('MixedPaymentSplitterFactory', deploymentLogPath).address;
+    const auctionsFactoryFactoryLibraryAddress = getContractRecord('AuctionsFactory', deploymentLogPath).address;
+    const sourceDutchAuctionHouseAddress = getContractRecord('DutchAuctionHouse', deploymentLogPath).address;
+    const sourceEnglishAuctionHouseAddress = getContractRecord('EnglishAuctionHouse', deploymentLogPath).address;
+    const nfuTokenFactoryLibraryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
+    const sourceNFUTokenAddress = getContractRecord('NFUToken', deploymentLogPath).address;
 
-    const deployerProxyAddress = deploymentAddresses[hre.network.name]['DeployerProxy'];
-    const nfTokenFactoryLibraryAddress = deploymentAddresses[hre.network.name]['NFTokenFactory'];
-    const mixedPaymentSplitterFactoryLibraryAddress = deploymentAddresses[hre.network.name]['MixedPaymentSplitterFactory'];
-    const auctionsFactoryFactoryLibraryAddress = deploymentAddresses[hre.network.name]['AuctionsFactory'];
-    const sourceDutchAuctionHouseAddress = deploymentAddresses[hre.network.name]['DutchAuctionHouse'];
-    const sourceEnglishAuctionHouseAddress = deploymentAddresses[hre.network.name]['EnglishAuctionHouse'];
-    const nfuTokenFactoryLibraryAddress = deploymentAddresses[hre.network.name]['NFUTokenFactory'];
-    const sourceNFUTokenAddress = deploymentAddresses[hre.network.name]['NFUToken'];
-
-    const jbxDirectoryAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBDirectory.json`).toString())['address'];
-    const jbxOperatorStoreAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBOperatorStore.json`).toString())['address'];
-    const jbxProjectsAddress = JSON.parse(fs.readFileSync(`./deployments/${hre.network.name}/JBProjects.json`).toString())['address'];
-
-    if (!deployerProxyAddress || deployerProxyAddress.length === 0) {
-        logger.error(`could not find previous deployment of deployerProxy in ${deploymentAddressLog} under ['${hre.network.name}']['DeployerProxy']`);
-        return;
-    }
-
-    if (!nfTokenFactoryLibraryAddress || nfTokenFactoryLibraryAddress.length === 0) {
-        logger.error(`could not find previous deployment of NFTokenFactory in ${deploymentAddressLog} under ['${hre.network.name}']['NFTokenFactory']`);
-        return;
-    }
-
-    if (!mixedPaymentSplitterFactoryLibraryAddress || mixedPaymentSplitterFactoryLibraryAddress.length === 0) {
-        logger.error(`could not find previous deployment of MixedPaymentSplitterFactory in ${deploymentAddressLog} under ['${hre.network.name}']['MixedPaymentSplitterFactory']`);
-        return;
-    }
-
-    if (!auctionsFactoryFactoryLibraryAddress || auctionsFactoryFactoryLibraryAddress.length === 0) {
-        logger.error(`could not find previous deployment of AuctionsFactory in ${deploymentAddressLog} under ['${hre.network.name}']['AuctionsFactory']`);
-        return;
-    }
-
-    if (!sourceDutchAuctionHouseAddress || sourceDutchAuctionHouseAddress.length === 0) {
-        logger.error(`could not find previous deployment of DutchAuctionHouse in ${deploymentAddressLog} under ['${hre.network.name}']['DutchAuctionHouse']`);
-        return;
-    }
-
-    if (!sourceEnglishAuctionHouseAddress || sourceEnglishAuctionHouseAddress.length === 0) {
-        logger.error(`could not find previous deployment of EnglishAuctionHouse in ${deploymentAddressLog} under ['${hre.network.name}']['EnglishAuctionHouse']`);
-        return;
-    }
-
-    if (!nfuTokenFactoryLibraryAddress || nfuTokenFactoryLibraryAddress.length === 0) {
-        logger.error(`could not find previous deployment of NFUTokenFactory in ${deploymentAddressLog} under ['${hre.network.name}']['NFUTokenFactory']`);
-        return;
-    }
-
-    if (!jbxDirectoryAddress || jbxDirectoryAddress.length === 0) {
-        logger.error(`could not find previous deployment of JBDirectory for '${hre.network.name}`);
-        return;
-    }
-
-    if (!jbxOperatorStoreAddress || jbxOperatorStoreAddress.length === 0) {
-        logger.error(`could not find previous deployment of JBOperator for '${hre.network.name}`);
-        return;
-    }
-
-    if (!jbxProjectsAddress || jbxProjectsAddress.length === 0) {
-        logger.error(`could not find previous deployment of JBProjects for '${hre.network.name}`);
-        return;
-    }
+    const jbxDirectoryAddress = getContractRecord('JBDirectory').address;
+    const jbxOperatorStoreAddress = getContractRecord('JBOperatorStore').address;
+    const jbxProjectsAddress = getContractRecord('JBProjects').address;
 
     logger.info(`found existing deployment of DeployerProxy at ${deployerProxyAddress}`);
     logger.info(`found existing deployment of NFTokenFactory at ${nfTokenFactoryLibraryAddress}`);
@@ -110,34 +61,34 @@ async function main() {
     logger.info(`found existing deployment of JBOperatorStore at ${jbxOperatorStoreAddress}`);
     logger.info(`found existing deployment of JBProjects at ${jbxProjectsAddress}`);
 
-    const paymentProcessorFactory = await ethers.getContractFactory('PaymentProcessorFactory', deployer);
-    const paymentProcessorFactoryLibrary = await paymentProcessorFactory.connect(deployer).deploy();
-
+    await deployRecordContract('PaymentProcessorFactory', [], deployer, 'PaymentProcessorFactory', deploymentLogPath);
+    const paymentProcessorFactoryAddress = getContractRecord('PaymentProcessorFactory', deploymentLogPath).address;
+    
     const deployerFactory = await ethers.getContractFactory('Deployer_v005', {
         libraries: {
             NFTokenFactory: nfTokenFactoryLibraryAddress,
             MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibraryAddress,
             AuctionsFactory: auctionsFactoryFactoryLibraryAddress,
             NFUTokenFactory: nfuTokenFactoryLibraryAddress,
-            PaymentProcessorFactory: paymentProcessorFactoryLibrary.address
+            PaymentProcessorFactory: paymentProcessorFactoryAddress
         },
         signer: deployer
     });
 
     const feeBps = 250;
     const uniswapPoolFee = 3000;
-    const tokenLiquidatorFactory = await ethers.getContractFactory('TokenLiquidator', { signer: deployer });
-    const tokenLiquidator = await tokenLiquidatorFactory.connect(deployer).deploy(jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, feeBps, uniswapPoolFee);
-    await tokenLiquidator.deployed();
 
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, tokenLiquidator.address] } });
+    await deployRecordContract('TokenLiquidator', [jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, feeBps, uniswapPoolFee], deployer, 'TokenLiquidator', deploymentLogPath);
+    const tokenLiquidatorAddress = getContractRecord('TokenLiquidator', deploymentLogPath).address;
+
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, tokenLiquidatorAddress] } });
     await deployerProxy.deployed();
-    logger.info(`deployed to ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
+    logger.info(`upgraded ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
 
-    deploymentAddresses[hre.network.name]['PaymentProcessorFactory'] = paymentProcessorFactoryLibrary.address;
-    deploymentAddresses[hre.network.name]['TokenLiquidator'] = tokenLiquidator.address;
-    deploymentAddresses[hre.network.name]['DeployerProxyVersion'] = 5;
-    fs.writeFileSync(deploymentAddressLog, JSON.stringify(deploymentAddresses, undefined, 4));
+    const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
+    deploymentLog[hre.network.name]['DeployerProxy']['version'] = 5;
+    deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
+    fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));
 }
 
 main().catch((error) => {

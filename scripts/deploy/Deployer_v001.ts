@@ -4,6 +4,8 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
+import { deployRecordContract, getContractRecord } from '../lib/lib';
+
 async function main() {
     dotenv.config();
 
@@ -29,26 +31,32 @@ async function main() {
     ///
     logger.info(`deploying Deployer_v001 to ${hre.network.name}`);
 
+    const deploymentLogPath = `./deployments/${hre.network.name}/extensions.json`;
+
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
 
-    const nfTokenFactoryFactory = await ethers.getContractFactory('NFTokenFactory', deployer);
-    const nfTokenFactoryLibrary = await nfTokenFactoryFactory.connect(deployer).deploy();
+    await deployRecordContract('NFTokenFactory', [], deployer, 'NFTokenFactory', deploymentLogPath);
 
+    const nftokenFactoryAddress = getContractRecord('NFTokenFactory', deploymentLogPath).address;
     const deployerFactory = await ethers.getContractFactory('Deployer_v001', {
-        libraries: { NFTokenFactory: nfTokenFactoryLibrary.address },
+        libraries: { NFTokenFactory: nftokenFactoryAddress },
         signer: deployer
     });
     const deployerProxy = await upgrades.deployProxy(deployerFactory, { kind: 'uups', initializer: 'initialize' });
     await deployerProxy.deployed();
+
+    // deployRecordContract('Deployer_v001', [], deployer, 'DeployerProxy', `./deployments/${hre.network.name}/extensions.json`, { NFTokenFactory: nfTokenFactoryLibrary.address }); // TODO: needs upgrade functionality
+
     logger.info(`deployed to ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
 
-    const deploymentAddressLog = `./deployments/${hre.network.name}/extensions.json`;
-    const deploymentAddresses = JSON.parse(fs.readFileSync(deploymentAddressLog).toString());
-    deploymentAddresses[hre.network.name]['NFTokenFactory'] = nfTokenFactoryLibrary.address;
-    deploymentAddresses[hre.network.name]['DeployerProxy'] = deployerProxy.address;
-    deploymentAddresses[hre.network.name]['DeployerProxyVersion'] = 1;
-    fs.writeFileSync(deploymentAddressLog, JSON.stringify(deploymentAddresses, undefined, 4));
+    const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
+    deploymentLog[hre.network.name]['DeployerProxy'] = {};
+    deploymentLog[hre.network.name]['DeployerProxy']['address'] = deployerProxy.address;
+    deploymentLog[hre.network.name]['DeployerProxy']['version'] = 1;
+    deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
+    deploymentLog[hre.network.name]['DeployerProxy']['verified'] = false;
+    fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));
 }
 
 main().catch((error) => {

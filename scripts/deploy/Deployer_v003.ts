@@ -4,6 +4,8 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
+import { deployRecordContract, getContractRecord } from '../lib/lib';
+
 async function main() {
     dotenv.config();
 
@@ -29,64 +31,45 @@ async function main() {
     ///
     logger.info(`deploying Deployer_v003 to ${hre.network.name}`);
 
+    const deploymentLogPath = `./deployments/${hre.network.name}/extensions.json`;
+
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
 
-    const deploymentAddressLog = `./deployments/${hre.network.name}/extensions.json`;
-    const deploymentAddresses = JSON.parse(fs.readFileSync(deploymentAddressLog).toString());
-
-    const deployerProxyAddress = deploymentAddresses[hre.network.name]['DeployerProxy'];
-    const nfTokenFactoryLibraryAddress = deploymentAddresses[hre.network.name]['NFTokenFactory'];
-    const mixedPaymentSplitterFactoryLibraryAddress = deploymentAddresses[hre.network.name]['MixedPaymentSplitterFactory'];
-
-    if (!deployerProxyAddress || deployerProxyAddress.length === 0) {
-        logger.error(`could not find previous deployment of deployerProxy in ${deploymentAddressLog} under ['${hre.network.name}']['DeployerProxy']`);
-        return;
-    }
-
-    if (!nfTokenFactoryLibraryAddress || nfTokenFactoryLibraryAddress.length === 0) {
-        logger.error(`could not find previous deployment of NFTokenFactory in ${deploymentAddressLog} under ['${hre.network.name}']['NFTokenFactory']`);
-        return;
-    }
-
-    if (!mixedPaymentSplitterFactoryLibraryAddress || mixedPaymentSplitterFactoryLibraryAddress.length === 0) {
-        logger.error(`could not find previous deployment of MixedPaymentSplitterFactory in ${deploymentAddressLog} under ['${hre.network.name}']['MixedPaymentSplitterFactory']`);
-        return;
-    }
+    const deployerProxyAddress = getContractRecord('DeployerProxy', deploymentLogPath).address;
+    const nftokenFactoryAddress = getContractRecord('NFTokenFactory', deploymentLogPath).address;
+    const mixedPaymentSplitterFactoryAddress = getContractRecord('MixedPaymentSplitterFactory', deploymentLogPath).address;
 
     logger.info(`found existing deployment of DeployerProxy at ${deployerProxyAddress}`);
-    logger.info(`found existing deployment of NFTokenFactory at ${nfTokenFactoryLibraryAddress}`);
-    logger.info(`found existing deployment of MixedPaymentSplitterFactory at ${mixedPaymentSplitterFactoryLibraryAddress}`);
+    logger.info(`found existing deployment of NFTokenFactory at ${nftokenFactoryAddress}`);
+    logger.info(`found existing deployment of MixedPaymentSplitterFactory at ${mixedPaymentSplitterFactoryAddress}`);
 
-    const auctionsFactoryFactory = await ethers.getContractFactory('AuctionsFactory', deployer);
-    const auctionsFactoryFactoryLibrary = await auctionsFactoryFactory.connect(deployer).deploy();
+    await deployRecordContract('AuctionsFactory', [], deployer, 'AuctionsFactory', deploymentLogPath);
 
+    const auctionsFactoryAddress = getContractRecord('AuctionsFactory', deploymentLogPath).address;
     const deployerFactory = await ethers.getContractFactory('Deployer_v003', {
         libraries: {
-            NFTokenFactory: nfTokenFactoryLibraryAddress,
-            MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibraryAddress,
-            AuctionsFactory: auctionsFactoryFactoryLibrary.address
+            NFTokenFactory: nftokenFactoryAddress,
+            MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryAddress,
+            AuctionsFactory: auctionsFactoryAddress
         },
         signer: deployer
     });
 
-    const dutchAuctionHouseFactory = await ethers.getContractFactory('DutchAuctionHouse', { signer: deployer });
-    const sourceDutchAuctionHouse = await dutchAuctionHouseFactory.connect(deployer).deploy();
-    await sourceDutchAuctionHouse.deployed();
+    await deployRecordContract('DutchAuctionHouse', [], deployer, 'DutchAuctionHouse', deploymentLogPath);
+    await deployRecordContract('EnglishAuctionHouse', [], deployer, 'EnglishAuctionHouse', deploymentLogPath);
 
-    const englishAuctionHouseFactory = await ethers.getContractFactory('EnglishAuctionHouse', { signer: deployer });
-    const sourceEnglishAuctionHouse = await englishAuctionHouseFactory.connect(deployer).deploy();
-    await sourceEnglishAuctionHouse.deployed();
+    const sourceDutchAuctionHouseAddress = getContractRecord('DutchAuctionHouse', deploymentLogPath).address;
+    const sourceEnglishAuctionHouseAddress = getContractRecord('EnglishAuctionHouse', deploymentLogPath).address;
 
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address] } });
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress] } });
     await deployerProxy.deployed();
-    logger.info(`deployed to ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
+    logger.info(`upgraded ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
 
-    deploymentAddresses[hre.network.name]['AuctionsFactory'] = auctionsFactoryFactoryLibrary.address;
-    deploymentAddresses[hre.network.name]['DutchAuctionHouse'] = sourceDutchAuctionHouse.address;
-    deploymentAddresses[hre.network.name]['EnglishAuctionHouse'] = sourceEnglishAuctionHouse.address;
-    deploymentAddresses[hre.network.name]['DeployerProxyVersion'] = 3;
-    fs.writeFileSync(deploymentAddressLog, JSON.stringify(deploymentAddresses, undefined, 4));
+    const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
+    deploymentLog[hre.network.name]['DeployerProxy']['version'] = 3;
+    deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
+    fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));
 }
 
 main().catch((error) => {
