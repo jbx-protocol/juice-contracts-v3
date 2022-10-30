@@ -24,7 +24,7 @@ For production deployments it's essential to review the configuration script to 
 
 ## Extension deployment
 
-Platform extension developed by DAOLABS expand core functionality and provide convenience features. Like the core scripts this would be run via hardhat as follows.
+Platform extensions developed by DAOLABS expand core functionality and provide convenience features. Like the core scripts this would be run via hardhat as follows.
 
 ```bash
 npx hardhat run scripts/platform/DaiTreasuryDelegate.ts --network goerli
@@ -36,7 +36,7 @@ Platform operators looking to add these features only need to deploy one instanc
 
 ### Deployer
 
-The Deployer contract
+The Deployer contract is likely to change relatively frequently. It is a gateway for platform users to deploy certain contracts, like NFTs, auction contracts, if they desire and so on. The contract has multiple parts and is upgradeable. To demonstrate this functionality out of the gate it was developed in parts even before the DAOLABS project went "gold". At the time of writing there are six versions of the contract progressively adding functionality. While other extensions are part of the platform deployment script, this one is not. It is expected that DAOLABS project admins will be deploying this contract as a platform service. There should be no reason why a platform user would want to deploy their own.
 
 ```bash
 npx hardhat run scripts/platform/Deployer_v001.ts --network goerli
