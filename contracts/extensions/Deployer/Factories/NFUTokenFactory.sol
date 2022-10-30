@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/proxy/Clones.sol';
 
-import '../NFT/NFUToken.sol';
-import '../../interfaces/IJBDirectory.sol';
+import '../../NFT/NFUToken.sol';
+import '../../../interfaces/IJBDirectory.sol';
 
 /**
  * @notice Creates an instance of NFToken contract

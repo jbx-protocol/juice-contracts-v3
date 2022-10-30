@@ -5,7 +5,7 @@ import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
 import '../NFT/NFUToken.sol';
 import './Deployer_v003.sol';
-import './NFUTokenFactory.sol';
+import './Factories/NFUTokenFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to create ERC721 NFTs from a reusable instance.

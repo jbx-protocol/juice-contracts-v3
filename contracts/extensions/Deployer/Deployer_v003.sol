@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
 import './Deployer_v002.sol';
-import './AuctionsFactory.sol';
+import './Factories/AuctionsFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to create DutchAuctionHouse and EnglishAuctionHouse contracts.

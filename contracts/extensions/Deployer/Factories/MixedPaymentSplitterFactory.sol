@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../MixedPaymentSplitter.sol';
-import '../../interfaces/IJBDirectory.sol';
+import '../../MixedPaymentSplitter.sol';
+import '../../../interfaces/IJBDirectory.sol';
 
 /**
  * @notice Creates an instance of MixedPaymentSplitter contract

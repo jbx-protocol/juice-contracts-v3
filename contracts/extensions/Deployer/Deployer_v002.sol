@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import './Deployer_v001.sol';
-import './MixedPaymentSplitterFactory.sol';
+import './Factories/MixedPaymentSplitterFactory.sol';
 
 /**
  * @notice

@@ -6,7 +6,7 @@ import '../Auctions/EnglishAuction.sol';
 import '../NFT/NFUToken.sol';
 import '../TokenLiquidator.sol';
 import './Deployer_v004.sol';
-import './PaymentProcessorFactory.sol';
+import './Factories/PaymentProcessorFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to deploy PaymentProcessor instances to allow project to accept payments in various ERC20 tokens.

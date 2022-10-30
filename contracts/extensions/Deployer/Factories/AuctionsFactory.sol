@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/proxy/Clones.sol';
 import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import '../../interfaces/IJBDirectory.sol';
-import '../../interfaces/IJBPaymentTerminal.sol';
+import '../../../interfaces/IJBDirectory.sol';
+import '../../../interfaces/IJBPaymentTerminal.sol';
 
-import '../Auctions/DutchAuction.sol';
-import '../Auctions/EnglishAuction.sol';
+import '../../Auctions/DutchAuction.sol';
+import '../../Auctions/EnglishAuction.sol';
 
 library AuctionsFactory {
   error INVALID_SOURCE_CONTRACT();

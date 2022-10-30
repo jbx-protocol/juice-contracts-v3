@@ -5,7 +5,7 @@ import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../../interfaces/IJBDirectory.sol';
-import './NFTokenFactory.sol';
+import './Factories/NFTokenFactory.sol';
 
 /**
  * @notice

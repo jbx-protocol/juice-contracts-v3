@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../PaymentProcessor.sol';
-import '../../interfaces/IJBDirectory.sol';
-import '../../interfaces/IJBOperatorStore.sol';
-import '../../interfaces/IJBProjects.sol';
-import '../TokenLiquidator.sol';
+import '../../PaymentProcessor.sol';
+import '../../../interfaces/IJBDirectory.sol';
+import '../../../interfaces/IJBOperatorStore.sol';
+import '../../../interfaces/IJBProjects.sol';
+import '../../TokenLiquidator.sol';
 
 /**
  * @notice Creates an instance of PaymentProcessor contract
