@@ -8,7 +8,7 @@ import * as helpers from '@nomicfoundation/hardhat-network-helpers';
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
 
-describe('Deployer tests', () => {
+describe('Deployer upgrade tests', () => {
     const jbxJbTokensEth = '0x000000000000000000000000000000000000EEEe';
     const provider = ethers.provider;
 
@@ -34,7 +34,7 @@ describe('Deployer tests', () => {
     let mixedPaymentSplitter: any;
     let dutchAuctionHouse: any;
 
-    before('Initialize contracts', async () => {
+    before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
     });
 

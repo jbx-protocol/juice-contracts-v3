@@ -99,6 +99,10 @@ describe('NFToken tests', () => {
     it('Reveal token, get actual token uri', async () => {
         await expect(basicToken.connect(accounts[0]).setBaseURI(basicBaseUriRevealed, true)).to.be.reverted;
 
+        await basicToken.connect(deployer).removeRevealer(deployer.address);
+        await expect(basicToken.connect(deployer).setBaseURI(basicBaseUriRevealed, true)).to.be.reverted;
+
+        await basicToken.connect(deployer).addRevealer(deployer.address);
         await basicToken.connect(deployer).setBaseURI(basicBaseUriRevealed, true);
 
         const tokenId = 1;
@@ -219,6 +223,30 @@ describe('NFToken tests', () => {
         await directory.mock.primaryTerminalOf.withArgs(basicProjectId, jbxJbTokensEth).returns(terminal.address);
     });
 
+    it('Set OperatorFilter', async () => {
+        const operatorFilterFactory = await ethers.getContractFactory('OperatorFilter');
+        const operatorFilter = await operatorFilterFactory.connect(deployer).deploy();
+
+        await expect(basicToken.connect(accounts[0]).updateOperatorFilter(operatorFilter.address)).to.be.reverted;
+        await expect(basicToken.connect(deployer).updateOperatorFilter(operatorFilter.address)).not.to.be.reverted;
+
+        await expect(operatorFilter.connect(accounts[0]).registerAddress(accounts[5].address, true)).to.be.reverted;
+        await operatorFilter.connect(deployer).registerAddress(accounts[5].address, true);
+
+        await expect(basicToken.connect(accounts[5])['mint()']({ value: basicUnitPrice }))
+            .to.be.revertedWithCustomError(basicToken, 'CALLER_BLOCKED');
+
+        await operatorFilter.connect(deployer).registerAddress(accounts[5].address, false);
+
+        await expect(basicToken.connect(accounts[5])['mint()']({ value: basicUnitPrice }))
+            .not.to.be.reverted;
+
+        const tokenId = await basicToken.totalSupply();
+        await operatorFilter.connect(deployer).registerAddress(accounts[5].address, true);
+        await expect(basicToken.connect(accounts[5]).transferFrom(accounts[5].address, accounts[4].address, tokenId))
+            .to.be.revertedWithCustomError(basicToken, 'CALLER_BLOCKED');
+    });
+
     it('Mint failure due to exhausted supply', async () => {
         let currentSupply = ((await basicToken.totalSupply()) as BigNumber).toNumber();
         while (currentSupply < basicMaxSupply) {
@@ -233,19 +261,5 @@ describe('NFToken tests', () => {
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
         await expect(basicToken.connect(accounts[4])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
-    });
-
-    it('Set OperatorFilter', async () => {
-        const operatorFilterFactory = await ethers.getContractFactory('OperatorFilter');
-        const operatorFilter = await operatorFilterFactory.connect(deployer).deploy();
-
-        await expect(basicToken.connect(accounts[0]).updateOperatorFilter(operatorFilter.address)).to.be.reverted;
-        await expect(basicToken.connect(deployer).updateOperatorFilter(operatorFilter.address)).not.to.be.reverted;
-
-        await expect(operatorFilter.connect(accounts[0]).registerAddress(accounts[5].address, true)).to.be.reverted;
-        operatorFilter.connect(deployer).registerAddress(accounts[5].address, true);
-
-        // operatorFilter.connect(deployer).registerCodeHash(...);
-        // basicToken.connect(accounts[0]).transferFrom(...)
     });
 });

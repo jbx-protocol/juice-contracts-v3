@@ -69,14 +69,14 @@ export async function deployRecordContract(contractName: string, constructorArgs
     fs.writeFileSync(logPath, JSON.stringify(deploymentAddresses, undefined, 4));
 }
 
-export function getContractRecord(contractName: string, logPath = `./deployments/${hre.network.name}/platform.json`) {
+export function getContractRecord(contractName: string, logPath = `./deployments/${hre.network.name}/platform.json`, network = hre.network.name) {
     let deploymentAddresses = JSON.parse(fs.readFileSync(logPath).toString());
 
-    if (deploymentAddresses[hre.network.name][contractName] === undefined) {
-        throw new Error(`no deployment record for ${contractName} on ${hre.network.name}`);
+    if (deploymentAddresses[network][contractName] === undefined) {
+        throw new Error(`no deployment record for ${contractName} on ${network}`);
     }
 
-    const record = deploymentAddresses[hre.network.name][contractName];
+    const record = deploymentAddresses[network][contractName];
     if (typeof record['abi'] === 'string') {
         record['abi'] = JSON.parse(record['abi']);
     }

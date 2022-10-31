@@ -46,10 +46,15 @@ module.exports = {
     defaultNetwork,
     networks: {
         hardhat: {
+            // forking: {
+            //     url: `${ALCHEMY_MAINNET_URL}/${ALCHEMY_MAINNET_KEY}`,
+            //     blockNumber: 15416229,
+            //     enabled: false
+            // },
             forking: {
-                url: `${ALCHEMY_MAINNET_URL}/${ALCHEMY_MAINNET_KEY}`,
-                blockNumber: 15416229,
-                enabled: false
+                url: 'https://goerli.infura.io/v3/' + infuraId,
+                blockNumber: 7863000,
+                enabled: true
             },
             allowUnlimitedContractSize: true,
             blockGasLimit: 100_000_000
