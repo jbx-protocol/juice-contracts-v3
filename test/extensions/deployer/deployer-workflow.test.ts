@@ -83,9 +83,58 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFUToken', tokenAddress);
     });
 
-    // TODO: v3 tests
+    it('Deploy DutchAuction (v3)', async () => {
+        const jbxProjectId = 2;
+        const feeReceiver = ethers.constants.AddressZero;
+        const feeRate = 500;
+        const allowPublicAuctions = true;
+        const periodDuration = 60 * 5;
+        const owner = accounts[0].address;
 
-    // TODO: v2 tests
+        const tx = deployerProxy.connect(accounts[0]).deployDutchAuction(jbxProjectId, feeReceiver, feeRate, allowPublicAuctions, periodDuration, owner, jbxDirectory.address);
 
-    // TODO: v1 tests
+        await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('DutchAuctionHouse', anyValue);
+    });
+
+    it('Deploy EnglishAuction (v3)', async () => {
+        const jbxProjectId = 2;
+        const feeReceiver = ethers.constants.AddressZero;
+        const feeRate = 500;
+        const allowPublicAuctions = true;
+        const owner = accounts[0].address;
+
+        const tx = deployerProxy.connect(accounts[0]).deployEnglishAuction(jbxProjectId, feeReceiver, feeRate, allowPublicAuctions, owner, jbxDirectory.address);
+
+        await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('EnglishAuctionHouse', anyValue);
+    });
+
+    it('Deploy MixedPaymentSplitter (v2)', async () => {
+        const name = 'Payment Splitter'
+        const payees = accounts.slice(0, 2).map(a => a.address);
+        const projects: number[] = [];
+        const shares = payees.map((v, i) => (i + 1) * 100_000);
+        const owner = accounts[0].address;
+
+        const tx = deployerProxy.connect(accounts[0]).deployMixedPaymentSplitter(name, payees, projects, shares, jbxDirectory.address, owner);
+
+        await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('MixedPaymentSplitter', anyValue);
+    });
+
+    it('Deploy NFToken (v1)', async () => {
+        const owner = accounts[0].address;
+        const name = 'Shared NFT';
+        const symbol = 'SNFT';
+        const baseUri = 'ipfs://contract-metadata';
+        const contractUri = 'ipfs://contract-metadata';
+        const jbxProjectId = 2;
+        const maxSupply = 100;
+        const unitPrice = ethers.utils.parseEther('0.0001');
+        const mintAllowance = 10;
+        const mintPeriodStart = 0
+        const mintPeriodEnd = 0;
+
+        const tx = deployerProxy.connect(accounts[0]).deployNFToken(owner, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, mintPeriodStart, mintPeriodEnd);
+
+        await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', anyValue);
+    });
 });
