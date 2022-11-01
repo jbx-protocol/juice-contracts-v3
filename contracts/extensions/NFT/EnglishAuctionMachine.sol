@@ -81,6 +81,9 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
+  /**
+   * Places a bid on a current auction if one is active, starts one if possible.
+   */
   function bid() external payable nonReentrant {
     if (currentBidder == address(0) && currentBid == 0 && currentTokenId == 0) {
       // no auction, create new
@@ -102,6 +105,9 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
     }
   }
 
+  /**
+   * Settles the last completed auction by transferring funds to the relevant Juicebox terminal and the token to the highest bidder. If there was no valid bidder, the token is retained by the contract. Automatically starts a new auction,
+   */
   function settle() external payable nonReentrant {
     if (auctionExpiration > block.timestamp) {
       revert AUCTION_ACTIVE();
@@ -145,6 +151,9 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
     }
   }
 
+  /**
+   * Returns the number of seconds to the end of the current auction.
+   */
   function timeLeft() public view returns (uint256) {
     if (block.timestamp > auctionExpiration) {
       return 0;

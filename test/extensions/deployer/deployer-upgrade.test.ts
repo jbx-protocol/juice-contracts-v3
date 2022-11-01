@@ -33,6 +33,7 @@ describe('Deployer upgrade tests', () => {
     let nfToken: any;
     let mixedPaymentSplitter: any;
     let dutchAuctionHouse: any;
+    let englishAuctionHouse: any;
 
     before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
@@ -54,10 +55,26 @@ describe('Deployer upgrade tests', () => {
     });
 
     it('Deploy NFToken via Deployer', async () => {
-        // const tx = await deployerProxy.connect(deployer).deployNFToken(
-        //
-        // );
-        // const receipt = await tx.wait();
+        const tx = await deployerProxy.connect(deployer).deployNFToken(
+            deployer.address,
+            'Picture Token',
+            'NFT',
+            'ipfs://token/metadata',
+            'ipfs://contract/metadata',
+            2,
+            jbxDirectory.address,
+            1000,
+            ethers.utils.parseEther('0.0001'),
+            10,
+            0,
+            0
+        );
+        const receipt = await tx.wait();
+
+        const [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+
+        const mixedPaymentSplitterFactory = await ethers.getContractFactory('NFToken', deployer);
+        mixedPaymentSplitter = await mixedPaymentSplitterFactory.attach(contractAddress);
     });
 
     it('Fail to upgrade Deployer_v001', async () => {
@@ -172,6 +189,26 @@ describe('Deployer upgrade tests', () => {
         // const tokenId = 1;
         // const auctionDuration = 60 * 60;
         // const feeDenominator = 1_000_000_000;
+    });
+
+    it('Deploy DutchAuctionHouse via Deployer', async () => {
+        const projectId = 1;
+        const feeRate = 5_000_000; // 0.5%
+        const allowPublicAuctions = true;
+
+        const tx = await deployerProxy.connect(deployer).deployEnglishAuction(
+            projectId,
+            ethers.constants.AddressZero, // IJBPaymentTerminal
+            feeRate,
+            allowPublicAuctions,
+            deployer.address,
+            jbxDirectory.address
+        );
+        const receipt = await tx.wait();
+
+        const [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        const dutchAuctionHouseFactory = await ethers.getContractFactory('EnglishAuctionHouse', { signer: deployer });
+        englishAuctionHouse = await dutchAuctionHouseFactory.attach(contractAddress);
     });
 
     it('Deploy Deployer_v004 as upgrade to v003', async () => {

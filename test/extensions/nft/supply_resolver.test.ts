@@ -79,6 +79,7 @@ describe('SupplyPriceResolver tests', () => {
             .to.be.reverted;
         await expect(basicToken.connect(deployer).updatePriceResolver(supplyPriceResolver.address))
             .not.to.be.reverted;
+        expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
     });
 
     it('Get price for 1st token', async () => {
