@@ -98,10 +98,16 @@ describe('DutchAuctionMachine tests', () => {
     });
 
     it('Complete auction', async () => {
+        await expect(dutchAuctionMachine.settle())
+            .to.be.revertedWithCustomError(dutchAuctionMachine, 'AUCTION_ACTIVE');
+
         const now = await helpers.time.latest();
         const remaining = await dutchAuctionMachine.timeLeft();
         await helpers.time.increaseTo(remaining.add(now).add(60));
 
+        expect(await dutchAuctionMachine.timeLeft()).to.equal(0);
+        await expect(dutchAuctionMachine.bid({ value: basicUnitPrice.mul(4) }))
+            .to.be.revertedWithCustomError(dutchAuctionMachine, 'AUCTION_ENDED');
         await dutchAuctionMachine.settle();
 
         expect(await basicToken.totalSupply()).to.equal(2);
@@ -139,5 +145,34 @@ describe('DutchAuctionMachine tests', () => {
         await helpers.time.increaseTo(now + periodDuration + 10);
         price = (await dutchAuctionMachine.currentPrice()) as BigNumber;
         expect(price).to.equal(maxPrice.sub(periodPriceDifference));
+    });
+
+    it('Fail to transfer pending auction token', async () => {
+        const currentAuctionToken = await dutchAuctionMachine.currentTokenId();
+
+        await expect(dutchAuctionMachine.connect(accounts[0]).recoverToken(accounts[2].address, 2))
+            .to.be.revertedWith('Ownable: caller is not the owner');
+        await expect(dutchAuctionMachine.connect(deployer).recoverToken(accounts[2].address, currentAuctionToken))
+            .to.be.revertedWithCustomError(dutchAuctionMachine, 'AUCTION_ACTIVE');
+
+        const now = await helpers.time.latest();
+        const remaining = await dutchAuctionMachine.timeLeft();
+        await helpers.time.increaseTo(remaining.add(now).add(60));
+
+        await dutchAuctionMachine.settle();
+    });
+
+    it('Transfer owned token', async () => {
+        const currentAuctionToken = await dutchAuctionMachine.currentTokenId();
+
+        const now = await helpers.time.latest();
+        const remaining = await dutchAuctionMachine.timeLeft();
+        await helpers.time.increaseTo(remaining.add(now).add(60));
+
+        await dutchAuctionMachine.settle();
+
+        await dutchAuctionMachine.connect(deployer).recoverToken(accounts[2].address, currentAuctionToken);
+        expect(await basicToken.balanceOf(dutchAuctionMachine.address)).to.equal(1);
+        expect(await basicToken.balanceOf(accounts[2].address)).to.equal(1);
     });
 });

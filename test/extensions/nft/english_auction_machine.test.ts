@@ -89,6 +89,9 @@ describe('EnglishAuctionMachine tests', () => {
         expect(await englishAuctionMachine.timeLeft()).to.be.greaterThan(0);
 
         await englishAuctionMachine.connect(accounts[1]).bid({ value: basicUnitPrice.mul(2) });
+
+        await expect(englishAuctionMachine.connect(accounts[1]).bid({ value: basicUnitPrice }))
+            .to.be.revertedWithCustomError(englishAuctionMachine, 'INVALID_BID');
     });
 
     it('Complete auction', async () => {
@@ -99,6 +102,7 @@ describe('EnglishAuctionMachine tests', () => {
         await expect(englishAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice.mul(3) }))
             .to.be.revertedWithCustomError(englishAuctionMachine, 'AUCTION_ENDED');
 
+        expect(await englishAuctionMachine.timeLeft()).to.equal(0);
         await englishAuctionMachine.settle();
 
         expect(await basicToken.totalSupply()).to.equal(2);
@@ -109,6 +113,9 @@ describe('EnglishAuctionMachine tests', () => {
 
     it('Settle auction without bids', async () => {
         expect(await englishAuctionMachine.timeLeft()).to.be.greaterThan(0);
+
+        await expect(englishAuctionMachine.connect(accounts[0]).settle())
+            .to.be.revertedWithCustomError(englishAuctionMachine, 'AUCTION_ACTIVE');
 
         const now = await helpers.time.latest();
         const remaining = await englishAuctionMachine.timeLeft();
