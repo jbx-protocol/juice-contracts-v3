@@ -302,6 +302,7 @@ contract EnglishAuctionHouse is
         // proceeds can be collected, but we still own the token, send it to the bidder
         address buyer = address(uint160(auctionDetails.bid));
         _collection.transferFrom(address(this), buyer, _item);
+        emit ConcludeAuction(auctionDetails.seller, address(0), _collection, _item, lastBidAmount, '');
       }
 
       if (uint32(settings) != 0) {
@@ -333,6 +334,7 @@ contract EnglishAuctionHouse is
         delete auctionSplits[auctionId];
 
         if (lastBidAmount > 0) {
+          // in case splits don't cover 100%, transfer remainder to seller
           payable(auctionDetails.seller).transfer(lastBidAmount);
         }
       } else {

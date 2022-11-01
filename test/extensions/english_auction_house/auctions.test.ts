@@ -263,6 +263,9 @@ describe('EnglishAuctionHouse tests', () => {
             .to.emit(englishAuctionHouse, 'ConcludeAuction')
             .withArgs(tokenOwner.address, accounts[0].address, token.address, tokenId, reservePrice, '');
 
+        await expect(englishAuctionHouse.connect(accounts[3]).distributeProceeds(token.address, 999))
+            .to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
+
         tx = await englishAuctionHouse.connect(accounts[3]).distributeProceeds(token.address, tokenId);
         await expect(tx).to.changeEtherBalance(tokenOwner, expectedProceeds);
 
@@ -355,6 +358,56 @@ describe('EnglishAuctionHouse tests', () => {
                 .connect(accounts[1])
                 .settle(token.address, tokenId + 1, '')
         ).to.be.revertedWith('INVALID_AUCTION()');
+    });
+
+    it(`distributeProceeds() success: transfer token`, async () => {
+        const { accounts, englishAuctionHouse, token, tokenOwner, feeReceiverTerminal } = await setup();
+
+        await create(token, englishAuctionHouse, tokenOwner);
+        await englishAuctionHouse.connect(accounts[0]).bid(token.address, tokenId, '', { value: reservePrice });
+
+        await ethers.provider.send("evm_increaseTime", [auctionDuration + 1]);
+        await ethers.provider.send("evm_mine", []);
+
+        const expectedFee = reservePrice.mul(feeRate).div(feeDenominator);
+        const expectedProceeds = reservePrice.sub(expectedFee);
+
+        const initialBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
+
+        let tx = await englishAuctionHouse.connect(accounts[3]).distributeProceeds(token.address, tokenId);
+        await expect(tx).to.changeEtherBalance(tokenOwner, expectedProceeds);
+        await expect(tx).to.emit(englishAuctionHouse, 'ConcludeAuction');
+
+        await expect(englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, ''))
+        .to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
+
+        const endingBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
+        expect(endingBalance).to.be.greaterThan(initialBalance);
+    });
+
+    it('update splits', async () => {
+        const { accounts, englishAuctionHouse, splits, token, tokenOwner } = await setup();
+
+        await create(token, englishAuctionHouse, tokenOwner);
+
+        await expect(englishAuctionHouse.connect(accounts[0]).updateAuctionSplits(token.address, tokenId, [])).to.be.revertedWithCustomError(englishAuctionHouse, 'NOT_AUTHORIZED');
+        await expect(englishAuctionHouse.connect(accounts[0]).updateAuctionSplits(token.address, tokenId + 10, [])).to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
+        await englishAuctionHouse.connect(tokenOwner).updateAuctionSplits(token.address, tokenId, splits);
+    });
+
+    it(`currentPrice()`, async () => {
+        const { accounts, englishAuctionHouse, splits, token, tokenOwner } = await setup();
+
+        const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
+        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + 60]);
+        await ethers.provider.send("evm_mine", []);
+
+        await create(token, englishAuctionHouse, tokenOwner);
+
+        expect(await englishAuctionHouse.currentPrice(token.address, tokenId)).to.eq(0);
+
+        await expect(englishAuctionHouse.currentPrice(token.address, 999))
+            .to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
     });
 
     it(`setFeeRate() success`, async () => {
