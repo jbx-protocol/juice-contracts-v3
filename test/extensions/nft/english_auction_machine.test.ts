@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import * as helpers from '@nomicfoundation/hardhat-network-helpers';
@@ -70,8 +70,8 @@ describe('EnglishAuctionMachine tests', () => {
 
     before('Initialize Auction Machine', async () => {
         const englishAuctionMachineFactory = await ethers.getContractFactory('EnglishAuctionMachine');
-        englishAuctionMachine = await englishAuctionMachineFactory.connect(deployer)
-            .deploy(10, 60 * 60, basicProjectId, directory.address, basicToken.address);
+        englishAuctionMachine = await englishAuctionMachineFactory.connect(deployer).deploy();
+        englishAuctionMachine.initialize(10, 60 * 60, basicProjectId, directory.address, basicToken.address, deployer.address);
 
         await basicToken.connect(deployer).addMinter(englishAuctionMachine.address);
     });
