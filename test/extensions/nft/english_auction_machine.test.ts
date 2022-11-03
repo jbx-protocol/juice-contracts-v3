@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { ethers, upgrades } from 'hardhat';
+import { ethers } from 'hardhat';
+import { BigNumber } from 'ethers';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import * as helpers from '@nomicfoundation/hardhat-network-helpers';
@@ -69,10 +70,20 @@ describe('EnglishAuctionMachine tests', () => {
     });
 
     before('Initialize Auction Machine', async () => {
+        const auctionCap = 10;
+        const auctionDuration = 60 * 60;
+
         const englishAuctionMachineFactory = await ethers.getContractFactory('EnglishAuctionMachine');
         englishAuctionMachine = await englishAuctionMachineFactory.connect(deployer).deploy();
         await englishAuctionMachine.deployed();
-        await englishAuctionMachine.initialize(10, 60 * 60, basicProjectId, directory.address, basicToken.address, deployer.address);
+
+        await expect(englishAuctionMachine.connect(accounts[0]).initialize(auctionCap, auctionDuration, basicProjectId, directory.address, basicToken.address, deployer.address))
+            .to.be.reverted;
+
+        await englishAuctionMachine.initialize(auctionCap, auctionDuration, basicProjectId, directory.address, basicToken.address, deployer.address);
+
+        await expect(englishAuctionMachine.connect(deployer).initialize(auctionCap, auctionDuration, basicProjectId, directory.address, basicToken.address, deployer.address))
+            .to.be.reverted;
 
         await basicToken.connect(deployer).addMinter(englishAuctionMachine.address);
     });
@@ -89,7 +100,9 @@ describe('EnglishAuctionMachine tests', () => {
     it('Increase bid', async () => {
         expect(await englishAuctionMachine.timeLeft()).to.be.greaterThan(0);
 
-        await englishAuctionMachine.connect(accounts[1]).bid({ value: basicUnitPrice.mul(2) });
+        const currentPrice = await englishAuctionMachine.currentPrice() as BigNumber;
+
+        await englishAuctionMachine.connect(accounts[1]).bid({ value: currentPrice.mul(2) });
 
         await expect(englishAuctionMachine.connect(accounts[1]).bid({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(englishAuctionMachine, 'INVALID_BID');

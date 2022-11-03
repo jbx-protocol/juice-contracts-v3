@@ -78,7 +78,14 @@ describe('DutchAuctionMachine tests', () => {
         const dutchAuctionMachineFactory = await ethers.getContractFactory('DutchAuctionMachine');
         dutchAuctionMachine = await dutchAuctionMachineFactory.connect(deployer).deploy();
         await dutchAuctionMachine.deployed();
+
+        await expect(dutchAuctionMachine.connect(accounts[0]).initialize(auctionCap, auctionDuration, periodDuration, priceMultiplier, basicProjectId, directory.address, basicToken.address, deployer.address))
+            .to.be.reverted;
+
         await dutchAuctionMachine.initialize(auctionCap, auctionDuration, periodDuration, priceMultiplier, basicProjectId, directory.address, basicToken.address, deployer.address);
+
+        await expect(dutchAuctionMachine.connect(deployer).initialize(auctionCap, auctionDuration, periodDuration, priceMultiplier, basicProjectId, directory.address, basicToken.address, deployer.address))
+            .to.be.reverted;
 
         await basicToken.connect(deployer).addMinter(dutchAuctionMachine.address);
     });
