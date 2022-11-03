@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 import '../../interfaces/IJBDirectory.sol';
 import '../../interfaces/IJBPaymentTerminal.sol';
@@ -10,12 +11,41 @@ import '../../libraries/JBTokens.sol';
 
 import './INFTAuctionMint.sol';
 
-contract DutchAuctionMachine is Ownable, ReentrancyGuard {
+interface IDutchAuctionMachine {
+  function initialize(
+    uint256 _maxAuctions,
+    uint256 _auctionDuration,
+    uint256 _periodDuration,
+    uint256 _maxPriceMultiplier,
+    uint256 _projectId,
+    IJBDirectory _jbxDirectory,
+    address _token,
+    address _owner
+  ) external;
+
+  function bid() external payable;
+
+  function settle() external;
+
+  function timeLeft() external view returns (uint256);
+
+  function currentPrice() external view returns (uint256 price);
+
+  function recoverToken(address _account, uint256 _tokenId) external;
+}
+
+/**
+ * @notice This contract allows for simple perpetual NFT Dutch auctions on ERC721 tokens. The target token must allow this contract to mint new tokens to itself via `mintFor(address)`. AuctionMachine will call this function to grab a token to put on sale. An example of a compatible token is available in this repo. It also requires `unitPrice()` to set starting and ending prices for the auction.
+ *
+ * @dev This contract is `Ownable` but it also mimics `Initializable` without actually implementing it. It's meant to be deployed by a clone factory contract. While the source contract storage is not inherited by clones, it is neater to have it be controlled by a known party rather than float without a pre-set admin. Once a clone is crated the factory contract will call `initialize` to set the contract admin on the new instance.
+ */
+contract DutchAuctionMachine is IDutchAuctionMachine, IERC165, Ownable, ReentrancyGuard {
   error INVALID_DURATION();
   error INVALID_BID();
   error AUCTION_ENDED();
   error SUPPLY_EXHAUSTED();
   error AUCTION_ACTIVE();
+  error INVALID_OPERATION();
 
   // TODO: consider packing maxAuctions, auctionDuration, periodDuration and maxPriceMultiplier
   uint256 public maxAuctions; // TODO: consider allowing modification of this parameter
@@ -60,12 +90,14 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
   /**
    * @notice Create an "Auction Machine" which is expected to be able to mint new NFTs against the supplied token. The operation is as follows:
    * - Mint a new token.
-   * - Create a new English auction for the token that was just minted with a reserve price.
+   * - Create a new Dutch auction for the token that was just minted using the provided price multiplier along with `unitPrice` from the nft contract as the starting price and `unitPrice` as the ending (lowest) price.
    * - Accept bids until auction duration is reached.
    * - Transfer the token to the auction winner.
-   * - Repeat until maxAuctions is spent.
+   * - Repeat until maxAuctions are run.
    *
-   * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `function transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction starting price. `transferFrom` will be called to transfer the token to the auction winner if any.
+   * An auction doesn't need to result in a sale for it to be counted as completed for `maxAuctions`. Unsold tokens are retained by the contract and can be moved by the admin with `recoverToken(address,uint256)`
+   *
+   * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction starting price. `transferFrom` will be called to transfer the token to the auction winner if any.
    *
    * @param _maxAuctions Maximum number of auctions to perform automatically, 0 for no limit.
    * @param _auctionDuration Auction duration in seconds.
@@ -74,16 +106,30 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
    * @param _projectId Juicebox project id, used to transfer auction proceeds.
    * @param _jbxDirectory Juicebox directory, used to transfer auction proceeds to the correct terminal.
    * @param _token Token contract to operate on.
+   * @param _owner Auction admin address.
    */
-  constructor(
+  function initialize(
     uint256 _maxAuctions,
     uint256 _auctionDuration,
     uint256 _periodDuration,
     uint256 _maxPriceMultiplier,
     uint256 _projectId,
     IJBDirectory _jbxDirectory,
-    address _token
-  ) {
+    address _token,
+    address _owner
+  ) external {
+    if (address(token) != address(0)) {
+      revert INVALID_OPERATION();
+    }
+
+    if (owner() != address(0)) {
+      if (msg.sender != owner()) {
+        revert INVALID_OPERATION();
+      }
+    } else {
+      _transferOwnership(_owner);
+    }
+
     maxAuctions = _maxAuctions;
     auctionDuration = _auctionDuration;
     periodDuration = _periodDuration;
@@ -117,7 +163,7 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
     }
   }
 
-  function settle() external payable nonReentrant {
+  function settle() external nonReentrant {
     if (auctionExpiration > block.timestamp && currentPrice() > currentBid) {
       revert AUCTION_ACTIVE();
     }
@@ -169,6 +215,10 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
     price = startingPrice - elapsedPeriods * periodPrice;
   }
 
+  function supportsInterface(bytes4 _interfaceId) public view override returns (bool) {
+    return _interfaceId == type(IDutchAuctionMachine).interfaceId;
+  }
+
   //*********************************************************************//
   // -------------------- priviledged transactions --------------------- //
   //*********************************************************************//
@@ -181,7 +231,7 @@ contract DutchAuctionMachine is Ownable, ReentrancyGuard {
    */
   function recoverToken(address _account, uint256 _tokenId) external onlyOwner {
     if (_tokenId == currentTokenId) {
-        revert AUCTION_ACTIVE();
+      revert AUCTION_ACTIVE();
     }
 
     token.transferFrom(address(this), _account, _tokenId);

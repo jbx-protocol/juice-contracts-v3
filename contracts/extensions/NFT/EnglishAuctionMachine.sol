@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 import '../../interfaces/IJBDirectory.sol';
 import '../../interfaces/IJBPaymentTerminal.sol';
@@ -10,12 +11,39 @@ import '../../libraries/JBTokens.sol';
 
 import './INFTAuctionMint.sol';
 
-contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
+interface IEnglishAuctionMachine {
+  function initialize(
+    uint256 _maxAuctions,
+    uint256 _auctionDuration,
+    uint256 _projectId,
+    IJBDirectory _jbxDirectory,
+    address _token,
+    address _owner
+  ) external;
+
+  function bid() external payable;
+
+  function settle() external;
+
+  function timeLeft() external view returns (uint256);
+
+  function currentPrice() external view returns (uint256 price);
+
+  function recoverToken(address _account, uint256 _tokenId) external;
+}
+
+/**
+ * @notice This contract allows for simple perpetual NFT English auctions on ERC721 tokens. The target token must allow this contract to mint new tokens to itself via `mintFor(address)`. AuctionMachine will call this function to grab a token to put on sale. An example of a compatible token is available in this repo. It also requires `unitPrice()` to get the starting price of the auction.
+ *
+ * @dev This contract is `Ownable` but it also mimics `Initializable` without actually implementing it. It's meant to be deployed by a clone factory contract. While the source contract storage is not inherited by clones, it is neater to have it be controlled by a known party rather than float without a pre-set admin. Once a clone is crated the factory contract will call `initialize` to set the contract admin on the new instance.
+ */
+contract EnglishAuctionMachine is IEnglishAuctionMachine, IERC165, Ownable, ReentrancyGuard {
   error INVALID_DURATION();
   error INVALID_BID();
   error AUCTION_ENDED();
   error SUPPLY_EXHAUSTED();
   error AUCTION_ACTIVE();
+  error INVALID_OPERATION();
 
   uint256 public maxAuctions; // TODO: consider allowing modification of this parameter
 
@@ -55,21 +83,37 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
    * - Transfer the token to the auction winner.
    * - Repeat until maxAuctions is spent.
    *
-   * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `function transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction reserve price. transferFrom will be called to transfer the token to the auction winner if any.
+   * An auction doesn't need to result in a sale for it to be counted as completed for `maxAuctions`. Unsold tokens are retained by the contract and can be moved by the admin with `recoverToken(address,uint256)
+   *
+   * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction reserve price. transferFrom will be called to transfer the token to the auction winner if any.
    *
    * @param _maxAuctions Maximum number of auctions to perform automatically, 0 for no limit.
    * @param _auctionDuration Auction duration in seconds.
    * @param _projectId Juicebox project id, used to transfer auction proceeds.
    * @param _jbxDirectory Juicebox directory, used to transfer auction proceeds to the correct terminal.
    * @param _token Token contract to operate on.
+   * @param _owner Auction admin address.
    */
-  constructor(
+  function initialize(
     uint256 _maxAuctions,
     uint256 _auctionDuration,
     uint256 _projectId,
     IJBDirectory _jbxDirectory,
-    address _token
-  ) {
+    address _token,
+    address _owner
+  ) external {
+    if (address(token) != address(0)) {
+      revert INVALID_OPERATION();
+    }
+
+    if (owner() != address(0)) {
+      if (msg.sender != owner()) {
+        revert INVALID_OPERATION();
+      }
+    } else {
+      _transferOwnership(_owner);
+    }
+
     maxAuctions = _maxAuctions;
     auctionDuration = _auctionDuration;
     jbxProjectId = _projectId;
@@ -95,7 +139,7 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
     } else if (auctionExpiration > block.timestamp && currentBid < msg.value) {
       // new high bid
 
-      payable(currentBidder).transfer(currentBid); // TODO: check success
+      payable(currentBidder).transfer(currentBid);
       currentBidder = msg.sender;
       currentBid = msg.value;
 
@@ -106,9 +150,9 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
   }
 
   /**
-   * Settles the last completed auction by transferring funds to the relevant Juicebox terminal and the token to the highest bidder. If there was no valid bidder, the token is retained by the contract. Automatically starts a new auction,
+   * Settles the last completed auction by transferring funds to the relevant Juicebox terminal and the token to the highest bidder. If there was no valid bidder, the token is retained by the contract. Automatically starts a new auction.
    */
-  function settle() external payable nonReentrant {
+  function settle() external nonReentrant {
     if (auctionExpiration > block.timestamp) {
       revert AUCTION_ACTIVE();
     }
@@ -117,29 +161,18 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
       // auction concluded with bids, settle
 
       IJBPaymentTerminal terminal = jbxDirectory.primaryTerminalOf(jbxProjectId, JBTokens.ETH);
-      terminal.pay(
-        jbxProjectId,
-        currentBid,
-        JBTokens.ETH,
-        currentBidder,
-        0,
-        false,
-        string(abi.encodePacked('')),
-        ''
-      ); // TODO: send relevant memo to terminal
+      terminal.pay(jbxProjectId, currentBid, JBTokens.ETH, currentBidder, 0, false, '', ''); // TODO: send relevant memo to terminal
 
-      unchecked {
-        ++completedAuctions;
-      }
       token.transferFrom(address(this), currentBidder, currentTokenId);
 
       emit AuctionEnded(currentBidder, currentBid, address(token), currentTokenId);
-    } else {
-      // auction concluded without bids
+    }
+    // else {
+    // auction concluded without bids
+    // }
 
-      unchecked {
-        ++completedAuctions;
-      }
+    unchecked {
+      ++completedAuctions;
     }
 
     currentBidder = address(0);
@@ -162,6 +195,14 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
     return auctionExpiration - block.timestamp;
   }
 
+  function currentPrice() external view returns (uint256) {
+    return currentBid;
+  }
+
+  function supportsInterface(bytes4 _interfaceId) public pure override returns (bool) {
+    return _interfaceId == type(IEnglishAuctionMachine).interfaceId;
+  }
+
   //*********************************************************************//
   // -------------------- priviledged transactions --------------------- //
   //*********************************************************************//
@@ -174,7 +215,7 @@ contract EnglishAuctionMachine is Ownable, ReentrancyGuard {
    */
   function recoverToken(address _account, uint256 _tokenId) external onlyOwner {
     if (_tokenId == currentTokenId) {
-        revert AUCTION_ACTIVE();
+      revert AUCTION_ACTIVE();
     }
 
     token.transferFrom(address(this), _account, _tokenId);

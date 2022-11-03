@@ -71,12 +71,13 @@ describe('EnglishAuctionMachine tests', () => {
     before('Initialize Auction Machine', async () => {
         const englishAuctionMachineFactory = await ethers.getContractFactory('EnglishAuctionMachine');
         englishAuctionMachine = await englishAuctionMachineFactory.connect(deployer).deploy();
-        englishAuctionMachine.initialize(10, 60 * 60, basicProjectId, directory.address, basicToken.address, deployer.address);
+        await englishAuctionMachine.deployed();
+        await englishAuctionMachine.initialize(10, 60 * 60, basicProjectId, directory.address, basicToken.address, deployer.address);
 
         await basicToken.connect(deployer).addMinter(englishAuctionMachine.address);
     });
 
-    it('Create first contract by placing a valid bid', async () => {
+    it('Create first auction by placing a valid bid', async () => {
         expect(await basicToken.totalSupply()).to.equal(0);
 
         await englishAuctionMachine.connect(accounts[0]).bid({ value: basicUnitPrice });
