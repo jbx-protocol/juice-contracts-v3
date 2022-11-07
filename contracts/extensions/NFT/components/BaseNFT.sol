@@ -306,7 +306,11 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
       revert INCORRECT_PAYMENT(expectedPrice);
     }
 
-    if (msg.value != 0) {
+    if (msg.value == 0) {
+      return;
+    }
+
+    if (jbxProjectId != 0) {
       // NOTE: move funds to jbx project
       IJBPaymentTerminal terminal = jbxDirectory.primaryTerminalOf(jbxProjectId, JBTokens.ETH);
       if (address(terminal) == address(0)) {
@@ -323,6 +327,13 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
         _memo,
         _metadata
       );
+    } else if (royaltyReceiver != address(0)) {
+      (bool success, ) = royaltyReceiver.call{value: msg.value}('');
+      if (!success) {
+        revert PAYMENT_FAILURE();
+      }
+    } else {
+      revert PAYMENT_FAILURE();
     }
   }
 

@@ -262,4 +262,36 @@ describe('NFToken tests', () => {
         await expect(basicToken.connect(accounts[4])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
     });
+
+    it('NFT w/o jbx project', async () => {
+        const basicName = 'Test NFT'
+        const basicSymbol = 'NFT';
+
+        nfTokenFactory = await ethers.getContractFactory('NFToken');
+        basicToken = await nfTokenFactory
+            .connect(deployer)
+            .deploy(
+                basicName,
+                basicSymbol,
+                basicBaseUri,
+                basicContractUri,
+                0,
+                directory.address,
+                basicMaxSupply,
+                basicUnitPrice,
+                basicMintAllowance,
+                0,
+                0
+            );
+
+        expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
+        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
+            .to.be.revertedWithCustomError(basicToken, 'PAYMENT_FAILURE');
+
+        await basicToken.connect(deployer).setRoyalties(deployer.address, 10_000);
+        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
+            .not.to.be.reverted;
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
+        expect(await basicToken.balanceOf(accounts[0].address)).to.equal(2);
+    });
 });
