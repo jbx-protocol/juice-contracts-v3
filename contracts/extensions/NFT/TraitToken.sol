@@ -91,18 +91,18 @@ contract TraitToken is BaseNFT {
   }
 
   function generateTokenId(
-    address _account,
-    uint256 _amount,
-    uint256 _blockNumber
+    address,
+    uint256,
+    uint256
   ) internal virtual override returns (uint256 tokenId) {
     tokenId = totalSupply;
   }
 
-  function base58Encode(bytes memory data_) public pure returns (bytes memory) {
+  function base58Encode(bytes memory _data) private pure returns (string memory) {
     unchecked {
-      uint256 size = data_.length;
+      uint256 size = _data.length;
       uint256 zeroCount;
-      while (zeroCount < size && data_[zeroCount] == 0) {
+      while (zeroCount < size && _data[zeroCount] == 0) {
         zeroCount++;
       }
       size = zeroCount + ((size - zeroCount) * 8351) / 6115 + 1;
@@ -110,9 +110,9 @@ contract TraitToken is BaseNFT {
       uint32 carry;
       int256 m;
       int256 high = int256(size) - 1;
-      for (uint256 i = 0; i < data_.length; i++) {
+      for (uint256 i = 0; i < _data.length; i++) {
         m = int256(size - 1);
-        for (carry = uint8(data_[i]); m > high || carry != 0; m--) {
+        for (carry = uint8(_data[i]); m > high || carry != 0; m--) {
           carry = carry + 256 * uint8(slot[uint256(m)]);
           slot[uint256(m)] = bytes1(uint8(carry % 58));
           carry /= 58;
@@ -127,7 +127,7 @@ contract TraitToken is BaseNFT {
         uint256 j = i + n - zeroCount;
         out[i] = ALPHABET[uint8(slot[j])];
       }
-      return out;
+      return string(out);
     }
   }
 }

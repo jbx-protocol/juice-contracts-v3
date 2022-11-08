@@ -263,7 +263,7 @@ describe('NFToken tests', () => {
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
     });
 
-    it('NFT w/o jbx project', async () => {
+    it('Deploy & mint an NFT without Juicebox project', async () => {
         const basicName = 'Test NFT'
         const basicSymbol = 'NFT';
 
@@ -293,5 +293,38 @@ describe('NFToken tests', () => {
             .not.to.be.reverted;
         await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
         expect(await basicToken.balanceOf(accounts[0].address)).to.equal(2);
+    });
+
+    it('Individual CID Token', async () => {
+        const cid = ethers.utils.base58.decode('QmWmyoMoctfbAaiEs2G46gpeUmhqFRDW6KWo64y5r581Vz');
+
+        const basicName = 'Test NFT'
+        const basicSymbol = 'NFT';
+
+        const traitTokenFactory = await ethers.getContractFactory('TraitToken');
+        const traitToken = await traitTokenFactory
+            .connect(deployer)
+            .deploy(
+                basicName,
+                basicSymbol,
+                basicBaseUri,
+                basicContractUri,
+                basicProjectId,
+                directory.address,
+                basicMaxSupply,
+                basicUnitPrice,
+                basicMintAllowance,
+                0,
+                0
+            );
+        await traitToken.deployed();
+
+        await expect(traitToken.setTokenAsset(1, '0x' + Buffer.from(cid.slice(2)).toString('hex')))
+            .to.be.revertedWithCustomError(traitToken, 'NOT_MINTED');
+        await traitToken.connect(accounts[4])['mint()']({ value: basicUnitPrice });
+        await expect(traitToken.setTokenAsset(1, '0x' + Buffer.from(cid.slice(2)).toString('hex')));
+        await expect(traitToken.setTokenAsset(1, '0x' + Buffer.from(cid.slice(2)).toString('hex')))
+            .to.be.revertedWithCustomError(traitToken, 'CID_REASSIGNMENT');
+        expect(await traitToken.tokenURI(1)).to.equal(`ipfs://QmWmyoMoctfbAaiEs2G46gpeUmhqFRDW6KWo64y5r581Vz`);
     });
 });
