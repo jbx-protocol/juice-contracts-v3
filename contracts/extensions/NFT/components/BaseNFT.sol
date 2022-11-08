@@ -303,7 +303,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
       ++totalSupply;
     }
     tokenId = generateTokenId(msg.sender, msg.value, block.number);
-    _mint(msg.sender, totalSupply);
+    _mint(msg.sender, tokenId);
   }
 
   /**

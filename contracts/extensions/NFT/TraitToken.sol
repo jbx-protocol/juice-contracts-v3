@@ -98,6 +98,9 @@ contract TraitToken is BaseNFT {
     tokenId = totalSupply;
   }
 
+  /**
+   * @dev Taken from https://github.com/MrChico/verifyIPFS/blob/master/contracts/verifyIPFS.sol
+   */
   function base58Encode(bytes memory _data) private pure returns (string memory) {
     unchecked {
       uint256 size = _data.length;

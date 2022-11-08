@@ -1,12 +1,13 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-import { deployMockContract } from '@ethereum-waffle/mock-contract';
+import { smock } from '@defi-wonderland/smock';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import * as helpers from '@nomicfoundation/hardhat-network-helpers';
 
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
+import iQuoter from '../../../artifacts/contracts/extensions/NFT/components/BaseNFT.sol/IQuoter.json';
 
 describe('NFToken tests', () => {
     const jbxJbTokensEth = '0x000000000000000000000000000000000000EEEe';
@@ -14,8 +15,9 @@ describe('NFToken tests', () => {
     let deployer: SignerWithAddress;
     let accounts: SignerWithAddress[];
 
-    let directory;
+    let directory: any;
     let terminal: any;
+    let uniswapQuoter: any;
 
     let nfTokenFactory: any;
     let basicToken: any;
@@ -33,13 +35,15 @@ describe('NFToken tests', () => {
         [deployer, ...accounts] = await ethers.getSigners();
     });
 
-    before('Setup JBX components', async () => {
-        directory = await deployMockContract(deployer, jbDirectory.abi);
-        terminal = await deployMockContract(deployer, jbTerminal.abi);
+    before('Mock related contracts', async () => {
+        directory = await smock.fake(jbDirectory.abi);
+        terminal = await smock.fake(jbTerminal.abi);
+        uniswapQuoter = await smock.fake(iQuoter.abi, { address: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6' });
 
-        await terminal.mock.pay.returns(0);
-        await directory.mock.isTerminalOf.withArgs(basicProjectId, terminal.address).returns(true);
-        await directory.mock.primaryTerminalOf.withArgs(basicProjectId, jbxJbTokensEth).returns(terminal.address);
+        await terminal.pay.returns(0);
+        await directory.isTerminalOf.whenCalledWith(basicProjectId, terminal.address).returns(true);
+        await directory.primaryTerminalOf.whenCalledWith(basicProjectId, jbxJbTokensEth).returns(terminal.address);
+        uniswapQuoter.quoteExactInputSingle.returns(BigNumber.from('1000000000000000000000'));
     });
 
     before('Initialize contracts', async () => {
@@ -215,12 +219,12 @@ describe('NFToken tests', () => {
     });
 
     it('Payment failure due to missing terminal', async () => {
-        await directory.mock.primaryTerminalOf.withArgs(basicProjectId, jbxJbTokensEth).returns(ethers.constants.AddressZero);
+        await directory.primaryTerminalOf.whenCalledWith(basicProjectId, jbxJbTokensEth).returns(ethers.constants.AddressZero);
 
         await expect(basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'PAYMENT_FAILURE');
 
-        await directory.mock.primaryTerminalOf.withArgs(basicProjectId, jbxJbTokensEth).returns(terminal.address);
+        await directory.primaryTerminalOf.whenCalledWith(basicProjectId, jbxJbTokensEth).returns(terminal.address);
     });
 
     it('Set OperatorFilter', async () => {
@@ -326,5 +330,51 @@ describe('NFToken tests', () => {
         await expect(traitToken.setTokenAsset(1, '0x' + Buffer.from(cid.slice(2)).toString('hex')))
             .to.be.revertedWithCustomError(traitToken, 'CID_REASSIGNMENT');
         expect(await traitToken.tokenURI(1)).to.equal(`ipfs://QmWmyoMoctfbAaiEs2G46gpeUmhqFRDW6KWo64y5r581Vz`);
+    });
+
+    it('Non-sequential token ids', async () => {
+        const basicName = 'Test NFT'
+        const basicSymbol = 'NFT';
+
+        const now = await helpers.time.latest();
+        basicMintPeriodStart = Math.floor(now + 60 * 60);
+        basicMintPeriodEnd = Math.floor(now + 24 * 60 * 60);
+
+        nfTokenFactory = await ethers.getContractFactory('NFToken');
+        const nonSequentialToken = await nfTokenFactory
+            .connect(deployer)
+            .deploy(
+                basicName,
+                basicSymbol,
+                basicBaseUri,
+                basicContractUri,
+                basicProjectId,
+                directory.address,
+                10_000,
+                basicUnitPrice,
+                10,
+                0,
+                0
+            );
+
+        await expect(nonSequentialToken.connect(accounts[0]).setRandomizedMint(true)).to.be.reverted;
+
+        await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        expect(await nonSequentialToken.ownerOf(1)).to.equal(accounts[0].address);
+
+        await nonSequentialToken.connect(deployer).setRandomizedMint(true);
+
+        const tx = await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        const receipt = await tx.wait();
+        const [AddressZero, owner, tokenId] = receipt.events.filter(e => e.event === 'Transfer')[0].args;
+
+        expect(await nonSequentialToken.ownerOf(2)).to.equal(ethers.constants.AddressZero);
+        expect(await nonSequentialToken.ownerOf(tokenId)).to.equal(accounts[0].address);
+        expect(tokenId).not.to.equal(await nonSequentialToken.totalSupply());
+
+        await nonSequentialToken.connect(deployer).setRandomizedMint(false);
+
+        await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        expect(await nonSequentialToken.ownerOf(2)).to.equal(ethers.constants.AddressZero);
     });
 });
