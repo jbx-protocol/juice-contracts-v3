@@ -14,11 +14,27 @@ import '../INFTPriceResolver.sol';
 import '../IOperatorFilter.sol';
 import './ERC721FU.sol';
 
+/**
+ * @notice Uniswap IQuoter interface snippet taken from uniswap v3 periphery library.
+ */
+interface IQuoter {
+  function quoteExactInputSingle(
+    address tokenIn,
+    address tokenOut,
+    uint24 fee,
+    uint256 amountIn,
+    uint160 sqrtPriceLimitX96
+  ) external returns (uint256 amountOut);
+}
+
 abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
   using Strings for uint256;
 
   bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
   bytes32 public constant REVEALER_ROLE = keccak256('REVEALER_ROLE');
+
+  address public constant WETH9 = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+  address public constant DAI = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
   /**
    * @notice NFT provenance hash reassignment prohibited.
@@ -86,6 +102,8 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     _;
   }
 
+  IQuoter public constant uniswapQuoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
+
   IJBDirectory jbxDirectory;
   uint256 jbxProjectId;
   uint256 public maxSupply;
@@ -110,6 +128,11 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
    * @notice Pause minting flag
    */
   bool public isPaused;
+
+  /**
+   * @notice Pause minting flag
+   */
+  bool public randomizedMint;
 
   address payable public royaltyReceiver;
 
@@ -248,8 +271,8 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     unchecked {
       ++totalSupply;
     }
-    tokenId = totalSupply;
-    _mint(msg.sender, totalSupply);
+    tokenId = generateTokenId(msg.sender, msg.value, block.number);
+    _mint(msg.sender, tokenId);
   }
 
   /**
@@ -279,7 +302,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     unchecked {
       ++totalSupply;
     }
-    tokenId = totalSupply;
+    tokenId = generateTokenId(msg.sender, msg.value, block.number);
     _mint(msg.sender, totalSupply);
   }
 
@@ -357,7 +380,7 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     unchecked {
       ++totalSupply;
     }
-    tokenId = totalSupply;
+    tokenId = generateTokenId(_account, 0, block.number);
     _mint(_account, tokenId);
   }
 
@@ -432,6 +455,10 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     operatorFilter = _operatorFilter;
   }
 
+  function setRandomizedMint(bool _randomizedMint) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    randomizedMint = _randomizedMint;
+  }
+
   /**
    * @notice Set NFT metadata base URI.
    *
@@ -492,5 +519,41 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
       interfaceId == type(IERC2981).interfaceId || // 0x2a55205a
       AccessControl.supportsInterface(interfaceId) ||
       ERC721FU.supportsInterface(interfaceId);
+  }
+
+  /**
+   * @notice Generates a token id based on provided parameters. Id range is 1...(maxSupply + 1), 0 is considered invalid and never returned.
+   */
+  function generateTokenId(
+    address _account,
+    uint256 _amount,
+    uint256 _blockNumber
+  ) internal virtual returns (uint256 tokenId) {
+    if (totalSupply == maxSupply) {
+      revert SUPPLY_EXHAUSTED();
+    }
+
+    if (!randomizedMint) {
+      tokenId = totalSupply;
+    } else {
+      uint256 ethPrice;
+      if (_amount != 0) {
+        ethPrice = uniswapQuoter.quoteExactInputSingle(
+          WETH9,
+          DAI,
+          3000, // fee
+          _amount,
+          0 // sqrtPriceLimitX96
+        );
+      }
+
+      tokenId =
+        uint256(keccak256(abi.encodePacked(_account, _blockNumber, ethPrice))) %
+        (maxSupply + 1);
+    }
+
+    while (tokenId == 0 || _ownerOf[tokenId] != address(0)) {
+      tokenId = ++tokenId % (maxSupply + 1);
+    }
   }
 }
