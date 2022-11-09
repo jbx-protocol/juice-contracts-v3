@@ -11,8 +11,8 @@
     "license": "MIT",
     "dependencies": {
         "@chainlink/contracts": "^0.4.1",
-        "@openzeppelin/contracts": "^4.7.3",
-        "@openzeppelin/contracts-upgradeable": "^4.7.3",
+        "@openzeppelin/contracts": "^4.8.0",
+        "@openzeppelin/contracts-upgradeable": "^4.8.0",
         "@paulrberg/contracts": "^3.7.0",
         "@rari-capital/solmate": "^6.4.0",
         "@uniswap/v3-periphery": "^1.4.1"
@@ -58,7 +58,7 @@
         "pretest": "hardhat compile",
         "test": "mocha './test/**/*.test.ts' -r ts-node/register --timeout 12000 --bail false",
         "coverage": "hardhat coverage --network hardhat",
-        "clean": "rimraf ./cache && rimraf ./artifacts",
+        "clean": "rimraf ./cache && rimraf ./artifacts && rimraf ./coverage",
         "compile": "yarn clean && hardhat compile",
         "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\"",
         "slither": "hardhat clean && slither . 2> slither.out"
