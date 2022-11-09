@@ -99,6 +99,8 @@ contract DutchAuctionMachine is IDutchAuctionMachine, IERC165, Ownable, Reentran
    *
    * @dev The provided token must have the following functions: `mintFor(address) => uint256`, `transferFrom(address, address, uint256)` (standard ERC721/1155 function), `unitPrice() => uint256`. `mintFor` will be called with `address(this)` to mint a new token to this contract in order to start a new auction. unitPrice() will be called to set the auction starting price. `transferFrom` will be called to transfer the token to the auction winner if any.
    *
+   * @dev This contract is meant to be used via the `Deployer` contract which makes `Clone`s. This means that there is a known-good initial deployment of by the platform admin which is then given to the deployer as the clone source. To make sure that the mother instance is not orphaned and taken over by a malicious actor this contract is Ownable which gives ownership to the original deployer. Then when a clone is made it is unowned but the Deployer contract will call initialize which will assign ownership as intended.
+   *
    * @param _maxAuctions Maximum number of auctions to perform automatically, 0 for no limit.
    * @param _auctionDuration Auction duration in seconds.
    * @param _periodDuration Price reduction period in seconds.

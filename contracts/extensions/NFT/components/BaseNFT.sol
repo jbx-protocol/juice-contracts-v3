@@ -529,10 +529,6 @@ abstract contract BaseNFT is ERC721FU, AccessControl, ReentrancyGuard {
     uint256 _amount,
     uint256 _blockNumber
   ) internal virtual returns (uint256 tokenId) {
-    if (totalSupply == maxSupply) {
-      revert SUPPLY_EXHAUSTED();
-    }
-
     if (!randomizedMint) {
       tokenId = totalSupply;
     } else {

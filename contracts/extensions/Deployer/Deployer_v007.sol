@@ -6,10 +6,12 @@ import '../Auctions/EnglishAuction.sol';
 import '../NFT/DutchAuctionMachine.sol';
 import '../NFT/EnglishAuctionMachine.sol';
 import '../NFT/NFUToken.sol';
+import '../NFT/TraitToken.sol';
 import '../TokenLiquidator.sol';
 
 import './Deployer_v006.sol';
 import './Factories/AuctionMachineFactory.sol';
+import './Factories/TraitTokenFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to deploy Dutch and English perpetual auctions for a specific NFT.
@@ -18,6 +20,7 @@ import './Factories/AuctionMachineFactory.sol';
 contract Deployer_v007 is Deployer_v006 {
   DutchAuctionMachine internal dutchAuctionMachineSource;
   EnglishAuctionMachine internal englishAuctionMachineSource;
+  TraitToken internal traitTokenSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -30,7 +33,8 @@ contract Deployer_v007 is Deployer_v006 {
     NFUToken _nfuTokenSource,
     ITokenLiquidator _tokenLiquidator,
     DutchAuctionMachine _dutchAuctionMachineSource,
-    EnglishAuctionMachine _englishAuctionMachineSource
+    EnglishAuctionMachine _englishAuctionMachineSource,
+    TraitToken _traitTokenSource
   ) public virtual reinitializer(7) {
     __Ownable_init();
     __UUPSUpgradeable_init();
@@ -41,6 +45,7 @@ contract Deployer_v007 is Deployer_v006 {
     tokenLiquidator = _tokenLiquidator;
     dutchAuctionMachineSource = _dutchAuctionMachineSource;
     englishAuctionMachineSource = _englishAuctionMachineSource;
+    traitTokenSource = _traitTokenSource;
   }
 
   /**
@@ -103,5 +108,33 @@ contract Deployer_v007 is Deployer_v006 {
       _owner
     );
     emit Deployment('EnglishAuctionMachine', machine);
+  }
+
+  function deployTraitToken(
+    address _owner,
+    string memory _name,
+    string memory _symbol,
+    string memory _baseUri,
+    string memory _contractUri,
+    uint256 _jbxProjectId,
+    IJBDirectory _jbxDirectory,
+    uint256 _maxSupply,
+    uint256 _unitPrice,
+    uint256 _mintAllowance
+  ) external returns (address token) {
+    token = TraitTokenFactory.createTraitToken(
+      address(traitTokenSource),
+      _owner,
+      _name,
+      _symbol,
+      _baseUri,
+      _contractUri,
+      _jbxProjectId,
+      _jbxDirectory,
+      _maxSupply,
+      _unitPrice,
+      _mintAllowance
+    );
+    emit Deployment('TraitToken', token);
   }
 }

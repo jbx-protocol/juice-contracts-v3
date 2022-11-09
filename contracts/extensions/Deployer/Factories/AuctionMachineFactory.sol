@@ -5,7 +5,6 @@ import '@openzeppelin/contracts/proxy/Clones.sol';
 import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 import '../../../interfaces/IJBDirectory.sol';
-import '../../../interfaces/IJBPaymentTerminal.sol';
 
 import '../../NFT/DutchAuctionMachine.sol';
 import '../../NFT/EnglishAuctionMachine.sol';

@@ -42,8 +42,8 @@ contract NFToken is BaseNFT {
 
     baseUri = _baseUri;
     contractUri = _contractUri;
-    jbxDirectory = _jbxDirectory;
     jbxProjectId = _jbxProjectId;
+    jbxDirectory = _jbxDirectory;
     maxSupply = _maxSupply;
     unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
