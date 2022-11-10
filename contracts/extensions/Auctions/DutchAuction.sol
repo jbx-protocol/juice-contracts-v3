@@ -203,7 +203,6 @@ contract DutchAuctionHouse is
     }
 
     uint256 expiration = uint256(uint64(auctionDetails.prices >> 192));
-
     if (block.timestamp > deploymentOffset + expiration) {
       revert AUCTION_ENDED();
     }
@@ -351,6 +350,23 @@ contract DutchAuctionHouse is
   }
 
   // TODO: consider an acceptLowBid function for the seller to execute after auction expiration
+
+  function timeLeft(IERC721 collection, uint256 item) public view returns (uint256) {
+    bytes32 auctionId = keccak256(abi.encodePacked(collection, item));
+    DutchAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.info == 0) {
+      revert INVALID_AUCTION();
+    }
+
+    uint256 expiration = deploymentOffset + uint256(uint64(auctionDetails.prices >> 192));
+
+    if (block.timestamp > expiration) {
+      return 0;
+    }
+
+    return expiration - block.timestamp;
+  }
 
   /**
    * @notice Returns the current price for an items subject to the price range and elapsed duration.

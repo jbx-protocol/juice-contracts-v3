@@ -178,6 +178,8 @@ describe('EnglishAuctionHouse tests', () => {
                 .connect(accounts[0])
                 .bid(token.address, tokenId, '', { value: reservePrice })
         ).to.emit(englishAuctionHouse, 'PlaceBid').withArgs(accounts[0].address, token.address, tokenId, reservePrice, '');
+
+        expect(await englishAuctionHouse.timeLeft(token.address, tokenId)).to.be.greaterThan(0);
     });
 
     it(`bid() fail: invalid price`, async () => {
@@ -228,6 +230,8 @@ describe('EnglishAuctionHouse tests', () => {
                 .connect(accounts[0])
                 .bid(token.address, tokenId + 1, '', { value: '10000' })
         ).to.be.revertedWith('INVALID_AUCTION()');
+
+        expect(await englishAuctionHouse.timeLeft(token.address, tokenId)).to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
     });
 
     it(`bid() fail: auction ended`, async () => {
@@ -242,6 +246,8 @@ describe('EnglishAuctionHouse tests', () => {
                 .connect(accounts[0])
                 .bid(token.address, tokenId, '', { value: '10000' })
         ).to.be.revertedWith('AUCTION_ENDED()');
+
+        expect(await englishAuctionHouse.timeLeft(token.address, tokenId)).to.equal(0);
     });
 
     it(`settle() success: sale`, async () => {

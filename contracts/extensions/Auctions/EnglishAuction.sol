@@ -302,7 +302,14 @@ contract EnglishAuctionHouse is
         // proceeds can be collected, but we still own the token, send it to the bidder
         address buyer = address(uint160(auctionDetails.bid));
         _collection.transferFrom(address(this), buyer, _item);
-        emit ConcludeAuction(auctionDetails.seller, address(0), _collection, _item, lastBidAmount, '');
+        emit ConcludeAuction(
+          auctionDetails.seller,
+          address(0),
+          _collection,
+          _item,
+          lastBidAmount,
+          ''
+        );
       }
 
       if (uint32(settings) != 0) {
@@ -344,6 +351,26 @@ contract EnglishAuctionHouse is
   }
 
   // TODO: consider an acceptLowBid function for the seller to execute after auction expiration
+
+  /**
+   * @notice Returns the number of seconds to the end of the current auction.
+   */
+  function timeLeft(IERC721 _collection, uint256 _item) public view returns (uint256) {
+    bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
+    EnglishAuctionData memory auctionDetails = auctions[auctionId];
+
+    if (auctionDetails.seller == address(0)) {
+      revert INVALID_AUCTION();
+    }
+
+    uint256 expiration = deploymentOffset + uint256(uint64(auctionDetails.prices >> 192));
+
+    if (block.timestamp > expiration) {
+      return 0;
+    }
+
+    return expiration - block.timestamp;
+  }
 
   /**
    * @notice Returns current bid for a given item even if it is below the reserve.

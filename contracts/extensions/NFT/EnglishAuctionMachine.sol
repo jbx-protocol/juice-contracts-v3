@@ -185,7 +185,7 @@ contract EnglishAuctionMachine is IEnglishAuctionMachine, IERC165, Ownable, Reen
   }
 
   /**
-   * Returns the number of seconds to the end of the current auction.
+   * @notice Returns the number of seconds to the end of the current auction.
    */
   function timeLeft() public view returns (uint256) {
     if (block.timestamp > auctionExpiration) {
