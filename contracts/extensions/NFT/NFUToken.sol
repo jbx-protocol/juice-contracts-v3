@@ -1,19 +1,29 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
-
 import '../../interfaces/IJBDirectory.sol';
 import './components/BaseNFT.sol';
 
-contract NFUToken is BaseNFT, Initializable {
+contract NFUToken is BaseNFT {
+  error INVALID_OPERATION();
+
   //*********************************************************************//
   // -------------------------- initializer ---------------------------- //
   //*********************************************************************//
 
   /**
-   * @notice Creates the NFT contract.
+   * @dev This contract is meant to be deployed via the `Deployer` which makes `Clone`s. The `Deployer` itself has a reference to a known-good copy. When the platform admin is deploying the `Deployer` and the source `NFUToken` the constructor will lock that contract to the platform admin. When the deployer is making copies of it the source storage isn't taken so the Deployer will call `initialize` to set the admin to the correct account.
+   */
+  constructor() {
+    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _grantRole(MINTER_ROLE, msg.sender);
+    _grantRole(REVEALER_ROLE, msg.sender);
+  }
+
+  /**
+   * @notice Initializes token state. Used by the Deployer contract to set NFT parameters and contract ownership.
    *
+   * @param _owner Token admin.
    * @param _name Token name.
    * @param _symbol Token symbol.
    * @param _baseUri Base URI, initially expected to point at generic, "unrevealed" metadata json.
@@ -27,6 +37,7 @@ contract NFUToken is BaseNFT, Initializable {
    * @param _mintPeriodEnd End of the minting period in seconds.
    */
   function initialize(
+    address _owner,
     string memory _name,
     string memory _symbol,
     string memory _baseUri,
@@ -38,7 +49,21 @@ contract NFUToken is BaseNFT, Initializable {
     uint256 _mintAllowance,
     uint128 _mintPeriodStart,
     uint128 _mintPeriodEnd
-  ) public initializer {
+  ) public {
+    if (bytes(name).length != 0) {
+      revert INVALID_OPERATION();
+    }
+
+    if (getRoleMemberCount(DEFAULT_ADMIN_ROLE) != 0) {
+      if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        revert INVALID_OPERATION();
+      }
+    } else {
+      _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+      _grantRole(MINTER_ROLE, _owner);
+      _grantRole(REVEALER_ROLE, _owner);
+    }
+
     name = _name;
     symbol = _symbol;
 
@@ -52,8 +77,8 @@ contract NFUToken is BaseNFT, Initializable {
     mintPeriodStart = _mintPeriodStart;
     mintPeriodEnd = _mintPeriodEnd;
 
-    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    _grantRole(MINTER_ROLE, msg.sender);
-    _grantRole(REVEALER_ROLE, msg.sender);
+    _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+    _grantRole(MINTER_ROLE, _owner);
+    _grantRole(REVEALER_ROLE, _owner);
   }
 }

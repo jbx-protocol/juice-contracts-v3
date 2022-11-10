@@ -306,22 +306,53 @@ describe('NFToken tests', () => {
         const basicSymbol = 'NFT';
 
         const traitTokenFactory = await ethers.getContractFactory('TraitToken');
-        const traitToken = await traitTokenFactory
-            .connect(deployer)
-            .deploy(
-                basicName,
-                basicSymbol,
-                basicBaseUri,
-                basicContractUri,
-                basicProjectId,
-                directory.address,
-                basicMaxSupply,
-                basicUnitPrice,
-                basicMintAllowance,
-                0,
-                0
-            );
+        const traitToken = await traitTokenFactory.connect(deployer).deploy();
         await traitToken.deployed();
+
+        await expect(traitToken.connect(accounts[0]).initialize(
+            deployer.address,
+            basicName,
+            basicSymbol,
+            basicBaseUri,
+            basicContractUri,
+            basicProjectId,
+            directory.address,
+            basicMaxSupply,
+            basicUnitPrice,
+            basicMintAllowance,
+            0,
+            0
+        )).to.be.reverted;
+
+        await expect(traitToken.connect(deployer).initialize(
+            deployer.address,
+            basicName,
+            basicSymbol,
+            basicBaseUri,
+            basicContractUri,
+            basicProjectId,
+            directory.address,
+            basicMaxSupply,
+            basicUnitPrice,
+            basicMintAllowance,
+            0,
+            0
+        )).not.to.be.reverted;
+
+        await expect(traitToken.connect(deployer).initialize(
+            deployer.address,
+            basicName,
+            basicSymbol,
+            basicBaseUri,
+            basicContractUri,
+            basicProjectId,
+            directory.address,
+            basicMaxSupply,
+            basicUnitPrice,
+            basicMintAllowance,
+            0,
+            0
+        )).to.be.reverted;
 
         await expect(traitToken.setTokenAsset(1, '0x' + Buffer.from(cid.slice(2)).toString('hex')))
             .to.be.revertedWithCustomError(traitToken, 'NOT_MINTED');

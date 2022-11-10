@@ -92,8 +92,6 @@ async function main() {
     await deployRecordContract('EnglishAuctionMachine', [], deployer, 'EnglishAuctionMachine', deploymentLogPath);
     await deployRecordContract('TraitToken', [], deployer, 'TraitToken', deploymentLogPath);
 
-    // TODO: take ownership of TraitToken source instance
-
     const dutchAuctionMachineAddress = getContractRecord('DutchAuctionMachine', deploymentLogPath).address;
     const englishAuctionMachineAddress = getContractRecord('EnglishAuctionMachine', deploymentLogPath).address;
     const sourceTraitTokenAddress = getContractRecord('TraitToken', deploymentLogPath).address;

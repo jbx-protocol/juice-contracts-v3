@@ -92,7 +92,7 @@ describe('EnglishAuctionHouse tests', () => {
             englishAuctionHouse
                 .connect(accounts[0])
                 .create(token.address, tokenId, basePrice, 0, auctionDuration, [], '')
-        ).to.be.revertedWith('ERC721: caller is not token owner nor approved');
+        ).to.be.revertedWith('ERC721: caller is not token owner or approved');
     });
 
     it(`create() fail: auction already exists`, async () => {
@@ -379,7 +379,7 @@ describe('EnglishAuctionHouse tests', () => {
         await expect(tx).to.emit(englishAuctionHouse, 'ConcludeAuction');
 
         await expect(englishAuctionHouse.connect(accounts[1]).settle(token.address, tokenId, ''))
-        .to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
+            .to.be.revertedWithCustomError(englishAuctionHouse, 'INVALID_AUCTION');
 
         const endingBalance = await ethers.provider.getBalance(feeReceiverTerminal.address);
         expect(endingBalance).to.be.greaterThan(initialBalance);

@@ -20,8 +20,6 @@ contract TraitToken is BaseNFT {
 
   error CID_REASSIGNMENT();
 
-  mapping(uint256 => uint256) public tokenTraits;
-
   /**
    * @notice Stores truncated IPFS CIDs, missing first two bytes that are expected to be 1220 for IPFS v1 CIDs.
    */
@@ -32,7 +30,7 @@ contract TraitToken is BaseNFT {
   //*********************************************************************//
 
   /**
-   * @dev
+   * @dev This contract is meant to be deployed via the `Deployer` which makes `Clone`s. The `Deployer` itself has a reference to a known-good copy. When the platform admin is deploying the `Deployer` and the source `TraitToken` the constructor will lock that contract to the platform admin. When the deployer is making copies of it the source storage isn't taken so the Deployer will call `initialize` to set the admin to the correct account.
    */
   constructor() {
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -41,9 +39,7 @@ contract TraitToken is BaseNFT {
   }
 
   /**
-   * @notice xxx
-   *
-   * @dev xxx
+   * @notice Initializes token state. Used by the Deployer contract to set NFT parameters and contract ownership.
    *
    * @param _owner Token admin.
    * @param _name Token name.
@@ -76,16 +72,15 @@ contract TraitToken is BaseNFT {
       revert INVALID_OPERATION();
     }
 
-    // TODO: this is an issue for the source contract where it's impossible to tell with oz/AccessControl if there are any account with a given role, in this case admin
-    // if (owner() != address(0)) {
-    //   if (msg.sender != owner()) {
-    //     revert INVALID_OPERATION();
-    //   }
-    // } else {
-    _grantRole(DEFAULT_ADMIN_ROLE, _owner);
-    _grantRole(MINTER_ROLE, _owner);
-    _grantRole(REVEALER_ROLE, _owner);
-    // }
+    if (getRoleMemberCount(DEFAULT_ADMIN_ROLE) != 0) {
+      if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        revert INVALID_OPERATION();
+      }
+    } else {
+      _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+      _grantRole(MINTER_ROLE, _owner);
+      _grantRole(REVEALER_ROLE, _owner);
+    }
 
     name = _name;
     symbol = _symbol;

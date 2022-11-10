@@ -122,7 +122,7 @@ describe('DutchAuctionHouse tests', () => {
             dutchAuctionHouse
                 .connect(accounts[0])
                 .create(token.address, tokenId, startPrice, endPrice, auctionDuration, [], '')
-        ).to.be.revertedWith('ERC721: caller is not token owner nor approved');
+        ).to.be.revertedWith('ERC721: caller is not token owner or approved');
     });
 
     it(`create() fail: auction already exists`, async () => {

@@ -25,6 +25,7 @@ describe('Deployer upgrade tests', () => {
     let paymentProcessorFactoryLibrary: any;
     let nftRewardDataSourceFactoryLibrary: any;
     let auctionMachineFactoryLibrary: any;
+    let traitTokenFactoryLibrary: any;
 
     let sourceDutchAuctionHouse: any;
     let sourceEnglishAuctionHouse: any;
@@ -32,6 +33,7 @@ describe('Deployer upgrade tests', () => {
     let tokenLiquidator: any;
     let dutchAuctionMachineSource: any;
     let englishAuctionMachineSource: any;
+    let traitTokenSource: any;
 
     let nfToken: any;
     let mixedPaymentSplitter: any;
@@ -242,7 +244,6 @@ describe('Deployer upgrade tests', () => {
         const name = 'Test NFT'
         const symbol = 'NFT';
         const baseUri = 'ipfs://hidden';
-        const baseUriRevealed = 'ipfs://revealed/';
         const contractUri = 'ipfs://metadata';
         const projectId = 99;
         const unitPrice = ethers.utils.parseEther('0.001');
@@ -251,19 +252,23 @@ describe('Deployer upgrade tests', () => {
         const mintPeriodStart = Math.floor(now + 60 * 60);
         const mintPeriodEnd = Math.floor(now + 24 * 60 * 60);
 
-        let tx = await deployerProxy.connect(deployer).deployNFUToken(deployer.address, name + ' A', symbol + 'A', baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
+        const targetAdminAddressA = accounts[0].address;
+        const targetAdminAddressB = accounts[1].address;
+
+        let tx = await deployerProxy.connect(deployer).deployNFUToken(targetAdminAddressA, name + ' A', symbol + 'A', baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
         let receipt = await tx.wait();
 
         let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
         const tokenA = await nfuTokenFactory.attach(contractAddress);
-        tokenA.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
+        tokenA.connect(targetAdminAddressA).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
+        await expect(tokenA.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd)).to.be.reverted;
 
-        tx = await deployerProxy.connect(deployer).deployNFUToken(deployer.address, name + ' B', symbol + 'B', baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
+        tx = await deployerProxy.connect(deployer).deployNFUToken(targetAdminAddressB, name + ' B', symbol + 'B', baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
         receipt = await tx.wait();
 
         [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
         const tokenB = await nfuTokenFactory.attach(contractAddress);
-        tokenB.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
+        tokenB.connect(targetAdminAddressB).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
 
         expect(await tokenA.symbol()).to.equal(symbol + 'A');
         expect(await tokenB.symbol()).to.equal(symbol + 'B');
@@ -317,6 +322,9 @@ describe('Deployer upgrade tests', () => {
         const auctionMachineFactory = await ethers.getContractFactory('AuctionMachineFactory', deployer);
         auctionMachineFactoryLibrary = await auctionMachineFactory.connect(deployer).deploy();
 
+        const traitTokenFactoryFactory = await ethers.getContractFactory('TraitTokenFactory', deployer);
+        traitTokenFactoryLibrary = await traitTokenFactoryFactory.connect(deployer).deploy();
+
         const deployerFactory = await ethers.getContractFactory('Deployer_v007', {
             libraries: {
                 NFTokenFactory: nfTokenFactoryLibrary.address,
@@ -325,7 +333,8 @@ describe('Deployer upgrade tests', () => {
                 NFUTokenFactory: nfuTokenFactoryLibrary.address,
                 PaymentProcessorFactory: paymentProcessorFactoryLibrary.address,
                 NFTRewardDataSourceFactory: nftRewardDataSourceFactoryLibrary.address,
-                AuctionMachineFactory: auctionMachineFactoryLibrary.address
+                AuctionMachineFactory: auctionMachineFactoryLibrary.address,
+                TraitTokenFactory: traitTokenFactoryLibrary.address
             },
             signer: deployer
         });
@@ -338,9 +347,14 @@ describe('Deployer upgrade tests', () => {
         englishAuctionMachineSource = await englishAuctionMachineFactory.connect(deployer).deploy();
         await englishAuctionMachineSource.deployed();
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address, tokenLiquidator.address, dutchAuctionMachineSource.address, englishAuctionMachineSource.address] } });
+        const traitTokenFactory = await ethers.getContractFactory('TraitToken', { signer: deployer });
+        traitTokenSource = await traitTokenFactory.connect(deployer).deploy();
+        await traitTokenSource.deployed();
+
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address, tokenLiquidator.address, dutchAuctionMachineSource.address, englishAuctionMachineSource.address, traitTokenSource.address] } });
 
         await expect(englishAuctionMachineSource.transferOwnership(deployerProxy.address)).not.to.be.reverted;
+        await expect(dutchAuctionMachineSource.transferOwnership(deployerProxy.address)).not.to.be.reverted;
     });
 
     it('Deploy EnglishAuctionMachine clone', async () => {
