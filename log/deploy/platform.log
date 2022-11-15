@@ -122,3 +122,4 @@ Reason: Already Verified
 2022-11-15T04:50:16.366Z|info|verifying VestingPlanManager on goerli at 0xDcb5E630EC772436f259A0eCE411118aC5888aE7 with Etherscan
 2022-11-15T04:51:33.353Z|info|verification complete
 2022-11-15T04:51:33.366Z|info|verification complete
+2022-11-15T05:57:51.600Z|info|NFTokenFactory already exists on goerli at 0x74537Baf4CB612C35869e0B09aC1d63c02527b0E

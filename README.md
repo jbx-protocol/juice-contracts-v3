@@ -1,10 +1,36 @@
-# DAOLABS Juicebox v3 Fork
+# DAOLABS ❤️ Juicebox v3 Fork 🍽️
 
-This repo is a fork of the [Juicebox protocol](https://github.com/jbx-protocol/juice-contracts-v3). For an overview, architecture, and API documentation see [juicebox.money](https://info.juicebox.money/dev/).
+This repo is a fork of the [Juicebox protocol](https://github.com/jbx-protocol/juice-contracts-v3). For an overview, architecture, and API specification, see the documentation at [juicebox.money](https://info.juicebox.money/dev/). While effort has been made to ensure the repository extension tests are demonstrative of how the protocol and its add-ons operate, front-end wrapper classes intended to simplify the [Svelte frontend](https://github.com/tankbottoms/juice-interface-svelte/tree/feature/contracts/src/utils/web3) integration are additionally illustrative. The repository deployments folder contains consolidated JSON files for the [platform](deployments/goerli/platform.json) and [extensions](deployments/goerli/extensions.json) integrations.
 
-Additionally, wrapper classes to interact with the extensions for the Svelte frontend can be found [here](https://github.com/tankbottoms/juice-interface-svelte/tree/feature/contracts/src/utils/web3), i.e. [Dutch Auction](https://github.com/tankbottoms/juice-interface-svelte/blob/feature/contracts/src/utils/web3/extensions/DutchAuctionWrapper.ts).
+## Environment variables
 
-Deployment JSONs [platform](deployments/goerli/platform.json) and [extensions](deployments/goerli/extensions.json) are intended to be single sources of truth for the frontend, where possible. i.e. contracts which rely on a singleton contract need not be provided the address, where deployed NFTs require subsequent calls to include its address.
+```bash
+INFURA_API_KEY=
+ALCHEMY_MAINNET_URL=
+ALCHEMY_MAINNET_API_KEY=
+ETHERSCAN_API_KEY=
+PRIVATE_KEY=
+REPORT_GAS=yes
+```
+
+## TL;DR
+
+The deployment and verification of all the contracts may take between 45 mins to 1 hour. The following commands will:
+
+- Deploy a Juicebox fork to the specified network,
+- Configure the first project-Juicebox,
+- Verify the contracts via Etherscan; and,
+- Add-On by deploying specific platform extensions, _each subsequent deployer aggregates the previous._
+
+```bash
+yarn
+npx hardhat run scripts/platform/deploy.ts --network goerli
+npx hardhat run scripts/platform/configure.ts --network goerli
+npx hardhat run scripts/platform/verify.ts --network goerli
+npx hardhat run scripts/deploy/Deployer_v001.ts --network goerli
+npx hardhat run scripts/deploy/Deployer_v002.ts --network goerli
+npx hardhat run scripts/deploy/Deployer_v003.ts --network goerli
+```
 
 ## Differences
 
