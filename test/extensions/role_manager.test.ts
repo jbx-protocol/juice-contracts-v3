@@ -124,17 +124,15 @@ describe('RoleManager Tests', () => {
     });
 
     it('getProjectUsers()', async () => {
-        console.log('aaa 1')
         let users: string[] = await roleManager.getProjectUsers(projectA, 'FINANCE_MANAGER');
         expect(users.length).to.equal(2);
-        console.log('aaa 2')
 
         users = await roleManager.getProjectUsers(projectA, 'TOKEN_MINTER');
         expect(users.length).to.equal(1);
-        console.log('aaa 3')
+
         users = await roleManager.getProjectUsers(projectB, 'FINANCE_MANAGER');
         expect(users.length).to.equal(0);
-        console.log('aaa 4')
+
         await expect(roleManager.getProjectUsers(invalidProject, 'FINANCE_MANAGER')).to.be.revertedWithCustomError(roleManager, 'INVALID_ROLE');
         await expect(roleManager.getProjectUsers(projectA, 'UNDEFINED_ROLE')).to.be.revertedWithCustomError(roleManager, 'INVALID_ROLE');
     });

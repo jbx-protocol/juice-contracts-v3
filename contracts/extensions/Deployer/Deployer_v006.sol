@@ -61,7 +61,8 @@ contract Deployer_v006 is Deployer_v005 {
       _userMintCap,
       _tiers
     );
-    emit Deployment('NFTRewardDataSourceDelegate', resolver);
+
+    emit Deployment('TieredPriceResolver', resolver);
   }
 
   function deployNFTRewardDataSource(
