@@ -1,0 +1,124 @@
+2022-11-15T03:33:54.705Z|info|deploying DAOLABS Juicebox v3, core platform, fork to goerli
+2022-11-15T03:33:54.772Z|info|connected as 0x8a97426C1a720a45B8d69E974631f01f1168232B
+2022-11-15T03:33:54.773Z|info|JBETHERC20ProjectPayerDeployer already exists on goerli at 0xD60795B15975139c8C5775c3A54879D875404A0a
+2022-11-15T03:33:54.774Z|info|JBETHERC20SplitsPayerDeployer already exists on goerli at 0x8214d626531819e990929Bf71582173a3bD40975
+2022-11-15T03:33:54.774Z|info|JBOperatorStore already exists on goerli at 0x007d8750a287c8a3a3759aecfda3c79abb802249
+2022-11-15T03:33:54.775Z|info|JBPrices already exists on goerli at 0x8B578C09F054F2A8711Caa8B40C3574661F7A717
+2022-11-15T03:33:54.777Z|info|JBProjects already exists on goerli at 0x9328084099CF7131FE5e2B5a9A97169d4BafEb9c
+2022-11-15T03:33:55.400Z|info|JBDirectory already exists on goerli at 0x2F1D1552F0027164c5aFA24fabeD6b12b95D8B86
+2022-11-15T03:33:55.402Z|info|JBFundingCycleStore already exists on goerli at 0x925ff4a796ba0CF162E7b3568B96ff7e54d9981C
+2022-11-15T03:33:55.404Z|info|JBTokenStore already exists on goerli at 0x2829CD89f18594388C6aD7f0F457Ff207554de81
+2022-11-15T03:33:55.405Z|info|JBSplitsStore already exists on goerli at 0x6A8A7Caa09cb5e0aDc44e42b8566aBD009C446FE
+2022-11-15T03:33:55.408Z|info|JBController already exists on goerli at 0x6cb0052ba87Da5AA43552d1b4709ce35d50c06Ec
+2022-11-15T03:33:55.409Z|info|JBSingleTokenPaymentTerminalStore already exists on goerli at 0x8F8C59383638eC51685F86db2Af16D07b4e2a1AE
+2022-11-15T03:33:55.410Z|info|JBCurrencies already exists on goerli at 0x1D217D4da7f88CA5D53E67Ace432bdD12311B453
+2022-11-15T03:33:55.413Z|info|JBETHPaymentTerminal already exists on goerli at 0x9250445D2C03C0a4844B203fCEAEaa69edEBC242
+2022-11-15T03:33:55.414Z|info|JB1DayReconfigurationBufferBallot already exists on goerli at 0x69cb344B64Aae517F740a7a90bB8C714ee64DE54
+2022-11-15T03:33:55.414Z|info|JB3DayReconfigurationBufferBallot already exists on goerli at 0x7fd60Ff2b7223487E9306DE525639cE2a0C46ce1
+2022-11-15T03:33:55.415Z|info|JB7DayReconfigurationBufferBallot already exists on goerli at 0x363245BFe4554Fd57040F2C4695f713c45Fb28c1
+2022-11-15T03:33:55.415Z|info|deployment complete
+2022-11-15T03:33:55.415Z|info|deploying DAOLABS extensions
+2022-11-15T03:33:55.417Z|info|DaiTreasuryDelegate already exists on goerli at 0x5B7638342008C096cC6875Ee9FDB9c1d65859083
+2022-11-15T03:33:55.418Z|info|RoleManager already exists on goerli at 0x3c00549F049dB8Cc02111451C00097f943336Bb2
+2022-11-15T03:33:55.419Z|info|VestingPlanManager already exists on goerli at 0x860c1A6291d018c9a45FE1f6530463FADf70358f
+2022-11-15T03:33:55.419Z|info|deployment complete
+2022-11-15T03:34:29.453Z|info|deploying DAOLABS Juicebox v3, core platform, fork to goerli
+2022-11-15T03:34:29.513Z|info|connected as 0x8a97426C1a720a45B8d69E974631f01f1168232B
+2022-11-15T03:34:29.513Z|info|deploying JBETHERC20ProjectPayerDeployer
+2022-11-15T03:34:50.878Z|info|deployed to 0x3009C2Ed9Df91cB4710f7c394D126600Dd53a862 in 0xc1b2524c95d75e8045e579b9407ffc317c4956350839f104ef099d7e8a967350
+2022-11-15T03:34:50.881Z|info|deploying JBETHERC20SplitsPayerDeployer
+2022-11-15T04:00:40.101Z|info|deployed to 0xFb4f3BF3214C7f0c72AD7a3253724E40c3917c01 in 0x5739461fe8037ddd29e4dcbc5e3a1e2c17c4f2356092153f7af0a16b413cb315
+2022-11-15T04:00:40.103Z|info|deploying JBOperatorStore
+2022-11-15T04:06:29.005Z|info|deployed to 0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC in 0xdf1c84791dc8d28f7192436a7588c1df1ba96b60aacd17dd0179c42c2fa40a9a
+2022-11-15T04:06:29.006Z|info|deploying JBPrices with args: '0x8a97426C1a720a45B8d69E974631f01f1168232B'
+2022-11-15T04:08:49.646Z|info|deployed to 0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431 in 0x0b511fb3df345531dae9c456a2842dda57d3e15fdd7d4cb153fcae052bdfa230
+2022-11-15T04:08:49.649Z|info|deploying JBProjects with args: '0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC'
+2022-11-15T04:09:26.551Z|info|deployed to 0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21 in 0x9d6fae87152bfa7f96a8c4b710165163b7b112c5f1aa18ef8f782e0e6bac9f77
+2022-11-15T04:09:26.646Z|info|deploying JBDirectory with args: '0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC,0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21,0x295611056E1351459f51642Ec90e6C31AE0685Ba,0x8a97426C1a720a45B8d69E974631f01f1168232B'
+2022-11-15T04:09:39.427Z|info|deployed to 0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A in 0x15956f0d2c61f4e8d102e0378f2f780840b3564d54cdccb65bda9e0438b29dfb
+2022-11-15T04:09:39.429Z|info|deploying JBFundingCycleStore with args: '0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A'
+2022-11-15T04:09:52.110Z|info|deployed to 0x295611056E1351459f51642Ec90e6C31AE0685Ba in 0xf1083b5434f50fabc8d82eb4eb0bc427d575510f1e2cc2ca321a8aec1bb2e5c1
+2022-11-15T04:09:52.120Z|info|deploying JBTokenStore with args: '0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC,0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21,0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A,0x295611056E1351459f51642Ec90e6C31AE0685Ba'
+2022-11-15T04:10:00.830Z|info|deployed to 0xe1f9AF6Ff96D4d549D1273439750cFe4Db97D3dF in 0x09798ace0cdba23df923839e45a9f8941fbb58597d0b9ef219b8f4dafef3ed46
+2022-11-15T04:10:00.839Z|info|deploying JBSplitsStore with args: '0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC,0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21,0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A'
+2022-11-15T04:10:25.587Z|info|deployed to 0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5 in 0x62d101f0a1b9124b1791e6df9e52ab711147445fb3662a6b5947556056e2693c
+2022-11-15T04:10:25.597Z|info|deploying JBController with args: '0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC,0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21,0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A,0x295611056E1351459f51642Ec90e6C31AE0685Ba,0xe1f9AF6Ff96D4d549D1273439750cFe4Db97D3dF,0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5'
+2022-11-15T04:11:03.144Z|info|deployed to 0x396EBD4832665b48a76763eE5259E63d884e80B6 in 0x412fb22b0ca4b1b247bc9048a8c2d55e43aa9a785525e4eb6bd406d588e5c102
+2022-11-15T04:11:03.159Z|info|deploying JBSingleTokenPaymentTerminalStore with args: '0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A,0x295611056E1351459f51642Ec90e6C31AE0685Ba,0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431'
+2022-11-15T04:11:27.947Z|info|deployed to 0xFca256E724F3F8034024b50a6B286C8788fc7EDE in 0x48439ff7f9f0028efb0476e12ab2caa3fe55104c4fd3b497c940096472c268d7
+2022-11-15T04:11:27.957Z|info|deploying JBCurrencies
+2022-11-15T04:11:40.546Z|info|deployed to 0x39bEc777Dd1366DA960AFA740E87517D3ca43348 in 0x1df616b08225b44f69b8bc86eb95c61e687b5284052a74f95f10c69bdd4e2b5f
+2022-11-15T04:18:58.388Z|info|deploying DAOLABS Juicebox v3, core platform, fork to goerli
+2022-11-15T04:18:58.447Z|info|connected as 0x8a97426C1a720a45B8d69E974631f01f1168232B
+2022-11-15T04:18:58.447Z|info|JBETHERC20ProjectPayerDeployer already exists on goerli at 0x3009C2Ed9Df91cB4710f7c394D126600Dd53a862
+2022-11-15T04:18:58.448Z|info|JBETHERC20SplitsPayerDeployer already exists on goerli at 0xFb4f3BF3214C7f0c72AD7a3253724E40c3917c01
+2022-11-15T04:18:58.449Z|info|JBOperatorStore already exists on goerli at 0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC
+2022-11-15T04:18:58.449Z|info|JBPrices already exists on goerli at 0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431
+2022-11-15T04:18:58.450Z|info|JBProjects already exists on goerli at 0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21
+2022-11-15T04:18:59.164Z|info|JBDirectory already exists on goerli at 0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A
+2022-11-15T04:18:59.166Z|info|JBFundingCycleStore already exists on goerli at 0x295611056E1351459f51642Ec90e6C31AE0685Ba
+2022-11-15T04:18:59.167Z|info|JBTokenStore already exists on goerli at 0xe1f9AF6Ff96D4d549D1273439750cFe4Db97D3dF
+2022-11-15T04:18:59.168Z|info|JBSplitsStore already exists on goerli at 0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5
+2022-11-15T04:18:59.170Z|info|JBController already exists on goerli at 0x396EBD4832665b48a76763eE5259E63d884e80B6
+2022-11-15T04:18:59.171Z|info|JBSingleTokenPaymentTerminalStore already exists on goerli at 0xFca256E724F3F8034024b50a6B286C8788fc7EDE
+2022-11-15T04:18:59.172Z|info|JBCurrencies already exists on goerli at 0x39bEc777Dd1366DA960AFA740E87517D3ca43348
+2022-11-15T04:18:59.175Z|info|deploying JBETHPaymentTerminal with args: '1,0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC,0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21,0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A,0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5,0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431,0xFca256E724F3F8034024b50a6B286C8788fc7EDE,0x8a97426C1a720a45B8d69E974631f01f1168232B'
+2022-11-15T04:21:28.644Z|info|deployed to 0x69E964e6491195d3383fc0719b66a145501Dd271 in 0x3739625c86ad57dfb2d2af8a1422bd83b6efb8f29f8433103320691a7cb5db2f
+2022-11-15T04:21:28.656Z|info|deploying JBReconfigurationBufferBallot with args: '86400'
+2022-11-15T04:22:25.232Z|info|deployed to 0xDe977C7Fd2e0e78ac3A889c3918896e39186E8B4 in 0xcf07a581a1327dab47e78617be930bdd9ce0e7095dff36749a6311fd0c53f106
+2022-11-15T04:22:25.244Z|info|deploying JBReconfigurationBufferBallot with args: '259200'
+2022-11-15T04:22:37.801Z|info|deployed to 0xA902Aff9d3114C3FB71274E83aD408f64325C151 in 0x573313d9c242ff66b0bde91ad64e190418022c181040d738f1d2f940d8dd7a7c
+2022-11-15T04:22:37.806Z|info|deploying JBReconfigurationBufferBallot with args: '604800'
+2022-11-15T04:22:50.350Z|info|deployed to 0xC9A85761aFB742F107A35688E7f866A014E2E6b3 in 0x57c9033b785ad45f676f883b9575752c2b26aef327718d5bbeae73fec38abaa6
+2022-11-15T04:22:50.360Z|info|deployment complete
+2022-11-15T04:22:50.360Z|info|deploying DAOLABS extensions
+2022-11-15T04:22:50.368Z|info|deploying DaiTreasuryDelegate with args: '0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5'
+2022-11-15T04:23:15.385Z|info|deployed to 0x3565801b4F0b1D6A6D3f6eeeEAdc5689eD083657 in 0xf3e9e9557ef6f94b611ffbccf992c587eec9d41a28c59b510e66df1e5c8474b3
+2022-11-15T04:23:15.402Z|info|deploying RoleManager with args: '0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A,0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC,0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21,0x8a97426C1a720a45B8d69E974631f01f1168232B'
+2022-11-15T04:23:40.217Z|info|deployed to 0xb00e925cE219Dabab33A6B61C0512840543586C6 in 0x3ae3273e195bc16c279fb46a2f1ecce4e13ea7e8a72b575f881b4ba3802103f4
+2022-11-15T04:23:40.221Z|info|deploying VestingPlanManager
+2022-11-15T04:23:49.057Z|info|deployed to 0xDcb5E630EC772436f259A0eCE411118aC5888aE7 in 0x3bc1ecc08a7bb5c3d80a01d8a86c1ad4b9101e4428ad9d89866dc7e202b24eec
+2022-11-15T04:23:49.067Z|info|deployment complete
+2022-11-15T04:24:16.269Z|info|verifying JBETHERC20ProjectPayerDeployer on goerli at 0x3009C2Ed9Df91cB4710f7c394D126600Dd53a862 with Etherscan
+2022-11-15T04:25:41.097Z|info|verification complete
+2022-11-15T04:25:41.108Z|info|verifying JBETHERC20SplitsPayerDeployer on goerli at 0xFb4f3BF3214C7f0c72AD7a3253724E40c3917c01 with Etherscan
+2022-11-15T04:27:53.999Z|info|verification complete
+2022-11-15T04:27:54.010Z|info|verifying JBOperatorStore on goerli at 0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC with Etherscan
+2022-11-15T04:29:18.408Z|error|failed to verify JBOperatorStore with Etherscan The Etherscan API responded with a failure status.
+The verification may still succeed but should be checked manually.
+Reason: Already Verified
+2022-11-15T04:29:18.417Z|info|verifying JBPrices on goerli at 0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431 with Etherscan
+2022-11-15T04:30:46.578Z|error|failed to verify JBPrices with Etherscan The Etherscan API responded with a failure status.
+The verification may still succeed but should be checked manually.
+Reason: Already Verified
+2022-11-15T04:30:46.596Z|info|verifying JBProjects on goerli at 0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21 with Etherscan
+2022-11-15T04:32:13.369Z|info|verification complete
+2022-11-15T04:32:13.377Z|info|verifying JBDirectory on goerli at 0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A with Etherscan
+2022-11-15T04:33:40.207Z|info|verification complete
+2022-11-15T04:33:40.223Z|info|verifying JBFundingCycleStore on goerli at 0x295611056E1351459f51642Ec90e6C31AE0685Ba with Etherscan
+2022-11-15T04:35:11.868Z|info|verification complete
+2022-11-15T04:35:11.883Z|info|verifying JBTokenStore on goerli at 0xe1f9AF6Ff96D4d549D1273439750cFe4Db97D3dF with Etherscan
+2022-11-15T04:36:42.293Z|info|verification complete
+2022-11-15T04:36:42.306Z|info|verifying JBSplitsStore on goerli at 0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5 with Etherscan
+2022-11-15T04:38:03.046Z|info|verification complete
+2022-11-15T04:38:03.062Z|info|verifying JBController on goerli at 0x396EBD4832665b48a76763eE5259E63d884e80B6 with Etherscan
+2022-11-15T04:39:29.284Z|info|verification complete
+2022-11-15T04:39:29.289Z|info|verifying JBSingleTokenPaymentTerminalStore on goerli at 0xFca256E724F3F8034024b50a6B286C8788fc7EDE with Etherscan
+2022-11-15T04:40:52.039Z|info|verification complete
+2022-11-15T04:40:52.055Z|info|verifying JBCurrencies on goerli at 0x39bEc777Dd1366DA960AFA740E87517D3ca43348 with Etherscan
+2022-11-15T04:42:05.174Z|info|verification complete
+2022-11-15T04:42:05.191Z|info|verifying JBETHPaymentTerminal on goerli at 0x69E964e6491195d3383fc0719b66a145501Dd271 with Etherscan
+2022-11-15T04:43:31.328Z|info|verification complete
+2022-11-15T04:43:31.344Z|info|verifying JB1DayReconfigurationBufferBallot on goerli at 0xDe977C7Fd2e0e78ac3A889c3918896e39186E8B4 with Etherscan
+2022-11-15T04:44:55.305Z|info|verification complete
+2022-11-15T04:44:55.320Z|info|verifying JB3DayReconfigurationBufferBallot on goerli at 0xA902Aff9d3114C3FB71274E83aD408f64325C151 with Etherscan
+2022-11-15T04:46:15.733Z|info|verification complete
+2022-11-15T04:46:15.748Z|info|verifying JB7DayReconfigurationBufferBallot on goerli at 0xC9A85761aFB742F107A35688E7f866A014E2E6b3 with Etherscan
+2022-11-15T04:47:36.228Z|info|verification complete
+2022-11-15T04:47:36.233Z|info|verifying DaiTreasuryDelegate on goerli at 0x3565801b4F0b1D6A6D3f6eeeEAdc5689eD083657 with Etherscan
+2022-11-15T04:48:59.379Z|info|verification complete
+2022-11-15T04:48:59.396Z|info|verifying RoleManager on goerli at 0xb00e925cE219Dabab33A6B61C0512840543586C6 with Etherscan
+2022-11-15T04:50:16.351Z|info|verification complete
+2022-11-15T04:50:16.366Z|info|verifying VestingPlanManager on goerli at 0xDcb5E630EC772436f259A0eCE411118aC5888aE7 with Etherscan
+2022-11-15T04:51:33.353Z|info|verification complete
+2022-11-15T04:51:33.366Z|info|verification complete

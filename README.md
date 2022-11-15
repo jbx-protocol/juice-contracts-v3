@@ -1,6 +1,10 @@
-# DAO LABS Juicebox v3 Fork
+# DAOLABS Juicebox v3 Fork
 
 This repo is a fork of the [Juicebox protocol](https://github.com/jbx-protocol/juice-contracts-v3). For an overview, architecture, and API documentation see [juicebox.money](https://info.juicebox.money/dev/).
+
+Additionally, wrapper classes to interact with the extensions for the Svelte frontend can be found [here](https://github.com/tankbottoms/juice-interface-svelte/tree/feature/contracts/src/utils/web3), i.e. [Dutch Auction](https://github.com/tankbottoms/juice-interface-svelte/blob/feature/contracts/src/utils/web3/extensions/DutchAuctionWrapper.ts).
+
+Deployment JSONs [platform](deployments/goerli/platform.json) and [extensions](deployments/goerli/extensions.json) are intended to be single sources of truth for the frontend, where possible. i.e. contracts which rely on a singleton contract need not be provided the address, where deployed NFTs require subsequent calls to include its address.
 
 ## Differences
 
@@ -14,7 +18,7 @@ This is a hardhat project you should be able to run hardhat commands directly li
 
 Code coverage may run out of memory, feed it more with `export NODE_OPTIONS=--max-old-space-size=8192`.
 
-These commands will require a .env file to be placed at the root of the project. An example is [included](./.example.env). DAO LABS uses a combination of Infura and Alchemy infrastructure, you can modify [hardhat config](./hardhat.config.ts) to use only one.
+These commands will require a .env file to be placed at the root of the project. An example is [included](./.example.env). DAOLABS uses a combination of Infura and Alchemy infrastructure, you can modify [hardhat config](./hardhat.config.ts) to use only one.
 
 ## Deploying
 
