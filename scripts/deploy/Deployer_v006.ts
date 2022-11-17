@@ -50,7 +50,7 @@ async function main() {
     const jbxDirectoryAddress = getContractRecord('JBDirectory').address;
     const jbxOperatorStoreAddress = getContractRecord('JBOperatorStore').address;
     const jbxProjectsAddress = getContractRecord('JBProjects').address;
-    
+
     logger.info(`found existing deployment of DeployerProxy at ${deployerProxyAddress}`);
     logger.info(`found existing deployment of NFTokenFactory at ${nfTokenFactoryLibraryAddress}`);
     logger.info(`found existing deployment of MixedPaymentSplitterFactory at ${mixedPaymentSplitterFactoryLibraryAddress}`);
@@ -81,8 +81,9 @@ async function main() {
     });
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, sourceTokenLiquidatorAddress] } });
+    logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
-    logger.info(`upgraded ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
+    logger.info(`upgraded ${deployerProxy.address}`);
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy']['version'] = 6;

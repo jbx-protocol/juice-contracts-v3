@@ -63,7 +63,7 @@ async function main() {
 
     await deployRecordContract('PaymentProcessorFactory', [], deployer, 'PaymentProcessorFactory', deploymentLogPath);
     const paymentProcessorFactoryAddress = getContractRecord('PaymentProcessorFactory', deploymentLogPath).address;
-    
+
     const deployerFactory = await ethers.getContractFactory('Deployer_v005', {
         libraries: {
             NFTokenFactory: nfTokenFactoryLibraryAddress,
@@ -82,8 +82,9 @@ async function main() {
     const tokenLiquidatorAddress = getContractRecord('TokenLiquidator', deploymentLogPath).address;
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, tokenLiquidatorAddress] } });
+    logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
-    logger.info(`upgraded ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
+    logger.info(`upgraded ${deployerProxy.address}`);
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy']['version'] = 5;

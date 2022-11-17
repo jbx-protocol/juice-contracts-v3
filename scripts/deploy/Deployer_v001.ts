@@ -44,11 +44,11 @@ async function main() {
         signer: deployer
     });
     const deployerProxy = await upgrades.deployProxy(deployerFactory, { kind: 'uups', initializer: 'initialize' });
+    logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
+    logger.info(`upgraded ${deployerProxy.address}`);
 
-    // deployRecordContract('Deployer_v001', [], deployer, 'DeployerProxy', `./deployments/${hre.network.name}/extensions.json`, { NFTokenFactory: nfTokenFactoryLibrary.address }); // TODO: needs upgrade functionality
-
-    logger.info(`deployed to ${deployerProxy.address} in ${deployerProxy.deployTransaction.hash}`);
+    // deployRecordContract('Deployer_v001', [], deployer, 'DeployerProxy', `./deployments/${hre.network.name}/extensions.json`, { NFTokenFactory: nfTokenFactoryLibrary.address }); // TODO: needs upgrade functionality; consider using lib for this
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy'] = {};
