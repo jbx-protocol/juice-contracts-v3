@@ -448,8 +448,8 @@
             "type": "NFTokenFactory"
         },
         "DeployerProxy": {
-            "address": "0xa442a4e92e0848C5Da03A105152Ffb6b0Cc502f9",
-            "version": 1,
+            "address": "0x432124c3eE06A95e0Cf01A3A1a02AF19F1600a59",
+            "version": 5,
             "abi": [
                 {
                     "type": "constructor",
@@ -545,6 +545,123 @@
                 },
                 {
                     "type": "function",
+                    "name": "deployDutchAuction",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_feeReceiver"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_feeRate"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_allowPublicAuctions"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_periodDuration"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_owner"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_directory"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address",
+                            "name": "auction"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "deployEnglishAuction",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_feeReceiver"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_feeRate"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_allowPublicAuctions"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_owner"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_directory"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address",
+                            "name": "auction"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "deployMixedPaymentSplitter",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "string",
+                            "name": "_name"
+                        },
+                        {
+                            "type": "address[]",
+                            "name": "_payees"
+                        },
+                        {
+                            "type": "uint256[]",
+                            "name": "_projects"
+                        },
+                        {
+                            "type": "uint256[]",
+                            "name": "_shares"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_jbxDirectory"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_owner"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
                     "name": "deployNFToken",
                     "constant": false,
                     "payable": false,
@@ -606,10 +723,165 @@
                 },
                 {
                     "type": "function",
+                    "name": "deployNFUToken",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_owner"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_name"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_symbol"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_baseUri"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_contractUri"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_jbxProjectId"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_jbxDirectory"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_maxSupply"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_unitPrice"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_mintAllowance"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address",
+                            "name": "token"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "deployPaymentProcessor",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_jbxDirectory"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_jbxOperatorStore"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_jbxProjects"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_jbxProjectId"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_ignoreFailures"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_defaultLiquidation"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address",
+                            "name": "processor"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "initialize",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_dutchAuctionSource"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_englishAuctionSource"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
                     "name": "initialize",
                     "constant": false,
                     "payable": false,
                     "inputs": [],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "initialize",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_dutchAuctionSource"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_englishAuctionSource"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_nfuTokenSource"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "initialize",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_dutchAuctionSource"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_englishAuctionSource"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_nfuTokenSource"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_tokenLiquidator"
+                        }
+                    ],
                     "outputs": []
                 },
                 {
@@ -4131,13 +4403,6 @@
             "verified": false,
             "type": "TokenLiquidator"
         },
-        "NFTRewardDataSourceFactory": {
-            "address": "0x39676AB8e639F4D409Bd3a8A94275fbc5652468B",
-            "args": [],
-            "abi": [],
-            "verified": false,
-            "type": "NFTRewardDataSourceFactory"
-        },
         "TraitTokenFactory": {
             "address": "0xD6E9BF14666bf4C3460D5A4f7376caB36964d885",
             "args": [],
@@ -6311,6 +6576,13 @@
             ],
             "verified": false,
             "type": "TraitToken"
+        },
+        "NFTRewardDataSourceFactory": {
+            "address": "0x49261ac02eD2b626Ea80dbF64Fe9F3935c04E8D4",
+            "args": [],
+            "abi": [],
+            "verified": false,
+            "type": "NFTRewardDataSourceFactory"
         }
     }
 }
