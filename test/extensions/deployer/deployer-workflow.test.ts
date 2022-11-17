@@ -9,7 +9,6 @@ import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 const testNetwork = 'goerli';
 
 describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
-
     const extensionDeploymentLogPath = `./deployments/${testNetwork}/extensions.json`;
     const platformDeploymentLogPath = `./deployments/${testNetwork}/platform.json`;
 
@@ -171,8 +170,15 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         let tx = await deployerProxy.connect(accounts[0]).deployTieredPriceResolver(contributionToken, mintCap, userMintCap, rewardTiers);
         let receipt = await tx.wait();
         let eventArgs = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        expect(eventArgs[0]).to.equal('TieredPriceResolver');
+        const priceResolverAddress = eventArgs[1];
 
-        // expect(eventArgs[0]).to.equal('TieredPriceResolver');
+        const uri = 'ipfs://token_base_uri';
+        tx = await deployerProxy.connect(accounts[0]).deployTieredTokenUriResolver(uri, rewardTiers.map(t => t.idCeiling));
+        receipt = await tx.wait();
+        eventArgs = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        expect(eventArgs[0]).to.equal('TieredTokenUriResolver');
+        const uriResolverAddress = eventArgs[1];
 
         const projectId = 2;
         const maxSupply = BigNumber.from('1000000000000000');
@@ -184,11 +190,10 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         };
         const name = '';
         const symbol = 'NFT';
-        const uri = 'ipfs://token_base_uri';
-        const tokenUriResolverAddress = ethers.constants.AddressZero;
+        const tokenUriResolverAddress = uriResolverAddress;
         const contractMetadataUri = 'ipfs://contract_metadata';
         const admin = deployer.address;
-        const priceResolver = eventArgs[1];
+        const priceResolver = priceResolverAddress;
 
         tx = await deployerProxy.connect(accounts[0]).deployNFTRewardDataSource(projectId, jbxDirectory.address, maxSupply, minContribution, name, symbol, uri, tokenUriResolverAddress, contractMetadataUri, admin, priceResolver);
         receipt = await tx.wait();
