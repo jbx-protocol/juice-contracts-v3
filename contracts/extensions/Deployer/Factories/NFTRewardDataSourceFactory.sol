@@ -6,6 +6,7 @@ import '../../../interfaces/IJBDirectory.sol';
 import '../../NFTRewards/NFTRewardDataSourceDelegate.sol';
 import '../../NFTRewards/OpenTieredTokenUriResolver.sol';
 import '../../NFTRewards/OpenTieredPriceResolver.sol';
+import '../../NFTRewards/TieredTokenUriResolver.sol';
 import '../../NFTRewards/TieredPriceResolver.sol';
 
 import '../../interfaces/IPriceResolver.sol';
@@ -26,6 +27,15 @@ library NFTRewardDataSourceFactory {
     returns (address)
   {
     OpenTieredPriceResolver c = new OpenTieredPriceResolver(_contributionToken, _tiers);
+
+    return address(c);
+  }
+
+  function createTieredTokenUriResolver(string memory _baseUri, uint256[] memory _idRange)
+    public
+    returns (address)
+  {
+    TieredTokenUriResolver c = new TieredTokenUriResolver(_baseUri, _idRange);
 
     return address(c);
   }

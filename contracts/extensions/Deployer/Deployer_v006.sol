@@ -49,6 +49,14 @@ contract Deployer_v006 is Deployer_v005 {
     emit Deployment('OpenTieredPriceResolver', resolver);
   }
 
+  function deployTieredTokenUriResolver(string memory _baseUri, uint256[] memory _idRange)
+    external
+    returns (address resolver)
+  {
+    resolver = NFTRewardDataSourceFactory.createTieredTokenUriResolver(_baseUri, _idRange);
+    emit Deployment('TieredTokenUriResolver', resolver);
+  }
+
   function deployTieredPriceResolver(
     address _contributionToken,
     uint256 _mintCap,
