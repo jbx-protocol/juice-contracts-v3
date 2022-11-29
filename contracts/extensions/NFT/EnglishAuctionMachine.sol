@@ -9,7 +9,7 @@ import '../../interfaces/IJBDirectory.sol';
 import '../../interfaces/IJBPaymentTerminal.sol';
 import '../../libraries/JBTokens.sol';
 
-import './INFTAuctionMint.sol';
+import './interfaces/INFTAuctionMint.sol';
 
 interface IEnglishAuctionMachine {
   function initialize(

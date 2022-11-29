@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 
-import './IOperatorFilter.sol';
+import './interfaces/IOperatorFilter.sol';
 
 /**
  * @notice NFT filter keeps a registry of addresses and code hashes that an NFT contract may use to prevent token mint and transfer operations.

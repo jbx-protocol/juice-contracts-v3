@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './INFTSupply.sol';
+import './interfaces/INFTSupply.sol';
 import './SupplyPriceResolver.sol';
 
 contract BalancePriceResolver is SupplyPriceResolver {

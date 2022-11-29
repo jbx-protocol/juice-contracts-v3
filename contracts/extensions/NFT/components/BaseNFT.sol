@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
@@ -10,8 +10,8 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '../../../interfaces/IJBDirectory.sol';
 import '../../../interfaces/IJBPaymentTerminal.sol';
 import '../../../libraries/JBTokens.sol';
-import '../INFTPriceResolver.sol';
-import '../IOperatorFilter.sol';
+import '../interfaces/INFTPriceResolver.sol';
+import '../interfaces/IOperatorFilter.sol';
 import './ERC721FU.sol';
 
 /**
@@ -130,7 +130,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   bool public isPaused;
 
   /**
-   * @notice Pause minting flag
+   * @notice If set, token ids will not be sequential, but instead based on minting account, current blockNumber, and optionally, price of eth.
    */
   bool public randomizedMint;
 
@@ -210,12 +210,10 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @param _tokenId Token id.
    * @param _salePrice NFT sale price to derive royalty amount from.
    */
-  function royaltyInfo(uint256 _tokenId, uint256 _salePrice)
-    external
-    view
-    virtual
-    returns (address receiver, uint256 royaltyAmount)
-  {
+  function royaltyInfo(
+    uint256 _tokenId,
+    uint256 _salePrice
+  ) external view virtual returns (address receiver, uint256 royaltyAmount) {
     if (_salePrice == 0 || _ownerOf[_tokenId] != address(0)) {
       receiver = address(0);
       royaltyAmount = 0;
@@ -280,7 +278,10 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    *
    * @dev Proceeds are forwarded to the default Juicebox terminal for the project id set in the constructor. Payment will fail if the terminal is not set in the jbx directory.
    */
-  function mint(string calldata _memo, bytes calldata _metadata)
+  function mint(
+    string calldata _memo,
+    bytes calldata _metadata
+  )
     external
     payable
     virtual
@@ -367,12 +368,9 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   /**
    * @notice Privileged operation callable by accounts with MINTER_ROLE permission to mint the next NFT id to the provided address.
    */
-  function mintFor(address _account)
-    external
-    virtual
-    onlyRole(MINTER_ROLE)
-    returns (uint256 tokenId)
-  {
+  function mintFor(
+    address _account
+  ) external virtual onlyRole(MINTER_ROLE) returns (uint256 tokenId) {
     if (totalSupply == maxSupply) {
       revert SUPPLY_EXHAUSTED();
     }
@@ -429,10 +427,10 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @param _mintPeriodStart New minting period start.
    * @param _mintPeriodEnd New minting period end.
    */
-  function updateMintPeriod(uint128 _mintPeriodStart, uint128 _mintPeriodEnd)
-    external
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function updateMintPeriod(
+    uint128 _mintPeriodStart,
+    uint128 _mintPeriodEnd
+  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
     mintPeriodStart = _mintPeriodStart;
     mintPeriodEnd = _mintPeriodEnd;
   }
@@ -441,17 +439,15 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     unitPrice = _unitPrice;
   }
 
-  function updatePriceResolver(INFTPriceResolver _priceResolver)
-    external
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function updatePriceResolver(
+    INFTPriceResolver _priceResolver
+  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
     priceResolver = _priceResolver;
   }
 
-  function updateOperatorFilter(IOperatorFilter _operatorFilter)
-    external
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function updateOperatorFilter(
+    IOperatorFilter _operatorFilter
+  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
     operatorFilter = _operatorFilter;
   }
 
@@ -491,10 +487,10 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @param _royaltyReceiver Payable royalties receiver, if set to address(0) royalties will be processed by the contract itself.
    * @param _royaltyRate Rate expressed in bps, can only be set once.
    */
-  function setRoyalties(address _royaltyReceiver, uint16 _royaltyRate)
-    external
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function setRoyalties(
+    address _royaltyReceiver,
+    uint16 _royaltyRate
+  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
     royaltyReceiver = payable(_royaltyReceiver);
 
     if (_royaltyRate > 10_000) {
@@ -509,12 +505,9 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   /**
    * @dev See {IERC165-supportsInterface}.
    */
-  function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(AccessControlEnumerable, ERC721FU)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 interfaceId
+  ) public view override(AccessControlEnumerable, ERC721FU) returns (bool) {
     return
       interfaceId == type(IERC2981).interfaceId || // 0x2a55205a
       AccessControlEnumerable.supportsInterface(interfaceId) ||

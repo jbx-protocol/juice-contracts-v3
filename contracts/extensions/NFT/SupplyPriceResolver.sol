@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './INFTSupply.sol';
-import './INFTPriceResolver.sol';
+import './interfaces/INFTSupply.sol';
+import './interfaces/INFTPriceResolver.sol';
 
 contract SupplyPriceResolver is INFTPriceResolver {
   uint256 internal immutable basePrice;
@@ -43,7 +43,7 @@ contract SupplyPriceResolver is INFTPriceResolver {
     if (priceFunction == PriceFunction.LINEAR) {
       price = multiplier * (currentSupply / tierSize) * basePrice;
     } else if (priceFunction == PriceFunction.EXP) {
-      price = multiplier**(currentSupply / tierSize) * basePrice;
+      price = multiplier ** (currentSupply / tierSize) * basePrice;
     } else if (priceFunction == PriceFunction.CONSTANT) {
       // price = basePrice; // NOTE, price is 0 here and will be set to basePrice below
     }
