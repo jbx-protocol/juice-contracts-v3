@@ -5,6 +5,9 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 
 import '../interfaces/IToken721UriResolver.sol';
 
+/**
+ * @dev Implements pseudo ERC1155 functionality into an ERC721 token while maintaining unique token id and serving the same metadata for some range of ids.
+ */
 contract TieredTokenUriResolver is IToken721UriResolver {
   using Strings for uint256;
   error INVALID_ID_SORT_ORDER(uint256);
