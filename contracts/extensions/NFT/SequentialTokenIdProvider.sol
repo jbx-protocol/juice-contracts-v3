@@ -38,7 +38,7 @@ contract SequentialTokenIdProvider is ITokenIdProvider, ITokenURIProvider {
     uint256 _maxSupply,
     address,
     uint256
-  ) external returns (uint256 id) {
+  ) public view returns (uint256 id) {
     unchecked {
       id = _currentSupply + 1;
     }
@@ -53,7 +53,7 @@ contract SequentialTokenIdProvider is ITokenIdProvider, ITokenURIProvider {
    *
    * @param _tokenId Token id
    */
-  function tokenURI(uint256 _tokenId) public returns (string memory uri) {
+  function tokenURI(uint256 _tokenId) public view returns (string memory uri) {
     uri = string(abi.encodePacked(baseUri, _tokenId.toString()));
   }
 }

@@ -50,7 +50,7 @@ contract RandomizedTokenIdProvider is ITokenIdProvider, ITokenURIProvider {
     uint256 _maxSupply,
     address _account,
     uint256
-  ) external returns (uint256 id) {
+  ) public override returns (uint256 id) {
     if (_currentSupply + 1 > _maxSupply) {
       revert SUPPLY_EXCEEDED();
     }
@@ -68,7 +68,7 @@ contract RandomizedTokenIdProvider is ITokenIdProvider, ITokenURIProvider {
 
     id = uint256(keccak256(abi.encodePacked(_account, block.number, ethPrice))) % (_maxSupply + 1);
 
-    while (tokenId == 0 || token.ownerOf(id) != address(0)) {
+    while (id == 0 || token.ownerOf(id) != address(0)) {
       id = ++id % (_maxSupply + 1);
     }
   }
@@ -78,7 +78,7 @@ contract RandomizedTokenIdProvider is ITokenIdProvider, ITokenURIProvider {
    *
    * @param _tokenId Token id
    */
-  function tokenURI(uint256 _tokenId) public returns (string memory uri) {
+  function tokenURI(uint256 _tokenId) public view returns (string memory uri) {
     uri = string(abi.encodePacked(baseUri, _tokenId.toString()));
   }
 }
