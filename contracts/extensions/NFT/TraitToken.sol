@@ -8,16 +8,19 @@ interface ITraitToken {
   function setTokenAsset(uint256 _tokenId, bytes32 _truncatedCID) external;
 }
 
+/**
+ * @notice An ERC721 contract that stores per-token IPFSs CIDs efficiently. This is meant to be used for NFTs that have traits along the lines of BAYC, etc.
+ */
 contract TraitToken is BaseNFT {
   error INVALID_OPERATION();
 
   bytes constant ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
-  /**
-   * @notice NFT provenance hash reassignment prohibited.
-   */
   error NOT_MINTED();
 
+  /**
+   * @notice Cannot reassign a token CID.
+   */
   error CID_REASSIGNMENT();
 
   /**
@@ -119,11 +122,7 @@ contract TraitToken is BaseNFT {
     );
   }
 
-  function generateTokenId(
-    address,
-    uint256,
-    uint256
-  ) internal virtual override returns (uint256 tokenId) {
+  function generateTokenId(address, uint256) internal virtual override returns (uint256 tokenId) {
     tokenId = totalSupply;
   }
 
