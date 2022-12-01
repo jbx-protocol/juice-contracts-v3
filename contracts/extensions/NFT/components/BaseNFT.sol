@@ -264,12 +264,12 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       revert MINTING_PAUSED();
     }
 
-    processPayment('', '');
+    processPayment('', '', unitPrice);
 
     unchecked {
       ++totalSupply;
     }
-    tokenId = generateTokenId(msg.sender, msg.value, block.number);
+    tokenId = generateTokenId(msg.sender, msg.value);
     _mint(msg.sender, tokenId);
   }
 
@@ -298,12 +298,12 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       revert MINTING_PAUSED();
     }
 
-    processPayment(_memo, _metadata);
+    processPayment(_memo, _metadata, unitPrice);
 
     unchecked {
       ++totalSupply;
     }
-    tokenId = generateTokenId(msg.sender, msg.value, block.number);
+    tokenId = generateTokenId(msg.sender, msg.value);
     _mint(msg.sender, tokenId);
   }
 
@@ -312,16 +312,21 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    *
    * @dev This version of the NFT does not directly accept Ether and will fail to process mint payment if there is a misconfiguration of the JBX terminal.
    *
-   * @param _memo Juicebox memo to pass to a IJBPaymentTerminal
-   * @param _metadata Juicebox metadata to pass to a IJBPaymentTerminal
+   * @param _memo Juicebox memo to pass to a IJBPaymentTerminal.
+   * @param _metadata Juicebox metadata to pass to a IJBPaymentTerminal.
+   * @param _unitPrice Expected price of the mint, for reusability with NFUEdition contract.
    */
-  function processPayment(string memory _memo, bytes memory _metadata) internal virtual {
+  function processPayment(
+    string memory _memo,
+    bytes memory _metadata,
+    uint256 _unitPrice
+  ) internal virtual {
     uint256 accountBalance = balanceOf(msg.sender);
     if (accountBalance == mintAllowance) {
       revert ALLOWANCE_EXHAUSTED();
     }
 
-    uint256 expectedPrice = unitPrice;
+    uint256 expectedPrice = _unitPrice;
     if (address(priceResolver) != address(0)) {
       expectedPrice = priceResolver.getPrice(address(this), msg.sender, 0);
     }
@@ -378,7 +383,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     unchecked {
       ++totalSupply;
     }
-    tokenId = generateTokenId(_account, 0, block.number);
+    tokenId = generateTokenId(_account, 0);
     _mint(_account, tokenId);
   }
 
@@ -516,11 +521,12 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
 
   /**
    * @notice Generates a token id based on provided parameters. Id range is 1...(maxSupply + 1), 0 is considered invalid and never returned.
+   *
+   * @dev If randomizedMint is set token id will be based on account value, current price of eth for the amount provided (via Uniswap), current block number. Collisions are resolved via increment.
    */
   function generateTokenId(
     address _account,
-    uint256 _amount,
-    uint256 _blockNumber
+    uint256 _amount
   ) internal virtual returns (uint256 tokenId) {
     if (!randomizedMint) {
       tokenId = totalSupply;
@@ -537,12 +543,13 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       }
 
       tokenId =
-        uint256(keccak256(abi.encodePacked(_account, _blockNumber, ethPrice))) %
+        uint256(keccak256(abi.encodePacked(_account, block.number, ethPrice))) %
         (maxSupply + 1);
-    }
 
-    while (tokenId == 0 || _ownerOf[tokenId] != address(0)) {
-      tokenId = ++tokenId % (maxSupply + 1);
+      // resolve token id collisions
+      while (tokenId == 0 || _ownerOf[tokenId] != address(0)) {
+        tokenId = ++tokenId % (maxSupply + 1);
+      }
     }
   }
 }
