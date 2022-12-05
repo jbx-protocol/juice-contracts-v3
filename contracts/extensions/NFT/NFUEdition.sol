@@ -112,6 +112,8 @@ contract NFUEdition is BaseNFT {
 
   /**
    * @notice Mints a token for a given edition provided that price validation logic is satisfied. Subject to maxSupply constraints set in the `initialize` function and edition limits set with `registerEdition`.
+   *
+   * @param _edition Edition index.
    */
   function mint(
     uint256 _edition
@@ -122,20 +124,9 @@ contract NFUEdition is BaseNFT {
     nonReentrant
     onlyDuringMintPeriod
     callerNotBlocked(msg.sender)
+    supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    if (editions.length == 0 || editions.length < _edition) {
-      revert INVALID_OPERATION();
-    }
-
-    if (totalSupply == maxSupply) {
-      revert SUPPLY_EXHAUSTED();
-    }
-
-    if (mintedEditions[_edition] == editions[_edition]) {
-      revert SUPPLY_EXHAUSTED();
-    }
-
     if (isPaused) {
       revert MINTING_PAUSED();
     }
@@ -151,7 +142,11 @@ contract NFUEdition is BaseNFT {
   }
 
   /**
+   * @notice Mints a token for a given edition index after validating payment. Subject to maxSupply constraints set in the `initialize` function and edition limits set with `registerEdition`.
    *
+   * @param _edition Edition index.
+   * @param _memo Juicebox payment memo param.
+   * @param _metadata Juicebox payment metadata param.
    */
   function mint(
     uint256 _edition,
@@ -164,24 +159,9 @@ contract NFUEdition is BaseNFT {
     nonReentrant
     onlyDuringMintPeriod
     callerNotBlocked(msg.sender)
+    supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    if (editions.length < _edition) {
-      revert INVALID_OPERATION();
-    }
-
-    if (_edition == 0) {
-      revert INVALID_OPERATION();
-    }
-
-    if (totalSupply == maxSupply) {
-      revert SUPPLY_EXHAUSTED();
-    }
-
-    if (mintedEditions[_edition] == editions[_edition]) {
-      revert SUPPLY_EXHAUSTED();
-    }
-
     if (isPaused) {
       revert MINTING_PAUSED();
     }
@@ -201,12 +181,12 @@ contract NFUEdition is BaseNFT {
   //*********************************************************************//
 
   /**
-   *
+   * @notice Priviledged operation to mint an edition to an address. Does not accept payment, ignores paused flag, mint period and block list.
    */
   function mintEditionFor(
     uint256 _edition,
     address _account
-  ) external virtual onlyRole(MINTER_ROLE) returns (uint256 tokenId) {
+  ) external virtual onlyRole(MINTER_ROLE) supplyAvailable(_edition) returns (uint256 tokenId) {
     unchecked {
       ++totalSupply;
       ++mintedEditions[_edition];
@@ -216,7 +196,7 @@ contract NFUEdition is BaseNFT {
   }
 
   /**
-   *
+   * @notice Appends an edition to the current list. Editions must be in acending order price-wise and this operation will fail if the edition being added is priced below the last one.
    */
   function registerEdition(
     uint256 _maxSupply,
@@ -229,14 +209,14 @@ contract NFUEdition is BaseNFT {
     editions.push(_maxSupply);
     editionPrices.push(_price);
     mintedEditions.push(0);
-    emit RegisterEdition(_supply, _price);
+    emit RegisterEdition(_maxSupply, _price);
   }
 
   //*********************************************************************//
   // ------------------------ parent overrides ------------------------- //
   //*********************************************************************//
   /**
-   *
+   * @notice Provides a token URI based on edition index encoded in the bottom 16 bits of the token id.
    */
   function tokenURI(uint256 _tokenId) public view virtual override returns (string memory uri) {
     if (ownerOf(_tokenId) == address(0)) {
@@ -286,7 +266,7 @@ contract NFUEdition is BaseNFT {
    *
    * @param _account Account which will recieve the token.
    * @param _amount Price being paid for this token, in wei.
-   * @param _edition Edition id.
+   * @param _edition Edition index.
    */
   function generateTokenId(
     address _account,
@@ -317,5 +297,21 @@ contract NFUEdition is BaseNFT {
         tokenId = ++tokenId % (editionSupply + 1);
       }
     }
+  }
+
+  modifier supplyAvailable(uint256 _edition) {
+    if (editions.length == 0 || editions.length < _edition) {
+      revert INVALID_OPERATION();
+    }
+
+    if (totalSupply == maxSupply) {
+      revert SUPPLY_EXHAUSTED();
+    }
+
+    if (mintedEditions[_edition] == editions[_edition]) {
+      revert SUPPLY_EXHAUSTED();
+    }
+
+    _;
   }
 }

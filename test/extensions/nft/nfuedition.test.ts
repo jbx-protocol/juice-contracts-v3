@@ -26,7 +26,7 @@ describe('NFUEdition tests', () => {
     const basicProjectId = 99;
     const basicUnitPrice = ethers.utils.parseEther('0.001');
     const basicMaxSupply = 20;
-    const basicMintAllowance = 2;
+    const basicMintAllowance = 10;
 
     before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
@@ -109,5 +109,45 @@ describe('NFUEdition tests', () => {
         expect(await editionToken.mintedEditions(1)).to.equal(2);
 
         expect(await editionToken.mintedEditions(0)).to.equal(0);
+    });
+
+    it('Supply exhaustion', async () => {
+        await editionToken.connect(deployer).mintEditionFor(2, accounts[2].address);
+        expect(await editionToken.balanceOf(accounts[2].address)).to.equal(2);
+
+        await expect(editionToken.connect(deployer).mintEditionFor(2, accounts[2].address)).to.be.revertedWithCustomError(editionToken, 'SUPPLY_EXHAUSTED');
+        await expect(editionToken.connect(accounts[0])['mint(uint256)'](2, { value: ethers.utils.parseEther('0.01') }))
+            .to.be.revertedWithCustomError(editionToken, 'SUPPLY_EXHAUSTED');
+
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+
+        await expect(editionToken.connect(accounts[0])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') }))
+            .to.be.revertedWithCustomError(editionToken, 'ALLOWANCE_EXHAUSTED');
+
+        await editionToken.connect(accounts[2])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await editionToken.connect(accounts[2])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') });
+        await expect(editionToken.connect(accounts[2])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') }))
+            .to.be.revertedWithCustomError(editionToken, 'SUPPLY_EXHAUSTED');
+
+        await editionToken.connect(accounts[2])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
+        await editionToken.connect(accounts[2])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
+        await editionToken.connect(accounts[2])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
+        await editionToken.connect(accounts[2])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
+        await editionToken.connect(accounts[2])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
+        await editionToken.connect(accounts[2])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
+
+        expect(await editionToken.mintedEditions(0)).to.equal(10);
+        expect(await editionToken.mintedEditions(1)).to.equal(8);
+        expect(await editionToken.mintedEditions(2)).to.equal(2);
+
+        await expect(editionToken.connect(accounts[2])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') }))
+            .to.be.revertedWithCustomError(editionToken, 'SUPPLY_EXHAUSTED');
     });
 });
