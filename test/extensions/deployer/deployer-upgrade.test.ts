@@ -26,6 +26,7 @@ describe('Deployer upgrade tests', () => {
     let nftRewardDataSourceFactoryLibrary: any;
     let auctionMachineFactoryLibrary: any;
     let traitTokenFactoryLibrary: any;
+    let nfuEditionFactoryLibrary: any;
 
     let sourceDutchAuctionHouse: any;
     let sourceEnglishAuctionHouse: any;
@@ -34,6 +35,7 @@ describe('Deployer upgrade tests', () => {
     let dutchAuctionMachineSource: any;
     let englishAuctionMachineSource: any;
     let traitTokenSource: any;
+    let nfuEditionSource: any;
 
     let nfToken: any;
     let mixedPaymentSplitter: any;
@@ -237,7 +239,7 @@ describe('Deployer upgrade tests', () => {
         deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address] } });
     });
 
-    it('Create cloned NFTs', async () => {
+    it('Create cloned NFTs (v004)', async () => {
         const now = await helpers.time.latest();
         const nfuTokenFactory = await ethers.getContractFactory('NFUToken', { signer: deployer });
 
@@ -325,6 +327,9 @@ describe('Deployer upgrade tests', () => {
         const traitTokenFactoryFactory = await ethers.getContractFactory('TraitTokenFactory', deployer);
         traitTokenFactoryLibrary = await traitTokenFactoryFactory.connect(deployer).deploy();
 
+        const nfuEditionFactoryFactory = await ethers.getContractFactory('NFUEditionFactory', deployer);
+        nfuEditionFactoryLibrary = await nfuEditionFactoryFactory.connect(deployer).deploy();
+
         const deployerFactory = await ethers.getContractFactory('Deployer_v007', {
             libraries: {
                 NFTokenFactory: nfTokenFactoryLibrary.address,
@@ -334,7 +339,8 @@ describe('Deployer upgrade tests', () => {
                 PaymentProcessorFactory: paymentProcessorFactoryLibrary.address,
                 NFTRewardDataSourceFactory: nftRewardDataSourceFactoryLibrary.address,
                 AuctionMachineFactory: auctionMachineFactoryLibrary.address,
-                TraitTokenFactory: traitTokenFactoryLibrary.address
+                TraitTokenFactory: traitTokenFactoryLibrary.address,
+                NFUEditionFactory: nfuEditionFactoryLibrary.address
             },
             signer: deployer
         });
@@ -351,7 +357,11 @@ describe('Deployer upgrade tests', () => {
         traitTokenSource = await traitTokenFactory.connect(deployer).deploy();
         await traitTokenSource.deployed();
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address, tokenLiquidator.address, dutchAuctionMachineSource.address, englishAuctionMachineSource.address, traitTokenSource.address] } });
+        const nfuEditionFactory = await ethers.getContractFactory('NFUEdition', { signer: deployer });
+        nfuEditionSource = await nfuEditionFactory.connect(deployer).deploy();
+        await nfuEditionSource.deployed();
+
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, nfuToken.address, tokenLiquidator.address, dutchAuctionMachineSource.address, englishAuctionMachineSource.address, traitTokenSource.address, nfuEditionSource.address] } });
 
         await expect(englishAuctionMachineSource.transferOwnership(deployerProxy.address)).not.to.be.reverted;
         await expect(dutchAuctionMachineSource.transferOwnership(deployerProxy.address)).not.to.be.reverted;
@@ -431,5 +441,39 @@ describe('Deployer upgrade tests', () => {
         expect(await machine.currentTokenId()).to.equal(1);
         expect(await token.totalSupply()).to.equal(1);
         expect(await token.ownerOf(1)).to.equal(machine.address);
+    });
+
+    it('Deploy NFUEdition clone (v007)', async () => {
+        const now = await helpers.time.latest();
+        const nfuTokenFactory = await ethers.getContractFactory('NFUEdition', { signer: deployer });
+
+        const name = 'Test NFT'
+        const symbol = 'NFT';
+        const baseUri = 'ipfs://hidden';
+        const contractUri = 'ipfs://metadata';
+        const projectId = 99;
+        const unitPrice = ethers.utils.parseEther('0.001');
+        const maxSupply = 20;
+        const mintAllowance = 2;
+        const mintPeriodStart = Math.floor(now + 60 * 60);
+        const mintPeriodEnd = Math.floor(now + 24 * 60 * 60);
+
+        const targetAdmin = accounts[0];
+
+        let tx = await deployerProxy.connect(deployer).deployNFUEdition(targetAdmin.address, name, symbol, baseUri, contractUri, projectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
+        let receipt = await tx.wait();
+
+        let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        expect(contractType).to.equal('NFUEdition');
+        const token = await nfuTokenFactory.attach(contractAddress);
+
+        await token.connect(targetAdmin).updateMintPeriod(mintPeriodStart, mintPeriodEnd);
+        await expect(token.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd)).to.be.reverted;
+
+        await token.connect(targetAdmin).registerEdition(1000, ethers.utils.parseEther('0.0001'));
+        await token.connect(targetAdmin).registerEdition(1000, ethers.utils.parseEther('0.001'));
+        await token.connect(targetAdmin).registerEdition(1000, ethers.utils.parseEther('0.01'));
+
+        expect(await token.editions(0)).to.equal(1000);
     });
 });

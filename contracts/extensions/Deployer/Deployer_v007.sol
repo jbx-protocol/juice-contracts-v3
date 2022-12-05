@@ -5,6 +5,7 @@ import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
 import '../NFT/DutchAuctionMachine.sol';
 import '../NFT/EnglishAuctionMachine.sol';
+import '../NFT/NFUEdition.sol';
 import '../NFT/NFUToken.sol';
 import '../NFT/TraitToken.sol';
 import '../TokenLiquidator.sol';
@@ -12,6 +13,7 @@ import '../TokenLiquidator.sol';
 import './Deployer_v006.sol';
 import './Factories/AuctionMachineFactory.sol';
 import './Factories/TraitTokenFactory.sol';
+import './Factories/NFUEditionFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to deploy Dutch and English perpetual auctions for a specific NFT.
@@ -21,6 +23,7 @@ contract Deployer_v007 is Deployer_v006 {
   DutchAuctionMachine internal dutchAuctionMachineSource;
   EnglishAuctionMachine internal englishAuctionMachineSource;
   TraitToken internal traitTokenSource;
+  NFUEdition internal nfuEditionSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -34,7 +37,8 @@ contract Deployer_v007 is Deployer_v006 {
     ITokenLiquidator _tokenLiquidator,
     DutchAuctionMachine _dutchAuctionMachineSource,
     EnglishAuctionMachine _englishAuctionMachineSource,
-    TraitToken _traitTokenSource
+    TraitToken _traitTokenSource,
+    NFUEdition _nfuEditionSource
   ) public virtual reinitializer(7) {
     __Ownable_init();
     __UUPSUpgradeable_init();
@@ -46,6 +50,7 @@ contract Deployer_v007 is Deployer_v006 {
     dutchAuctionMachineSource = _dutchAuctionMachineSource;
     englishAuctionMachineSource = _englishAuctionMachineSource;
     traitTokenSource = _traitTokenSource;
+    nfuEditionSource = _nfuEditionSource;
   }
 
   /**
@@ -136,5 +141,33 @@ contract Deployer_v007 is Deployer_v006 {
       _mintAllowance
     );
     emit Deployment('TraitToken', token);
+  }
+
+  function deployNFUEdition(
+    address _owner,
+    string memory _name,
+    string memory _symbol,
+    string memory _baseUri,
+    string memory _contractUri,
+    uint256 _jbxProjectId,
+    IJBDirectory _jbxDirectory,
+    uint256 _maxSupply,
+    uint256 _unitPrice,
+    uint256 _mintAllowance
+  ) external returns (address token) {
+    token = NFUEditionFactory.createNFUEdition(
+      address(nfuEditionSource),
+      _owner,
+      _name,
+      _symbol,
+      _baseUri,
+      _contractUri,
+      _jbxProjectId,
+      _jbxDirectory,
+      _maxSupply,
+      _unitPrice,
+      _mintAllowance
+    );
+    emit Deployment('NFUEdition', token);
   }
 }

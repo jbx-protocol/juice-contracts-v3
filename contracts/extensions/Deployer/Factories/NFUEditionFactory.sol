@@ -3,21 +3,21 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/proxy/Clones.sol';
 
-import '../../NFT/NFUToken.sol';
+import '../../NFT/NFUEdition.sol';
 import '../../../interfaces/IJBDirectory.sol';
 
 /**
- * @notice Clones an instance of NFUToken contract for a new owner.
+ * @notice Clones an instance of NFUEdition contract for a new owner.
  */
-library NFUTokenFactory {
+library NFUEditionFactory {
   /**
-   * @notice In addition to taking the parameters requires by the NFUToken contract, the `_owner` argument will be used to assign ownership after contract deployment.
+   * @notice In addition to taking the parameters requires by the NFToken contract, the `_owner` argument will be used to assign ownership after contract deployment.
    *
    * @dev mintPeriodStart and mintPeriodEnd are set to 0 allowing immediate minting. These constrants can be set with a call to `updateMintPeriod`.
    *
-   * @param _source Known-good deployment of NFUToken contract.
+   * @param _source Known-good deployment of NFUEdition contract.
    */
-  function createNFUToken(
+  function createNFUEdition(
     address _source,
     address _owner,
     string memory _name,
@@ -32,7 +32,7 @@ library NFUTokenFactory {
   ) external returns (address token) {
     token = Clones.clone(_source);
     {
-      NFUToken(token).initialize(
+      NFUEdition(token).initialize(
         _owner,
         _name,
         _symbol,

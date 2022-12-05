@@ -73,6 +73,8 @@ async function main() {
     await deployRecordContract('AuctionMachineFactory', [], deployer, 'AuctionMachineFactory', deploymentLogPath);
     const auctionMachineFactoryAddress = getContractRecord('AuctionMachineFactory', deploymentLogPath).address;
 
+    await deployRecordContract('NFUEditionFactory', [], deployer, 'NFUEditionFactory', deploymentLogPath);
+    const nfuEditionFactoryAddress = getContractRecord('NFUEditionFactory', deploymentLogPath).address;
 
     const deployerFactory = await ethers.getContractFactory('Deployer_v007', {
         libraries: {
@@ -83,7 +85,8 @@ async function main() {
             PaymentProcessorFactory: paymentProcessorFactoryLibraryAddress,
             NFTRewardDataSourceFactory: nftRewardDataSourceFactoryAddress,
             TraitTokenFactory: traitTokenFactoryAddress,
-            AuctionMachineFactory: auctionMachineFactoryAddress
+            AuctionMachineFactory: auctionMachineFactoryAddress,
+            NFUEditionFactory: nfuEditionFactoryAddress
         },
         signer: deployer
     });
@@ -91,15 +94,17 @@ async function main() {
     await deployRecordContract('DutchAuctionMachine', [], deployer, 'DutchAuctionMachine', deploymentLogPath);
     await deployRecordContract('EnglishAuctionMachine', [], deployer, 'EnglishAuctionMachine', deploymentLogPath);
     await deployRecordContract('TraitToken', [], deployer, 'TraitToken', deploymentLogPath);
+    await deployRecordContract('NFUEdition', [], deployer, 'NFUEdition', deploymentLogPath);
 
     const dutchAuctionMachineAddress = getContractRecord('DutchAuctionMachine', deploymentLogPath).address;
     const englishAuctionMachineAddress = getContractRecord('EnglishAuctionMachine', deploymentLogPath).address;
     const sourceTraitTokenAddress = getContractRecord('TraitToken', deploymentLogPath).address;
+    const sourceNFUEditionAddress = getContractRecord('NFUEdition', deploymentLogPath).address;
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, {
         kind: 'uups',
         call: {
-            fn: 'initialize(address,address,address,address,address,address,address)',
+            fn: 'initialize(address,address,address,address,address,address,address,address)',
             args: [
                 sourceDutchAuctionHouseAddress,
                 sourceEnglishAuctionHouseAddress,
@@ -107,7 +112,8 @@ async function main() {
                 sourceTokenLiquidatorAddress,
                 dutchAuctionMachineAddress,
                 englishAuctionMachineAddress,
-                sourceTraitTokenAddress]
+                sourceTraitTokenAddress,
+                sourceNFUEditionAddress]
         }
     });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);

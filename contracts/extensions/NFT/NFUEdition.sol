@@ -12,6 +12,8 @@ import './components/BaseNFT.sol';
 contract NFUEdition is BaseNFT {
   using Strings for uint256;
 
+  event RegisterEdition(uint256 supply, uint256 price);
+
   error INVALID_OPERATION();
 
   /**
@@ -108,6 +110,9 @@ contract NFUEdition is BaseNFT {
   // ------------------------- mint operations ------------------------- //
   //*********************************************************************//
 
+  /**
+   * @notice Mints a token for a given edition provided that price validation logic is satisfied. Subject to maxSupply constraints set in the `initialize` function and edition limits set with `registerEdition`.
+   */
   function mint(
     uint256 _edition
   )
@@ -119,11 +124,7 @@ contract NFUEdition is BaseNFT {
     callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
-    if (editions.length < _edition) {
-      revert INVALID_OPERATION();
-    }
-
-    if (_edition == 0) {
+    if (editions.length == 0 || editions.length < _edition) {
       revert INVALID_OPERATION();
     }
 
@@ -206,7 +207,12 @@ contract NFUEdition is BaseNFT {
     uint256 _edition,
     address _account
   ) external virtual onlyRole(MINTER_ROLE) returns (uint256 tokenId) {
-    //
+    unchecked {
+      ++totalSupply;
+      ++mintedEditions[_edition];
+    }
+    tokenId = generateTokenId(_account, 0, _edition);
+    _mint(_account, tokenId);
   }
 
   /**
@@ -216,9 +222,14 @@ contract NFUEdition is BaseNFT {
     uint256 _maxSupply,
     uint256 _price
   ) external virtual onlyRole(MINTER_ROLE) returns (uint256 editionId) {
+    if (editions.length != 0 && editionPrices[editions.length - 1] > _price) {
+      revert INVALID_OPERATION();
+    }
+
     editions.push(_maxSupply);
     editionPrices.push(_price);
-    // TODO event
+    mintedEditions.push(0);
+    emit RegisterEdition(_supply, _price);
   }
 
   //*********************************************************************//
