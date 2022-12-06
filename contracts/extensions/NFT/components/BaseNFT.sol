@@ -81,12 +81,16 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @notice Prevents minting outside of the mint period if set. Can be set only to have a start or only and end date.
    */
   modifier onlyDuringMintPeriod() {
-    if (mintPeriodStart != 0 && mintPeriodStart > block.timestamp) {
-      revert MINT_NOT_STARTED();
+    if (mintPeriodStart != 0) {
+      if (mintPeriodStart > block.timestamp) {
+        revert MINT_NOT_STARTED();
+      }
     }
 
-    if (mintPeriodEnd != 0 && mintPeriodEnd < block.timestamp) {
-      revert MINT_CONCLUDED();
+    if (mintPeriodEnd != 0) {
+      if (mintPeriodEnd < block.timestamp) {
+        revert MINT_CONCLUDED();
+      }
     }
 
     _;
@@ -95,8 +99,10 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @notice Prevents minting by blocked addresses and contracts hashes.
    */
   modifier callerNotBlocked(address account) {
-    if (address(operatorFilter) != address(0) && !operatorFilter.mayTransfer(account)) {
-      revert CALLER_BLOCKED();
+    if (address(operatorFilter) != address(0)) {
+      if (!operatorFilter.mayTransfer(account)) {
+        revert CALLER_BLOCKED();
+      }
     }
 
     _;
