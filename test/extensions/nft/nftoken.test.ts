@@ -408,4 +408,34 @@ describe('NFToken tests', () => {
         await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
         expect(await nonSequentialToken.ownerOf(2)).to.equal(ethers.constants.AddressZero);
     });
+
+    it('Simplest feature set mint', async () => {
+        const simpleToken = await nfTokenFactory
+            .connect(deployer)
+            .deploy(
+                'Simple NFT',
+                'SNFT',
+                basicBaseUri,
+                basicContractUri,
+                0,
+                ethers.constants.AddressZero,
+                10_000,
+                basicUnitPrice,
+                10,
+                0,
+                0
+            );
+
+        await simpleToken.connect(deployer).setRoyalties(deployer.address, 500);
+
+        let totalGas = BigNumber.from(0);
+        const samples = 10;
+        for (let i = 0; i < samples; i++) {
+            const tx = await simpleToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
+            const receipt = await tx.wait();
+            totalGas = totalGas.add(receipt.gasUsed);
+        }
+
+        console.log(`minimum expected gas: ${totalGas.div(samples)}`);
+    });
 });
