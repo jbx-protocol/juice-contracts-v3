@@ -206,8 +206,10 @@ contract DutchAuctionMachine is IDutchAuctionMachine, IERC165, Ownable, Reentran
   }
 
   function currentPrice() public view returns (uint256 price) {
-    if (currentTokenId != 0 && auctionExpiration < block.timestamp) {
-      return endingPrice;
+    if (currentTokenId != 0) {
+      if (auctionExpiration < block.timestamp) {
+        return endingPrice;
+      }
     }
 
     uint256 startTime = auctionExpiration - auctionDuration;

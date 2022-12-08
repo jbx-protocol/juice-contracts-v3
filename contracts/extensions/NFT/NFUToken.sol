@@ -47,8 +47,8 @@ contract NFUToken is BaseNFT {
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
-    uint128 _mintPeriodStart,
-    uint128 _mintPeriodEnd
+    uint256 _mintPeriodStart,
+    uint256 _mintPeriodEnd
   ) public {
     if (bytes(name).length != 0) {
       revert INVALID_OPERATION();
@@ -74,8 +74,7 @@ contract NFUToken is BaseNFT {
     maxSupply = _maxSupply;
     unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
-    mintPeriodStart = _mintPeriodStart;
-    mintPeriodEnd = _mintPeriodEnd;
+    mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
 
     _grantRole(DEFAULT_ADMIN_ROLE, _owner);
     _grantRole(MINTER_ROLE, _owner);

@@ -81,12 +81,14 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @notice Prevents minting outside of the mint period if set. Can be set only to have a start or only and end date.
    */
   modifier onlyDuringMintPeriod() {
+    uint256 mintPeriodStart = mintPeriod >> 128;
     if (mintPeriodStart != 0) {
       if (mintPeriodStart > block.timestamp) {
         revert MINT_NOT_STARTED();
       }
     }
 
+    uint256 mintPeriodEnd = uint128(mintPeriod);
     if (mintPeriodEnd != 0) {
       if (mintPeriodEnd < block.timestamp) {
         revert MINT_CONCLUDED();
@@ -115,8 +117,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   uint256 public maxSupply;
   uint256 public unitPrice;
   uint256 public mintAllowance;
-  uint128 public mintPeriodStart;
-  uint128 public mintPeriodEnd;
+  uint256 public mintPeriod;
   uint256 public totalSupply;
 
   string public baseUri;
@@ -145,7 +146,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   /**
    * @notice Royalty rate expressed in bps.
    */
-  uint16 public royaltyRate;
+  uint256 public royaltyRate;
 
   INFTPriceResolver public priceResolver;
   IOperatorFilter public operatorFilter;
@@ -203,7 +204,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @dev If the token has been set as "revealed", returned uri will append the token id
    */
   function tokenURI(uint256 _tokenId) public view virtual override returns (string memory uri) {
-    if (ownerOf(_tokenId) == address(0)) {
+    if (_ownerOf[_tokenId] == address(0)) {
       uri = '';
     } else {
       uri = !isRevealed ? baseUri : string(abi.encodePacked(baseUri, _tokenId.toString()));
@@ -327,7 +328,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     bytes memory _metadata,
     uint256 _unitPrice
   ) internal virtual {
-    uint256 accountBalance = balanceOf(msg.sender);
+    uint256 accountBalance = _balanceOf[msg.sender];
     if (accountBalance == mintAllowance) {
       revert ALLOWANCE_EXHAUSTED();
     }
@@ -439,11 +440,10 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @param _mintPeriodEnd New minting period end.
    */
   function updateMintPeriod(
-    uint128 _mintPeriodStart,
-    uint128 _mintPeriodEnd
+    uint256 _mintPeriodStart,
+    uint256 _mintPeriodEnd
   ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-    mintPeriodStart = _mintPeriodStart;
-    mintPeriodEnd = _mintPeriodEnd;
+    mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
   }
 
   function updateUnitPrice(uint256 _unitPrice) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -472,7 +472,6 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @dev URI must include the trailing slash.
    */
   function setBaseURI(string memory _baseUri, bool _reveal) external onlyRole(REVEALER_ROLE) {
-    // TODO: revealer role
     if (isRevealed && !_reveal) {
       revert ALREADY_REVEALED();
     }

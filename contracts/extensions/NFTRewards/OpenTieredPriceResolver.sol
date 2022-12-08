@@ -77,7 +77,8 @@ contract OpenTieredPriceResolver is IPriceResolver {
     }
 
     tokenId = 0;
-    for (uint256 i; i < tiers.length; i++) {
+    uint256 tiersLength = tiers.length;
+    for (uint256 i; i < tiersLength; ) {
       if (
         (tiers[i].contributionFloor <= contribution.value && i == tiers.length - 1) ||
         (tiers[i].contributionFloor <= contribution.value &&
@@ -85,6 +86,9 @@ contract OpenTieredPriceResolver is IPriceResolver {
       ) {
         tokenId = i | (uint248(uint256(keccak256(abi.encodePacked(account, block.number)))) << 8);
         break;
+      }
+      unchecked {
+        ++i;
       }
     }
   }

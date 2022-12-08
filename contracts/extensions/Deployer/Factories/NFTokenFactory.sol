@@ -22,8 +22,8 @@ library NFTokenFactory {
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
-    uint128 _mintPeriodStart,
-    uint128 _mintPeriodEnd
+    uint256 _mintPeriodStart,
+    uint256 _mintPeriodEnd
   ) external returns (address) {
     NFToken t = new NFToken(
       _name,
