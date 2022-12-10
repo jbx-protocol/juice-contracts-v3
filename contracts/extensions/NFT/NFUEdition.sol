@@ -288,14 +288,15 @@ contract NFUEdition is BaseNFT {
         );
       }
 
-      uint256 editionSupply = editions[_edition];
-      tokenId =
-        uint256(keccak256(abi.encodePacked(_account, block.number, ethPrice))) %
-        (editionSupply + 1);
+      uint256 editionSupply = editions[_edition] + 1; // +1 because we consider 0 to be an invalid token id
+      uint256 tokenIdRoot = uint256(keccak256(abi.encodePacked(_account, block.number, ethPrice))) %
+        editionSupply;
+
+      tokenId = _edition | (uint240(tokenIdRoot) << 16);
 
       // resolve token id collisions
       while (tokenId == 0 || _ownerOf[tokenId] != address(0)) {
-        tokenId = ++tokenId % (editionSupply + 1);
+        tokenId = _edition | (uint240(++tokenIdRoot % editionSupply) << 16);
       }
     }
   }
