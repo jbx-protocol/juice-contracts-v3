@@ -201,12 +201,6 @@ contract NFUEdition is BaseNFT {
     uint256 _maxSupply,
     uint256 _price
   ) external virtual onlyRole(MINTER_ROLE) returns (uint256 editionId) {
-    if (editions.length != 0) {
-      if (editionPrices[editions.length - 1] > _price) {
-        revert INVALID_OPERATION();
-      }
-    }
-
     editions.push(_maxSupply);
     editionPrices.push(_price);
     mintedEditions.push(0);
