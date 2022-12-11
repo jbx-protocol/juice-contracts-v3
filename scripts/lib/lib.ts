@@ -69,6 +69,43 @@ export async function deployRecordContract(contractName: string, constructorArgs
     fs.writeFileSync(logPath, JSON.stringify(deploymentAddresses, undefined, 4));
 }
 
+export async function recordContractAbi(contractName: string, deployer: SignerWithAddress, recordAs?: string, logPath = `./deployments/${hre.network.name}/platform.json`, libraries: { [key: string]: string } = {}) {
+    let deploymentAddresses = JSON.parse(fs.readFileSync(logPath).toString());
+
+    const key = recordAs === undefined ? contractName : recordAs;
+    if (deploymentAddresses[hre.network.name][key] !== undefined) {
+        logger.info(`${key} already exists on ${hre.network.name} at ${deploymentAddresses[hre.network.name][key]['address']}`);
+        return;
+    }
+
+    let abi: string;
+    try {
+        let message = `generating abi for ${contractName}`;
+        logger.info(message);
+
+        const contractFactory = await hre.ethers.getContractFactory(contractName, { libraries, signer: deployer });
+
+        abi = contractFactory.interface.format('json') as string;
+    } catch (err) {
+        logger.error(`failed to generate abi ${contractName}`, err);
+        throw err;
+    }
+
+    deploymentAddresses[hre.network.name][key] = {
+        address: '',
+        args: [],
+        abi: JSON.parse(abi),
+        verified: false
+    };
+
+    if (recordAs !== undefined) {
+        deploymentAddresses[hre.network.name][key]['type'] = contractName;
+    }
+
+    fs.writeFileSync(logPath, JSON.stringify(deploymentAddresses, undefined, 4));
+}
+
+
 export function getContractRecord(contractName: string, logPath = `./deployments/${hre.network.name}/platform.json`, network = hre.network.name) {
     let deploymentAddresses = JSON.parse(fs.readFileSync(logPath).toString());
 
