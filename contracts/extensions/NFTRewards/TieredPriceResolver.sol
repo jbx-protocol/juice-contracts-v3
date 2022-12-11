@@ -97,10 +97,11 @@ contract TieredPriceResolver is IPriceResolver {
     }
 
     tokenId = 0;
-    for (uint256 i; i < tiers.length; i++) {
+    uint256 tiersLength = tiers.length;
+    for (uint256 i; i < tiersLength; i++) {
       if (
         tiers[i].contributionFloor <= contribution.value &&
-        i == tiers.length - 1 &&
+        i == tiersLength - 1 &&
         tiers[i].remainingAllowance > 0
       ) {
         tokenId = tiers[i].idCeiling - tiers[i].remainingAllowance;
