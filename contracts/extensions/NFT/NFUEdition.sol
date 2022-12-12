@@ -12,7 +12,7 @@ import './components/BaseNFT.sol';
 contract NFUEdition is BaseNFT {
   using Strings for uint256;
 
-  event RegisterEdition(uint256 supply, uint256 price);
+  event RegisterEdition(uint256 editionId, uint256 supply, uint256 price);
 
   error INVALID_OPERATION();
 
@@ -204,7 +204,9 @@ contract NFUEdition is BaseNFT {
     editions.push(_maxSupply);
     editionPrices.push(_price);
     mintedEditions.push(0);
-    emit RegisterEdition(_maxSupply, _price);
+    editionId = editions.length - 1;
+
+    emit RegisterEdition(editionId, _maxSupply, _price);
   }
 
   //*********************************************************************//
