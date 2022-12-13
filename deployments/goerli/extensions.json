@@ -1,15 +1,16 @@
 {
     "goerli": {
         "NFTokenFactory": {
-            "address": "0x1492edf86E0Ee09D1AbC52a26c4a7d470d6E4c39",
+            "address": "0x01c89dE9ff6e607Ae6bFb894DB0678A3Ec65E65d",
             "args": [],
             "abi": [],
             "verified": false,
             "type": "NFTokenFactory"
         },
         "DeployerProxy": {
-            "address": "0x0B47761Bc8658Dd4bD2b735a1DCCd4F6244E2Ed5",
+            "address": "0xDF5A16C967fB6190885D5AFa02a4892A91Fe1abd",
             "version": 7,
+            "implementation": "0x7D0d57c72Fc2CCd5558916e23b4aDFE768BDcDF8",
             "abi": [
                 {
                     "type": "constructor",
@@ -947,14 +948,14 @@
             "verified": false
         },
         "MixedPaymentSplitterFactory": {
-            "address": "0x16161055D5C924c645B2bC62cA270c83a133c446",
+            "address": "0x44601284536a3d1bF55933FDdae7AB7F4d7C1dcF",
             "args": [],
             "abi": [],
             "verified": false,
             "type": "MixedPaymentSplitterFactory"
         },
         "AuctionsFactory": {
-            "address": "0x4A039AfB5f68E6b663A65c4cdccd9E18FdCE392c",
+            "address": "0xCb0B2da6953AddeFA7054BC373bc8E6f5701A096",
             "args": [],
             "abi": [
                 {
@@ -967,7 +968,7 @@
             "type": "AuctionsFactory"
         },
         "DutchAuctionHouse": {
-            "address": "0xB61C02d53fC56BE1417feCeC2cc5987cD76B697D",
+            "address": "0x2825Ea6f9402eD47055aE05636D05a3D0502f341",
             "args": [],
             "abi": [
                 {
@@ -1981,7 +1982,7 @@
             "type": "DutchAuctionHouse"
         },
         "EnglishAuctionHouse": {
-            "address": "0x117ACee73bEC0fEaA0F4017859CA68B9553bc880",
+            "address": "0x691B253cb9511A53b534079daC9E336EDDB5dC19",
             "args": [],
             "abi": [
                 {
@@ -2996,14 +2997,14 @@
             "type": "EnglishAuctionHouse"
         },
         "NFUTokenFactory": {
-            "address": "0x230398cDa14426506B42ccA98bfFeD1a07A8C949",
+            "address": "0xEE8553935C4679404A4C185B7E5e8c1d83116808",
             "args": [],
             "abi": [],
             "verified": false,
             "type": "NFUTokenFactory"
         },
         "NFUToken": {
-            "address": "0xbf41947f6aFCD9E286540b58B56f3a47d75c6654",
+            "address": "0x10f92469F34024a9b05D21382b4f4cbd4E095329",
             "args": [],
             "abi": [
                 {
@@ -4244,14 +4245,14 @@
             "type": "NFUToken"
         },
         "PaymentProcessorFactory": {
-            "address": "0x105A5c1BA9Cf9C8bA85a57A723b129b8755D38eC",
+            "address": "0x73bB7CC906877104A7dBF5f3Cafd85325FB114A9",
             "args": [],
             "abi": [],
             "verified": false,
             "type": "PaymentProcessorFactory"
         },
         "TokenLiquidator": {
-            "address": "0xF605C5346389bB891fAdA75A8d18e85249B2d255",
+            "address": "0xB85daCCCAd3819FDCB7616b5fb698dCdb53Df8ef",
             "args": [
                 "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
                 "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
@@ -4523,14 +4524,14 @@
             "type": "TokenLiquidator"
         },
         "NFTRewardDataSourceFactory": {
-            "address": "0x6a8BA9d3BaC4047f57F1f4a2f49b51aa7B869C56",
+            "address": "0xbA9B6c647B45509140Db71827c37AD8c8578f103",
             "args": [],
             "abi": [],
             "verified": false,
             "type": "NFTRewardDataSourceFactory"
         },
         "TraitTokenFactory": {
-            "address": "0x160dd5609953F262401D7183030cAEF9bff0E70A",
+            "address": "0xeE45E59C2ABfdFf3fE80e51a2981c8b3E50a3a20",
             "args": [],
             "abi": [
                 {
@@ -4543,7 +4544,7 @@
             "type": "TraitTokenFactory"
         },
         "AuctionMachineFactory": {
-            "address": "0x901c822fbD665B05DA1B3Fda73c66BfC650C6013",
+            "address": "0x4376CfCFDCDA39Fe86d1e2b7956A545CB2c25e8F",
             "args": [],
             "abi": [
                 {
@@ -4556,14 +4557,14 @@
             "type": "AuctionMachineFactory"
         },
         "NFUEditionFactory": {
-            "address": "0x5e7134bbD1D97db686fA9F60F75b23d610D70BDB",
+            "address": "0xAAF5167aE88c80BbCf683317d7F9Fe9cf9c631d8",
             "args": [],
             "abi": [],
             "verified": false,
             "type": "NFUEditionFactory"
         },
         "DutchAuctionMachine": {
-            "address": "0xd24b19499bad37c58a449fd195c2508A124356c5",
+            "address": "0x4116C845247C017D32C4cBC5b4E234C28361A5d0",
             "args": [],
             "abi": [
                 {
@@ -5030,7 +5031,7 @@
             "type": "DutchAuctionMachine"
         },
         "EnglishAuctionMachine": {
-            "address": "0x7130ab520C45D262Ab8180AB3260CAA0CfeF1479",
+            "address": "0x8d5B183E9Bc7d3E9D0408a3bf794f938054F569D",
             "args": [],
             "abi": [
                 {
@@ -5436,7 +5437,7 @@
             "type": "EnglishAuctionMachine"
         },
         "TraitToken": {
-            "address": "0xcA7B45566cB5b0235f59d17038C2a23EE11065e4",
+            "address": "0x46FE482e4D06BAa8B3ed5f641F02Bf6040e6f4eD",
             "args": [],
             "abi": [
                 {
@@ -6717,11 +6718,11 @@
                     "outputs": []
                 }
             ],
-            "verified": false,
+            "verified": true,
             "type": "TraitToken"
         },
         "NFUEdition": {
-            "address": "0xe6134F2Ce5c8449593ffd6e7a4B8901Ec0042951",
+            "address": "0xbF3769C679bFF260DAfa21e3384C1A509716DF50",
             "args": [],
             "abi": [
                 {
@@ -6847,6 +6848,11 @@
                     "anonymous": false,
                     "name": "RegisterEdition",
                     "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "editionId",
+                            "indexed": false
+                        },
                         {
                             "type": "uint256",
                             "name": "supply",
@@ -8110,7 +8116,7 @@
                     "outputs": []
                 }
             ],
-            "verified": false,
+            "verified": true,
             "type": "NFUEdition"
         }
     }
