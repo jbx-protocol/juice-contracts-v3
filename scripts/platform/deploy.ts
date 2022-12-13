@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as hre from 'hardhat';
-import { deployRecordContract, getContractRecord, getPlatformConstant, logger } from '../lib/lib';
+import { deployRecordContract, getContractRecord, getPlatformConstant, logger, recordContractAbi } from '../lib/lib';
 
 async function main() {
     const deploymentLogPath = `./deployments/${hre.network.name}/platform.json`;
@@ -62,6 +62,8 @@ async function main() {
     await deployRecordContract('RoleManager', [jbDirectoryAddress, jbOperatorStoreAddress, jbProjectsAddress, deployer.address], deployer);
 
     await deployRecordContract('VestingPlanManager', [], deployer);
+
+    await recordContractAbi('OperatorFilter', deployer);
 
     logger.info('deployment complete');
 }

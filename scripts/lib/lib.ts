@@ -24,7 +24,6 @@ export const logger = winston.createLogger({
     ]
 });
 
-
 async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, libraries: { [key: string]: string } = {}): Promise<DeployResult> {
     try {
         let message = `deploying ${contractName}`;
@@ -105,7 +104,6 @@ export async function recordContractAbi(contractName: string, deployer: SignerWi
     fs.writeFileSync(logPath, JSON.stringify(deploymentAddresses, undefined, 4));
 }
 
-
 export function getContractRecord(contractName: string, logPath = `./deployments/${hre.network.name}/platform.json`, network = hre.network.name) {
     let deploymentAddresses = JSON.parse(fs.readFileSync(logPath).toString());
 
@@ -133,4 +131,27 @@ export function getPlatformConstant(valueName: string, defaultValue?: any, logPa
     }
 
     throw new Error(`no constant value for ${valueName} on ${hre.network.name}`);
+}
+
+export async function verifyContract(contractName: string, contractAddress: string, constructorArgs: any[]): Promise<boolean> {
+    try {
+        logger.info(`verifying ${contractName} on ${hre.network.name} at ${contractAddress} with Etherscan`);
+        await hre.run('verify:verify', { address: contractAddress, constructorArguments: constructorArgs });
+        logger.info('verification complete');
+
+        return true;
+    } catch (err) {
+        logger.error(`failed to verify ${contractName} with Etherscan`, err);
+
+        return false;
+    }
+}
+
+export async function verifyRecordContract(contractName: string, contractAddress: string, constructorArgs: any[], logPath = `./deployments/${hre.network.name}/platform.json`) {
+    let deploymentAddresses = JSON.parse(fs.readFileSync(logPath).toString());
+
+    const result = await verifyContract(contractName, contractAddress, constructorArgs);
+    deploymentAddresses[hre.network.name][contractName]['verified'] = result;
+
+    fs.writeFileSync(logPath, JSON.stringify(deploymentAddresses, undefined, 4));
 }

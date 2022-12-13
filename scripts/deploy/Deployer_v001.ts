@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
-import { deployRecordContract, getContractRecord } from '../lib/lib';
+import { deployRecordContract, getContractRecord, verifyContract } from '../lib/lib';
 
 async function main() {
     dotenv.config();
@@ -46,14 +46,16 @@ async function main() {
     const deployerProxy = await upgrades.deployProxy(deployerFactory, { kind: 'uups', initializer: 'initialize' });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
-    logger.info(`upgraded ${deployerProxy.address}`);
+    const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);
+    logger.info(`deployed proxy ${deployerProxy.address} for ${implementationAddress}`);
 
-    // deployRecordContract('Deployer_v001', [], deployer, 'DeployerProxy', `./deployments/${hre.network.name}/extensions.json`, { NFTokenFactory: nfTokenFactoryLibrary.address }); // TODO: needs upgrade functionality; consider using lib for this
+    await verifyContract('Deployer_v001', deployerProxy.address, []);
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy'] = {};
     deploymentLog[hre.network.name]['DeployerProxy']['address'] = deployerProxy.address;
     deploymentLog[hre.network.name]['DeployerProxy']['version'] = 1;
+    deploymentLog[hre.network.name]['DeployerProxy']['implementation'] = implementationAddress;
     deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
     deploymentLog[hre.network.name]['DeployerProxy']['verified'] = false;
     fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));

@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
-import { deployRecordContract, getContractRecord } from '../lib/lib';
+import { deployRecordContract, getContractRecord, verifyContract, verifyRecordContract } from '../lib/lib';
 
 async function main() {
     dotenv.config();
@@ -65,14 +65,20 @@ async function main() {
 
     await deployRecordContract('NFUToken', [], deployer, 'NFUToken', deploymentLogPath);
 
-    const sourceNFUTokenAddress = getContractRecord('NFUToken', deploymentLogPath).address;
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress] } });
+    const sourceNFUTokenRecord = getContractRecord('NFUToken', deploymentLogPath);
+    await verifyRecordContract('NFUToken', sourceNFUTokenRecord.address, sourceNFUTokenRecord.args, deploymentLogPath);
+
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenRecord.address] } });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
-    logger.info(`upgraded ${deployerProxy.address}`);
+    const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);
+    logger.info(`upgraded ${deployerProxy.address} to ${implementationAddress}`);
+
+    await verifyContract('Deployer_v004', deployerProxy.address, []);
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy']['version'] = 4;
+    deploymentLog[hre.network.name]['DeployerProxy']['implementation'] = implementationAddress;
     deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
     fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));
 }

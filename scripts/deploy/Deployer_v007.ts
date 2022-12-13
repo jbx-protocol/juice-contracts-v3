@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
-import { deployRecordContract, getContractRecord } from '../lib/lib';
+import { deployRecordContract, getContractRecord, verifyContract, verifyRecordContract } from '../lib/lib';
 
 async function main() {
     dotenv.config();
@@ -98,8 +98,12 @@ async function main() {
 
     const dutchAuctionMachineAddress = getContractRecord('DutchAuctionMachine', deploymentLogPath).address;
     const englishAuctionMachineAddress = getContractRecord('EnglishAuctionMachine', deploymentLogPath).address;
-    const sourceTraitTokenAddress = getContractRecord('TraitToken', deploymentLogPath).address;
-    const sourceNFUEditionAddress = getContractRecord('NFUEdition', deploymentLogPath).address;
+
+    const sourceTraitTokenRecord = getContractRecord('TraitToken', deploymentLogPath);
+    await verifyRecordContract('TraitToken', sourceTraitTokenRecord.address, sourceTraitTokenRecord.args, deploymentLogPath);
+
+    const sourceNFUEditionRecord = getContractRecord('NFUEdition', deploymentLogPath);
+    await verifyRecordContract('NFUEdition', sourceNFUEditionRecord.address, sourceNFUEditionRecord.args, deploymentLogPath);
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, {
         kind: 'uups',
@@ -112,16 +116,20 @@ async function main() {
                 sourceTokenLiquidatorAddress,
                 dutchAuctionMachineAddress,
                 englishAuctionMachineAddress,
-                sourceTraitTokenAddress,
-                sourceNFUEditionAddress]
+                sourceTraitTokenRecord.address,
+                sourceNFUEditionRecord.address]
         }
     });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
-    logger.info(`upgraded ${deployerProxy.address}`);
+    const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);
+    logger.info(`upgraded ${deployerProxy.address} to ${implementationAddress}`);
+
+    await verifyContract('Deployer_v007', deployerProxy.address, []);
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy']['version'] = 7;
+    deploymentLog[hre.network.name]['DeployerProxy']['implementation'] = implementationAddress;
     deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
     fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));
 }

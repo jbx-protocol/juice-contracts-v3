@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
 
-import { deployRecordContract, getContractRecord } from '../lib/lib';
+import { deployRecordContract, getContractRecord, verifyContract } from '../lib/lib';
 
 async function main() {
     dotenv.config();
@@ -56,10 +56,14 @@ async function main() {
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize' } });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
-    logger.info(`upgraded ${deployerProxy.address}`);
+    const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);
+    logger.info(`upgraded ${deployerProxy.address} to ${implementationAddress}`);
+
+    await verifyContract('Deployer_v002', deployerProxy.address, []);
 
     const deploymentLog = JSON.parse(fs.readFileSync(deploymentLogPath).toString());
     deploymentLog[hre.network.name]['DeployerProxy']['version'] = 2;
+    deploymentLog[hre.network.name]['DeployerProxy']['implementation'] = implementationAddress;
     deploymentLog[hre.network.name]['DeployerProxy']['abi'] = JSON.parse(deployerFactory.interface.format('json') as string);
     fs.writeFileSync(deploymentLogPath, JSON.stringify(deploymentLog, undefined, 4));
 }
