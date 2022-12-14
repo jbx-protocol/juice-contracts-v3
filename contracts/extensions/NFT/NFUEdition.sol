@@ -100,6 +100,8 @@ contract NFUEdition is BaseNFT {
     mintAllowance = _mintAllowance;
     mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
 
+    royaltyReceiver = payable(_owner);
+
     _grantRole(DEFAULT_ADMIN_ROLE, _owner);
     _grantRole(MINTER_ROLE, _owner);
     _grantRole(REVEALER_ROLE, _owner);

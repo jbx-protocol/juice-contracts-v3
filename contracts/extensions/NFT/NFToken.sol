@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import '../../interfaces/IJBDirectory.sol';
 import './components/BaseNFT.sol';
 
+/**
+ * @notice ERC721
+ */
 contract NFToken is BaseNFT {
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
@@ -48,6 +51,9 @@ contract NFToken is BaseNFT {
     unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
     mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
+
+    royaltyReceiver = payable(msg.sender);
+
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(MINTER_ROLE, msg.sender);
     _grantRole(REVEALER_ROLE, msg.sender);
