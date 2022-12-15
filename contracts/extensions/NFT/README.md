@@ -31,7 +31,9 @@ The constructor takes several parameters.
 
 This contract supports several common ERC standards: ERC721, ERC165, EIP2981.
 
-It is possible to set royalty information after contract deployment. This is done with `setRoyalties(address _royaltyReceiver, uint16 _royaltyRate)`. This method is gated with OpenZeppelin AccessControl for `DEFAULT_ADMIN_ROLE`. The first parameter must be an EOA or a payable contract. Consider using a deployment of `MixedPaymentSplitter` to pay multiple collaborators. The second parameter is royalty rate expressed as basis points where 10,000 is 100%. The `royaltyInfo(uint256 _tokenId, uint256 _salePrice)` view returns the actual royalty being collected and the address where it should be sent.
+This contract expects to be associated with a Juicebox project. It is possible to deploy it stand-alone. In the case that `0` is passed as `jbxProjectId` proceeds from primary sales will go to the royalty receiver which is set to `msg.sender` in the constructor.
+
+It is possible to set royalty information after contract deployment. This is done with `setRoyalties(address _royaltyReceiver, uint16 _royaltyRate)`. This method is gated with OpenZeppelin AccessControl for `DEFAULT_ADMIN_ROLE`. The first parameter must be an EOA or a payable contract. Consider using a deployment of `MixedPaymentSplitter` to pay multiple collaborators. The second parameter is royalty rate expressed as basis points where 10,000 is 100%. The `royaltyInfo(uint256 _tokenId, uint256 _salePrice)` view returns the actual royalty being collected and the address where it should be sent. Royalty rate can only be set to a non-zero value once, but royalty receiver can be set as much as needed.
 
 In addition to setting a bounded mint period, which can be modified after deployment with `updateMintPeriod(uint128 _mintPeriodStart, uint128 _mintPeriodEnd)`, it's possible to implement a simple "reveal" mechanic with this contract. `setBaseURI(string memory _baseUri, bool _reveal)`. On deployment the internal reveal flag is set to false. This causes `tokenURI(uint256 _tokenId)` to return base uri value without modification. The deployment value of base uri can then be used as a placeholder. Calling setBaseURI with reveal true will then append the token id to the base uri in the `tokenURI` view. Reveal can be set only once. There is a role, `REVEALER_ROLE`, that is allowed to perform this operation.
 
@@ -116,3 +118,7 @@ The constructor parameters are as follows.
 - projectId: Juicebox project id, used to transfer auction proceeds.
 - jbxDirectory: Juicebox directory, used to transfer auction proceeds to the correct terminal.
 - token: Token contract to operate on.
+
+## OperatorFilter
+
+blah
