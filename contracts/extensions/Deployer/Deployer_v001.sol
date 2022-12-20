@@ -14,6 +14,12 @@ import './Factories/NFTokenFactory.sol';
 contract Deployer_v001 is OwnableUpgradeable, UUPSUpgradeable {
   event Deployment(string contractType, address contractAddress);
 
+  error INVALID_PAYMENT(uint256 price);
+
+  bytes32 internal deployNFTokenKey = keccak256(abi.encodePacked('deployNFToken'));
+
+  mapping(bytes32 => uint256) public prices;
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -22,6 +28,8 @@ contract Deployer_v001 is OwnableUpgradeable, UUPSUpgradeable {
   function initialize() public virtual initializer {
     __Ownable_init();
     __UUPSUpgradeable_init();
+
+    prices[deployNFTokenKey] = 1000000000000000; // 0.001 eth
   }
 
   function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -39,7 +47,9 @@ contract Deployer_v001 is OwnableUpgradeable, UUPSUpgradeable {
     uint256 _mintAllowance,
     uint256 _mintPeriodStart,
     uint256 _mintPeriodEnd
-  ) external returns (address) {
+  ) external payable returns (address) {
+    validatePayment();
+
     address t = NFTokenFactory.createNFToken(
       _owner,
       _name,
@@ -58,5 +68,12 @@ contract Deployer_v001 is OwnableUpgradeable, UUPSUpgradeable {
     emit Deployment('NFToken', t);
 
     return t;
+  }
+
+  function validatePayment() internal {
+    uint256 price = prices[deployNFTokenKey];
+    if (msg.value != price) {
+      revert INVALID_PAYMENT(price);
+    }
   }
 }
