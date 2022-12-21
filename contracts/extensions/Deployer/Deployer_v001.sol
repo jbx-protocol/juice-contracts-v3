@@ -21,7 +21,7 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
 
   error INVALID_PAYMENT(uint256 price);
   error INVALID_ADDRESS();
-  error INVALID_AMOUNT();
+  error INVALID_AMOUNT(uint256 amount);
 
   IJBDirectory internal jbxDirectory;
   IJBProjects internal jbxProjects;
@@ -128,6 +128,25 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
     )
   {
     prices[_priceKey] = _price;
+  }
+
+  function transferBalance(
+    address payable _destination,
+    uint256 _amount
+  )
+    external
+    requirePermissionAllowingOverride(
+      jbxProjects.ownerOf(1),
+      1,
+      JBOperations.PROCESS_FEES,
+      (msg.sender == address(jbxDirectory.controllerOf(1)))
+    )
+  {
+    if (_amount > (payable(address(this))).balance) {
+      revert INVALID_AMOUNT((payable(address(this))).balance);
+    }
+
+    _destination.transfer(_amount);
   }
 
   function setPlatformDiscountManager(
