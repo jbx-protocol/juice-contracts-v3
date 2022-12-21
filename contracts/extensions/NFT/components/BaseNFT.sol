@@ -81,16 +81,16 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @notice Prevents minting outside of the mint period if set. Can be set only to have a start or only and end date.
    */
   modifier onlyDuringMintPeriod() {
-    uint256 mintPeriodStart = mintPeriod >> 128;
-    if (mintPeriodStart != 0) {
-      if (mintPeriodStart > block.timestamp) {
+    uint256 start = mintPeriod >> 128;
+    if (start != 0) {
+      if (start > block.timestamp) {
         revert MINT_NOT_STARTED();
       }
     }
 
-    uint256 mintPeriodEnd = uint128(mintPeriod);
-    if (mintPeriodEnd != 0) {
-      if (mintPeriodEnd < block.timestamp) {
+    uint256 end = uint128(mintPeriod);
+    if (end != 0) {
+      if (end < block.timestamp) {
         revert MINT_CONCLUDED();
       }
     }
@@ -235,6 +235,14 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    */
   function ownerOf(uint256 _tokenId) public view override returns (address owner) {
     owner = _ownerOf[_tokenId];
+  }
+
+  function mintPeriodStart() external view returns (uint256 start) {
+    start = mintPeriod >> 128;
+  }
+
+  function mintPeriodEnd() external view returns (uint256 end) {
+    end = uint256(uint128(mintPeriod));
   }
 
   function getMintPrice(address _minter) external view returns (uint256) {

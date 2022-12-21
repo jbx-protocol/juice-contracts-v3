@@ -21,7 +21,8 @@ library NFTokenFactory {
     IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
-    uint256 _mintAllowance
+    uint256 _mintAllowance,
+    bool _reveal
   ) external returns (address) {
     NFToken t = new NFToken(
       _name,
@@ -36,6 +37,10 @@ library NFTokenFactory {
       0,
       0
     );
+
+    if (_reveal) {
+      t.setBaseURI(_baseUri, true);
+    }
 
     abdicate(t, _owner);
 
