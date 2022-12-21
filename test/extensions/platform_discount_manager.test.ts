@@ -2,11 +2,17 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { smock } from '@defi-wonderland/smock';
 
+import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
+import jbOperatorStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
+import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
+
 enum TokenType {
     ERC20,
     ERC721,
     ERC1155
 }
+
+const JBOperations_MIGRATE_CONTROLLER = 3;
 
 describe('PlatformDiscountManager Tests', () => {
     let deployer;
@@ -16,46 +22,57 @@ describe('PlatformDiscountManager Tests', () => {
     let mock1155Token;
     let discountManager;
 
-    before(async () => {
+    let mockJbDirectory: any;
+    let mockJbOperatorStore: any;
+    let mockJbProjects: any
+
+    before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
-
-        const platformDiscountManagerFactory = await ethers.getContractFactory('PlatformDiscountManager');
-        discountManager = await platformDiscountManagerFactory.connect(deployer).deploy();
-        await discountManager.deployed();
-
-        // const mock20TokenFactory = await ethers.getContractFactory('MockERC20', deployer);
-        // mock20Token = await mock20TokenFactory.connect(deployer).deploy();
-        // await mock20Token.connect(deployer).mint(deployer.address, 2_000_000_000);
-
-        mock20Token = await smock.fake('MockERC20');
-
     });
 
-    before('Mock state', async () => {
+    before('Setup JBX components', async () => {
+        mockJbDirectory = await smock.fake(jbDirectory.abi);
+        mockJbOperatorStore = await smock.fake(jbOperatorStore.abi);
+        mockJbProjects = await smock.fake(jbProjects.abi);
+
+        // platform project
+        mockJbOperatorStore.hasPermission.whenCalledWith(deployer.address, deployer.address, 1, JBOperations_MIGRATE_CONTROLLER).returns(true);
+
+        mockJbDirectory.controllerOf.whenCalledWith(1).returns(deployer.address);
+
+        mockJbProjects.ownerOf.whenCalledWith(1).returns(deployer.address);
+    });
+
+    before('Initialize contracts', async () => {
+        const platformDiscountManagerFactory = await ethers.getContractFactory('PlatformDiscountManager');
+        discountManager = await platformDiscountManagerFactory.connect(deployer).deploy(mockJbDirectory.address, mockJbProjects.address, mockJbOperatorStore.address);
+        await discountManager.deployed();
+
+        mock20Token = await smock.fake('MockERC20');
         mock20Token.balanceOf.whenCalledWith(accounts[0].address).returns('1000000000000000000000');
         mock20Token.balanceOf.whenCalledWith(accounts[1].address).returns('500000000000000000000');
         mock20Token.balanceOf.whenCalledWith(accounts[2].address).returns(0);
     });
 
     it('registerDiscount: invalid discount', async () => {
-        await expect(discountManager.connect(accounts[0]).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 1_000, 10_001))
+        await expect(discountManager.connect(deployer).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 1_000, 10_001))
             .to.be.revertedWithCustomError(discountManager, 'INVALID_DISCOUNT');
     });
 
     it('removeDiscount: invalid discount', async () => {
-        await expect(discountManager.connect(accounts[0]).removeDiscount(mock20Token.address, TokenType.ERC20, 0, 5_000))
+        await expect(discountManager.connect(deployer).removeDiscount(mock20Token.address, TokenType.ERC20, 0, 5_000))
             .to.be.revertedWithCustomError(discountManager, 'INVALID_DISCOUNT');
     });
 
     it('registerDiscount: discount', async () => {
-        await expect(discountManager.connect(accounts[0]).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 1_000, 1_000))
+        await expect(discountManager.connect(deployer).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 1_000, 1_000))
             .not.to.be.reverted;
     });
 
     // getDiscountInfo
 
     it('removeDiscount: invalid discount', async () => {
-        await expect(discountManager.connect(accounts[0]).removeDiscount(mock20Token.address, TokenType.ERC20, 0, 500))
+        await expect(discountManager.connect(deployer).removeDiscount(mock20Token.address, TokenType.ERC20, 0, 500))
             .to.be.revertedWithCustomError(discountManager, 'INVALID_DISCOUNT');
     });
 

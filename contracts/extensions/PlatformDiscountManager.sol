@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
+import '../abstract/JBOperatable.sol';
+import '../libraries/JBOperations.sol';
+import '../interfaces/IJBDirectory.sol';
+import '../interfaces/IJBProjects.sol';
+import '../interfaces/IJBOperatorStore.sol';
+
 enum TokenType {
   ERC20,
   ERC721,
@@ -23,7 +29,10 @@ interface IndexedBalance {
   function balanceOf(address, uint256) external view returns (uint256);
 }
 
-contract PlatformDiscountManager {
+/**
+ * @notice Allows registration of platform fee discounts for holders of tokens.
+ */
+contract PlatformDiscountManager is JBOperatable {
   error INVALID_DISCOUNT();
 
   event AddDiscount(
@@ -39,15 +48,36 @@ contract PlatformDiscountManager {
     uint256 tokenIndex,
     uint256 tokenBalance
   );
+
+  IJBDirectory public immutable jbxDirectory;
+  IJBProjects public immutable jbxProjects;
+
   uint256[] public discounts;
 
   /**
-   * @notice
+   * @param _jbxDirectory Juicebox directory.
+   * @param _jbxOperatorStore Juicebox operator store.
+   * @param _jbxProjects Juicebox project registry.
+   */
+  constructor(
+    IJBDirectory _jbxDirectory,
+    IJBProjects _jbxProjects,
+    IJBOperatorStore _jbxOperatorStore
+  ) {
+    operatorStore = _jbxOperatorStore;
+    jbxDirectory = _jbxDirectory;
+    jbxProjects = _jbxProjects;
+  }
+
+  /**
+   * @notice Adds a discount. Note that long discount lists degrade contract performance.
+   *
+   * @dev The user calling this function must have the MIGRATE_CONTROLLER permission on project 1.
    *
    * @param _token Token address ownership of which qualifies a user to the given discount.
    * @param _tokenType Token type: ERC20, ERC721, etc. Defined in `TokenType` enum.
    * @param _tokenIndex Token index, used for ERC1155 token type.
-   * @param _tokenBalance Minimum token balance to quilify for the discount. This value is stored as uint32, it is expected to be divided by 10^18.
+   * @param _tokenBalance Minimum token balance to quilify for the discount. This value is stored as uint32, it is expected to be divided by 10^17.
    * @param _discount Discount percentage in bps, 500 = 5%.
    */
   function registerDiscount(
@@ -56,8 +86,15 @@ contract PlatformDiscountManager {
     uint256 _tokenIndex,
     uint256 _tokenBalance,
     uint256 _discount
-  ) external {
-    // TODO: permissions
+  )
+    external
+    requirePermissionAllowingOverride(
+      jbxProjects.ownerOf(1),
+      1,
+      JBOperations.MIGRATE_CONTROLLER,
+      (msg.sender == address(jbxDirectory.controllerOf(1)))
+    )
+  {
     if (_discount > 10_000) {
       revert INVALID_DISCOUNT();
     }
@@ -67,18 +104,35 @@ contract PlatformDiscountManager {
     emit AddDiscount(_token, _tokenType, _tokenIndex, _tokenBalance, _discount);
   }
 
+  /**
+   * @notice Removes a discount.
+   *
+   * @dev The user calling this function must have the MIGRATE_CONTROLLER permission on project 1.
+   *
+   * @param _token Token address ownership of which qualifies a user to the given discount.
+   * @param _tokenType Token type: ERC20, ERC721, etc. Defined in `TokenType` enum.
+   * @param _tokenIndex Token index, used for ERC1155 token type.
+   * @param _tokenBalance Minimum token balance to quilify for the discount. This value is stored as uint32, it is expected to be divided by 10^17.
+   */
   function removeDiscount(
     address _token,
     TokenType _tokenType,
     uint256 _tokenIndex,
     uint256 _tokenBalance
-  ) external {
-    // TODO: permissions
-    uint256 discount = packDiscount(_token, _tokenType, _tokenIndex, _tokenBalance, 0);
+  )
+    external
+    requirePermissionAllowingOverride(
+      jbxProjects.ownerOf(1),
+      1,
+      JBOperations.MIGRATE_CONTROLLER,
+      (msg.sender == address(jbxDirectory.controllerOf(1)))
+    )
+  {
     uint256 l = discounts.length;
     if (l == 0) {
       revert INVALID_DISCOUNT();
     }
+    uint256 discount = packDiscount(_token, _tokenType, _tokenIndex, _tokenBalance, 0);
     uint256[] memory updatedDiscounts = new uint256[](l - 1);
     uint256[] memory currentDiscounts = discounts;
     bool found;
