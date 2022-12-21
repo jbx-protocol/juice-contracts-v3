@@ -1,18 +1,17 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import * as helpers from '@nomicfoundation/hardhat-network-helpers';
-import { getContractRecord } from '../../../scripts/lib/lib';
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
+import * as helpers from '@nomicfoundation/hardhat-network-helpers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+
+import { getContractRecord } from '../../../scripts/lib/lib';
 
 const testNetwork = 'goerli';
 
 describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
     const extensionDeploymentLogPath = `./deployments/${testNetwork}/extensions.json`;
     const platformDeploymentLogPath = `./deployments/${testNetwork}/platform.json`;
-
-    const provider = ethers.provider;
 
     let deployer: SignerWithAddress;
     let accounts: SignerWithAddress[];
@@ -28,6 +27,8 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
     // let englishAuctionHouse: any;
     // let dutchAuctionHouse: any;
 
+    const defaultOperationFee = ethers.utils.parseEther('0.001');
+
     before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
 
@@ -35,7 +36,7 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         await helpers.setBalance(accounts[0].address, ethers.utils.parseEther('10').toHexString());
     });
 
-    before('Connect juicebox contracts', async () => {
+    before('Connect jbx contracts', async () => {
         const jbxDirectoryInfo = getContractRecord('JBDirectory', platformDeploymentLogPath, testNetwork);
         jbxDirectory = await ethers.getContractAt(jbxDirectoryInfo.abi, jbxDirectoryInfo.address);
 
@@ -64,7 +65,8 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         const mintPeriodStart = 0
         const mintPeriodEnd = 0;
 
-        const tx = deployerProxy.connect(accounts[0]).deployNFToken(owner, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, mintPeriodStart, mintPeriodEnd);
+        const tx = deployerProxy.connect(accounts[0])
+            .deployNFToken(owner, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, mintPeriodStart, mintPeriodEnd, { value: defaultOperationFee });
 
         await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', anyValue);
     });
