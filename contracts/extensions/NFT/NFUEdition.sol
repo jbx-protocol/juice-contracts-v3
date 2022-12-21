@@ -251,10 +251,7 @@ contract NFUEdition is BaseNFT {
   /**
    * @dev Prevent mint without edition param.
    */
-  function generateTokenId(
-    address _account,
-    uint256 _amount
-  ) internal virtual override returns (uint256 tokenId) {
+  function generateTokenId(address, uint256) internal virtual override returns (uint256 tokenId) {
     revert INVALID_OPERATION();
   }
 

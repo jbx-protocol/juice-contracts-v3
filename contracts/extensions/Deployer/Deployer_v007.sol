@@ -20,6 +20,13 @@ import './Factories/NFUEditionFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v007 is Deployer_v006 {
+  bytes32 internal constant deployDutchAuctionMachineKey =
+    keccak256(abi.encodePacked('deployDutchAuctionMachine'));
+  bytes32 internal constant deployEnglishAuctionMachineKey =
+    keccak256(abi.encodePacked('deployEnglishAuctionMachine'));
+  bytes32 internal constant deployTraitTokenKey = keccak256(abi.encodePacked('deployTraitToken'));
+  bytes32 internal constant deployNFUEditionKey = keccak256(abi.encodePacked('deployNFUEdition'));
+
   DutchAuctionMachine internal dutchAuctionMachineSource;
   EnglishAuctionMachine internal englishAuctionMachineSource;
   TraitToken internal traitTokenSource;
@@ -51,6 +58,11 @@ contract Deployer_v007 is Deployer_v006 {
     englishAuctionMachineSource = _englishAuctionMachineSource;
     traitTokenSource = _traitTokenSource;
     nfuEditionSource = _nfuEditionSource;
+
+    prices[deployDutchAuctionMachineKey] = 1000000000000000; // 0.001 eth
+    prices[deployEnglishAuctionMachineKey] = 1000000000000000; // 0.001 eth
+    prices[deployTraitTokenKey] = 1000000000000000; // 0.001 eth
+    prices[deployNFUEditionKey] = 1000000000000000; // 0.001 eth
   }
 
   /**
@@ -72,7 +84,9 @@ contract Deployer_v007 is Deployer_v006 {
     IJBDirectory _jbxDirectory,
     address _token,
     address _owner
-  ) external returns (address machine) {
+  ) external payable returns (address machine) {
+    validatePayment(deployDutchAuctionMachineKey);
+
     machine = AuctionMachineFactory.createDutchAuctionMachine(
       address(dutchAuctionMachineSource),
       _maxAuctions,
@@ -84,6 +98,7 @@ contract Deployer_v007 is Deployer_v006 {
       _token,
       _owner
     );
+
     emit Deployment('DutchAuctionMachine', machine);
   }
 
@@ -102,7 +117,9 @@ contract Deployer_v007 is Deployer_v006 {
     IJBDirectory _jbxDirectory,
     address _token,
     address _owner
-  ) external returns (address machine) {
+  ) external payable returns (address machine) {
+    validatePayment(deployEnglishAuctionMachineKey);
+
     machine = AuctionMachineFactory.createEnglishAuctionMachine(
       address(englishAuctionMachineSource),
       _maxAuctions,
@@ -126,7 +143,9 @@ contract Deployer_v007 is Deployer_v006 {
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance
-  ) external returns (address token) {
+  ) external payable returns (address token) {
+    validatePayment(deployTraitTokenKey);
+
     token = TraitTokenFactory.createTraitToken(
       address(traitTokenSource),
       _owner,
@@ -140,6 +159,7 @@ contract Deployer_v007 is Deployer_v006 {
       _unitPrice,
       _mintAllowance
     );
+
     emit Deployment('TraitToken', token);
   }
 
@@ -154,7 +174,9 @@ contract Deployer_v007 is Deployer_v006 {
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance
-  ) external returns (address token) {
+  ) external payable returns (address token) {
+    validatePayment(deployNFUEditionKey);
+
     token = NFUEditionFactory.createNFUEdition(
       address(nfuEditionSource),
       _owner,
@@ -168,6 +190,7 @@ contract Deployer_v007 is Deployer_v006 {
       _unitPrice,
       _mintAllowance
     );
+
     emit Deployment('NFUEdition', token);
   }
 }

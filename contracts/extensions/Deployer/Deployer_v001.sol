@@ -23,8 +23,8 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
   error INVALID_ADDRESS();
   error INVALID_AMOUNT();
 
-  // IJBDirectory public jbxDirectory
-  // IJBProjects public jbxProjects;
+  IJBDirectory internal jbxDirectory;
+  IJBProjects internal jbxProjects;
 
   PlatformDiscountManager public platformDiscountManager;
 
@@ -37,26 +37,26 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
     _disableInitializers();
   }
 
-  function initialize()
-    public
-    virtual
-    // IJBDirectory _jbxDirectory,
-    // IJBProjects _jbxProjects,
-    // IJBOperatorStore _jbxOperatorStore
-    initializer
-  {
+  function initialize(
+    address _jbxDirectory,
+    address _jbxProjects,
+    address _jbxOperatorStore
+  ) public virtual initializer {
     __Ownable_init();
     __UUPSUpgradeable_init();
 
-    // operatorStore = _jbxOperatorStore;
-    // jbxDirectory = _jbxDirectory;
-    // jbxProjects = _jbxProjects;
+    operatorStore = IJBOperatorStore(_jbxOperatorStore);
+    jbxDirectory = IJBDirectory(_jbxDirectory);
+    jbxProjects = IJBProjects(_jbxProjects);
 
     prices[deployNFTokenKey] = 1000000000000000; // 0.001 eth
   }
 
   function _authorizeUpgrade(address) internal override onlyOwner {}
 
+  /**
+   * @dev This creates a token that can be minted immediately, to discourage this, unitPrice can be set high, then mint period can be defined before setting price to a "reasonable" value.
+   */
   function deployNFToken(
     address _owner,
     string memory _name,
@@ -68,12 +68,11 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
-    uint256 _mintPeriodStart,
-    uint256 _mintPeriodEnd
-  ) external payable returns (address) {
+    bool _reveal
+  ) external payable returns (address token) {
     validatePayment(deployNFTokenKey);
 
-    address t = NFTokenFactory.createNFToken(
+    token = NFTokenFactory.createNFToken(
       _owner,
       _name,
       _symbol,
@@ -84,63 +83,64 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
       _maxSupply,
       _unitPrice,
       _mintAllowance,
-      _mintPeriodStart,
-      _mintPeriodEnd
+      _reveal
     );
-
-    emit Deployment('NFToken', t);
-
-    return t;
+    emit Deployment('NFToken', token);
   }
 
   function validatePayment(bytes32 _priceKey) internal virtual {
-    uint256 price = prices[_priceKey];
-
-    if (price == 0) {
-      return;
-    }
-
-    if (address(platformDiscountManager) != address(0)) {
-      price = platformDiscountManager.getPrice(msg.sender, price);
-    }
+    uint256 price = getPrice(_priceKey, msg.sender);
 
     if (msg.value != price) {
       revert INVALID_PAYMENT(price);
     }
   }
 
-  function updatePrice(bytes32 _priceKey, uint256 _price) external virtual {
-    // TODO: permissions
+  /**
+   * @notice Returns the price of a given deployer action. To generate the price key, get the hash of the packed function name, for example price key of `deployNFToken` action would be `keccak256(abi.encodePacked('deployNFToken'))`.
+   *
+   * @param _priceKey keccak256 hash of a packed action key.
+   * @param _actor Account attempting the operation.
+   */
+  function getPrice(bytes32 _priceKey, address _actor) public view virtual returns (uint256 price) {
+    price = prices[_priceKey];
+
+    if (price == 0) {
+      return 0;
+    }
+
+    if (address(platformDiscountManager) != address(0)) {
+      price = platformDiscountManager.getPrice(_actor, price);
+    }
+  }
+
+  function updatePrice(
+    bytes32 _priceKey,
+    uint256 _price
+  )
+    external
+    virtual
+    requirePermissionAllowingOverride(
+      jbxProjects.ownerOf(1),
+      1,
+      JBOperations.PROCESS_FEES,
+      (msg.sender == address(jbxDirectory.controllerOf(1)))
+    )
+  {
     prices[_priceKey] = _price;
   }
 
-  //   function transferBalance(
-  //     address payable _destination,
-  //     uint256 _amount
-  //   )
-  //     external
-  //     nonReentrant
-  //     requirePermissionAllowingOverride(
-  //       jbxProjects.ownerOf(jbxProjectId),
-  //       jbxProjectId,
-  //       JBOperations.MANAGE_PAYMENTS,
-  //       (msg.sender == address(jbxDirectory.controllerOf(jbxProjectId)))
-  //     )
-  //   {
-  //     // TODO: permissions
-  //     if (_destination == address(0)) {
-  //       revert INVALID_ADDRESS();
-  //     }
-
-  //     if (_amount == 0 || _amount > (payable(address(this))).balance) {
-  //       revert INVALID_AMOUNT();
-  //     }
-
-  //     _destination.transfer(_amount);
-  //   }
-
-  function setPlatformDiscountManager(PlatformDiscountManager _platformDiscountManager) external {
-    // TODO: permissions
-    // platformDiscountManager = _platformDiscountManager;
+  function setPlatformDiscountManager(
+    PlatformDiscountManager _platformDiscountManager
+  )
+    external
+    requirePermissionAllowingOverride(
+      jbxProjects.ownerOf(1),
+      1,
+      JBOperations.PROCESS_FEES,
+      (msg.sender == address(jbxDirectory.controllerOf(1)))
+    )
+  {
+    platformDiscountManager = _platformDiscountManager;
   }
 }

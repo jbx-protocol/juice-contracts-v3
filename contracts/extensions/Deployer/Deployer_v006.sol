@@ -13,6 +13,17 @@ import './Factories/NFTRewardDataSourceFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v006 is Deployer_v005 {
+  bytes32 internal constant deployOpenTieredTokenUriResolverKey =
+    keccak256(abi.encodePacked('deployOpenTieredTokenUriResolver'));
+  bytes32 internal constant deployOpenTieredPriceResolverKey =
+    keccak256(abi.encodePacked('deployOpenTieredPriceResolver'));
+  bytes32 internal constant deployTieredTokenUriResolverKey =
+    keccak256(abi.encodePacked('deployTieredTokenUriResolver'));
+  bytes32 internal constant deployTieredPriceResolverKey =
+    keccak256(abi.encodePacked('deployTieredPriceResolver'));
+  bytes32 internal constant deployNFTRewardDataSourceKey =
+    keccak256(abi.encodePacked('deployNFTRewardDataSource'));
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -31,28 +42,36 @@ contract Deployer_v006 is Deployer_v005 {
     englishAuctionSource = _englishAuctionSource;
     nfuTokenSource = _nfuTokenSource;
     tokenLiquidator = _tokenLiquidator;
+
+    prices[deployOpenTieredTokenUriResolverKey] = 1000000000000000; // 0.001 eth
+    prices[deployOpenTieredPriceResolverKey] = 1000000000000000; // 0.001 eth
+    prices[deployTieredTokenUriResolverKey] = 1000000000000000; // 0.001 eth
+    prices[deployTieredPriceResolverKey] = 1000000000000000; // 0.001 eth
+    prices[deployNFTRewardDataSourceKey] = 1000000000000000; // 0.001 eth
   }
 
-  function deployOpenTieredTokenUriResolver(string memory _baseUri)
-    external
-    returns (address resolver)
-  {
+  function deployOpenTieredTokenUriResolver(
+    string memory _baseUri
+  ) external payable returns (address resolver) {
+    validatePayment(deployOpenTieredTokenUriResolverKey);
     resolver = NFTRewardDataSourceFactory.createOpenTieredTokenUriResolver(_baseUri);
     emit Deployment('OpenTieredTokenUriResolver', resolver);
   }
 
-  function deployOpenTieredPriceResolver(address _contributionToken, OpenRewardTier[] memory _tiers)
-    external
-    returns (address resolver)
-  {
+  function deployOpenTieredPriceResolver(
+    address _contributionToken,
+    OpenRewardTier[] memory _tiers
+  ) external payable returns (address resolver) {
+    validatePayment(deployOpenTieredPriceResolverKey);
     resolver = NFTRewardDataSourceFactory.createOpenTieredPriceResolver(_contributionToken, _tiers);
     emit Deployment('OpenTieredPriceResolver', resolver);
   }
 
-  function deployTieredTokenUriResolver(string memory _baseUri, uint256[] memory _idRange)
-    external
-    returns (address resolver)
-  {
+  function deployTieredTokenUriResolver(
+    string memory _baseUri,
+    uint256[] memory _idRange
+  ) external payable returns (address resolver) {
+    validatePayment(deployTieredTokenUriResolverKey);
     resolver = NFTRewardDataSourceFactory.createTieredTokenUriResolver(_baseUri, _idRange);
     emit Deployment('TieredTokenUriResolver', resolver);
   }
@@ -62,7 +81,9 @@ contract Deployer_v006 is Deployer_v005 {
     uint256 _mintCap,
     uint256 _userMintCap,
     RewardTier[] memory _tiers
-  ) external returns (address resolver) {
+  ) external payable returns (address resolver) {
+    validatePayment(deployTieredPriceResolverKey);
+
     resolver = NFTRewardDataSourceFactory.createTieredPriceResolver(
       _contributionToken,
       _mintCap,
@@ -85,7 +106,9 @@ contract Deployer_v006 is Deployer_v005 {
     string memory _contractMetadataUri,
     address _admin,
     IPriceResolver _priceResolver
-  ) external returns (address datasource) {
+  ) external payable returns (address datasource) {
+    validatePayment(deployNFTRewardDataSourceKey);
+
     datasource = NFTRewardDataSourceFactory.createNFTRewardDataSource(
       _projectId,
       _jbxDirectory,

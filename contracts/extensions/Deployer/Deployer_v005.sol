@@ -13,6 +13,8 @@ import './Factories/PaymentProcessorFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v005 is Deployer_v004 {
+  bytes32 internal constant deployPaymentProcessorKey =
+    keccak256(abi.encodePacked('deployPaymentProcessor'));
   ITokenLiquidator internal tokenLiquidator;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
@@ -33,6 +35,8 @@ contract Deployer_v005 is Deployer_v004 {
     englishAuctionSource = _englishAuctionSource;
     nfuTokenSource = _nfuTokenSource;
     tokenLiquidator = _tokenLiquidator;
+
+    prices[deployPaymentProcessorKey] = 1000000000000000; // 0.001 eth
   }
 
   function deployPaymentProcessor(
@@ -42,7 +46,9 @@ contract Deployer_v005 is Deployer_v004 {
     uint256 _jbxProjectId,
     bool _ignoreFailures,
     bool _defaultLiquidation
-  ) external returns (address processor) {
+  ) external payable returns (address processor) {
+    validatePayment(deployPaymentProcessorKey);
+
     processor = PaymentProcessorFactory.createPaymentProcessor(
       _jbxDirectory,
       _jbxOperatorStore,

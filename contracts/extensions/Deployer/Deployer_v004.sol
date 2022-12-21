@@ -12,6 +12,7 @@ import './Factories/NFUTokenFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v004 is Deployer_v003 {
+  bytes32 internal constant deployNFUTokenKey = keccak256(abi.encodePacked('deployNFUToken'));
   NFUToken internal nfuTokenSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
@@ -19,19 +20,27 @@ contract Deployer_v004 is Deployer_v003 {
     _disableInitializers();
   }
 
+  /**
+   * @dev This function clashes with initialize in Deployer_v001, for this reason instead of having typed arguments, they're addresses.
+   */
   function initialize(
-    DutchAuctionHouse _dutchAuctionSource,
-    EnglishAuctionHouse _englishAuctionSource,
-    NFUToken _nfuTokenSource
-  ) public virtual reinitializer(4) {
+    address _dutchAuctionSource,
+    address _englishAuctionSource,
+    address _nfuTokenSource
+  ) public virtual override reinitializer(4) {
     __Ownable_init();
     __UUPSUpgradeable_init();
 
-    dutchAuctionSource = _dutchAuctionSource;
-    englishAuctionSource = _englishAuctionSource;
-    nfuTokenSource = _nfuTokenSource;
+    dutchAuctionSource = DutchAuctionHouse(_dutchAuctionSource);
+    englishAuctionSource = EnglishAuctionHouse(_englishAuctionSource);
+    nfuTokenSource = NFUToken(_nfuTokenSource);
+
+    prices[deployNFUTokenKey] = 1000000000000000; // 0.001 eth
   }
 
+  /**
+   * @dev This creates a token that can be minted immediately, to discourage this, unitPrice can be set high, then mint period can be defined before setting price to a "reasonable" value.
+   */
   function deployNFUToken(
     address _owner,
     string memory _name,
@@ -43,7 +52,9 @@ contract Deployer_v004 is Deployer_v003 {
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance
-  ) external returns (address token) {
+  ) external payable returns (address token) {
+    validatePayment(deployNFUTokenKey);
+
     token = NFUTokenFactory.createNFUToken(
       address(nfuTokenSource),
       _owner,
@@ -57,6 +68,7 @@ contract Deployer_v004 is Deployer_v003 {
       _unitPrice,
       _mintAllowance
     );
+
     emit Deployment('NFUToken', token);
   }
 }

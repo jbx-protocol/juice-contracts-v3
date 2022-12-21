@@ -9,14 +9,19 @@ import './Factories/MixedPaymentSplitterFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v002 is Deployer_v001 {
+  bytes32 internal constant deployMixedPaymentSplitterKey =
+    keccak256(abi.encodePacked('deployMixedPaymentSplitter'));
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
   }
 
-  function initialize() public virtual override reinitializer(2) {
+  function initialize() public virtual reinitializer(2) {
     __Ownable_init();
     __UUPSUpgradeable_init();
+
+    prices[deployMixedPaymentSplitterKey] = 1000000000000000; // 0.001 eth
   }
 
   function deployMixedPaymentSplitter(
@@ -26,8 +31,10 @@ contract Deployer_v002 is Deployer_v001 {
     uint256[] memory _shares,
     IJBDirectory _jbxDirectory,
     address _owner
-  ) external returns (address) {
-    address s = MixedPaymentSplitterFactory.createMixedPaymentSplitter(
+  ) external payable returns (address splitter) {
+    validatePayment(deployMixedPaymentSplitterKey);
+
+    splitter = MixedPaymentSplitterFactory.createMixedPaymentSplitter(
       _name,
       _payees,
       _projects,
@@ -36,8 +43,6 @@ contract Deployer_v002 is Deployer_v001 {
       _owner
     );
 
-    emit Deployment('MixedPaymentSplitter', s);
-
-    return s;
+    emit Deployment('MixedPaymentSplitter', splitter);
   }
 }

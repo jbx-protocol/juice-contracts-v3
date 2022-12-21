@@ -21,9 +21,7 @@ library NFTokenFactory {
     IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
-    uint256 _mintAllowance,
-    uint256 _mintPeriodStart,
-    uint256 _mintPeriodEnd
+    uint256 _mintAllowance
   ) external returns (address) {
     NFToken t = new NFToken(
       _name,
@@ -35,8 +33,8 @@ library NFTokenFactory {
       _maxSupply,
       _unitPrice,
       _mintAllowance,
-      _mintPeriodStart,
-      _mintPeriodEnd
+      0,
+      0
     );
 
     abdicate(t, _owner);

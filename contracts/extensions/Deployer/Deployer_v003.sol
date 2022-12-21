@@ -11,6 +11,10 @@ import './Factories/AuctionsFactory.sol';
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v003 is Deployer_v002 {
+  bytes32 internal constant deployDutchAuctionKey =
+    keccak256(abi.encodePacked('deployDutchAuctionSplitter'));
+  bytes32 internal constant deployEnglishAuctionKey =
+    keccak256(abi.encodePacked('deployEnglishAuction'));
   DutchAuctionHouse internal dutchAuctionSource;
   EnglishAuctionHouse internal englishAuctionSource;
 
@@ -22,12 +26,15 @@ contract Deployer_v003 is Deployer_v002 {
   function initialize(
     DutchAuctionHouse _dutchAuctionSource,
     EnglishAuctionHouse _englishAuctionSource
-  ) public virtual reinitializer(3) {
+  ) public reinitializer(3) {
     __Ownable_init();
     __UUPSUpgradeable_init();
 
     dutchAuctionSource = _dutchAuctionSource;
     englishAuctionSource = _englishAuctionSource;
+
+    prices[deployDutchAuctionKey] = 1000000000000000; // 0.001 eth
+    prices[deployEnglishAuctionKey] = 1000000000000000; // 0.001 eth
   }
 
   function deployDutchAuction(
@@ -38,7 +45,9 @@ contract Deployer_v003 is Deployer_v002 {
     uint256 _periodDuration,
     address _owner,
     IJBDirectory _directory
-  ) external returns (address auction) {
+  ) external payable returns (address auction) {
+    validatePayment(deployDutchAuctionKey);
+
     auction = AuctionsFactory.createDutchAuction(
       address(dutchAuctionSource),
       _projectId,
@@ -60,7 +69,9 @@ contract Deployer_v003 is Deployer_v002 {
     bool _allowPublicAuctions,
     address _owner,
     IJBDirectory _directory
-  ) external returns (address auction) {
+  ) external payable returns (address auction) {
+    validatePayment(deployEnglishAuctionKey);
+
     auction = AuctionsFactory.createEnglishAuction(
       address(englishAuctionSource),
       _projectId,

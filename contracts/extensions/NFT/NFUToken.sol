@@ -24,7 +24,7 @@ contract NFUToken is BaseNFT {
    * @notice Initializes token state. Used by the Deployer contract to set NFT parameters and contract ownership.
    *
    * @param _owner Token admin.
-   * @param _name Token name.
+   * @param _name Token name. Name must not be blank.
    * @param _symbol Token symbol.
    * @param _baseUri Base URI, initially expected to point at generic, "unrevealed" metadata json.
    * @param _contractUri OpenSea-style contract metadata URI.
@@ -51,6 +51,7 @@ contract NFUToken is BaseNFT {
     uint256 _mintPeriodEnd
   ) public {
     if (bytes(name).length != 0) {
+      // NOTE: prevent re-init
       revert INVALID_OPERATION();
     }
 
