@@ -117,11 +117,8 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     @param _directory A contract storing directories of terminals and controllers for each project.
   */
-  constructor(
-    IJBOperatorStore _operatorStore,
-    IJBProjects _projects,
-    IJBDirectory _directory
-  ) JBOperatable(_operatorStore) {
+  constructor(IJBOperatorStore _operatorStore, IJBProjects _projects, IJBDirectory _directory) {
+    operatorStore = _operatorStore;
     projects = _projects;
     directory = _directory;
   }
@@ -288,11 +285,10 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
 
     @return A flag indicating if the `_lockedSplit` is contained in the `_splits`.
   */
-  function _includesLocked(JBSplit[] memory _splits, JBSplit memory _lockedSplit)
-    private
-    pure
-    returns (bool)
-  {
+  function _includesLocked(
+    JBSplit[] memory _splits,
+    JBSplit memory _lockedSplit
+  ) private pure returns (bool) {
     // Keep a reference to the number of splits.
     uint256 _numberOfSplits = _splits.length;
 

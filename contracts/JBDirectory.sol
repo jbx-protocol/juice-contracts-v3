@@ -102,12 +102,9 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
     @return An array of terminal addresses.
   */
-  function terminalsOf(uint256 _projectId)
-    external
-    view
-    override
-    returns (IJBPaymentTerminal[] memory)
-  {
+  function terminalsOf(
+    uint256 _projectId
+  ) external view override returns (IJBPaymentTerminal[] memory) {
     return _terminalsOf[_projectId];
   }
 
@@ -123,12 +120,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
     @return The primary terminal for the project for the specified token.
   */
-  function primaryTerminalOf(uint256 _projectId, address _token)
-    external
-    view
-    override
-    returns (IJBPaymentTerminal)
-  {
+  function primaryTerminalOf(
+    uint256 _projectId,
+    address _token
+  ) external view override returns (IJBPaymentTerminal) {
     // Keep a reference to the primary terminal for the provided project ID and token.
     IJBPaymentTerminal _primaryTerminal = _primaryTerminalOf[_projectId][_token];
 
@@ -171,12 +166,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
     @return A flag indicating whether or not the specified terminal is a terminal of the specified project.
   */
-  function isTerminalOf(uint256 _projectId, IJBPaymentTerminal _terminal)
-    public
-    view
-    override
-    returns (bool)
-  {
+  function isTerminalOf(
+    uint256 _projectId,
+    IJBPaymentTerminal _terminal
+  ) public view override returns (bool) {
     // Keep a reference to the number of terminals the project has.
     uint256 _numberOfTerminals = _terminalsOf[_projectId].length;
 
@@ -209,7 +202,8 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     IJBProjects _projects,
     IJBFundingCycleStore _fundingCycleStore,
     address _owner
-  ) JBOperatable(_operatorStore) {
+  ) {
+    operatorStore = _operatorStore;
     projects = _projects;
     fundingCycleStore = _fundingCycleStore;
 
@@ -233,7 +227,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     @param _projectId The ID of the project to set a new controller for.
     @param _controller The new controller to set.
   */
-  function setControllerOf(uint256 _projectId, address _controller)
+  function setControllerOf(
+    uint256 _projectId,
+    address _controller
+  )
     external
     override
     requirePermissionAllowingOverride(
@@ -254,7 +251,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     if (
       msg.sender != address(controllerOf[_projectId]) &&
       controllerOf[_projectId] != address(0) &&
-      !_fundingCycle.global().allowSetController
+      !_fundingCycle.shared().allowSetController
     ) revert SET_CONTROLLER_NOT_ALLOWED();
 
     // Set the new controller.
@@ -273,7 +270,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     @param _projectId The ID of the project having terminals set.
     @param _terminals The terminal to set.
   */
-  function setTerminalsOf(uint256 _projectId, IJBPaymentTerminal[] calldata _terminals)
+  function setTerminalsOf(
+    uint256 _projectId,
+    IJBPaymentTerminal[] calldata _terminals
+  )
     external
     override
     requirePermissionAllowingOverride(
@@ -288,7 +288,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
     // Setting terminals must be allowed if not called from the current controller.
     if (
-      msg.sender != address(controllerOf[_projectId]) && !_fundingCycle.global().allowSetTerminals
+      msg.sender != address(controllerOf[_projectId]) && !_fundingCycle.shared().allowSetTerminals
     ) revert SET_TERMINALS_NOT_ALLOWED();
 
     // Set the stored terminals for the project.
@@ -364,11 +364,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     @param _address The address to allow or revoke allowance from.
     @param _flag Whether allowance is being added or revoked.
   */
-  function setIsAllowedToSetFirstController(address _address, bool _flag)
-    external
-    override
-    onlyOwner
-  {
+  function setIsAllowedToSetFirstController(
+    address _address,
+    bool _flag
+  ) external override onlyOwner {
     // Set the flag in the allowlist.
     isAllowedToSetFirstController[_address] = _flag;
 
@@ -395,7 +394,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
     // Setting terminals must be allowed if not called from the current controller.
     if (
-      msg.sender != address(controllerOf[_projectId]) && !_fundingCycle.global().allowSetTerminals
+      msg.sender != address(controllerOf[_projectId]) && !_fundingCycle.shared().allowSetTerminals
     ) revert SET_TERMINALS_NOT_ALLOWED();
 
     // Add the new terminal.
