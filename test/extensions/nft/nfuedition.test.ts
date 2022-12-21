@@ -83,7 +83,6 @@ describe('NFUEdition tests', () => {
         await editionToken.connect(deployer).registerEdition(10, ethers.utils.parseEther('0.0001'));
         await editionToken.connect(deployer).registerEdition(8, ethers.utils.parseEther('0.001'));
         await editionToken.connect(deployer).registerEdition(2, ethers.utils.parseEther('0.01'));
-        await expect(editionToken.connect(deployer).registerEdition(10, ethers.utils.parseEther('0.001'))).to.be.reverted;
 
         expect(await editionToken.editions(0)).to.equal(10);
         expect(await editionToken.editions(1)).to.equal(8);

@@ -289,8 +289,9 @@ describe('NFToken tests', () => {
             );
 
         expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
-        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
-            .to.be.revertedWithCustomError(basicToken, 'PAYMENT_FAILURE');
+
+        const tx = basicToken.connect(accounts[6])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        await expect(await tx).to.changeEtherBalance(deployer, '1000000000000000');
 
         await basicToken.connect(deployer).setRoyalties(deployer.address, 10_000);
         await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
