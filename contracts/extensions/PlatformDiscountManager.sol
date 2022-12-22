@@ -134,25 +134,24 @@ contract PlatformDiscountManager is JBOperatable {
     }
     uint256 discount = packDiscount(_token, _tokenType, _tokenIndex, _tokenBalance, 0);
     uint256[] memory updatedDiscounts = new uint256[](l - 1);
-    uint256[] memory currentDiscounts = discounts;
     bool found;
     for (uint256 i; i != l; ) {
       if (found) {
-        updatedDiscounts[i - 1] = currentDiscounts[i];
+        updatedDiscounts[i - 1] = discounts[i];
         unchecked {
           ++i;
         }
         continue;
       }
 
-      uint256 discountKey = currentDiscounts[i] &
+      uint256 discountKey = discounts[i] &
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // 232 1s to 0-out the discount rate
       if (discountKey != discount) {
         if (i == l - 1) {
           // NOTE: reached the end of the list already
           revert INVALID_DISCOUNT();
         }
-        updatedDiscounts[i] = currentDiscounts[i];
+        updatedDiscounts[i] = discounts[i];
       } else if (discountKey == discount) {
         found = true;
       }
@@ -167,11 +166,10 @@ contract PlatformDiscountManager is JBOperatable {
   }
 
   function getPrice(address _actor, uint256 _fee) external view returns (uint256 price) {
-    uint256[] memory currentDiscounts = discounts;
-    uint256 l = currentDiscounts.length;
+    uint256 l = discounts.length;
     uint256 discount;
     for (uint256 i; i != l; ) {
-      DiscountDefinition memory dd = unpackDiscount(currentDiscounts[i]);
+      DiscountDefinition memory dd = unpackDiscount(discounts[i]);
       uint256 actorBalance;
       if (dd.tokenType == TokenType.ERC20) {
         actorBalance = ((BasicBalance)(dd.token)).balanceOf(_actor) / 10e17;
