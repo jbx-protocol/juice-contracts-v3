@@ -47,6 +47,8 @@ contract NFUEdition is BaseNFT {
   /**
    * @notice Initializes token state. Used by the Deployer contract to set NFT parameters and contract ownership.
    *
+   * @dev _unitPrice (after _maxSupply, before _mintAllowance) parameter is ignored as token prices are dictated by edition definition.
+   *
    * @param _owner Token admin.
    * @param _name Token name.
    * @param _symbol Token symbol.
@@ -55,7 +57,6 @@ contract NFUEdition is BaseNFT {
    * @param _jbxProjectId Juicebox project id that will be paid the proceeds of the sale.
    * @param _jbxDirectory Juicebox directory to determine payment destination.
    * @param _maxSupply Max NFT supply.
-   * @param _unitPrice Price per token expressed in Ether.
    * @param _mintAllowance Per-user mint cap.
    * @param _mintPeriodStart Start of the minting period in seconds.
    * @param _mintPeriodEnd End of the minting period in seconds.
@@ -69,7 +70,7 @@ contract NFUEdition is BaseNFT {
     uint256 _jbxProjectId,
     IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
-    uint256 _unitPrice,
+    uint256,
     uint256 _mintAllowance,
     uint256 _mintPeriodStart,
     uint256 _mintPeriodEnd
@@ -96,7 +97,6 @@ contract NFUEdition is BaseNFT {
     jbxDirectory = _jbxDirectory;
     jbxProjectId = _jbxProjectId;
     maxSupply = _maxSupply;
-    unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
     mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
 
@@ -297,7 +297,12 @@ contract NFUEdition is BaseNFT {
   }
 
   modifier supplyAvailable(uint256 _edition) {
-    if (editions.length == 0 || editions.length < _edition) {
+    uint256 l = editions.length;
+    if (l == 0) {
+      revert INVALID_OPERATION();
+    }
+
+    if (_edition > l - 1) {
       revert INVALID_OPERATION();
     }
 
