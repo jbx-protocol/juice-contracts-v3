@@ -67,13 +67,32 @@ describe('PlatformDiscountManager Tests', () => {
     it('registerDiscount: discount', async () => {
         await expect(discountManager.connect(deployer).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 1_000, 1_000))
             .not.to.be.reverted;
+
+        await expect(discountManager.connect(deployer).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 10_000, 1_500))
+            .not.to.be.reverted;
+
+        await expect(discountManager.connect(deployer).registerDiscount(mock20Token.address, TokenType.ERC20, 0, 100_000, 2_000))
+            .not.to.be.reverted;
     });
 
-    // getDiscountInfo
+    it('getDiscountInfo', async () => {
+        const info = await discountManager.getDiscountInfo(0);
+
+        expect(info['token']).to.equal(mock20Token.address);
+        expect(info['tokenType']).to.equal(TokenType.ERC20);
+        expect(info['tokenIndex']).to.equal(0);
+        expect(info['tokenBalance']).to.equal(1000);
+        expect(info['discount']).to.equal(1000);
+    });
 
     it('removeDiscount: invalid discount', async () => {
         await expect(discountManager.connect(deployer).removeDiscount(mock20Token.address, TokenType.ERC20, 0, 500))
             .to.be.revertedWithCustomError(discountManager, 'INVALID_DISCOUNT');
+    });
+
+    it('removeDiscount', async () => {
+        await expect(discountManager.connect(deployer).removeDiscount(mock20Token.address, TokenType.ERC20, 0, 10_000))
+            .not.to.be.reverted;
     });
 
     it('getPrice: full price', async () => {

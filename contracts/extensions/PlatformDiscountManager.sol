@@ -161,10 +161,6 @@ contract PlatformDiscountManager is JBOperatable {
       }
     }
 
-    if (!found) {
-      revert INVALID_DISCOUNT();
-    }
-
     discounts = updatedDiscounts;
 
     emit RemoveDiscount(_token, _tokenType, _tokenIndex, _tokenBalance);
