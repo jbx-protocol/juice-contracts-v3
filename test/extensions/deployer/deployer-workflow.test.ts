@@ -132,7 +132,8 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         const ignoreFailures = false;
         const defaultLiquidation = true;
 
-        const tx = deployerProxy.connect(accounts[0]).deployPaymentProcessor(jbxDirectory.address, jbxOperatorStore.address, jbxProjects.address, jbxProjectId, ignoreFailures, defaultLiquidation);
+        const tx = deployerProxy.connect(accounts[0])
+            .deployPaymentProcessor(jbxDirectory.address, jbxOperatorStore.address, jbxProjects.address, jbxProjectId, ignoreFailures, defaultLiquidation);
 
         await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('PaymentProcessor', anyValue);
     });

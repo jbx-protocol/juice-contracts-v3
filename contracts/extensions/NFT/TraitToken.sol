@@ -11,7 +11,7 @@ interface ITraitToken {
 /**
  * @notice An ERC721 contract that stores per-token IPFSs CIDs efficiently. This is meant to be used for NFTs that have traits along the lines of BAYC, etc.
  */
-contract TraitToken is BaseNFT {
+contract TraitToken is BaseNFT, ITraitToken {
   error INVALID_OPERATION();
 
   bytes constant ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -102,7 +102,10 @@ contract TraitToken is BaseNFT {
    *
    * @dev The IPFS hash is expressed as base58 with the first two bytes cut off since they are expected to be `1220`. Future versions of this contract may use a struct instead of bytes32 that would include additional information like hashing function.
    */
-  function setTokenAsset(uint256 _tokenId, bytes32 _truncatedCID) external onlyRole(MINTER_ROLE) {
+  function setTokenAsset(
+    uint256 _tokenId,
+    bytes32 _truncatedCID
+  ) external override onlyRole(MINTER_ROLE) {
     if (ownerOf(_tokenId) == address(0)) {
       revert NOT_MINTED();
     }
@@ -123,6 +126,10 @@ contract TraitToken is BaseNFT {
 
   function generateTokenId(address, uint256) internal virtual override returns (uint256 tokenId) {
     tokenId = totalSupply;
+  }
+
+  function supportsInterface(bytes4 _interfaceId) public pure override returns (bool) {
+    return _interfaceId == type(ITraitToken).interfaceId;
   }
 
   /**
