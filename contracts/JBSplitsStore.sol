@@ -23,6 +23,7 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
+  error BENEFICIARY_IS_ALLOCATOR();
   error INVALID_LOCKED_UNTIL();
   error INVALID_PROJECT_ID();
   error INVALID_SPLIT_PERCENT();
@@ -228,6 +229,13 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
 
       // ProjectId should be within a uint56
       if (_splits[_i].projectId > type(uint56).max) revert INVALID_PROJECT_ID();
+
+      // Insure we aren't setting an allocator as beneficiary (using erc165 to avoid
+      // excluding other contract beneficiary - multisig for instance)
+      if(_splits[_i].beneficiary.code.length != 0
+        && _splits[_i].beneficiary != address(_splits[_i].allocator)
+        && IERC165(_splits[_i].beneficiary).supportsInterface(type(IJBSplitAllocator).interfaceId))
+          revert BENEFICIARY_IS_ALLOCATOR();
 
       // Add to the total percents.
       _percentTotal = _percentTotal + _splits[_i].percent;
