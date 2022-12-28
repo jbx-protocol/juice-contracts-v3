@@ -2,9 +2,10 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { daysFromNow, daysFromDate } from '../helpers/utils';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
+import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbOperatorStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
-import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
+import jbSplitAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.sol/IJBSplitAllocator.json';
 import errors from '../helpers/errors.json';
 import { BigNumber } from 'ethers';
 
@@ -23,15 +24,21 @@ describe('JBSplitsStore::set(...)', function () {
   async function setup() {
     let [deployer, projectOwner, ...addrs] = await ethers.getSigners();
 
+    let mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
     let mockJbOperatorStore = await deployMockContract(deployer, jbOperatorStore.abi);
     let mockJbProjects = await deployMockContract(deployer, jbProjects.abi);
-    let mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
+    let mockJbSplitAllocator = await deployMockContract(deployer, jbSplitAllocator.abi);
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
 
-    let jbSplitsStoreFact = await ethers.getContractFactory('contracts/JBSplitsStore.sol:JBSplitsStore');
+    // Hardcoded as HH doesn't provide easy access to the interface ID
+    await mockJbSplitAllocator.mock.supportsInterface.withArgs('0x9d740bfa').returns(true);
+
+    let jbSplitsStoreFact = await ethers.getContractFactory(
+      'contracts/JBSplitsStore.sol:JBSplitsStore',
+    );
     let jbSplitsStore = await jbSplitsStoreFact.deploy(
       mockJbOperatorStore.address,
       mockJbProjects.address,
@@ -51,6 +58,7 @@ describe('JBSplitsStore::set(...)', function () {
       mockJbOperatorStore,
       mockJbProjects,
       mockJbDirectory,
+      mockJbSplitAllocator,
     };
   }
 
@@ -87,8 +95,15 @@ describe('JBSplitsStore::set(...)', function () {
   }
 
   it('Should set splits with beneficiaries and emit events if project owner', async function () {
-    const { projectOwner, addrs, jbSplitsStore, splits, groupedSplits, mockJbOperatorStore, mockJbDirectory } =
-      await setup();
+    const {
+      projectOwner,
+      addrs,
+      jbSplitsStore,
+      splits,
+      groupedSplits,
+      mockJbOperatorStore,
+      mockJbDirectory,
+    } = await setup();
 
     await mockJbOperatorStore.mock.hasPermission.returns(false);
     await mockJbDirectory.mock.controllerOf.returns(addrs[0].address);
@@ -109,8 +124,15 @@ describe('JBSplitsStore::set(...)', function () {
   });
 
   it('Should set splits with allocators set', async function () {
-    const { projectOwner, addrs, jbSplitsStore, splits, mockJbOperatorStore, mockJbDirectory } =
-      await setup();
+    const {
+      projectOwner,
+      addrs,
+      jbSplitsStore,
+      splits,
+      mockJbOperatorStore,
+      mockJbDirectory,
+      mockJbSplitAllocator,
+    } = await setup();
 
     await mockJbOperatorStore.mock.hasPermission.returns(false);
     await mockJbDirectory.mock.controllerOf.returns(addrs[0].address);
@@ -120,7 +142,7 @@ describe('JBSplitsStore::set(...)', function () {
       preferClaimed: true,
       preferAddToBalance: true,
       beneficiary: ethers.constants.AddressZero,
-      allocator: addrs[5].address,
+      allocator: mockJbSplitAllocator.address,
     }));
 
     const newGroupedSplits = [{ group: GROUP, splits: newSplits }];
@@ -132,8 +154,15 @@ describe('JBSplitsStore::set(...)', function () {
   });
 
   it('Should set splits with allocators and beneficiaries set', async function () {
-    const { projectOwner, addrs, jbSplitsStore, splits, mockJbOperatorStore, mockJbDirectory } =
-      await setup();
+    const {
+      projectOwner,
+      addrs,
+      jbSplitsStore,
+      splits,
+      mockJbOperatorStore,
+      mockJbDirectory,
+      mockJbSplitAllocator,
+    } = await setup();
 
     await mockJbOperatorStore.mock.hasPermission.returns(false);
     await mockJbDirectory.mock.controllerOf.returns(addrs[0].address);
@@ -141,7 +170,7 @@ describe('JBSplitsStore::set(...)', function () {
     const newSplits = splits.map((elt) => ({
       ...elt,
       beneficiary: addrs[5].address,
-      allocator: addrs[5].address,
+      allocator: mockJbSplitAllocator.address,
     }));
 
     const newGroupedSplits = [{ group: GROUP, splits: newSplits }];
@@ -150,6 +179,60 @@ describe('JBSplitsStore::set(...)', function () {
 
     let splitsStored = cleanSplits(await jbSplitsStore.splitsOf(PROJECT_ID, DOMAIN, GROUP));
     expect(splitsStored).to.eql(newSplits);
+  });
+
+  it('Should set split with an allocator as allocator and beneficiary', async function () {
+    const {
+      projectOwner,
+      addrs,
+      jbSplitsStore,
+      splits,
+      mockJbOperatorStore,
+      mockJbDirectory,
+      mockJbSplitAllocator,
+    } = await setup();
+
+    await mockJbOperatorStore.mock.hasPermission.returns(false);
+    await mockJbDirectory.mock.controllerOf.returns(addrs[0].address);
+
+    const newSplits = splits.map((elt) => ({
+      ...elt,
+      beneficiary: mockJbSplitAllocator.address,
+      allocator: mockJbSplitAllocator.address,
+    }));
+
+    const newGroupedSplits = [{ group: GROUP, splits: newSplits }];
+
+    await jbSplitsStore.connect(projectOwner).set(PROJECT_ID, DOMAIN, newGroupedSplits);
+
+    let splitsStored = cleanSplits(await jbSplitsStore.splitsOf(PROJECT_ID, DOMAIN, GROUP));
+    expect(splitsStored).to.eql(newSplits);
+  });
+
+  it('Can not set split with an allocator as beneficiary', async function () {
+    const {
+      projectOwner,
+      addrs,
+      jbSplitsStore,
+      splits,
+      mockJbOperatorStore,
+      mockJbDirectory,
+      mockJbSplitAllocator,
+    } = await setup();
+
+    await mockJbOperatorStore.mock.hasPermission.returns(false);
+    await mockJbDirectory.mock.controllerOf.returns(addrs[0].address);
+
+    const newSplits = splits.map((elt) => ({
+      ...elt,
+      beneficiary: mockJbSplitAllocator.address,
+    }));
+
+    const newGroupedSplits = [{ group: GROUP, splits: newSplits }];
+
+    await expect(
+      jbSplitsStore.connect(projectOwner).set(PROJECT_ID, DOMAIN, newGroupedSplits),
+    ).to.be.revertedWith(errors.BENEFICIARY_IS_ALLOCATOR);
   });
 
   it('Should set new splits when overwriting existing splits with the same ID/Domain/Group', async function () {
@@ -285,7 +368,8 @@ describe('JBSplitsStore::set(...)', function () {
   });
 
   it('Should set splits if not the project owner but has permission', async function () {
-    const { projectOwner, addrs, jbSplitsStore, groupedSplits, mockJbOperatorStore } = await setup();
+    const { projectOwner, addrs, jbSplitsStore, groupedSplits, mockJbOperatorStore } =
+      await setup();
 
     let caller = addrs[0];
 
@@ -298,7 +382,8 @@ describe('JBSplitsStore::set(...)', function () {
   });
 
   it("Can't set splits if not project owner and doesn't have permission", async function () {
-    const { projectOwner, addrs, jbSplitsStore, groupedSplits, mockJbOperatorStore } = await setup();
+    const { projectOwner, addrs, jbSplitsStore, groupedSplits, mockJbOperatorStore } =
+      await setup();
 
     let caller = addrs[1];
 
