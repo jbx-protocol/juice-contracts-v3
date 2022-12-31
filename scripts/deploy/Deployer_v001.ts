@@ -32,6 +32,7 @@ async function main() {
     logger.info(`deploying Deployer_v001 to ${hre.network.name}`);
 
     const deploymentLogPath = `./deployments/${hre.network.name}/extensions.json`;
+    const platformLogPath = `./deployments/${hre.network.name}/platform.json`;
 
     const [deployer] = await ethers.getSigners();
     logger.info(`connected as ${deployer.address}`);
@@ -43,7 +44,11 @@ async function main() {
         libraries: { NFTokenFactory: nftokenFactoryAddress },
         signer: deployer
     });
-    const deployerProxy = await upgrades.deployProxy(deployerFactory, { kind: 'uups', initializer: 'initialize' });
+
+    const jbDirectoryAddress = getContractRecord('JBDirectory', platformLogPath).address;
+    const jbProjectsAddress = getContractRecord('JBProjects', platformLogPath).address;
+    const jbOperatorStoreAddress = getContractRecord('JBOperatorStore', platformLogPath).address;
+    const deployerProxy = await upgrades.deployProxy(deployerFactory, [jbDirectoryAddress, jbProjectsAddress, jbOperatorStoreAddress], { kind: 'uups', initializer: 'initialize' });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
     const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);
