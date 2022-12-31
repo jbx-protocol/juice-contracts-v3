@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
+import '../Auctions/FixedPriceSale.sol';
 import '../NFT/NFUToken.sol';
 import './Deployer_v003.sol';
 import './Factories/NFUTokenFactory.sol';
@@ -24,16 +25,18 @@ contract Deployer_v004 is Deployer_v003 {
    * @dev This function clashes with initialize in Deployer_v001, for this reason instead of having typed arguments, they're addresses.
    */
   function initialize(
-    address _dutchAuctionSource,
-    address _englishAuctionSource,
-    address _nfuTokenSource
-  ) public virtual override reinitializer(4) {
+    DutchAuctionHouse _dutchAuctionSource,
+    EnglishAuctionHouse _englishAuctionSource,
+    FixedPriceSale _fixedPriceSaleSource,
+    NFUToken _nfuTokenSource
+  ) public virtual reinitializer(4) {
     __Ownable_init();
     __UUPSUpgradeable_init();
 
-    dutchAuctionSource = DutchAuctionHouse(_dutchAuctionSource);
-    englishAuctionSource = EnglishAuctionHouse(_englishAuctionSource);
-    nfuTokenSource = NFUToken(_nfuTokenSource);
+    dutchAuctionSource = _dutchAuctionSource;
+    englishAuctionSource = _englishAuctionSource;
+    fixedPriceSaleSource = _fixedPriceSaleSource;
+    nfuTokenSource = _nfuTokenSource;
 
     prices[deployNFUTokenKey] = 1000000000000000; // 0.001 eth
   }

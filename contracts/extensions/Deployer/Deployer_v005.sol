@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
+import '../Auctions/FixedPriceSale.sol';
 import '../NFT/NFUToken.sol';
 import '../TokenLiquidator.sol';
 import './Deployer_v004.sol';
@@ -25,6 +26,7 @@ contract Deployer_v005 is Deployer_v004 {
   function initialize(
     DutchAuctionHouse _dutchAuctionSource,
     EnglishAuctionHouse _englishAuctionSource,
+    FixedPriceSale _fixedPriceSaleSource,
     NFUToken _nfuTokenSource,
     ITokenLiquidator _tokenLiquidator
   ) public virtual reinitializer(5) {
@@ -33,6 +35,7 @@ contract Deployer_v005 is Deployer_v004 {
 
     dutchAuctionSource = _dutchAuctionSource;
     englishAuctionSource = _englishAuctionSource;
+    fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
     tokenLiquidator = _tokenLiquidator;
 

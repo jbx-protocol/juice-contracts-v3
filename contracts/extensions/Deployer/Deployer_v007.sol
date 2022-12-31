@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
+import '../Auctions/FixedPriceSale.sol';
 import '../NFT/DutchAuctionMachine.sol';
 import '../NFT/EnglishAuctionMachine.sol';
 import '../NFT/NFUEdition.sol';
@@ -40,6 +41,7 @@ contract Deployer_v007 is Deployer_v006 {
   function initialize(
     DutchAuctionHouse _dutchAuctionSource,
     EnglishAuctionHouse _englishAuctionSource,
+    FixedPriceSale _fixedPriceSaleSource,
     NFUToken _nfuTokenSource,
     ITokenLiquidator _tokenLiquidator,
     DutchAuctionMachine _dutchAuctionMachineSource,
@@ -52,6 +54,7 @@ contract Deployer_v007 is Deployer_v006 {
 
     dutchAuctionSource = _dutchAuctionSource;
     englishAuctionSource = _englishAuctionSource;
+    fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
     tokenLiquidator = _tokenLiquidator;
     dutchAuctionMachineSource = _dutchAuctionMachineSource;

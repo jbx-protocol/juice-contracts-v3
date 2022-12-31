@@ -46,7 +46,7 @@ describe('FixedPriceSale tests', () => {
 
         fixedPriceSale = await fixedPriceSaleFactory.connect(deployer).deploy();
         await fixedPriceSale.deployed();
-        fixedPriceSale.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicSale, deployer.address, directory.address)
+        fixedPriceSale.connect(deployer).initialize(projectId, feeReceiverTerminal.address, feeRate, allowPublicSale, deployer.address, directory.address);
     });
 
     before('Initialize aux state', async () => {
@@ -264,10 +264,11 @@ describe('FixedPriceSale tests', () => {
         await token.connect(deployer).mint(tokenOwner.address, tokenId);
         await token.connect(tokenOwner).approve(fixedPriceSale.address, tokenId);
         await fixedPriceSale.connect(tokenOwner).create(token.address, tokenId, salePrice, saleDuration, [], '');
+        const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
 
         expect(await fixedPriceSale.currentPrice(token.address, tokenId)).to.eq(salePrice);
 
-        await ethers.provider.send("evm_setNextBlockTimestamp", [saleDuration + 60]);
+        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + saleDuration + 60]);
         await ethers.provider.send("evm_mine", []);
 
         expect(await fixedPriceSale.currentPrice(token.address, tokenId)).to.eq(0);

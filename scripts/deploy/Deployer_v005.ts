@@ -42,6 +42,7 @@ async function main() {
     const auctionsFactoryFactoryLibraryAddress = getContractRecord('AuctionsFactory', deploymentLogPath).address;
     const sourceDutchAuctionHouseAddress = getContractRecord('DutchAuctionHouse', deploymentLogPath).address;
     const sourceEnglishAuctionHouseAddress = getContractRecord('EnglishAuctionHouse', deploymentLogPath).address;
+    const sourceFixedPriceSaleAddress = getContractRecord('FixedPriceSale', deploymentLogPath).address;
     const nfuTokenFactoryLibraryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
     const sourceNFUTokenAddress = getContractRecord('NFUToken', deploymentLogPath).address;
 
@@ -55,6 +56,7 @@ async function main() {
     logger.info(`found existing deployment of AuctionsFactory at ${auctionsFactoryFactoryLibraryAddress}`);
     logger.info(`found existing deployment of DutchAuctionHouse at ${sourceDutchAuctionHouseAddress}`);
     logger.info(`found existing deployment of EnglishAuctionHouse at ${sourceEnglishAuctionHouseAddress}`);
+    logger.info(`found existing deployment of FixedPriceSale at ${sourceFixedPriceSaleAddress}`);
     logger.info(`found existing deployment of NFUTokenFactory at ${nfuTokenFactoryLibraryAddress}`);
     logger.info(`found existing deployment of NFUToken at ${sourceNFUTokenAddress}`);
     logger.info(`found existing deployment of JBDirectory at ${jbxDirectoryAddress}`);
@@ -81,7 +83,14 @@ async function main() {
     await deployRecordContract('TokenLiquidator', [jbxDirectoryAddress, jbxOperatorStoreAddress, jbxProjectsAddress, feeBps, uniswapPoolFee], deployer, 'TokenLiquidator', deploymentLogPath);
     const tokenLiquidatorAddress = getContractRecord('TokenLiquidator', deploymentLogPath).address;
 
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenAddress, tokenLiquidatorAddress] } });
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory,
+        {
+            kind: 'uups',
+            call: {
+                fn: 'initialize(address,address,address,address,address)',
+                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenAddress, tokenLiquidatorAddress]
+            }
+        });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
     const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);
