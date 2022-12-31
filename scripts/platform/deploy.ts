@@ -45,8 +45,27 @@ async function main() {
 
     const jbCurrencies_ETH = getPlatformConstant('JBCurrencies_ETH');
     const jbSingleTokenPaymentTerminalStoreAddress = getContractRecord('JBSingleTokenPaymentTerminalStore').address;
-    await deployRecordContract('JBETHPaymentTerminal', [jbCurrencies_ETH, jbOperatorStoreAddress, jbProjectsAddress, jbDirectoryAddress, jbSplitStoreAddress, jbPricesAddress, jbSingleTokenPaymentTerminalStoreAddress,
-        deployer.address], deployer);
+    await deployRecordContract('JBETHPaymentTerminal', [jbCurrencies_ETH, jbOperatorStoreAddress, jbProjectsAddress, jbDirectoryAddress, jbSplitStoreAddress, jbPricesAddress, jbSingleTokenPaymentTerminalStoreAddress, deployer.address], deployer);
+
+    const jbCurrencies_USD = getPlatformConstant('JBCurrencies_USD');
+    const usdToken = getPlatformConstant('usdToken');
+    await deployRecordContract(
+        'JBERC20PaymentTerminal',
+        [
+            usdToken,
+            jbCurrencies_USD,
+            jbCurrencies_ETH,
+            2, // _payoutSplitsGroup, 2 = eth
+            jbOperatorStoreAddress,
+            jbProjectsAddress,
+            jbDirectoryAddress,
+            jbSplitStoreAddress,
+            jbPricesAddress,
+            jbSingleTokenPaymentTerminalStoreAddress,
+            deployer.address],
+        deployer,
+        'JBDAIPaymentTerminal'
+    );
 
     const daySeconds = 60 * 60 * 24;
     await deployRecordContract('JBReconfigurationBufferBallot', [daySeconds], deployer, 'JB1DayReconfigurationBufferBallot');
