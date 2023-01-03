@@ -100,12 +100,8 @@ async function main() {
 
     const dutchAuctionMachineAddress = getContractRecord('DutchAuctionMachine', deploymentLogPath).address;
     const englishAuctionMachineAddress = getContractRecord('EnglishAuctionMachine', deploymentLogPath).address;
-
     const sourceTraitTokenRecord = getContractRecord('TraitToken', deploymentLogPath);
-    await verifyRecordContract('TraitToken', sourceTraitTokenRecord.address, sourceTraitTokenRecord.args, deploymentLogPath);
-
     const sourceNFUEditionRecord = getContractRecord('NFUEdition', deploymentLogPath);
-    await verifyRecordContract('NFUEdition', sourceNFUEditionRecord.address, sourceNFUEditionRecord.args, deploymentLogPath);
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, {
         kind: 'uups',

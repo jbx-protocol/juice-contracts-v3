@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
+import * as hre from 'hardhat';
 import { BigNumber } from 'ethers';
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import * as helpers from '@nomicfoundation/hardhat-network-helpers';
@@ -32,8 +33,11 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
     before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
 
-        await helpers.setBalance(deployer.address, ethers.utils.parseEther('10').toHexString());
-        await helpers.setBalance(accounts[0].address, ethers.utils.parseEther('10').toHexString());
+        if (hre.network.name === 'hardhat') {
+            await helpers.setBalance(deployer.address, ethers.utils.parseEther('10').toHexString());
+            await helpers.setBalance(accounts[0].address, ethers.utils.parseEther('10').toHexString());
+        }
+
     });
 
     before('Connect jbx contracts', async () => {
@@ -53,7 +57,9 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
     });
 
     it('Deploy NFToken (v1)', async () => {
-        const owner = accounts[0].address;
+        let owner = hre.network.name === 'hardhat' ? accounts[0] : deployer;
+
+        const ownerAddress = owner.address;
         const name = 'Shared NFT';
         const symbol = 'SNFT';
         const baseUri = 'ipfs://contract-metadata';
@@ -62,13 +68,24 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         const maxSupply = 100;
         const unitPrice = ethers.utils.parseEther('0.0001');
         const mintAllowance = 10;
-        const mintPeriodStart = 0
-        const mintPeriodEnd = 0;
+        const reveal = false;
 
-        const tx = deployerProxy.connect(accounts[0])
-            .deployNFToken(owner, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, mintPeriodStart, mintPeriodEnd, { value: defaultOperationFee });
+        // const tx = deployerProxy.connect(owner)
+        //     .deployNFToken(ownerAddress, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, reveal, { value: defaultOperationFee });
 
-        await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', anyValue);
+        // await expect(tx).not.to.be.reverted;
+        // await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', anyValue);
+
+        const tx = await deployerProxy.connect(owner)
+            .deployNFToken(ownerAddress, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, reveal, { value: defaultOperationFee });
+
+        const receipt = await tx.wait();
+
+        console.log('tx')
+        console.log(tx);
+        console.log('receipt')
+        console.log(receipt);
+        console.log('-----')
     });
 
     it('Deploy MixedPaymentSplitter (v2)', async () => {

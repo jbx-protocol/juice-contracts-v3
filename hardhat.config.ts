@@ -53,7 +53,7 @@ module.exports = {
             // },
             forking: {
                 url: 'https://goerli.infura.io/v3/' + infuraId,
-                blockNumber: 7863000,
+                blockNumber: 8230000,
                 enabled: true
             },
             allowUnlimitedContractSize: true,
