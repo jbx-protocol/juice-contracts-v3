@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import '../../NFT/NFToken.sol';
-import '../../../interfaces/IJBDirectory.sol';
 
 /**
  * @notice Creates an instance of NFToken contract
@@ -12,13 +11,11 @@ library NFTokenFactory {
    * @notice In addition to taking the parameters requires by the NFToken contract, the `_owner` argument will be used to assign ownership after contract deployment.
    */
   function createNFToken(
-    address _owner,
+    address payable _owner,
     string memory _name,
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
@@ -29,8 +26,6 @@ library NFTokenFactory {
       _symbol,
       _baseUri,
       _contractUri,
-      _jbxProjectId,
-      _jbxDirectory,
       _maxSupply,
       _unitPrice,
       _mintAllowance,
@@ -47,7 +42,8 @@ library NFTokenFactory {
     return address(t);
   }
 
-  function abdicate(NFToken _t, address _owner) private {
+  function abdicate(NFToken _t, address payable _owner) private {
+    _t.setPayoutReceiver(_owner);
     _t.setRoyalties(_owner, 0);
 
     _t.grantRole(0x00, _owner); // AccessControl.DEFAULT_ADMIN_ROLE

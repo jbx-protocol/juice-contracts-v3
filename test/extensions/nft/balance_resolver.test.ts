@@ -59,8 +59,6 @@ describe('BalancePriceResolver tests', () => {
                 basicSymbol,
                 basicBaseUri,
                 basicContractUri,
-                basicProjectId,
-                directory.address,
                 basicMaxSupply,
                 basicUnitPrice,
                 basicMintAllowance,

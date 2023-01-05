@@ -58,13 +58,11 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
    * @dev This creates a token that can be minted immediately, to discourage this, unitPrice can be set high, then mint period can be defined before setting price to a "reasonable" value.
    */
   function deployNFToken(
-    address _owner,
+    address payable _owner,
     string memory _name,
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
@@ -78,8 +76,6 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
       _symbol,
       _baseUri,
       _contractUri,
-      _jbxProjectId,
-      _jbxDirectory,
       _maxSupply,
       _unitPrice,
       _mintAllowance,

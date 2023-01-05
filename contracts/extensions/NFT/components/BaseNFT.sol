@@ -7,9 +7,6 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 
-import '../../../interfaces/IJBDirectory.sol';
-import '../../../interfaces/IJBPaymentTerminal.sol';
-import '../../../libraries/JBTokens.sol';
 import '../interfaces/INFTPriceResolver.sol';
 import '../interfaces/IOperatorFilter.sol';
 import './ERC721FU.sol';
@@ -112,8 +109,6 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
 
   IQuoter public constant uniswapQuoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
 
-  IJBDirectory jbxDirectory;
-  uint256 jbxProjectId;
   uint256 public maxSupply;
   uint256 public unitPrice;
   uint256 public mintAllowance;
@@ -141,6 +136,14 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    */
   bool public randomizedMint;
 
+  /**
+   * @notice Address that receives payments from mint operations.
+   */
+  address payable public payoutReceiver;
+
+  /**
+   * @notice Address that receives payments from secondary sales.
+   */
   address payable public royaltyReceiver;
 
   /**
@@ -354,25 +357,8 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       return;
     }
 
-    if (jbxProjectId != 0) {
-      // NOTE: move funds to jbx project
-      IJBPaymentTerminal terminal = jbxDirectory.primaryTerminalOf(jbxProjectId, JBTokens.ETH);
-      if (address(terminal) == address(0)) {
-        revert PAYMENT_FAILURE();
-      }
-
-      terminal.pay{value: msg.value}(
-        jbxProjectId,
-        msg.value,
-        JBTokens.ETH,
-        msg.sender,
-        0,
-        false,
-        _memo,
-        _metadata
-      );
-    } else if (royaltyReceiver != address(0)) {
-      (bool success, ) = royaltyReceiver.call{value: msg.value}('');
+    if (payoutReceiver != address(0)) {
+      (bool success, ) = payoutReceiver.call{value: msg.value}('');
       if (!success) {
         revert PAYMENT_FAILURE();
       }
@@ -499,10 +485,16 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     token.transfer(to, amount);
   }
 
+  function setPayoutReceiver(
+    address payable _payoutReceiver
+  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    payoutReceiver = _payoutReceiver;
+  }
+
   /**
    * @notice Sets royalty info
    *
-   * @param _royaltyReceiver Payable royalties receiver, if set to address(0) royalties will be processed by the contract itself.
+   * @param _royaltyReceiver Payable royalties receiver.
    * @param _royaltyRate Rate expressed in bps, can only be set once.
    */
   function setRoyalties(

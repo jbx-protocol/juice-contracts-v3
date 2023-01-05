@@ -85,8 +85,6 @@ describe('Deployer upgrade tests', () => {
             'NFT',
             'ipfs://token/metadata',
             'ipfs://contract/metadata',
-            2,
-            mockJbDirectory.address,
             1000,
             ethers.utils.parseEther('0.0001'),
             10,
@@ -317,7 +315,7 @@ describe('Deployer upgrade tests', () => {
         const mintPeriodEnd = Math.floor(now + 24 * 60 * 60);
 
         let tx = await deployerProxy.connect(deployer)
-            .deployNFUToken(accounts[0].address, name + ' A', symbol + 'A', baseUri, contractUri, projectId, mockJbDirectory.address, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
+            .deployNFUToken(accounts[0].address, name + ' A', symbol + 'A', baseUri, contractUri, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
         let receipt = await tx.wait();
 
         let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
@@ -326,7 +324,7 @@ describe('Deployer upgrade tests', () => {
         await expect(tokenA.connect(deployer).updateMintPeriod(mintPeriodStart, mintPeriodEnd)).to.be.reverted;
 
         tx = await deployerProxy.connect(deployer)
-            .deployNFUToken(accounts[1].address, name + ' B', symbol + 'B', baseUri, contractUri, projectId, mockJbDirectory.address, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
+            .deployNFUToken(accounts[1].address, name + ' B', symbol + 'B', baseUri, contractUri, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
         receipt = await tx.wait();
         [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
         const tokenB = await nfuTokenFactory.attach(contractAddress);
@@ -476,7 +474,7 @@ describe('Deployer upgrade tests', () => {
         const mintAllowance = 2;
 
         let tx = await deployerProxy.connect(deployer)
-            .deployNFUToken(deployer.address, name + ' A', symbol + 'A', baseUri, contractUri, projectId, mockJbDirectory.address, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
+            .deployNFUToken(deployer.address, name + ' A', symbol + 'A', baseUri, contractUri, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
         let receipt = await tx.wait();
 
         let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
@@ -515,7 +513,7 @@ describe('Deployer upgrade tests', () => {
         const mintAllowance = 2;
 
         let tx = await deployerProxy.connect(deployer)
-            .deployNFUToken(deployer.address, name + ' A', symbol + 'A', baseUri, contractUri, projectId, mockJbDirectory.address, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
+            .deployNFUToken(deployer.address, name + ' A', symbol + 'A', baseUri, contractUri, maxSupply, unitPrice, mintAllowance, { value: defaultOperationFee });
         let receipt = await tx.wait();
 
         let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
@@ -561,8 +559,6 @@ describe('Deployer upgrade tests', () => {
                 symbol,
                 baseUri,
                 contractUri,
-                projectId,
-                mockJbDirectory.address,
                 maxSupply,
                 unitPrice,
                 mintAllowance,

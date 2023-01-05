@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-import '../../interfaces/IJBDirectory.sol';
 import './components/BaseNFT.sol';
 
 interface ITraitToken {
@@ -49,8 +48,6 @@ contract TraitToken is BaseNFT, ITraitToken {
    * @param _symbol Token symbol.
    * @param _baseUri Base URI, initially expected to point at generic, "unrevealed" metadata json.
    * @param _contractUri OpenSea-style contract metadata URI.
-   * @param _jbxProjectId Juicebox project id that will be paid the proceeds of the sale.
-   * @param _jbxDirectory Juicebox directory to determine payment destination.
    * @param _maxSupply Max NFT supply.
    * @param _unitPrice Price per token expressed in Ether.
    * @param _mintAllowance Per-user mint cap.
@@ -63,8 +60,6 @@ contract TraitToken is BaseNFT, ITraitToken {
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
@@ -89,12 +84,13 @@ contract TraitToken is BaseNFT, ITraitToken {
     symbol = _symbol;
     baseUri = _baseUri;
     contractUri = _contractUri;
-    jbxProjectId = _jbxProjectId;
-    jbxDirectory = _jbxDirectory;
     maxSupply = _maxSupply;
     unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
     mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
+
+    payoutReceiver = payable(_owner);
+    royaltyReceiver = payable(_owner);
   }
 
   /**

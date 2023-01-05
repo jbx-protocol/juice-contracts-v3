@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/proxy/Clones.sol';
 import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import '../../../interfaces/IJBDirectory.sol';
-
 import '../../NFT/TraitToken.sol';
 
 library TraitTokenFactory {
@@ -18,8 +16,6 @@ library TraitTokenFactory {
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance
@@ -35,8 +31,6 @@ library TraitTokenFactory {
       _symbol,
       _baseUri,
       _contractUri,
-      _jbxProjectId,
-      _jbxDirectory,
       _maxSupply,
       _unitPrice,
       _mintAllowance,
