@@ -74,7 +74,7 @@ async function transferOwnership(deployer: SignerWithAddress) {
     }
 }
 
-async function deployParentProject(deployer: SignerWithAddress) {
+async function deployParentEthProject(deployer: SignerWithAddress) {
     const jbProjectsRecord = getContractRecord('JBProjects');
     const jbProjectsContract = await hre.ethers.getContractAt(jbProjectsRecord['abi'], jbProjectsRecord['address'], deployer);
 
@@ -213,11 +213,11 @@ async function deployParentProject(deployer: SignerWithAddress) {
 
         const fundAccessConstraints = [{
             terminal: jbETHPaymentTerminalRecord['address'],
-            token: '0x000000000000000000000000000000000000EEEe',
+            token: getPlatformConstant('ethToken'),
             distributionLimit: '70000000000000000000000', // 70_000
-            distributionLimitCurrency: 2,
+            distributionLimitCurrency: getPlatformConstant('JBCurrencies_USD'),
             overflowAllowance: 0,
-            overflowAllowanceCurrency: 0
+            overflowAllowanceCurrency: getPlatformConstant('JBCurrencies_ETH')
         }];
 
         const terminals = [jbETHPaymentTerminalRecord['address']];
@@ -240,6 +240,101 @@ async function deployParentProject(deployer: SignerWithAddress) {
     }
 }
 
+async function deployParentDaiProject(deployer: SignerWithAddress) {
+    const jbProjectsRecord = getContractRecord('JBProjects');
+    const jbProjectsContract = await hre.ethers.getContractAt(jbProjectsRecord['abi'], jbProjectsRecord['address'], deployer);
+
+    logger.info('launching parent project');
+
+    const groupedSplits = [];
+
+    const jb3DayReconfigurationBufferBallotRecord = getContractRecord('JB3DayReconfigurationBufferBallot');
+    const daiPaymentTerminalRecord = getContractRecord('JBDAIPaymentTerminal');
+    const jbControllerRecord = getContractRecord('JBController');
+    const jbControllerContract = await hre.ethers.getContractAt(jbControllerRecord['abi'], jbControllerRecord['address'], deployer);
+    const platformOwnerAddress = getPlatformConstant('platformOwner', deployer.address);
+
+    const domain = 0;
+    const projectMetadataCID = getPlatformConstant('projectMetadataCID', '');
+    const projectMetadata = [projectMetadataCID, domain];
+
+    const protocolLaunchDate = getPlatformConstant('protocolLaunchDate', Math.floor(Date.now() / 1000) - 10);
+
+    const duration = 3600 * 24 * 30; // 30 days
+    const weight = hre.ethers.BigNumber.from('1000000000000000000000000'); // 1M tokens/eth
+    const discountRate = 0; // 0%
+    const ballot = jb3DayReconfigurationBufferBallotRecord['address'];
+    const fundingCycleData = [duration, weight, discountRate, ballot];
+
+    const allowSetTerminals = false;
+    const allowSetController = true;
+    const pauseTransfer = true;
+    const global = [allowSetTerminals, allowSetController, pauseTransfer];
+
+    const reservedRate = 0;
+    const redemptionRate = 10_000; // 100%
+    const ballotRedemptionRate = 10_000;
+    const pausePay = false;
+    const pauseDistributions = false;
+    const pauseRedeem = false;
+    const pauseBurn = false;
+    const allowMinting = false;
+    const allowTerminalMigration = false;
+    const allowControllerMigration = false;
+    const holdFees = false;
+    const preferClaimedTokenOverride = false;
+    const useTotalOverflowForRedemptions = false;
+    const useDataSourceForPay = false;
+    const useDataSourceForRedeem = false;
+    const dataSource = hre.ethers.constants.AddressZero;
+    const metadata = 0;
+    const fundingCycleMetadata = [
+        global,
+        reservedRate,
+        redemptionRate,
+        ballotRedemptionRate,
+        pausePay,
+        pauseDistributions,
+        pauseRedeem,
+        pauseBurn,
+        allowMinting,
+        allowTerminalMigration,
+        allowControllerMigration,
+        holdFees,
+        preferClaimedTokenOverride,
+        useTotalOverflowForRedemptions,
+        useDataSourceForPay,
+        useDataSourceForRedeem,
+        dataSource,
+        metadata
+    ];
+
+    const fundAccessConstraints = [{
+        terminal: daiPaymentTerminalRecord['address'],
+        token: getPlatformConstant('usdToken'),
+        distributionLimit: '0',
+        distributionLimitCurrency: getPlatformConstant('JBCurrencies_USD'),
+        overflowAllowance: 0,
+        overflowAllowanceCurrency: getPlatformConstant('JBCurrencies_USD')
+    }];
+
+    const terminals = [daiPaymentTerminalRecord['address']];
+
+    const tx = await jbControllerContract.connect(deployer)['launchProjectFor(address,(string,uint256),(uint256,uint256,uint256,address),((bool,bool,bool),uint256,uint256,uint256,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,address,uint256),uint256,(uint256,(bool,bool,uint256,uint256,address,uint256,address)[])[],(address,address,uint256,uint256,uint256,uint256)[],address[],string)'](
+        platformOwnerAddress,
+        projectMetadata,
+        fundingCycleData,
+        fundingCycleMetadata,
+        protocolLaunchDate,
+        groupedSplits,
+        fundAccessConstraints,
+        terminals,
+        ''
+    );
+    await tx.wait();
+    logger.info('launched parent project');
+}
+
 async function main() {
     logger.info(`configuring DAOLABS Juicebox v3 fork on ${hre.network.name}`);
 
@@ -249,7 +344,8 @@ async function main() {
     await miscConfiguration(deployer);
     await configureEtherPriceFeed(deployer);
     await transferOwnership(deployer);
-    await deployParentProject(deployer);
+    await deployParentEthProject(deployer);
+    await deployParentDaiProject(deployer);
 
     logger.info('configuration complete');
 }
