@@ -11,6 +11,7 @@ import '../interfaces/IJBPaymentTerminal.sol';
 import '../interfaces/IJBRedemptionDelegate.sol';
 import '../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
 import '../libraries/JBCurrencies.sol';
+import '../libraries/JBOperations.sol';
 import '../libraries/JBTokens.sol';
 import '../structs/JBDidPayData.sol';
 
@@ -31,12 +32,19 @@ interface IWETH9 is IERC20 {
 interface IDaiHedgeDelegate {
   function setHedgeParameters(
     uint256 _projectId,
+    bool _applyHedge,
     uint256 _ethShare,
     uint256 _balanceThreshold,
     uint256 _ethThreshold,
     uint256 _usdThreshold,
-    bool _liveQuote
+    HedgeFlags memory _flags
   ) external;
+}
+
+struct HedgeFlags {
+  bool liveQuote;
+  bool defaultEthTerminal;
+  bool defaultUsdTerminal;
 }
 
 struct HedgeSettings {
@@ -92,8 +100,8 @@ contract DaiHedgeDelegate is
 
   uint24 public constant poolFee = 3000;
 
-  IJBPaymentTerminal public defaultEthTerminal;
-  IJBPaymentTerminal public defaultUsdTerminal;
+  IJBSingleTokenPaymentTerminal public defaultEthTerminal;
+  IJBSingleTokenPaymentTerminal public defaultUsdTerminal;
   IJBSingleTokenPaymentTerminalStore public terminalStore;
   uint256 public recentPrice;
   uint256 public recentPriceTimestamp;
@@ -103,6 +111,7 @@ contract DaiHedgeDelegate is
    */
   mapping(uint256 => HedgeSettings) public projectHedgeSettings;
 
+  uint256 private constant bps = 10_000;
   uint256 private constant SettingsOffsetEthShare = 0;
   uint256 private constant SettingsOffsetBalanceThreshold = 16;
   uint256 private constant SettingsOffsetLiveQuote = 32;
@@ -115,7 +124,6 @@ contract DaiHedgeDelegate is
 
     jbxDirectory = IJBDirectory(_jbxDirectory);
     jbxProjects = IERC721(_jbxProjects);
-    daiSinkProjectId = _daiSinkProjectId;
   }
 
   //*********************************************************************//
@@ -133,10 +141,11 @@ contract DaiHedgeDelegate is
    * @param _balanceThreshold Distance from targer threshold at which to take action.
    * @param _ethThreshold Ether contribution threshold, below this number trandes won't be attempted.
    * @param _usdThreshold Dai contribution threshold, below this number trandes won't be attempted.
-   * @param _liveQuote When set to false and a recent price exists, do not query the pool for current price.
-   * @param _defaultEthTerminal Use default Ether payment terminal, otherwise JBDirectory will be queries.
-   * @param _defaultUsdTerminal Use default DAI payment terminal, otherwise JBDirectory will be queries.
+   * @param _flags When set to false and a recent price exists, do not query the pool for current price.
    */
+  //   * @param _defaultEthTerminal Use default Ether payment terminal, otherwise JBDirectory will be queries.
+  //    * @param _defaultUsdTerminal Use default DAI payment terminal, otherwise JBDirectory will be queries.
+
   function setHedgeParameters(
     uint256 _projectId,
     bool _applyHedge,
@@ -144,9 +153,7 @@ contract DaiHedgeDelegate is
     uint256 _balanceThreshold,
     uint256 _ethThreshold,
     uint256 _usdThreshold,
-    bool _liveQuote,
-    bool _defaultEthTerminal,
-    bool _defaultUsdTerminal
+    HedgeFlags memory _flags
   )
     external
     requirePermissionAllowingOverride(
@@ -158,9 +165,9 @@ contract DaiHedgeDelegate is
   {
     uint256 settings = uint16(_ethShare);
     settings |= uint16(_balanceThreshold) << SettingsOffsetBalanceThreshold;
-    settings = setBoolean(settings, SettingsOffsetLiveQuote, _liveQuote);
-    settings = setBoolean(settings, SettingsOffsetDefaultEthTerminal, _defaultEthTerminal);
-    settings = setBoolean(settings, SettingsOffsetDefaultUsdTerminal, _defaultUsdTerminal);
+    settings = setBoolean(settings, SettingsOffsetLiveQuote, _flags.liveQuote);
+    settings = setBoolean(settings, SettingsOffsetDefaultEthTerminal, _flags.defaultEthTerminal);
+    settings = setBoolean(settings, SettingsOffsetDefaultUsdTerminal, _flags.defaultUsdTerminal);
     settings = setBoolean(settings, SettingsOffsetApplyHedge, _applyHedge);
 
     projectHedgeSettings[_projectId] = HedgeSettings(_ethThreshold, _usdThreshold, settings);
@@ -172,9 +179,9 @@ contract DaiHedgeDelegate is
    * @notice Will swap incoming ether via WETH into DAI using Uniswap v3 and pay the proceeds into the platform DAI sink.
    */
   function didPay(JBDidPayData calldata _data) public payable override {
-    HedgeSettings settings = projectHedgeSettings[_data.projectId];
+    HedgeSettings memory settings = projectHedgeSettings[_data.projectId];
 
-    if (!getBoolean(settings, SettingsOffsetApplyHedge)) {
+    if (!getBoolean(settings.settings, SettingsOffsetApplyHedge)) {
       return;
     }
 
@@ -184,78 +191,93 @@ contract DaiHedgeDelegate is
       if (_data.forwardedAmount.value >= settings.ethThreshold) {
         (uint256 projectEthBalance, IJBPaymentTerminal ethTerminal) = getProjectBalance(
           JBCurrencies.ETH,
-          getBoolean(settings, SettingsOffsetDefaultEthTerminal),
+          getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
           _data.projectId
         );
         (uint256 projectUsdBalance, IJBPaymentTerminal daiTerminal) = getProjectBalance(
           JBCurrencies.USD,
-          getBoolean(settings, SettingsOffsetDefaultUsdTerminal),
-          _data.projectId
-        );
-      }
-
-      uint256 projectUsdBalanceEthValue;
-      if (
-        getBoolean(setting, SettingsOffsetLiveQuote) ||
-        recentPriceTimestamp < block.timestamp - 43_200
-      ) {
-        recentPrice = _swapQuoter.quoteExactOutputSingle(
-          address(_dai),
-          address(_weth),
-          poolFee,
-          1000000000000000000,
-          0
-        );
-        recentPriceTimestamp = block.timestamp;
-      }
-      uint256 projectUsdBalanceEthValue = projectUsdBalance / recentPrice;
-      // value of the project's eth balance after adding current contribution
-      uint256 newEthBalance = projectEthBalance + _data.forwardedAmount;
-      uint256 totalEthBalance = newEthBalance + projectUsdBalanceEthValue;
-      uint256 newEthShare = (projectEthBalance * 10_000) / totalEthBalance;
-      if (
-        newEthShare > uint16(settings) &&
-        newEthShare - uint16(settings) > uint16(settings >> SettingsOffsetBalanceThreshold)
-      ) {
-        uint256 swapAmount = (_data.forwardedAmount.value * (10_000 - uint16(settings))) / 10_000; // TODO: calc amount to convert
-
-        _weth.deposit{value: swapAmount}();
-        _weth.approve(address(_swapRouter), swapAmount);
-
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-          tokenIn: address(_weth),
-          tokenOut: address(_dai),
-          fee: poolFee,
-          recipient: address(this),
-          deadline: block.timestamp,
-          amountIn: swapAmount,
-          amountOutMinimum: 0,
-          sqrtPriceLimitX96: 0
-        });
-        uint256 amountOut = _swapRouter.exactInputSingle(params);
-        _weth.approve(address(_swapRouter), 0);
-
-        _dai.approve(address(ethTerminal), amountOut);
-        daiTerminal.addToBalanceOf(_data.projectId, amountOut, address(_dai), '', '');
-        _dai.approve(address(ethTerminal), 0);
-      }
-    } else if (_data.amount.token == _dai) {
-      // dai -> eth
-      if (_data.forwardedAmount.value >= settings.usdThreshold) {
-        (uint256 projectEthBalance, IJBPaymentTerminal ethTerminal) = getProjectBalance(
-          JBCurrencies.ETH,
-          getBoolean(settings, SettingsOffsetDefaultEthTerminal),
-          _data.projectId
-        );
-        (uint256 projectUsdBalance, IJBPaymentTerminal daiTerminal) = getProjectBalance(
-          JBCurrencies.USD,
-          getBoolean(settings, SettingsOffsetDefaultUsdTerminal),
+          getBoolean(settings.settings, SettingsOffsetDefaultUsdTerminal),
           _data.projectId
         );
 
         uint256 projectUsdBalanceEthValue;
         if (
-          getBoolean(setting, SettingsOffsetLiveQuote) ||
+          getBoolean(settings.settings, SettingsOffsetLiveQuote) ||
+          recentPriceTimestamp < block.timestamp - 43_200
+        ) {
+          recentPrice = _swapQuoter.quoteExactOutputSingle(
+            address(_dai),
+            address(_weth),
+            poolFee,
+            1000000000000000000,
+            0
+          );
+          recentPriceTimestamp = block.timestamp;
+        }
+        projectUsdBalanceEthValue = projectUsdBalance / recentPrice;
+        // value of the project's eth balance after adding current contribution
+        uint256 newEthBalance = projectEthBalance + _data.forwardedAmount.value;
+        uint256 totalEthBalance = newEthBalance + projectUsdBalanceEthValue;
+        uint256 newEthShare = (projectEthBalance * bps) / totalEthBalance;
+        if (
+          newEthShare > uint16(settings.settings) &&
+          newEthShare - uint16(settings.settings) >
+          uint16(settings.settings >> SettingsOffsetBalanceThreshold)
+        ) {
+          uint256 ratio = (bps * uint16(settings.settings)) / (bps - uint16(settings.settings));
+          uint256 swapAmount;
+          if (
+            _data.forwardedAmount.value + projectEthBalance <
+            (ratio * projectUsdBalanceEthValue) / bps
+          ) {
+            swapAmount = _data.forwardedAmount.value;
+          } else {
+            swapAmount =
+              (_data.forwardedAmount.value +
+                projectEthBalance -
+                (ratio * projectUsdBalanceEthValue) /
+                bps) /
+              ((ratio + bps * bps) / bps);
+          }
+
+          _weth.deposit{value: swapAmount}();
+          _weth.approve(address(_swapRouter), swapAmount);
+
+          ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: address(_weth),
+            tokenOut: address(_dai),
+            fee: poolFee,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: swapAmount,
+            amountOutMinimum: 0,
+            sqrtPriceLimitX96: 0
+          });
+          uint256 amountOut = _swapRouter.exactInputSingle(params);
+          _weth.approve(address(_swapRouter), 0);
+
+          _dai.approve(address(ethTerminal), amountOut);
+          daiTerminal.addToBalanceOf(_data.projectId, amountOut, address(_dai), '', '');
+          _dai.approve(address(ethTerminal), 0);
+        }
+      }
+    } else if (_data.amount.token == address(_dai)) {
+      // dai -> eth
+      if (_data.forwardedAmount.value >= settings.usdThreshold) {
+        (uint256 projectEthBalance, IJBPaymentTerminal ethTerminal) = getProjectBalance(
+          JBCurrencies.ETH,
+          getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
+          _data.projectId
+        );
+        (uint256 projectUsdBalance, IJBPaymentTerminal daiTerminal) = getProjectBalance(
+          JBCurrencies.USD,
+          getBoolean(settings.settings, SettingsOffsetDefaultUsdTerminal),
+          _data.projectId
+        );
+
+        uint256 projectUsdBalanceEthValue;
+        if (
+          getBoolean(settings.settings, SettingsOffsetLiveQuote) ||
           recentPriceTimestamp < block.timestamp - 43200
         ) {
           recentPrice = _swapQuoter.quoteExactOutputSingle(
@@ -268,15 +290,26 @@ contract DaiHedgeDelegate is
           recentPriceTimestamp = block.timestamp;
         }
         // value of the project's dai balance in terms of eth after adding current contribution
-        uint256 projectUsdBalanceEthValue = (projectUsdBalance + _data.forwardedAmount) /
-          recentPrice;
+        projectUsdBalanceEthValue = (projectUsdBalance + _data.forwardedAmount.value) / recentPrice;
         uint256 totalEthBalance = projectEthBalance + projectUsdBalanceEthValue;
-        uint256 newEthShare = (projectEthBalance * 10000) / totalEthBalance;
+        uint256 newEthShare = (projectEthBalance * bps) / totalEthBalance;
         if (
-          newEthShare < uint16(settings) &&
-          uint16(settings) - newEthShare > uint16(settings >> SettingsOffsetBalanceThreshold)
+          newEthShare < uint16(settings.settings) &&
+          uint16(settings.settings) - newEthShare >
+          uint16(settings.settings >> SettingsOffsetBalanceThreshold)
         ) {
-          uint256 swapAmount = (_data.forwardedAmount.value * uint16(settings)) / 10_000; // TODO: calc amount to convert
+          uint256 ratio = (bps * uint16(settings.settings)) / (bps - uint16(settings.settings));
+          uint256 swapAmount;
+          if (_data.forwardedAmount.value + projectEthBalance < (ratio * projectUsdBalance) / bps) {
+            swapAmount = _data.forwardedAmount.value;
+          } else {
+            swapAmount =
+              (_data.forwardedAmount.value +
+                projectEthBalance -
+                (ratio * projectUsdBalance) /
+                bps) /
+              ((ratio + bps * bps) / bps);
+          }
 
           _dai.approve(address(_swapRouter), _data.forwardedAmount.value);
 
@@ -309,7 +342,7 @@ contract DaiHedgeDelegate is
   /**
    * @notice IJBRedemptionDelegate implementation
    */
-  function didRedeem(JBDidRedeemData calldata _data) public payable override {
+  function didRedeem(JBDidRedeemData calldata) public payable override {
     // no rebalance on redemption
   }
 
@@ -372,27 +405,31 @@ contract DaiHedgeDelegate is
    * @dev didPay() receives weth from swaps that need to be unwrapped and deposited
    */
   // solhint-disable-next-line no-empty-blocks
-  receive() external payable override {}
+  receive() external payable {}
 
   //*********************************************************************//
   // ---------------------- internal functions ------------------------- //
   //*********************************************************************//
   function getProjectBalance(
-    JBCurrencies _currency,
+    uint256 _currency,
     bool _useDefaultTerminal,
     uint256 _projectId
-  ) internal returns (uint256 balance, IJBPaymentTerminal terminal) {
+  ) internal returns (uint256 balance, IJBSingleTokenPaymentTerminal terminal) {
     if (_currency == JBCurrencies.ETH) {
-      terminal = defaultEthTerminal;
+      terminal = IJBSingleTokenPaymentTerminal(defaultEthTerminal);
       if (!_useDefaultTerminal) {
-        terminal = jbxDirectory.primaryTerminalOf(_projectId, JBTokens.ETH);
+        terminal = IJBSingleTokenPaymentTerminal(
+          address(jbxDirectory.primaryTerminalOf(_projectId, JBTokens.ETH))
+        );
       }
 
       balance = terminalStore.balanceOf(terminal, _projectId);
     } else if (_currency == JBCurrencies.USD) {
       terminal = defaultUsdTerminal;
       if (!_useDefaultTerminal) {
-        terminal = jbxDirectory.primaryTerminalOf(_projectId, _dai);
+        terminal = IJBSingleTokenPaymentTerminal(
+          address(jbxDirectory.primaryTerminalOf(_projectId, address(_dai)))
+        );
       }
 
       balance = terminalStore.balanceOf(terminal, _projectId);
