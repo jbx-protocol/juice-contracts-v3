@@ -43,7 +43,13 @@ interface IDaiHedgeDelegate {
 
 struct HedgeFlags {
   bool liveQuote;
+  /**
+   * @dev Use default Ether payment terminal, otherwise JBDirectory will be queries.
+   */
   bool defaultEthTerminal;
+  /**
+   * @dev Use default DAI payment terminal, otherwise JBDirectory will be queries.
+   */
   bool defaultUsdTerminal;
 }
 
@@ -80,7 +86,8 @@ contract DaiHedgeDelegate is
   /**
    * @notice Balance token, in this case DAI, that is held by the delegate on behalf of depositors.
    */
-  IERC20Metadata private constant _dai = IERC20Metadata(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI
+  // IERC20Metadata private constant _dai = IERC20Metadata(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI mainnet
+  IERC20Metadata private constant _dai = IERC20Metadata(0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60); // DAI goerli
 
   /**
    * @notice Uniswap v3 router.
@@ -119,11 +126,22 @@ contract DaiHedgeDelegate is
   uint256 private constant SettingsOffsetDefaultUsdTerminal = 34;
   uint256 private constant SettingsOffsetApplyHedge = 35;
 
-  constructor(IJBOperatorStore _jbxOperatorStore, address _jbxDirectory, address _jbxProjects) {
+  constructor(
+    IJBOperatorStore _jbxOperatorStore,
+    IJBDirectory _jbxDirectory,
+    IERC721 _jbxProjects,
+    IJBSingleTokenPaymentTerminal _defaultEthTerminal,
+    IJBSingleTokenPaymentTerminal _defaultUsdTerminal,
+    IJBSingleTokenPaymentTerminalStore _terminalStore
+  ) {
     operatorStore = _jbxOperatorStore; // JBOperatable
 
-    jbxDirectory = IJBDirectory(_jbxDirectory);
-    jbxProjects = IERC721(_jbxProjects);
+    jbxDirectory = _jbxDirectory;
+    jbxProjects = _jbxProjects;
+
+    defaultEthTerminal = _defaultEthTerminal;
+    defaultUsdTerminal = _defaultUsdTerminal;
+    terminalStore = _terminalStore;
   }
 
   //*********************************************************************//
@@ -143,9 +161,6 @@ contract DaiHedgeDelegate is
    * @param _usdThreshold Dai contribution threshold, below this number trandes won't be attempted.
    * @param _flags When set to false and a recent price exists, do not query the pool for current price.
    */
-  //   * @param _defaultEthTerminal Use default Ether payment terminal, otherwise JBDirectory will be queries.
-  //    * @param _defaultUsdTerminal Use default DAI payment terminal, otherwise JBDirectory will be queries.
-
   function setHedgeParameters(
     uint256 _projectId,
     bool _applyHedge,
@@ -164,7 +179,7 @@ contract DaiHedgeDelegate is
     )
   {
     uint256 settings = uint16(_ethShare);
-    settings |= uint16(_balanceThreshold) << SettingsOffsetBalanceThreshold;
+    settings |= uint256(uint16(_balanceThreshold)) << SettingsOffsetBalanceThreshold;
     settings = setBoolean(settings, SettingsOffsetLiveQuote, _flags.liveQuote);
     settings = setBoolean(settings, SettingsOffsetDefaultEthTerminal, _flags.defaultEthTerminal);
     settings = setBoolean(settings, SettingsOffsetDefaultUsdTerminal, _flags.defaultUsdTerminal);
@@ -269,7 +284,7 @@ contract DaiHedgeDelegate is
           getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
           _data.projectId
         );
-        (uint256 projectUsdBalance, IJBPaymentTerminal daiTerminal) = getProjectBalance(
+        (uint256 projectUsdBalance, ) = getProjectBalance(
           JBCurrencies.USD,
           getBoolean(settings.settings, SettingsOffsetDefaultUsdTerminal),
           _data.projectId
@@ -379,7 +394,7 @@ contract DaiHedgeDelegate is
     JBRedeemParamsData calldata _data
   )
     public
-    view
+    pure
     override
     returns (
       uint256 reclaimAmount,
@@ -414,7 +429,7 @@ contract DaiHedgeDelegate is
     uint256 _currency,
     bool _useDefaultTerminal,
     uint256 _projectId
-  ) internal returns (uint256 balance, IJBSingleTokenPaymentTerminal terminal) {
+  ) internal view returns (uint256 balance, IJBSingleTokenPaymentTerminal terminal) {
     if (_currency == JBCurrencies.ETH) {
       terminal = IJBSingleTokenPaymentTerminal(defaultEthTerminal);
       if (!_useDefaultTerminal) {
