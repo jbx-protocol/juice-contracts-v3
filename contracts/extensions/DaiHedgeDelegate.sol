@@ -86,8 +86,8 @@ contract DaiHedgeDelegate is
   /**
    * @notice Balance token, in this case DAI, that is held by the delegate on behalf of depositors.
    */
-  // IERC20Metadata private constant _dai = IERC20Metadata(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI mainnet
-  IERC20Metadata private constant _dai = IERC20Metadata(0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60); // DAI goerli
+  IERC20Metadata private constant _dai = IERC20Metadata(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI mainnet
+  // IERC20Metadata private constant _dai = IERC20Metadata(0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60); // DAI goerli
 
   /**
    * @notice Uniswap v3 router.
@@ -200,15 +200,23 @@ contract DaiHedgeDelegate is
       return;
     }
 
+    // TODO: special case for eth 100% and dai 100% share
+
     if (_data.amount.token == JBTokens.ETH) {
+      //   processEthContribution(_data, settings);
+      IJBSingleTokenPaymentTerminal ethTerminal = getProjectTerminal(
+        JBCurrencies.ETH,
+        getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
+        _data.projectId
+      );
+
       // eth -> dai
+      // (depositEth - x + currentEth) / (currentUsdEth + x) = ethShare/usdShare
+      // x = (depositEth + currentEth - currentUsdEth * ethShare/usdShare) / (ethShare/usdShare + 1)
       // NOTE: in this case this should be the same as msg.value
       if (_data.forwardedAmount.value >= settings.ethThreshold) {
-        (uint256 projectEthBalance, IJBPaymentTerminal ethTerminal) = getProjectBalance(
-          JBCurrencies.ETH,
-          getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
-          _data.projectId
-        );
+        uint256 projectEthBalance = terminalStore.balanceOf(ethTerminal, _data.projectId);
+
         (uint256 projectUsdBalance, IJBPaymentTerminal daiTerminal) = getProjectBalance(
           JBCurrencies.USD,
           getBoolean(settings.settings, SettingsOffsetDefaultUsdTerminal),
@@ -229,55 +237,96 @@ contract DaiHedgeDelegate is
           );
           recentPriceTimestamp = block.timestamp;
         }
-        projectUsdBalanceEthValue = projectUsdBalance / recentPrice;
+        projectUsdBalanceEthValue = (projectUsdBalance * (10 ** 18)) / recentPrice;
         // value of the project's eth balance after adding current contribution
-        uint256 newEthBalance = projectEthBalance + _data.forwardedAmount.value;
-        uint256 totalEthBalance = newEthBalance + projectUsdBalanceEthValue;
-        uint256 newEthShare = (projectEthBalance * bps) / totalEthBalance;
+        uint256 newEthBalance;
+        uint256 newEthShare;
+        {
+          newEthBalance = projectEthBalance + _data.forwardedAmount.value;
+          uint256 totalEthBalance = newEthBalance + projectUsdBalanceEthValue;
+          newEthShare = (newEthBalance * bps) / totalEthBalance;
+        }
+
         if (
           newEthShare > uint16(settings.settings) &&
           newEthShare - uint16(settings.settings) >
           uint16(settings.settings >> SettingsOffsetBalanceThreshold)
         ) {
-          uint256 ratio = (bps * uint16(settings.settings)) / (bps - uint16(settings.settings));
+          uint256 ratio;
+          {
+            ratio = ((projectUsdBalanceEthValue * uint16(settings.settings)) /
+              (bps - uint16(settings.settings)));
+          }
           uint256 swapAmount;
-          if (
-            _data.forwardedAmount.value + projectEthBalance <
-            (ratio * projectUsdBalanceEthValue) / bps
-          ) {
+          if (newEthBalance < ratio) {
             swapAmount = _data.forwardedAmount.value;
           } else {
-            swapAmount =
-              (_data.forwardedAmount.value +
-                projectEthBalance -
-                (ratio * projectUsdBalanceEthValue) /
-                bps) /
-              ((ratio + bps * bps) / bps);
+            uint256 numerator = newEthBalance - ratio;
+            uint256 denominator = (uint16(settings.settings) * bps) /
+              (bps - uint16(settings.settings)) +
+              bps;
+            swapAmount = (numerator / denominator) * bps;
           }
 
-          _weth.deposit{value: swapAmount}();
-          _weth.approve(address(_swapRouter), swapAmount);
+          {
+            _weth.deposit{value: swapAmount}();
+            _weth.approve(address(_swapRouter), swapAmount);
 
-          ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-            tokenIn: address(_weth),
-            tokenOut: address(_dai),
-            fee: poolFee,
-            recipient: address(this),
-            deadline: block.timestamp,
-            amountIn: swapAmount,
-            amountOutMinimum: 0,
-            sqrtPriceLimitX96: 0
-          });
-          uint256 amountOut = _swapRouter.exactInputSingle(params);
-          _weth.approve(address(_swapRouter), 0);
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+              tokenIn: address(_weth),
+              tokenOut: address(_dai),
+              fee: poolFee,
+              recipient: address(this),
+              deadline: block.timestamp,
+              amountIn: swapAmount,
+              amountOutMinimum: 0,
+              sqrtPriceLimitX96: 0
+            });
+            uint256 amountOut = _swapRouter.exactInputSingle(params);
+            _weth.approve(address(_swapRouter), 0);
 
-          _dai.approve(address(ethTerminal), amountOut);
-          daiTerminal.addToBalanceOf(_data.projectId, amountOut, address(_dai), '', '');
-          _dai.approve(address(ethTerminal), 0);
+            _dai.approve(address(daiTerminal), amountOut);
+            daiTerminal.addToBalanceOf(_data.projectId, amountOut, address(_dai), '', '');
+            _dai.approve(address(daiTerminal), 0);
+          }
+          {
+            uint256 remainingEth = _data.forwardedAmount.value - swapAmount;
+            ethTerminal.addToBalanceOf{value: remainingEth}(
+              _data.projectId,
+              remainingEth,
+              JBTokens.ETH,
+              '',
+              ''
+            );
+          }
+        } else {
+          ethTerminal.addToBalanceOf{value: msg.value}(
+            _data.projectId,
+            msg.value,
+            JBTokens.ETH,
+            '',
+            ''
+          );
         }
+      } else {
+        ethTerminal.addToBalanceOf{value: msg.value}(
+          _data.projectId,
+          msg.value,
+          JBTokens.ETH,
+          '',
+          ''
+        );
       }
     } else if (_data.amount.token == address(_dai)) {
       // dai -> eth
+      // (currentEth + x) / (currentUsdEth + depositUsdEth - x) = ethShare/usdShare
+      // x = (ethShare/usdShare * (currentUsdEth + depositUsdEth) - currentEth) / (1 + ethShare/usdShare)
+      IJBSingleTokenPaymentTerminal daiTerminal = getProjectTerminal(
+        JBCurrencies.USD,
+        getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
+        _data.projectId
+      );
+
       if (_data.forwardedAmount.value >= settings.usdThreshold) {
         (uint256 projectEthBalance, IJBPaymentTerminal ethTerminal) = getProjectBalance(
           JBCurrencies.ETH,
@@ -290,7 +339,6 @@ contract DaiHedgeDelegate is
           _data.projectId
         );
 
-        uint256 projectUsdBalanceEthValue;
         if (
           getBoolean(settings.settings, SettingsOffsetLiveQuote) ||
           recentPriceTimestamp < block.timestamp - 43200
@@ -305,9 +353,11 @@ contract DaiHedgeDelegate is
           recentPriceTimestamp = block.timestamp;
         }
         // value of the project's dai balance in terms of eth after adding current contribution
-        projectUsdBalanceEthValue = (projectUsdBalance + _data.forwardedAmount.value) / recentPrice;
+        uint256 projectUsdBalanceEthValue = ((projectUsdBalance + _data.forwardedAmount.value) *
+          10 ** 18) / recentPrice;
         uint256 totalEthBalance = projectEthBalance + projectUsdBalanceEthValue;
         uint256 newEthShare = (projectEthBalance * bps) / totalEthBalance;
+
         if (
           newEthShare < uint16(settings.settings) &&
           uint16(settings.settings) - newEthShare >
@@ -315,33 +365,39 @@ contract DaiHedgeDelegate is
         ) {
           uint256 ratio = (bps * uint16(settings.settings)) / (bps - uint16(settings.settings));
           uint256 swapAmount;
-          if (_data.forwardedAmount.value + projectEthBalance < (ratio * projectUsdBalance) / bps) {
+
+          if ((projectEthBalance * bps) > ratio * projectUsdBalanceEthValue) {
             swapAmount = _data.forwardedAmount.value;
           } else {
-            swapAmount =
-              (_data.forwardedAmount.value +
-                projectEthBalance -
-                (ratio * projectUsdBalance) /
-                bps) /
-              ((ratio + bps * bps) / bps);
+            uint256 numerator = ratio * projectUsdBalanceEthValue - (projectEthBalance * bps);
+            uint256 denominator = bps + ratio;
+
+            swapAmount = numerator / denominator;
+            swapAmount = (swapAmount * recentPrice) / 10 ** 18;
           }
 
-          _dai.approve(address(_swapRouter), _data.forwardedAmount.value);
+          uint256 amountOut;
+          {
+            _dai.transferFrom(msg.sender, address(this), _data.forwardedAmount.value);
+            _dai.approve(address(_swapRouter), swapAmount);
 
-          ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-            tokenIn: address(_dai),
-            tokenOut: address(_weth),
-            fee: poolFee,
-            recipient: address(this),
-            deadline: block.timestamp,
-            amountIn: _data.forwardedAmount.value,
-            amountOutMinimum: 0,
-            sqrtPriceLimitX96: 0
-          });
-          uint256 amountOut = _swapRouter.exactInputSingle(params);
-          _dai.approve(address(_swapRouter), 0);
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+              tokenIn: address(_dai),
+              tokenOut: address(_weth),
+              fee: poolFee,
+              recipient: address(this),
+              deadline: block.timestamp,
+              amountIn: swapAmount,
+              amountOutMinimum: 0,
+              sqrtPriceLimitX96: 0
+            });
 
-          _weth.withdraw(amountOut);
+            amountOut = _swapRouter.exactInputSingle(params);
+
+            _dai.approve(address(_swapRouter), 0);
+
+            _weth.withdraw(amountOut);
+          }
           ethTerminal.addToBalanceOf{value: amountOut}(
             _data.projectId,
             amountOut,
@@ -349,7 +405,35 @@ contract DaiHedgeDelegate is
             '',
             ''
           );
+
+          uint256 remainder = _data.forwardedAmount.value - swapAmount;
+
+          _dai.approve(address(daiTerminal), remainder);
+          daiTerminal.addToBalanceOf(_data.projectId, remainder, address(_dai), '', '');
+          _dai.approve(address(daiTerminal), 0);
+        } else {
+          _dai.transferFrom(msg.sender, address(this), _data.forwardedAmount.value);
+          _dai.approve(address(daiTerminal), _data.forwardedAmount.value);
+          daiTerminal.addToBalanceOf(
+            _data.projectId,
+            _data.forwardedAmount.value,
+            address(_dai),
+            '',
+            ''
+          );
+          _dai.approve(address(daiTerminal), 0);
         }
+      } else {
+        _dai.transferFrom(msg.sender, address(this), _data.forwardedAmount.value);
+        _dai.approve(address(daiTerminal), _data.forwardedAmount.value);
+        daiTerminal.addToBalanceOf(
+          _data.projectId,
+          _data.forwardedAmount.value,
+          address(_dai),
+          '',
+          ''
+        );
+        _dai.approve(address(daiTerminal), 0);
       }
     }
   }
@@ -446,8 +530,29 @@ contract DaiHedgeDelegate is
           address(jbxDirectory.primaryTerminalOf(_projectId, address(_dai)))
         );
       }
-
       balance = terminalStore.balanceOf(terminal, _projectId);
+    }
+  }
+
+  function getProjectTerminal(
+    uint256 _currency,
+    bool _useDefaultTerminal,
+    uint256 _projectId
+  ) internal view returns (IJBSingleTokenPaymentTerminal terminal) {
+    if (_currency == JBCurrencies.ETH) {
+      terminal = IJBSingleTokenPaymentTerminal(defaultEthTerminal);
+      if (!_useDefaultTerminal) {
+        terminal = IJBSingleTokenPaymentTerminal(
+          address(jbxDirectory.primaryTerminalOf(_projectId, JBTokens.ETH))
+        );
+      }
+    } else if (_currency == JBCurrencies.USD) {
+      terminal = defaultUsdTerminal;
+      if (!_useDefaultTerminal) {
+        terminal = IJBSingleTokenPaymentTerminal(
+          address(jbxDirectory.primaryTerminalOf(_projectId, address(_dai)))
+        );
+      }
     }
   }
 
