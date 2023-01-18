@@ -22,10 +22,8 @@ import '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 interface IWETH9 is IERC20 {
-  /// @notice Deposit ether to get wrapped ether
   function deposit() external payable;
 
-  /// @notice Withdraw wrapped ether to get ether
   function withdraw(uint256) external;
 }
 
@@ -76,7 +74,12 @@ contract DaiHedgeDelegate is
   IJBRedemptionDelegate
 {
   //*********************************************************************//
-  // --------------------- private stored properties ------------------- //
+  // ------------------------------ errors ----------------------------- //
+  //*********************************************************************//
+  error REDEEM_NOT_SUPPORTED();
+
+  //*********************************************************************//
+  // -------------------- private stored properties -------------------- //
   //*********************************************************************//
 
   IJBDirectory private immutable jbxDirectory;
@@ -126,6 +129,16 @@ contract DaiHedgeDelegate is
   uint256 private constant SettingsOffsetDefaultUsdTerminal = 34;
   uint256 private constant SettingsOffsetApplyHedge = 35;
 
+  /**
+   * @notice Funding cycle datasource implementation that keeps contributions split between Ether and DAI according to pre-defined params. This contract stores per-project configuration so only a single instance is needed for the platform. Usage of this contract is optional for projects.
+   *
+   * @param _jbxOperatorStore Juicebox OperatorStore to manage per-project permissions.
+   * @param _jbxDirectory Juicebox Directory for terminal lookup.
+   * @param _jbxProjects Juicebox Projects ownership NFT.
+   * @param _defaultEthTerminal Default Eth terminal.
+   * @param _defaultUsdTerminal Default DAI terminal.
+   * @param _terminalStore Juicebox TerminalStore to track token balances.
+   */
   constructor(
     IJBOperatorStore _jbxOperatorStore,
     IJBDirectory _jbxDirectory,
@@ -145,13 +158,15 @@ contract DaiHedgeDelegate is
   }
 
   //*********************************************************************//
-  // ---------------------- external functions ------------------------- //
+  // ------------------------ external functions ----------------------- //
   //*********************************************************************//
 
   /**
-   * @notice
+   * @notice Sets project params. This function requires `MANAGE_PAYMENTS` operation privilege.
    *
-   * @dev Multiple conditions need to be met for this delegate to attempt swaps between Ether and DAI.
+   * @dev Multiple conditions need to be met for this delegate to attempt swaps between Ether and DAI. Eth/DAI ratio must be away from desired (_ethShare) by at least (_balanceThreshold). Incoming contribution amount must be larger than either _ethThreshold or _usdThreshold depending on denomination.
+   *
+   * @dev Rather than setting _ethShare to 10_000 (100%), disable hedging or remove the datasource delegate from the funding cycle config to save gas. Similarly setting _ethShare to 0 is more cheaply accomplished by removing the Eth terminal from the project to require contributions in DAI only.
    *
    * @param _projectId Project id to modify settings for.
    * @param _applyHedge Enable hedging.
@@ -159,7 +174,7 @@ contract DaiHedgeDelegate is
    * @param _balanceThreshold Distance from targer threshold at which to take action.
    * @param _ethThreshold Ether contribution threshold, below this number trandes won't be attempted.
    * @param _usdThreshold Dai contribution threshold, below this number trandes won't be attempted.
-   * @param _flags When set to false and a recent price exists, do not query the pool for current price.
+   * @param _flags Sets flags requiring live quotes, and allowing use of default token terminals instead of performing look ups to save gas.
    */
   function setHedgeParameters(
     uint256 _projectId,
@@ -191,7 +206,7 @@ contract DaiHedgeDelegate is
   /**
    * @notice IJBPayDelegate implementation
    *
-   * @notice Will swap incoming ether via WETH into DAI using Uniswap v3 and pay the proceeds into the platform DAI sink.
+   * @notice Will swap ether to DAI or the reverse subject to project-defined constraints. See setHedgeParameters() for requirements.
    */
   function didPay(JBDidPayData calldata _data) public payable override {
     HedgeSettings memory settings = projectHedgeSettings[_data.projectId];
@@ -200,17 +215,58 @@ contract DaiHedgeDelegate is
       return;
     }
 
-    // TODO: special case for eth 100% and dai 100% share
-
     if (_data.amount.token == JBTokens.ETH) {
-      //   processEthContribution(_data, settings);
+      // eth -> dai
+
       IJBSingleTokenPaymentTerminal ethTerminal = getProjectTerminal(
         JBCurrencies.ETH,
         getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
         _data.projectId
       );
 
-      // eth -> dai
+      if (uint16(settings.settings) == 10_000) {
+        // 100% eth
+        ethTerminal.addToBalanceOf{value: msg.value}(
+          _data.projectId,
+          msg.value,
+          JBTokens.ETH,
+          '',
+          ''
+        );
+
+        return;
+      }
+
+      if (uint16(settings.settings) == 0) {
+        // 0% eth
+
+        IJBSingleTokenPaymentTerminal daiTerminal = getProjectTerminal(
+          JBCurrencies.USD,
+          getBoolean(settings.settings, SettingsOffsetDefaultUsdTerminal),
+          _data.projectId
+        );
+
+        _weth.deposit{value: _data.forwardedAmount.value}();
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+          tokenIn: address(_weth),
+          tokenOut: address(_dai),
+          fee: poolFee,
+          recipient: address(this),
+          deadline: block.timestamp,
+          amountIn: _data.forwardedAmount.value,
+          amountOutMinimum: 0, // TODO: consider setting amount
+          sqrtPriceLimitX96: 0
+        });
+
+        uint256 amountOut = _swapRouter.exactInputSingle(params);
+
+        _dai.approve(address(daiTerminal), amountOut);
+        daiTerminal.addToBalanceOf(_data.projectId, amountOut, address(_dai), '', '');
+        _dai.approve(address(daiTerminal), 0);
+
+        return;
+      }
+
       // (depositEth - x + currentEth) / (currentUsdEth + x) = ethShare/usdShare
       // x = (depositEth + currentEth - currentUsdEth * ethShare/usdShare) / (ethShare/usdShare + 1)
       // NOTE: in this case this should be the same as msg.value
@@ -279,7 +335,7 @@ contract DaiHedgeDelegate is
               recipient: address(this),
               deadline: block.timestamp,
               amountIn: swapAmount,
-              amountOutMinimum: 0,
+              amountOutMinimum: 0, // TODO: consider setting amount
               sqrtPriceLimitX96: 0
             });
             uint256 amountOut = _swapRouter.exactInputSingle(params);
@@ -319,13 +375,70 @@ contract DaiHedgeDelegate is
       }
     } else if (_data.amount.token == address(_dai)) {
       // dai -> eth
+
       // (currentEth + x) / (currentUsdEth + depositUsdEth - x) = ethShare/usdShare
       // x = (ethShare/usdShare * (currentUsdEth + depositUsdEth) - currentEth) / (1 + ethShare/usdShare)
       IJBSingleTokenPaymentTerminal daiTerminal = getProjectTerminal(
         JBCurrencies.USD,
-        getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
+        getBoolean(settings.settings, SettingsOffsetDefaultUsdTerminal),
         _data.projectId
       );
+
+      if (uint16(settings.settings) == 10_000) {
+        // 100% eth
+
+        IJBSingleTokenPaymentTerminal ethTerminal = getProjectTerminal(
+          JBCurrencies.ETH,
+          getBoolean(settings.settings, SettingsOffsetDefaultEthTerminal),
+          _data.projectId
+        );
+
+        _dai.transferFrom(msg.sender, address(this), _data.forwardedAmount.value);
+        _dai.approve(address(_swapRouter), _data.forwardedAmount.value);
+
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+          tokenIn: address(_dai),
+          tokenOut: address(_weth),
+          fee: poolFee,
+          recipient: address(this),
+          deadline: block.timestamp,
+          amountIn: _data.forwardedAmount.value,
+          amountOutMinimum: 0, // TODO: consider setting amount
+          sqrtPriceLimitX96: 0
+        });
+
+        uint256 amountOut = _swapRouter.exactInputSingle(params);
+
+        _dai.approve(address(_swapRouter), 0);
+
+        _weth.withdraw(amountOut);
+
+        ethTerminal.addToBalanceOf{value: amountOut}(
+          _data.projectId,
+          amountOut,
+          JBTokens.ETH,
+          '',
+          ''
+        );
+
+        return;
+      }
+
+      if (uint16(settings.settings) == 0) {
+        // 0% eth
+        _dai.transferFrom(msg.sender, address(this), _data.forwardedAmount.value);
+        _dai.approve(address(daiTerminal), _data.forwardedAmount.value);
+        daiTerminal.addToBalanceOf(
+          _data.projectId,
+          _data.forwardedAmount.value,
+          address(_dai),
+          '',
+          ''
+        );
+        _dai.approve(address(daiTerminal), 0);
+
+        return;
+      }
 
       if (_data.forwardedAmount.value >= settings.usdThreshold) {
         (uint256 projectEthBalance, IJBPaymentTerminal ethTerminal) = getProjectBalance(
@@ -388,7 +501,7 @@ contract DaiHedgeDelegate is
               recipient: address(this),
               deadline: block.timestamp,
               amountIn: swapAmount,
-              amountOutMinimum: 0,
+              amountOutMinimum: 0, // TODO: consider setting amount
               sqrtPriceLimitX96: 0
             });
 
@@ -440,9 +553,11 @@ contract DaiHedgeDelegate is
 
   /**
    * @notice IJBRedemptionDelegate implementation
+   *
+   * @notice NOT SUPPORTED, set fundingCycleMetadata.useDataSourceForRedeem to false when deploying.
    */
   function didRedeem(JBDidRedeemData calldata) public payable override {
-    // no rebalance on redemption
+    revert REDEEM_NOT_SUPPORTED();
   }
 
   /**
@@ -473,6 +588,8 @@ contract DaiHedgeDelegate is
 
   /**
    * @notice IJBFundingCycleDataSource implementation
+   *
+   * @notice NOT SUPPORTED, set fundingCycleMetadata.useDataSourceForRedeem to false when deploying.
    */
   function redeemParams(
     JBRedeemParamsData calldata _data
@@ -486,8 +603,7 @@ contract DaiHedgeDelegate is
       JBRedemptionDelegateAllocation[] memory delegateAllocations
     )
   {
-    reclaimAmount = _data.reclaimAmount.value;
-    memo = _data.memo;
+    revert REDEEM_NOT_SUPPORTED();
   }
 
   /**
@@ -501,13 +617,13 @@ contract DaiHedgeDelegate is
   }
 
   /**
-   * @dev didPay() receives weth from swaps that need to be unwrapped and deposited
+   * @dev WETH withdraw() payment is sent here before execution proceeds in the original function.
    */
   // solhint-disable-next-line no-empty-blocks
   receive() external payable {}
 
   //*********************************************************************//
-  // ---------------------- internal functions ------------------------- //
+  // ------------------------ internal functions ----------------------- //
   //*********************************************************************//
   function getProjectBalance(
     uint256 _currency,
