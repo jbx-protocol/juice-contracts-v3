@@ -28,19 +28,18 @@ library NFUTokenFactory {
     uint256 _mintAllowance
   ) external returns (address token) {
     token = Clones.clone(_source);
-    {
-      NFUToken(token).initialize(
-        _owner,
-        _name,
-        _symbol,
-        _baseUri,
-        _contractUri,
-        _maxSupply,
-        _unitPrice,
-        _mintAllowance,
-        0,
-        0
-      );
-    }
+
+    NFUToken(token).initialize(
+      _owner,
+      _name,
+      _symbol,
+      _baseUri,
+      _contractUri,
+      _maxSupply,
+      _unitPrice,
+      _mintAllowance,
+      0,
+      0
+    );
   }
 }
