@@ -8,7 +8,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { abiFromAddress, getPlatformConstant } from '../../../scripts/lib/lib';
 
-const testNetwork = 'goerli';
+const testNetwork = 'mainnet';
 
 async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, libraries: { [key: string]: string } = {}): Promise<any> {
     const contractFactory = await hre.ethers.getContractFactory(contractName, { libraries, signer: deployer });
@@ -22,19 +22,22 @@ async function deployContract(contractName: string, constructorArgs: any[], depl
  */
 describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
     const platformDeploymentLogPath = `./deployments/${testNetwork}/platform.json`;
+    const eighteen = '1000000000000000000';
 
     const JBCurrencies_ETH = getPlatformConstant('JBCurrencies_ETH', 1, platformDeploymentLogPath);
     const JBCurrencies_USD = getPlatformConstant('JBCurrencies_USD', 2, platformDeploymentLogPath);
     const ethToken = getPlatformConstant('ethToken', '0x000000000000000000000000000000000000EEEe', platformDeploymentLogPath);
     const usdToken = getPlatformConstant('usdToken', '0x6B175474E89094C44Da98b954EedeAC495271d0F', platformDeploymentLogPath);
-    const chainlinkV2UsdEthPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419' // getPlatformConstant('chainlinkV2UsdEthPriceFeed', '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e', platformDeploymentLogPath);
+    const chainlinkV2UsdEthPriceFeed = getPlatformConstant('chainlinkV2UsdEthPriceFeed', '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', platformDeploymentLogPath);
 
     const wethAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
     const daiAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
     const uniswapRouter3Address = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
+    const projectTokensPerEth = BigNumber.from('1000000').mul(eighteen); // 1M tokens/eth, 18 decimals
 
     let testAccounts = [];
 
+    let jbPrices;
     let jbTokenStore;
     let jbController;
     let jbSingleTokenPaymentTerminalStore;
@@ -105,7 +108,7 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         let jbETHERC20ProjectPayerDeployer = await deployContract('JBETHERC20ProjectPayerDeployer', [], deployer);
         let jbETHERC20SplitsPayerDeployer = await deployContract('JBETHERC20SplitsPayerDeployer', [], deployer);
         let jbOperatorStore = await deployContract('JBOperatorStore', [], deployer);
-        let jbPrices = await deployContract('JBPrices', [deployer.address], deployer);
+        jbPrices = await deployContract('JBPrices', [deployer.address], deployer);
         let jbProjects = await deployContract('JBProjects', [jbOperatorStore.address], deployer);
 
         const transactionCount = await deployer.getTransactionCount();
@@ -289,7 +292,7 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         const protocolLaunchDate = referenceTime - 100;
 
         const duration = 0;// 10 * 60; // 10 min
-        const weight = hre.ethers.BigNumber.from('1000000000000000000000000'); // 1M tokens/eth
+        const weight = projectTokensPerEth;
         const discountRate = 0; // 0%
         const ballot = hre.ethers.constants.AddressZero;
         const fundingCycleData = [duration, weight, discountRate, ballot];
@@ -374,6 +377,7 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
 
         tx = await jbTokenStore.connect(deployer).issueFor(projectId, 'Ah ah ah', 'AAA');
         receipt = await tx.wait();
+        const issueEventArgs = receipt.events.filter(e => e.event === 'Issue')[0].args;
     });
 
     it('Test setHedgeParameters()', async function () {
@@ -422,7 +426,8 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
 
     it('Test smol dai contribution', async function () {
         const account = testAccounts[1];
-        const amount = ethers.utils.parseEther('100');
+        const dollarEthPrice = await jbPrices.priceFor(JBCurrencies_USD, JBCurrencies_ETH, 18);
+        const amount = dollarEthPrice.div(10); // 0.1 eth in dai
 
         let tx = await daiToken.connect(account)['approve(address,uint256)'](jbDAIPaymentTerminal.address, '0');
         await tx.wait();
@@ -441,6 +446,7 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         );
         const receipt = await tx.wait();
         const payEventArgs = receipt.events.filter(e => e.event === 'Pay')[0].args;
+        expect(payEventArgs.beneficiaryTokenCount).to.equal(projectTokensPerEth.div(10));
     });
 
     it('Test large eth contribution', async function () {
@@ -459,25 +465,112 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
             { value: amount });
         const receipt = await tx.wait();
         const payEventArgs = receipt.events.filter(e => e.event === 'Pay')[0].args;
+        expect(payEventArgs.beneficiaryTokenCount).to.equal(projectTokensPerEth.div(2));
+
+        const dollarEthPrice = await jbPrices.priceFor(JBCurrencies_USD, JBCurrencies_ETH, 18);
+        const projectEthBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbETHPaymentTerminal.address, projectId);
+        const projectDaiBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbDAIPaymentTerminal.address, projectId);
+        const projectDaiBalanceEthValue = projectDaiBalance.mul(eighteen).div(dollarEthPrice);
+        const ethShare = projectEthBalance.mul(10000).div(projectEthBalance.add(projectDaiBalanceEthValue));
+
+        expect(ethShare.sub(6000).abs()).to.be.lessThan(500); // 5% balance threshold
     });
 
     it('Test large dai contribution', async function () {
-        expect(false).to.equal(true);
+        const account = testAccounts[1];
+        const dollarEthPrice = await jbPrices.priceFor(JBCurrencies_USD, JBCurrencies_ETH, 18);
+        const amount = dollarEthPrice.div(2); // 0.5 eth in dai
+
+        let tx = await daiToken.connect(account)['approve(address,uint256)'](jbDAIPaymentTerminal.address, '0');
+        await tx.wait();
+        tx = await daiToken.connect(account)['approve(address,uint256)'](jbDAIPaymentTerminal.address, amount);
+        await tx.wait();
+
+        tx = await jbDAIPaymentTerminal.connect(account).pay(
+            projectId,
+            amount,
+            daiToken.address, // token
+            account.address, // beneficiary
+            1, // minReturnedTokens
+            false, // preferClaimedTokens
+            '', // memo
+            '0x00', // metadata
+        );
+        const receipt = await tx.wait();
+        const payEventArgs = receipt.events.filter(e => e.event === 'Pay')[0].args;
+        expect(payEventArgs.beneficiaryTokenCount).to.equal(projectTokensPerEth.div(2));
+
+        const projectEthBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbETHPaymentTerminal.address, projectId);
+        const projectDaiBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbDAIPaymentTerminal.address, projectId);
+        const projectEthBalanceDaiValue = projectEthBalance.mul(dollarEthPrice).div(eighteen);
+        const daiShare = projectDaiBalance.mul(10000).div(projectDaiBalance.add(projectEthBalanceDaiValue));
+
+        expect(daiShare.sub(4000).abs()).to.be.lessThan(500); // 5% balance threshold
     });
 
     it('Test eth redemption', async function () {
-        expect(false).to.equal(true);
+        const account = testAccounts[1];
+        const accountTokenBalance = await jbTokenStore.balanceOf(account.address, projectId) as BigNumber;
+        const accountEthBalance = await hre.ethers.provider.getBalance(account.address);
+
+        const dollarEthPrice = await jbPrices.priceFor(JBCurrencies_USD, JBCurrencies_ETH, 18);
+        const totalProjectTokens = await jbTokenStore.totalSupplyOf(projectId);
+        const projectEthBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbETHPaymentTerminal.address, projectId);
+        const projectDaiBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbDAIPaymentTerminal.address, projectId);
+
+        await jbETHPaymentTerminal.connect(account).redeemTokensOf(
+            account.address, // holder,
+            projectId,
+            accountTokenBalance.div(2),
+            ethToken,
+            1, // minReturnedTokens,
+            account.address, // beneficiary,
+            '', // memo
+            '0x00', // metadata
+        );
+
+        const redeemedTokenShare = accountTokenBalance.div(2).mul(10000).div(totalProjectTokens); // bps
+        const estimatedProjectPurseEth = projectDaiBalance.mul(eighteen).div(dollarEthPrice).add(projectEthBalance);
+        const estimatedEthRedemption = estimatedProjectPurseEth.mul(redeemedTokenShare).div(10000);
+        const actualEthRedemption = projectEthBalance.sub(await jbSingleTokenPaymentTerminalStore.balanceOf(jbETHPaymentTerminal.address, projectId));
+
+        expect(estimatedEthRedemption.sub(actualEthRedemption).abs()).to.be.lessThan(ethers.utils.parseEther('0.005')); // TODO: consider tighter, dynamic constraints
+
+        expect(await jbTokenStore.totalSupplyOf(projectId)).to.equal(totalProjectTokens.sub(accountTokenBalance.div(2)));
+        expect(await jbTokenStore.balanceOf(account.address, projectId) as BigNumber).to.be.equal(accountTokenBalance.div(2));
     });
 
     it('Test dai redemption', async function () {
-        expect(false).to.equal(true);
-    });
+        const account = testAccounts[2];
+        const accountTokenBalance = await jbTokenStore.balanceOf(account.address, projectId) as BigNumber;
+        const accountDaiBalance = await daiToken.balanceOf(account.address) as BigNumber;
 
-    it('Test eth distribution', async function () {
-        expect(false).to.equal(true);
-    });
+        const dollarEthPrice = await jbPrices.priceFor(JBCurrencies_USD, JBCurrencies_ETH, 18);
+        const totalProjectTokens = await jbTokenStore.totalSupplyOf(projectId);
+        const projectEthBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbETHPaymentTerminal.address, projectId);
+        const projectDaiBalance = await jbSingleTokenPaymentTerminalStore.balanceOf(jbDAIPaymentTerminal.address, projectId);
 
-    it('Test dai distribution', async function () {
-        expect(false).to.equal(true);
+        await jbDAIPaymentTerminal.connect(account).redeemTokensOf(
+            account.address, // holder,
+            projectId,
+            accountTokenBalance.div(2),
+            daiAddress,
+            1, // minReturnedTokens,
+            account.address, // beneficiary,
+            '', // memo
+            '0x00', // metadata
+        );
+
+        const redeemedTokenShare = accountTokenBalance.div(2).mul(10000).div(totalProjectTokens); // bps
+        const estimatedProjectPurseDai = projectEthBalance.mul(dollarEthPrice).div(eighteen).add(projectDaiBalance);
+        const estimatedDaiRedemption = estimatedProjectPurseDai.mul(redeemedTokenShare).div(10000);
+        const actualDaiRedemption = projectDaiBalance.sub(await jbSingleTokenPaymentTerminalStore.balanceOf(jbDAIPaymentTerminal.address, projectId));
+
+        expect(estimatedDaiRedemption.sub(actualDaiRedemption).abs()).to.be.lessThan(ethers.utils.parseEther('5')); // TODO: consider tighter, dynamic constraints
+
+        expect(await jbTokenStore.totalSupplyOf(projectId)).to.equal(totalProjectTokens.sub(accountTokenBalance.div(2)));
+        expect(await jbTokenStore.balanceOf(account.address, projectId) as BigNumber).to.be.equal(accountTokenBalance.div(2));
     });
 });
+
+// npx hardhat test test/extensions/defi/dai_hedge_delegate.test.ts
