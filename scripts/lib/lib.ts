@@ -1,4 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as hre from 'hardhat';
 import * as winston from 'winston';
@@ -23,6 +24,10 @@ export const logger = winston.createLogger({
         })
     ]
 });
+
+function sleep(ms = 1_000) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, libraries: { [key: string]: string } = {}): Promise<DeployResult> {
     try {
@@ -154,4 +159,46 @@ export async function verifyRecordContract(contractName: string, contractAddress
     deploymentAddresses[hre.network.name][contractName]['verified'] = result;
 
     fs.writeFileSync(logPath, JSON.stringify(deploymentAddresses, undefined, 4));
+}
+
+async function getCachedAbi(contractAddress: string, cachePath: string = `./abicache/${hre.network.name}`): Promise<any | undefined> {
+    try {
+        if (!fs.existsSync(cachePath)) {
+            fs.mkdirSync(cachePath, { recursive: true });
+        }
+        const abi = await fs.promises.readFile(`${cachePath}/${contractAddress}.json`, 'utf-8');
+        return JSON.parse(abi);
+    } catch (error: any) {
+        return undefined;
+    }
+}
+
+/**
+ * Download and store JSON abi for a given contract address on "current" network.
+ * 
+ * @param contractAddress Contract address to get abi for.
+ * @param etherscanKey Optional Etherscan key.
+ * @param isProxy If true, will attempt to parse target contract as an EIP1967 proxy to get implementation address.
+ * @returns abi JSON.
+ */
+export async function abiFromAddress(contractAddress: string, etherscanKey: string, isProxy: boolean = false): Promise<any> {
+    if (isProxy) {
+        const eip1967 = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
+        const implementationAddress = (await hre.ethers.getDefaultProvider().getStorageAt(contractAddress, eip1967)).slice(-40);
+        return abiFromAddress(`0x${implementationAddress}`, etherscanKey, false);
+    } else {
+        const abi = await getCachedAbi(contractAddress);
+        if (abi) {
+            return abi;
+        }
+
+        logger.info(`getting abi for ${contractAddress} on ${hre.network.name}`);
+        console.log(``);
+        const data = await fetch(`https://api.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${etherscanKey}`)
+            .then((response: any) => response.json())
+            .then((data: any) => data['result']);
+        await sleep(1_500); // throttle etherscan
+        await fs.promises.writeFile(`./abicache/${hre.network.name}/${contractAddress}.json`, data, 'utf-8');
+        return JSON.parse(data);
+    }
 }

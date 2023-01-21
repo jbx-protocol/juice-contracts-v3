@@ -67,6 +67,20 @@ async function main() {
         'JBDAIPaymentTerminal'
     );
 
+    const jbETHPaymentTerminalAddress = getContractRecord('JBETHPaymentTerminal').address;
+    const jbDAIPaymentTerminalAddress = getContractRecord('JBDAIPaymentTerminal').address;
+    await deployRecordContract(
+        'DaiHedgeDelegate',
+        [
+            jbOperatorStoreAddress,
+            jbDirectoryAddress,
+            jbProjectsAddress,
+            jbETHPaymentTerminalAddress,
+            jbDAIPaymentTerminalAddress,
+            jbSingleTokenPaymentTerminalStoreAddress
+        ],
+        deployer);
+
     const daySeconds = 60 * 60 * 24;
     await deployRecordContract('JBReconfigurationBufferBallot', [daySeconds], deployer, 'JB1DayReconfigurationBufferBallot');
     await deployRecordContract('JBReconfigurationBufferBallot', [daySeconds * 3], deployer, 'JB3DayReconfigurationBufferBallot');

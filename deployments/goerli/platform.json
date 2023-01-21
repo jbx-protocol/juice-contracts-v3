@@ -9329,7 +9329,7 @@
             "verified": true
         },
         "JBDAIPaymentTerminal": {
-            "address": "0x408Bec501D3e47DE430801754Ea10B08cA6DC071",
+            "address": "0x21C175B9DCf2ff0B29398a9219d175803958c493",
             "args": [
                 "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
                 2,
@@ -10830,12 +10830,642 @@
             ],
             "verified": false,
             "type": "JBERC20PaymentTerminal"
+        },
+        "DaiHedgeDelegate": {
+            "address": "0x18041Bd34291B92fd4DD6Aa6C58A845b66ae0446",
+            "args": [
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x6c3c5afEc53243f41921A692E770133823609533",
+                "0x21C175B9DCf2ff0B29398a9219d175803958c493",
+                "0x1D16e454327Bb42946409445ef9410c29A9F41a1"
+            ],
+            "abi": [
+                {
+                    "type": "constructor",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_jbxOperatorStore"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_jbxDirectory"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_jbxProjects"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_defaultEthTerminal"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_defaultUsdTerminal"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_terminalStore"
+                        }
+                    ]
+                },
+                {
+                    "type": "error",
+                    "name": "UNAUTHORIZED",
+                    "inputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "_swapQuoter",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "defaultEthTerminal",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "defaultUsdTerminal",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "didPay",
+                    "constant": false,
+                    "stateMutability": "payable",
+                    "payable": true,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "payer"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "amount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "forwardedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectTokenCount"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "preferClaimedTokens"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "didRedeem",
+                    "constant": false,
+                    "stateMutability": "payable",
+                    "payable": true,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "holder"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectTokenCount"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "reclaimedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "forwardedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "operatorStore",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "payParams",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "terminal"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "payer"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "amount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "weight"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "reservedRate"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "weight"
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo"
+                        },
+                        {
+                            "type": "tuple[]",
+                            "name": "delegateAllocations",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "delegate"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "amount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "poolFee",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint24"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "projectHedgeSettings",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "ethThreshold"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "usdThreshold"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "settings"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "recentPrice",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "recentPriceTimestamp",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "redeemParams",
+                    "constant": true,
+                    "stateMutability": "pure",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "terminal"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "holder"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "tokenCount"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "totalSupply"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "overflow"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "reclaimAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "useTotalOverflow"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "redemptionRate"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "reclaimAmount"
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo"
+                        },
+                        {
+                            "type": "tuple[]",
+                            "name": "delegateAllocations",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "delegate"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "amount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "setHedgeParameters",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_applyHedge"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_ethShare"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_balanceThreshold"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_ethThreshold"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_usdThreshold"
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "_flags",
+                            "components": [
+                                {
+                                    "type": "bool",
+                                    "name": "liveQuote"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "defaultEthTerminal"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "defaultUsdTerminal"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "supportsInterface",
+                    "constant": true,
+                    "stateMutability": "pure",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "bytes4",
+                            "name": "interfaceId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "terminalStore",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                }
+            ],
+            "verified": false
         }
     },
     "constants": {
         "JBCurrencies_ETH": 1,
         "JBCurrencies_USD": 2,
         "chainlinkV2UsdEthPriceFeed": "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e",
+        "ethToken": "0x000000000000000000000000000000000000EEEe",
         "usdToken": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
         "primaryBeneficiary": "0xbeeF69b41A166A8696478F117cE92DbaC35250F4",
         "payoutSplits": [
