@@ -20,7 +20,7 @@ async function deployContract(contractName: string, constructorArgs: any[], depl
 /**
  * This test requires forked mainnet to run
  */
-describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
+describe(`DAI hedge delegate workflow tests (forked ${testNetwork})`, () => {
     const platformDeploymentLogPath = `./deployments/${testNetwork}/platform.json`;
     const eighteen = '1000000000000000000';
 

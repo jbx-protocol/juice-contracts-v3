@@ -83,7 +83,9 @@ contract ThinProjectPayer is ERC165, JBOperatable, IJBProjectPayer {
   /**
    * @notice This contract is meant to be cloned by the deployer contract. The default instance is attached to the platform project during platform deployment.
    */
-  constructor() {}
+  constructor(uint256 _defaultProjectId) {
+    defaultProjectId = _defaultProjectId; // prevent initialization of default instance
+  }
 
   /**
    * @notice This function is called by the deployer contract to attach a cloned instance to a particular project. This happens atomically following the clone operation.

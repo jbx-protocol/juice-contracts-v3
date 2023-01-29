@@ -78,6 +78,9 @@ async function main() {
     await deployRecordContract('NFUEditionFactory', [], deployer, 'NFUEditionFactory', deploymentLogPath);
     const nfuEditionFactoryAddress = getContractRecord('NFUEditionFactory', deploymentLogPath).address;
 
+    await deployRecordContract('ThinProjectPayerFactory', [], deployer, 'ThinProjectPayerFactory', deploymentLogPath);
+    const thinProjectPayerFactoryAddress = getContractRecord('ThinProjectPayerFactory', deploymentLogPath).address;
+
     const deployerFactory = await ethers.getContractFactory('Deployer_v007', {
         libraries: {
             NFTokenFactory: nfTokenFactoryLibraryAddress,
@@ -88,7 +91,8 @@ async function main() {
             NFTRewardDataSourceFactory: nftRewardDataSourceFactoryAddress,
             TraitTokenFactory: traitTokenFactoryAddress,
             AuctionMachineFactory: auctionMachineFactoryAddress,
-            NFUEditionFactory: nfuEditionFactoryAddress
+            NFUEditionFactory: nfuEditionFactoryAddress,
+            ThinProjectPayerFactory: thinProjectPayerFactoryAddress
         },
         signer: deployer
     });
@@ -97,16 +101,18 @@ async function main() {
     await deployRecordContract('EnglishAuctionMachine', [], deployer, 'EnglishAuctionMachine', deploymentLogPath);
     await deployRecordContract('TraitToken', [], deployer, 'TraitToken', deploymentLogPath);
     await deployRecordContract('NFUEdition', [], deployer, 'NFUEdition', deploymentLogPath);
+    await deployRecordContract('ThinProjectPayer', [1], deployer, 'ThinProjectPayer', deploymentLogPath);
 
     const dutchAuctionMachineAddress = getContractRecord('DutchAuctionMachine', deploymentLogPath).address;
     const englishAuctionMachineAddress = getContractRecord('EnglishAuctionMachine', deploymentLogPath).address;
     const sourceTraitTokenRecord = getContractRecord('TraitToken', deploymentLogPath);
     const sourceNFUEditionRecord = getContractRecord('NFUEdition', deploymentLogPath);
+    const sourceThinProjectPayerRecord = getContractRecord('ThinProjectPayer', deploymentLogPath);
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, {
         kind: 'uups',
         call: {
-            fn: 'initialize(address,address,address,address,address,address,address,address,address)',
+            fn: 'initialize(address,address,address,address,address,address,address,address,address,address)',
             args: [
                 sourceDutchAuctionHouseAddress,
                 sourceEnglishAuctionHouseAddress,
@@ -116,7 +122,8 @@ async function main() {
                 dutchAuctionMachineAddress,
                 englishAuctionMachineAddress,
                 sourceTraitTokenRecord.address,
-                sourceNFUEditionRecord.address]
+                sourceNFUEditionRecord.address,
+                sourceThinProjectPayerRecord.address]
         }
     });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);

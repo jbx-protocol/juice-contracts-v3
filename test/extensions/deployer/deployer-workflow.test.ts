@@ -77,7 +77,7 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         // await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', anyValue);
 
         const tx = await deployerProxy.connect(owner)
-            .deployNFToken(ownerAddress, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, reveal, { value: defaultOperationFee });
+            .deployNFToken(ownerAddress, name, symbol, baseUri, contractUri, maxSupply, unitPrice, mintAllowance, reveal, { value: defaultOperationFee });
 
         const receipt = await tx.wait();
 
