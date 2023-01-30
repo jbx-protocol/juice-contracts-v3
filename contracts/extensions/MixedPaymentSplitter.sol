@@ -321,7 +321,9 @@ contract MixedPaymentSplitter is Ownable {
     _addProject(_projectId, _shares);
   }
 
-  function withdraw() external onlyOwner {}
+  function withdraw() external onlyOwner {
+    // TODO
+  }
 
   //*********************************************************************//
   // ---------------------- private transactions ----------------------- //

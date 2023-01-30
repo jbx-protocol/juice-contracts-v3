@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-import '../../interfaces/IJBDirectory.sol';
 import './components/BaseNFT.sol';
 
 interface ITraitToken {
@@ -11,7 +10,7 @@ interface ITraitToken {
 /**
  * @notice An ERC721 contract that stores per-token IPFSs CIDs efficiently. This is meant to be used for NFTs that have traits along the lines of BAYC, etc.
  */
-contract TraitToken is BaseNFT {
+contract TraitToken is BaseNFT, ITraitToken {
   error INVALID_OPERATION();
 
   bytes constant ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -49,8 +48,6 @@ contract TraitToken is BaseNFT {
    * @param _symbol Token symbol.
    * @param _baseUri Base URI, initially expected to point at generic, "unrevealed" metadata json.
    * @param _contractUri OpenSea-style contract metadata URI.
-   * @param _jbxProjectId Juicebox project id that will be paid the proceeds of the sale.
-   * @param _jbxDirectory Juicebox directory to determine payment destination.
    * @param _maxSupply Max NFT supply.
    * @param _unitPrice Price per token expressed in Ether.
    * @param _mintAllowance Per-user mint cap.
@@ -63,8 +60,6 @@ contract TraitToken is BaseNFT {
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
@@ -89,12 +84,13 @@ contract TraitToken is BaseNFT {
     symbol = _symbol;
     baseUri = _baseUri;
     contractUri = _contractUri;
-    jbxProjectId = _jbxProjectId;
-    jbxDirectory = _jbxDirectory;
     maxSupply = _maxSupply;
     unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
     mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
+
+    payoutReceiver = payable(_owner);
+    royaltyReceiver = payable(_owner);
   }
 
   /**
@@ -102,7 +98,10 @@ contract TraitToken is BaseNFT {
    *
    * @dev The IPFS hash is expressed as base58 with the first two bytes cut off since they are expected to be `1220`. Future versions of this contract may use a struct instead of bytes32 that would include additional information like hashing function.
    */
-  function setTokenAsset(uint256 _tokenId, bytes32 _truncatedCID) external onlyRole(MINTER_ROLE) {
+  function setTokenAsset(
+    uint256 _tokenId,
+    bytes32 _truncatedCID
+  ) external override onlyRole(MINTER_ROLE) {
     if (ownerOf(_tokenId) == address(0)) {
       revert NOT_MINTED();
     }
@@ -123,6 +122,10 @@ contract TraitToken is BaseNFT {
 
   function generateTokenId(address, uint256) internal virtual override returns (uint256 tokenId) {
     tokenId = totalSupply;
+  }
+
+  function supportsInterface(bytes4 _interfaceId) public pure override returns (bool) {
+    return _interfaceId == type(ITraitToken).interfaceId;
   }
 
   /**

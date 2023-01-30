@@ -94,10 +94,12 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
     IJBProjects _jbxProjects,
     uint256 _feeBps,
     uint24 _uniswapPoolFee
-  ) JBOperatable(_jbxOperatorStore) {
+  ) {
     if (_feeBps > FEE_CAP_BPS) {
       revert();
     }
+
+    operatorStore = _jbxOperatorStore;
 
     jbxDirectory = _jbxDirectory;
     jbxProjects = _jbxProjects;
@@ -282,7 +284,9 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
   /**
    * @notice Set protocol liquidation fee. This share of the swap proceeds will be taken out and kept for the protocol. Expressed in basis points.
    */
-  function setProtocolFee(uint256 _feeBps)
+  function setProtocolFee(
+    uint256 _feeBps
+  )
     external
     override
     requirePermissionAllowingOverride(
@@ -302,7 +306,9 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
   /**
    * @notice Set Uniswap pool fee.
    */
-  function setUniswapPoolFee(uint24 _uniswapPoolFee)
+  function setUniswapPoolFee(
+    uint24 _uniswapPoolFee
+  )
     external
     override
     requirePermissionAllowingOverride(
@@ -318,7 +324,9 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
   /**
    * @notice Prevent liquidation of a specific token through the contract.
    */
-  function blockToken(IERC20 _token)
+  function blockToken(
+    IERC20 _token
+  )
     external
     override
     requirePermissionAllowingOverride(
@@ -335,7 +343,9 @@ contract TokenLiquidator is ITokenLiquidator, JBOperatable {
   /**
    * @notice Remove a previously blocked token from the block list.
    */
-  function unblockToken(IERC20 _token)
+  function unblockToken(
+    IERC20 _token
+  )
     external
     override
     requirePermissionAllowingOverride(

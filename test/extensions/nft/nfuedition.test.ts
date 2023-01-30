@@ -3,7 +3,6 @@ import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { smock } from '@defi-wonderland/smock';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import * as helpers from '@nomicfoundation/hardhat-network-helpers';
 
 import jbDirectory from '../../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
@@ -21,6 +20,7 @@ describe('NFUEdition tests', () => {
 
     let nfTokenFactory: any;
     let editionToken: any;
+    let randomizedEditionToken: any;
     const basicBaseUri = 'ipfs://hidden';
     const basicContractUri = 'ipfs://metadata';
     const basicProjectId = 99;
@@ -52,14 +52,28 @@ describe('NFUEdition tests', () => {
             'NFT',
             basicBaseUri,
             basicContractUri,
-            basicProjectId,
-            directory.address,
             basicMaxSupply,
             basicUnitPrice,
             basicMintAllowance,
             0,
             0,
         );
+
+        randomizedEditionToken = await nfTokenFactory.connect(deployer).deploy();
+        await randomizedEditionToken.connect(deployer).initialize(
+            deployer.address,
+            'Test NFT',
+            'NFT',
+            basicBaseUri,
+            basicContractUri,
+            basicMaxSupply,
+            basicUnitPrice,
+            basicMintAllowance,
+            0,
+            0,
+        );
+
+        await randomizedEditionToken.connect(deployer).setRandomizedMint(true);
     });
 
     it('Mint failures', async () => {
@@ -83,7 +97,6 @@ describe('NFUEdition tests', () => {
         await editionToken.connect(deployer).registerEdition(10, ethers.utils.parseEther('0.0001'));
         await editionToken.connect(deployer).registerEdition(8, ethers.utils.parseEther('0.001'));
         await editionToken.connect(deployer).registerEdition(2, ethers.utils.parseEther('0.01'));
-        await expect(editionToken.connect(deployer).registerEdition(10, ethers.utils.parseEther('0.001'))).to.be.reverted;
 
         expect(await editionToken.editions(0)).to.equal(10);
         expect(await editionToken.editions(1)).to.equal(8);
@@ -149,5 +162,18 @@ describe('NFUEdition tests', () => {
 
         await expect(editionToken.connect(accounts[2])['mint(uint256)'](0, { value: ethers.utils.parseEther('0.0001') }))
             .to.be.revertedWithCustomError(editionToken, 'SUPPLY_EXHAUSTED');
+    });
+
+    it('Randomized mint', async () => {
+        const tokenPrice = ethers.utils.parseEther('0.0001');
+
+        await expect(randomizedEditionToken.connect(deployer).registerEdition(10, tokenPrice)).to.emit(randomizedEditionToken, 'RegisterEdition').withArgs(0, 10, tokenPrice);
+
+        await expect(randomizedEditionToken.connect(accounts[0])['mint(uint256)'](1, { value: tokenPrice }))
+            .to.be.revertedWithCustomError(randomizedEditionToken, 'INVALID_OPERATION');
+
+        await randomizedEditionToken.connect(accounts[0])['mint(uint256)'](0, { value: tokenPrice });
+        await randomizedEditionToken.connect(accounts[0])['mint(uint256)'](0, { value: tokenPrice });
+        expect(await randomizedEditionToken.totalSupply()).to.equal(2);
     });
 });

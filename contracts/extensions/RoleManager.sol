@@ -74,7 +74,8 @@ contract RoleManager is JBOperatable, Ownable, IRoleManager {
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
     address _owner
-  ) JBOperatable(_operatorStore) {
+  ) {
+    operatorStore = _operatorStore;
     directory = _directory;
     projects = _projects;
 
@@ -90,7 +91,10 @@ contract RoleManager is JBOperatable, Ownable, IRoleManager {
    *
    * @dev Internally the role names are hashed together with the project id.
    */
-  function addProjectRole(uint256 _projectId, string calldata _role)
+  function addProjectRole(
+    uint256 _projectId,
+    string calldata _role
+  )
     public
     override
     requirePermissionAllowingOverride(
@@ -113,7 +117,10 @@ contract RoleManager is JBOperatable, Ownable, IRoleManager {
   /**
    * @notice Allows the project owner to remove a previously defined role.
    */
-  function removeProjectRole(uint256 _projectId, string calldata _role)
+  function removeProjectRole(
+    uint256 _projectId,
+    string calldata _role
+  )
     public
     override
     requirePermissionAllowingOverride(
@@ -280,12 +287,10 @@ contract RoleManager is JBOperatable, Ownable, IRoleManager {
   /**
    * @notice Returns roles for a given project, account pair.
    */
-  function getUserRoles(uint256 _projectId, address _account)
-    public
-    view
-    override
-    returns (string[] memory)
-  {
+  function getUserRoles(
+    uint256 _projectId,
+    address _account
+  ) public view override returns (string[] memory) {
     uint256[] memory currentRoles = userRoles[_projectId][_account];
     string[] memory currentRoleNames = new string[](currentRoles.length);
 
@@ -300,12 +305,10 @@ contract RoleManager is JBOperatable, Ownable, IRoleManager {
   /**
    * @notice Returns users for a given project, role pair.
    */
-  function getProjectUsers(uint256 _projectId, string calldata _role)
-    public
-    view
-    override
-    returns (address[] memory)
-  {
+  function getProjectUsers(
+    uint256 _projectId,
+    string calldata _role
+  ) public view override returns (address[] memory) {
     uint256 roleId = uint256(keccak256(abi.encodePacked(_projectId, _role)));
 
     if (bytes(roleNames[roleId]).length == 0) {

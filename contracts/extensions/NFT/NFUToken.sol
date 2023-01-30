@@ -24,12 +24,10 @@ contract NFUToken is BaseNFT {
    * @notice Initializes token state. Used by the Deployer contract to set NFT parameters and contract ownership.
    *
    * @param _owner Token admin.
-   * @param _name Token name.
+   * @param _name Token name. Name must not be blank.
    * @param _symbol Token symbol.
    * @param _baseUri Base URI, initially expected to point at generic, "unrevealed" metadata json.
    * @param _contractUri OpenSea-style contract metadata URI.
-   * @param _jbxProjectId Juicebox project id that will be paid the proceeds of the sale.
-   * @param _jbxDirectory Juicebox directory to determine payment destination.
    * @param _maxSupply Max NFT supply.
    * @param _unitPrice Price per token expressed in Ether.
    * @param _mintAllowance Per-user mint cap.
@@ -42,8 +40,6 @@ contract NFUToken is BaseNFT {
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance,
@@ -51,6 +47,7 @@ contract NFUToken is BaseNFT {
     uint256 _mintPeriodEnd
   ) public {
     if (bytes(name).length != 0) {
+      // NOTE: prevent re-init
       revert INVALID_OPERATION();
     }
 
@@ -69,17 +66,12 @@ contract NFUToken is BaseNFT {
 
     baseUri = _baseUri;
     contractUri = _contractUri;
-    jbxDirectory = _jbxDirectory;
-    jbxProjectId = _jbxProjectId;
     maxSupply = _maxSupply;
     unitPrice = _unitPrice;
     mintAllowance = _mintAllowance;
     mintPeriod = (_mintPeriodStart << 128) | _mintPeriodEnd;
 
+    payoutReceiver = payable(_owner);
     royaltyReceiver = payable(_owner);
-
-    _grantRole(DEFAULT_ADMIN_ROLE, _owner);
-    _grantRole(MINTER_ROLE, _owner);
-    _grantRole(REVEALER_ROLE, _owner);
   }
 }

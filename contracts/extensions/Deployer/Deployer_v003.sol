@@ -3,16 +3,24 @@ pragma solidity ^0.8.0;
 
 import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
+import '../Auctions/FixedPriceSale.sol';
 import './Deployer_v002.sol';
 import './Factories/AuctionsFactory.sol';
 
 /**
- * @notice This version of the deployer adds the ability to create DutchAuctionHouse and EnglishAuctionHouse contracts.
+ * @notice This version of the deployer adds the ability to create DutchAuctionHouse, EnglishAuctionHouse and FixedPriceSale contracts.
  */
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v003 is Deployer_v002 {
+  bytes32 internal constant deployDutchAuctionKey =
+    keccak256(abi.encodePacked('deployDutchAuctionSplitter'));
+  bytes32 internal constant deployEnglishAuctionKey =
+    keccak256(abi.encodePacked('deployEnglishAuction'));
+  bytes32 internal constant deployFixedPriceSaleKey =
+    keccak256(abi.encodePacked('deployFixedPriceSale'));
   DutchAuctionHouse internal dutchAuctionSource;
   EnglishAuctionHouse internal englishAuctionSource;
+  FixedPriceSale internal fixedPriceSaleSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -20,14 +28,21 @@ contract Deployer_v003 is Deployer_v002 {
   }
 
   function initialize(
-    DutchAuctionHouse _dutchAuctionSource,
-    EnglishAuctionHouse _englishAuctionSource
-  ) public virtual reinitializer(3) {
+    address _dutchAuctionSource,
+    address _englishAuctionSource,
+    address _fixedPriceSaleSource
+  ) public virtual override reinitializer(3) {
+    // NOTE: clashes with Deployer_001
     __Ownable_init();
     __UUPSUpgradeable_init();
 
-    dutchAuctionSource = _dutchAuctionSource;
-    englishAuctionSource = _englishAuctionSource;
+    dutchAuctionSource = DutchAuctionHouse(_dutchAuctionSource);
+    englishAuctionSource = EnglishAuctionHouse(_englishAuctionSource);
+    fixedPriceSaleSource = FixedPriceSale(_fixedPriceSaleSource);
+
+    prices[deployDutchAuctionKey] = 1000000000000000; // 0.001 eth
+    prices[deployEnglishAuctionKey] = 1000000000000000; // 0.001 eth
+    prices[deployFixedPriceSaleKey] = 1000000000000000; // 0.001 eth
   }
 
   function deployDutchAuction(
@@ -38,7 +53,9 @@ contract Deployer_v003 is Deployer_v002 {
     uint256 _periodDuration,
     address _owner,
     IJBDirectory _directory
-  ) external returns (address auction) {
+  ) external payable returns (address auction) {
+    validatePayment(deployDutchAuctionKey);
+
     auction = AuctionsFactory.createDutchAuction(
       address(dutchAuctionSource),
       _projectId,
@@ -60,7 +77,9 @@ contract Deployer_v003 is Deployer_v002 {
     bool _allowPublicAuctions,
     address _owner,
     IJBDirectory _directory
-  ) external returns (address auction) {
+  ) external payable returns (address auction) {
+    validatePayment(deployEnglishAuctionKey);
+
     auction = AuctionsFactory.createEnglishAuction(
       address(englishAuctionSource),
       _projectId,
@@ -72,5 +91,28 @@ contract Deployer_v003 is Deployer_v002 {
     );
 
     emit Deployment('EnglishAuctionHouse', auction);
+  }
+
+  function deployFixedPriceSale(
+    uint256 _projectId,
+    IJBPaymentTerminal _feeReceiver,
+    uint256 _feeRate,
+    bool _allowPublicSales,
+    address _owner,
+    IJBDirectory _directory
+  ) external payable returns (address sale) {
+    validatePayment(deployEnglishAuctionKey);
+
+    sale = AuctionsFactory.createFixedPriceSale(
+      address(fixedPriceSaleSource),
+      _projectId,
+      _feeReceiver,
+      _feeRate,
+      _allowPublicSales,
+      _owner,
+      _directory
+    );
+
+    emit Deployment('FixedPriceSale', sale);
   }
 }

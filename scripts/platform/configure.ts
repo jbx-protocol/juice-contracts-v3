@@ -81,34 +81,74 @@ async function deployParentProject(deployer: SignerWithAddress) {
     if ((await jbProjectsContract['count()']() as BigNumber).toNumber() === 0) {
         logger.info('launching parent project');
 
-        const beneficiaries = [];
-        let primaryBeneficiary = getPlatformConstant('primaryBeneficiary', deployer.address);
+        const tokenBeneficiaries = getPlatformConstant('tokenSplits', []);
+        const payoutBeneficiaries = getPlatformConstant('payoutSplits', []);
 
-        let splits = [];
+        let reserveTokenSplits = [];
+        let payoutSplits = [];
+        let reserveTokenSplitShare = 0;
+        let payoutSplitShare = 0;
 
-        beneficiaries.map((beneficiary) => {
-            splits.push({
+        tokenBeneficiaries.map((beneficiary) => {
+            reserveTokenSplits.push({
                 preferClaimed: false,
                 preferAddToBalance: false,
-                percent: Math.floor((1000000000 - 300600000) / beneficiaries.length),
+                percent: beneficiary.share,
                 projectId: 0,
-                beneficiary: beneficiary,
+                beneficiary: beneficiary.address,
                 lockedUntil: 0,
                 allocator: hre.ethers.constants.AddressZero,
             });
+            reserveTokenSplitShare += beneficiary.share;
         });
 
-        splits.push({
-            preferClaimed: false,
-            preferAddToBalance: false,
-            percent: 300600000,
-            projectId: 0,
-            beneficiary: primaryBeneficiary,
-            lockedUntil: 0,
-            allocator: hre.ethers.constants.AddressZero,
+        payoutBeneficiaries.map((beneficiary) => {
+            payoutSplits.push({
+                preferClaimed: false,
+                preferAddToBalance: false,
+                percent: beneficiary.share,
+                projectId: 0,
+                beneficiary: beneficiary.address,
+                lockedUntil: 0,
+                allocator: hre.ethers.constants.AddressZero,
+            });
+            payoutSplitShare += beneficiary.share;
         });
 
-        const groupedSplits = [{ group: 2, splits }];
+        if (reserveTokenSplitShare > 1_000_000_000) {
+            throw new Error(`Invalid beneficiary token split total: ${reserveTokenSplitShare}.`);
+        }
+
+        if (payoutSplitShare > 1_000_000_000) {
+            throw new Error(`Invalid beneficiary payout split total: ${payoutSplitShare}.`);
+        }
+
+        const primaryBeneficiary = getPlatformConstant('primaryBeneficiary', deployer.address);
+        if (reserveTokenSplitShare < 1_000_000_000) {
+            reserveTokenSplits.push({
+                preferClaimed: false,
+                preferAddToBalance: false,
+                percent: 1_000_000_000 - reserveTokenSplitShare,
+                projectId: 0,
+                beneficiary: primaryBeneficiary,
+                lockedUntil: 0,
+                allocator: hre.ethers.constants.AddressZero,
+            });
+        }
+
+        if (payoutSplitShare < 1_000_000_000) {
+            payoutSplits.push({
+                preferClaimed: false,
+                preferAddToBalance: false,
+                percent: 1_000_000_000 - payoutSplitShare,
+                projectId: 0,
+                beneficiary: primaryBeneficiary,
+                lockedUntil: 0,
+                allocator: hre.ethers.constants.AddressZero,
+            });
+        }
+
+        const groupedSplits = [{ group: 1, splits: reserveTokenSplits }, { group: 2, splits: payoutSplits }];
 
         const jb3DayReconfigurationBufferBallotRecord = getContractRecord('JB3DayReconfigurationBufferBallot');
         const jbETHPaymentTerminalRecord = getContractRecord('JBETHPaymentTerminal');
@@ -122,9 +162,9 @@ async function deployParentProject(deployer: SignerWithAddress) {
 
         const protocolLaunchDate = getPlatformConstant('protocolLaunchDate', Math.floor(Date.now() / 1000) - 10);
 
-        const duration = 1209600;
-        const weight = hre.ethers.BigNumber.from('62850518250000000000000');
-        const discountRate = 5000000;
+        const duration = 3600 * 24 * 30; // 30 days
+        const weight = hre.ethers.BigNumber.from('1000000000000000000000000'); // 1M tokens/eth
+        const discountRate = 0; // 0%
         const ballot = jb3DayReconfigurationBufferBallotRecord['address'];
         const fundingCycleData = [duration, weight, discountRate, ballot];
 
@@ -133,9 +173,9 @@ async function deployParentProject(deployer: SignerWithAddress) {
         const pauseTransfer = true;
         const global = [allowSetTerminals, allowSetController, pauseTransfer];
 
-        const reservedRate = 5000;
-        const redemptionRate = 0;
-        const ballotRedemptionRate = 0;
+        const reservedRate = 5000; // 50%
+        const redemptionRate = 10_000; // 100%
+        const ballotRedemptionRate = 10_000;
         const pausePay = false;
         const pauseDistributions = false;
         const pauseRedeem = false;
@@ -171,7 +211,14 @@ async function deployParentProject(deployer: SignerWithAddress) {
             metadata
         ];
 
-        const fundAccessConstraints = [];
+        const fundAccessConstraints = [{
+            terminal: jbETHPaymentTerminalRecord['address'],
+            token: '0x000000000000000000000000000000000000EEEe',
+            distributionLimit: '70000000000000000000000', // 70_000
+            distributionLimitCurrency: 2,
+            overflowAllowance: 0,
+            overflowAllowanceCurrency: 0
+        }];
 
         const terminals = [jbETHPaymentTerminalRecord['address']];
 

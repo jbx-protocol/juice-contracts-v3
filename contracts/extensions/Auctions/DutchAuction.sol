@@ -25,6 +25,23 @@ interface IDutchAuctionHouse is INFTAuction {
     uint256 expiration,
     string memo
   );
+
+  event PlaceDutchBid(
+    address bidder,
+    IERC721 collection,
+    uint256 item,
+    uint256 bidAmount,
+    string memo
+  );
+
+  event ConcludeDutchAuction(
+    address seller,
+    address bidder,
+    IERC721 collection,
+    uint256 item,
+    uint256 closePrice,
+    string memo
+  );
 }
 
 struct DutchAuctionData {
@@ -229,7 +246,7 @@ contract DutchAuctionHouse is
 
     // TODO: consider allowing a bid over the current minimum price to tranfer the token immediately without calling settle
 
-    emit PlaceBid(msg.sender, collection, item, msg.value, _memo);
+    emit PlaceDutchBid(msg.sender, collection, item, msg.value, _memo);
   }
 
   /**
@@ -258,7 +275,7 @@ contract DutchAuctionHouse is
 
       collection.transferFrom(address(this), buyer, item);
 
-      emit ConcludeAuction(
+      emit ConcludeDutchAuction(
         address(uint160(auctionDetails.info)),
         buyer,
         collection,
@@ -275,7 +292,7 @@ contract DutchAuctionHouse is
         delete auctions[auctionId];
         delete auctionSplits[auctionId];
 
-        emit ConcludeAuction(
+        emit ConcludeDutchAuction(
           address(uint160(auctionDetails.info)),
           address(0),
           collection,
@@ -374,12 +391,10 @@ contract DutchAuctionHouse is
    * @param collection ERC721 contract.
    * @param item Token id to get the price of.
    */
-  function currentPrice(IERC721 collection, uint256 item)
-    public
-    view
-    override
-    returns (uint256 price)
-  {
+  function currentPrice(
+    IERC721 collection,
+    uint256 item
+  ) public view override returns (uint256 price) {
     bytes32 auctionId = keccak256(abi.encodePacked(collection, item));
     DutchAuctionData memory auctionDetails = auctions[auctionId];
 
@@ -444,11 +459,9 @@ contract DutchAuctionHouse is
   /**
    * @param _allowPublicAuctions Sets or clears the flag to enable users other than admin role to create auctions.
    */
-  function setAllowPublicAuctions(bool _allowPublicAuctions)
-    external
-    override
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function setAllowPublicAuctions(
+    bool _allowPublicAuctions
+  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     settings = setBoolean(settings, 32, _allowPublicAuctions);
   }
 
@@ -457,11 +470,9 @@ contract DutchAuctionHouse is
    *
    * @dev addToBalanceOf on the feeReceiver will be called to send fees.
    */
-  function setFeeReceiver(IJBPaymentTerminal _feeReceiver)
-    external
-    override
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function setFeeReceiver(
+    IJBPaymentTerminal _feeReceiver
+  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     feeReceiver = _feeReceiver;
   }
 

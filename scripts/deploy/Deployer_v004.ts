@@ -42,6 +42,7 @@ async function main() {
     const auctionsFactoryAddress = getContractRecord('AuctionsFactory', deploymentLogPath).address;
     const sourceDutchAuctionHouseAddress = getContractRecord('DutchAuctionHouse', deploymentLogPath).address;
     const sourceEnglishAuctionHouseAddress = getContractRecord('EnglishAuctionHouse', deploymentLogPath).address;
+    const sourceFixedPriceSaleAddress = getContractRecord('FixedPriceSale', deploymentLogPath).address;
 
     logger.info(`found existing deployment of DeployerProxy at ${deployerProxyAddress}`);
     logger.info(`found existing deployment of NFTokenFactory at ${nftokenFactoryAddress}`);
@@ -49,6 +50,7 @@ async function main() {
     logger.info(`found existing deployment of AuctionsFactory at ${auctionsFactoryAddress}`);
     logger.info(`found existing deployment of DutchAuctionHouse at ${sourceDutchAuctionHouseAddress}`);
     logger.info(`found existing deployment of EnglishAuctionHouse at ${sourceEnglishAuctionHouseAddress}`);
+    logger.info(`found existing deployment of FixedPriceSale at ${sourceFixedPriceSaleAddress}`);
 
     await deployRecordContract('NFUTokenFactory', [], deployer, 'NFUTokenFactory', deploymentLogPath);
 
@@ -68,7 +70,14 @@ async function main() {
     const sourceNFUTokenRecord = getContractRecord('NFUToken', deploymentLogPath);
     await verifyRecordContract('NFUToken', sourceNFUTokenRecord.address, sourceNFUTokenRecord.args, deploymentLogPath);
 
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceNFUTokenRecord.address] } });
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory,
+        {
+            kind: 'uups',
+            call: {
+                fn: 'initialize(address,address,address,address)',
+                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenRecord.address]
+            }
+        });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
     const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/proxy/Clones.sol';
 
 import '../../NFT/NFUToken.sol';
-import '../../../interfaces/IJBDirectory.sol';
 
 /**
  * @notice Clones an instance of NFUToken contract for a new owner.
@@ -24,8 +23,6 @@ library NFUTokenFactory {
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance
@@ -38,8 +35,6 @@ library NFUTokenFactory {
         _symbol,
         _baseUri,
         _contractUri,
-        _jbxProjectId,
-        _jbxDirectory,
         _maxSupply,
         _unitPrice,
         _mintAllowance,

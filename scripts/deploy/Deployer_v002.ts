@@ -53,7 +53,7 @@ async function main() {
         signer: deployer
     });
 
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize' } });
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize()' } });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
     const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);

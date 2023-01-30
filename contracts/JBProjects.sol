@@ -86,13 +86,9 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
 
     @param _interfaceId The ID of the interface to check for adherance to.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(IERC165, ERC721)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(IERC165, ERC721) returns (bool) {
     return
       _interfaceId == type(IJBProjects).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
@@ -106,13 +102,10 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
   /** 
     @param _operatorStore A contract storing operator assignments.
   */
-  constructor(IJBOperatorStore _operatorStore)
-    ERC721('Juicebox Projects', 'JUICEBOX')
-    EIP712('Juicebox Projects', '1')
-    JBOperatable(_operatorStore)
-  // solhint-disable-next-line no-empty-blocks
-  {
-
+  constructor(
+    IJBOperatorStore _operatorStore
+  ) ERC721('Juicebox Projects', 'JUICEBOX') EIP712('Juicebox Projects', '1') {
+    operatorStore = _operatorStore;
   }
 
   //*********************************************************************//
@@ -131,11 +124,10 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
 
     @return projectId The token ID of the newly created project.
   */
-  function createFor(address _owner, JBProjectMetadata calldata _metadata)
-    external
-    override
-    returns (uint256 projectId)
-  {
+  function createFor(
+    address _owner,
+    JBProjectMetadata calldata _metadata
+  ) external override returns (uint256 projectId) {
     // Increment the count, which will be used as the ID.
     projectId = ++count;
 
@@ -162,7 +154,10 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
     @param _projectId The ID of the project who's metadata is being changed.
     @param _metadata A struct containing metadata content, and domain within which the metadata applies. 
   */
-  function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
+  function setMetadataOf(
+    uint256 _projectId,
+    JBProjectMetadata calldata _metadata
+  )
     external
     override
     requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_METADATA)

@@ -25,6 +25,23 @@ interface IEnglishAuctionHouse is INFTAuction {
     uint256 expiration,
     string memo
   );
+
+  event PlaceEnglishBid(
+    address bidder,
+    IERC721 collection,
+    uint256 item,
+    uint256 bidAmount,
+    string memo
+  );
+
+  event ConcludeEnglishAuction(
+    address seller,
+    address bidder,
+    IERC721 collection,
+    uint256 item,
+    uint256 closePrice,
+    string memo
+  );
 }
 
 struct EnglishAuctionData {
@@ -231,7 +248,7 @@ contract EnglishAuctionHouse is
 
     auctions[auctionId].bid = newBid;
 
-    emit PlaceBid(msg.sender, _collection, _item, msg.value, _memo);
+    emit PlaceEnglishBid(msg.sender, _collection, _item, msg.value, _memo);
   }
 
   /**
@@ -264,7 +281,14 @@ contract EnglishAuctionHouse is
 
       collection.transferFrom(address(this), buyer, item);
 
-      emit ConcludeAuction(auctionDetails.seller, buyer, collection, item, lastBidAmount, _memo);
+      emit ConcludeEnglishAuction(
+        auctionDetails.seller,
+        buyer,
+        collection,
+        item,
+        lastBidAmount,
+        _memo
+      );
     } else {
       collection.transferFrom(address(this), auctionDetails.seller, item);
 
@@ -275,7 +299,7 @@ contract EnglishAuctionHouse is
       delete auctions[auctionId];
       delete auctionSplits[auctionId];
 
-      emit ConcludeAuction(auctionDetails.seller, address(0), collection, item, 0, _memo);
+      emit ConcludeEnglishAuction(auctionDetails.seller, address(0), collection, item, 0, _memo);
     }
   }
 
@@ -302,7 +326,7 @@ contract EnglishAuctionHouse is
         // proceeds can be collected, but we still own the token, send it to the bidder
         address buyer = address(uint160(auctionDetails.bid));
         _collection.transferFrom(address(this), buyer, _item);
-        emit ConcludeAuction(
+        emit ConcludeEnglishAuction(
           auctionDetails.seller,
           address(0),
           _collection,
@@ -375,12 +399,10 @@ contract EnglishAuctionHouse is
   /**
    * @notice Returns current bid for a given item even if it is below the reserve.
    */
-  function currentPrice(IERC721 _collection, uint256 _item)
-    public
-    view
-    override
-    returns (uint256 price)
-  {
+  function currentPrice(
+    IERC721 _collection,
+    uint256 _item
+  ) public view override returns (uint256 price) {
     bytes32 auctionId = keccak256(abi.encodePacked(_collection, _item));
     EnglishAuctionData memory auctionDetails = auctions[auctionId];
 
@@ -435,11 +457,9 @@ contract EnglishAuctionHouse is
   /**
    * @notice Sets or clears the flag to enable users other than admin role to create auctions.
    */
-  function setAllowPublicAuctions(bool _allowPublicAuctions)
-    external
-    override
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function setAllowPublicAuctions(
+    bool _allowPublicAuctions
+  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     settings = setBoolean(settings, 32, _allowPublicAuctions);
   }
 
@@ -448,11 +468,9 @@ contract EnglishAuctionHouse is
    *
    * @dev addToBalanceOf on the feeReceiver will be called to send fees.
    */
-  function setFeeReceiver(IJBPaymentTerminal _feeReceiver)
-    external
-    override
-    onlyRole(DEFAULT_ADMIN_ROLE)
-  {
+  function setFeeReceiver(
+    IJBPaymentTerminal _feeReceiver
+  ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
     feeReceiver = _feeReceiver;
   }
 

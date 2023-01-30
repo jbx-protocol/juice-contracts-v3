@@ -62,8 +62,6 @@ describe('NFToken tests', () => {
                 basicSymbol,
                 basicBaseUri,
                 basicContractUri,
-                basicProjectId,
-                directory.address,
                 basicMaxSupply,
                 basicUnitPrice,
                 basicMintAllowance,
@@ -218,15 +216,6 @@ describe('NFToken tests', () => {
             .to.be.revertedWithCustomError(basicToken, 'ALLOWANCE_EXHAUSTED');
     });
 
-    it('Payment failure due to missing terminal', async () => {
-        await directory.primaryTerminalOf.whenCalledWith(basicProjectId, jbxJbTokensEth).returns(ethers.constants.AddressZero);
-
-        await expect(basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
-            .to.be.revertedWithCustomError(basicToken, 'PAYMENT_FAILURE');
-
-        await directory.primaryTerminalOf.whenCalledWith(basicProjectId, jbxJbTokensEth).returns(terminal.address);
-    });
-
     it('Set OperatorFilter', async () => {
         const operatorFilterFactory = await ethers.getContractFactory('OperatorFilter');
         const operatorFilter = await operatorFilterFactory.connect(deployer).deploy();
@@ -267,38 +256,6 @@ describe('NFToken tests', () => {
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
     });
 
-    it('Deploy & mint an NFT without Juicebox project', async () => {
-        const basicName = 'Test NFT'
-        const basicSymbol = 'NFT';
-
-        nfTokenFactory = await ethers.getContractFactory('NFToken');
-        basicToken = await nfTokenFactory
-            .connect(deployer)
-            .deploy(
-                basicName,
-                basicSymbol,
-                basicBaseUri,
-                basicContractUri,
-                0,
-                directory.address,
-                basicMaxSupply,
-                basicUnitPrice,
-                basicMintAllowance,
-                0,
-                0
-            );
-
-        expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
-        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
-            .to.be.revertedWithCustomError(basicToken, 'PAYMENT_FAILURE');
-
-        await basicToken.connect(deployer).setRoyalties(deployer.address, 10_000);
-        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
-            .not.to.be.reverted;
-        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
-        expect(await basicToken.balanceOf(accounts[0].address)).to.equal(2);
-    });
-
     it('Individual CID Token', async () => {
         const cid = ethers.utils.base58.decode('QmWmyoMoctfbAaiEs2G46gpeUmhqFRDW6KWo64y5r581Vz');
 
@@ -315,8 +272,6 @@ describe('NFToken tests', () => {
             basicSymbol,
             basicBaseUri,
             basicContractUri,
-            basicProjectId,
-            directory.address,
             basicMaxSupply,
             basicUnitPrice,
             basicMintAllowance,
@@ -330,8 +285,6 @@ describe('NFToken tests', () => {
             basicSymbol,
             basicBaseUri,
             basicContractUri,
-            basicProjectId,
-            directory.address,
             basicMaxSupply,
             basicUnitPrice,
             basicMintAllowance,
@@ -345,8 +298,6 @@ describe('NFToken tests', () => {
             basicSymbol,
             basicBaseUri,
             basicContractUri,
-            basicProjectId,
-            directory.address,
             basicMaxSupply,
             basicUnitPrice,
             basicMintAllowance,
@@ -379,8 +330,6 @@ describe('NFToken tests', () => {
                 basicSymbol,
                 basicBaseUri,
                 basicContractUri,
-                basicProjectId,
-                directory.address,
                 10_000,
                 basicUnitPrice,
                 10,
@@ -417,8 +366,6 @@ describe('NFToken tests', () => {
                 'SNFT',
                 basicBaseUri,
                 basicContractUri,
-                0,
-                ethers.constants.AddressZero,
                 10_000,
                 basicUnitPrice,
                 10,

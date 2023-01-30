@@ -1,7 +1,7 @@
 {
     "goerli": {
         "JBETHERC20ProjectPayerDeployer": {
-            "address": "0x3009C2Ed9Df91cB4710f7c394D126600Dd53a862",
+            "address": "0x911115326D9835a504e6FE46AFEF64Ca684302Cf",
             "args": [],
             "abi": [
                 {
@@ -108,10 +108,10 @@
                     ]
                 }
             ],
-            "verified": true
+            "verified": false
         },
         "JBETHERC20SplitsPayerDeployer": {
-            "address": "0xFb4f3BF3214C7f0c72AD7a3253724E40c3917c01",
+            "address": "0x74a34673AB438d7369D98A690De8d564460e7f52",
             "args": [],
             "abi": [
                 {
@@ -332,7 +332,7 @@
             "verified": true
         },
         "JBOperatorStore": {
-            "address": "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
+            "address": "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
             "args": [],
             "abi": [
                 {
@@ -513,9 +513,9 @@
             "verified": false
         },
         "JBPrices": {
-            "address": "0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431",
+            "address": "0x48915495E42564532Fc7E90db002A8Dd67f83aC1",
             "args": [
-                "0x8a97426C1a720a45B8d69E974631f01f1168232B"
+                "0xbeeF69b41A166A8696478F117cE92DbaC35250F4"
             ],
             "abi": [
                 {
@@ -693,12 +693,12 @@
                     "outputs": []
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "JBProjects": {
-            "address": "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
+            "address": "0xb352398671Bc178f078891caDd13c58bd224A8d1",
             "args": [
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC"
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8"
             ],
             "abi": [
                 {
@@ -1490,12 +1490,12 @@
             "verified": true
         },
         "JBDirectory": {
-            "address": "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
+            "address": "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
             "args": [
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
-                "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
-                "0x295611056E1351459f51642Ec90e6C31AE0685Ba",
-                "0x8a97426C1a720a45B8d69E974631f01f1168232B"
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x88613B0EA6D75CACBce68aB7FDF01F7fB637A06a",
+                "0xbeeF69b41A166A8696478F117cE92DbaC35250F4"
             ],
             "abi": [
                 {
@@ -1927,9 +1927,9 @@
             "verified": true
         },
         "JBFundingCycleStore": {
-            "address": "0x295611056E1351459f51642Ec90e6C31AE0685Ba",
+            "address": "0x88613B0EA6D75CACBce68aB7FDF01F7fB637A06a",
             "args": [
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A"
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd"
             ],
             "abi": [
                 {
@@ -2441,12 +2441,12 @@
             "verified": true
         },
         "JBTokenStore": {
-            "address": "0xe1f9AF6Ff96D4d549D1273439750cFe4Db97D3dF",
+            "address": "0x11eB51a15194F8BfF13C27a7981c090D3797C4b4",
             "args": [
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
-                "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
-                "0x295611056E1351459f51642Ec90e6C31AE0685Ba"
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0x88613B0EA6D75CACBce68aB7FDF01F7fB637A06a"
             ],
             "abi": [
                 {
@@ -3029,11 +3029,11 @@
             "verified": true
         },
         "JBSplitsStore": {
-            "address": "0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5",
+            "address": "0x164e754A1dB89f77aE08c3ac9143E978B7Dc3520",
             "args": [
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
-                "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A"
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd"
             ],
             "abi": [
                 {
@@ -3306,14 +3306,14 @@
             "verified": true
         },
         "JBController": {
-            "address": "0x396EBD4832665b48a76763eE5259E63d884e80B6",
+            "address": "0xa01C872C6221DE5F3089FE309299c06750A74A6F",
             "args": [
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
-                "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
-                "0x295611056E1351459f51642Ec90e6C31AE0685Ba",
-                "0xe1f9AF6Ff96D4d549D1273439750cFe4Db97D3dF",
-                "0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5"
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0x88613B0EA6D75CACBce68aB7FDF01F7fB637A06a",
+                "0x11eB51a15194F8BfF13C27a7981c090D3797C4b4",
+                "0x164e754A1dB89f77aE08c3ac9143E978B7Dc3520"
             ],
             "abi": [
                 {
@@ -5416,11 +5416,11 @@
             "verified": true
         },
         "JBSingleTokenPaymentTerminalStore": {
-            "address": "0xFca256E724F3F8034024b50a6B286C8788fc7EDE",
+            "address": "0x1D16e454327Bb42946409445ef9410c29A9F41a1",
             "args": [
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
-                "0x295611056E1351459f51642Ec90e6C31AE0685Ba",
-                "0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431"
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0x88613B0EA6D75CACBce68aB7FDF01F7fB637A06a",
+                "0x48915495E42564532Fc7E90db002A8Dd67f83aC1"
             ],
             "abi": [
                 {
@@ -6112,7 +6112,7 @@
             "verified": true
         },
         "JBCurrencies": {
-            "address": "0x39bEc777Dd1366DA960AFA740E87517D3ca43348",
+            "address": "0x33bec8F912E14d9fDAa5deA28dE8034a55894876",
             "args": [],
             "abi": [
                 {
@@ -6145,16 +6145,16 @@
             "verified": true
         },
         "JBETHPaymentTerminal": {
-            "address": "0x69E964e6491195d3383fc0719b66a145501Dd271",
+            "address": "0x6c3c5afEc53243f41921A692E770133823609533",
             "args": [
                 1,
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
-                "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
-                "0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5",
-                "0x1b3ffE41CCd921aDd6C69b0fC0187D9B6a204431",
-                "0xFca256E724F3F8034024b50a6B286C8788fc7EDE",
-                "0x8a97426C1a720a45B8d69E974631f01f1168232B"
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0x164e754A1dB89f77aE08c3ac9143E978B7Dc3520",
+                "0x48915495E42564532Fc7E90db002A8Dd67f83aC1",
+                "0x1D16e454327Bb42946409445ef9410c29A9F41a1",
+                "0xbeeF69b41A166A8696478F117cE92DbaC35250F4"
             ],
             "abi": [
                 {
@@ -7632,7 +7632,7 @@
             "verified": true
         },
         "JB1DayReconfigurationBufferBallot": {
-            "address": "0xDe977C7Fd2e0e78ac3A889c3918896e39186E8B4",
+            "address": "0x6c7988C2b2ab3F6ca407E64a3d1e63918358ae8a",
             "args": [
                 86400
             ],
@@ -7709,7 +7709,7 @@
             "type": "JBReconfigurationBufferBallot"
         },
         "JB3DayReconfigurationBufferBallot": {
-            "address": "0xA902Aff9d3114C3FB71274E83aD408f64325C151",
+            "address": "0x191076BDD08BBe92eEE4aaA633395eEED3741A92",
             "args": [
                 259200
             ],
@@ -7786,7 +7786,7 @@
             "type": "JBReconfigurationBufferBallot"
         },
         "JB7DayReconfigurationBufferBallot": {
-            "address": "0xC9A85761aFB742F107A35688E7f866A014E2E6b3",
+            "address": "0xD5B818466069b36Ee62B1801ba4D6C65C0B632A5",
             "args": [
                 604800
             ],
@@ -7863,9 +7863,9 @@
             "type": "JBReconfigurationBufferBallot"
         },
         "DaiTreasuryDelegate": {
-            "address": "0x3565801b4F0b1D6A6D3f6eeeEAdc5689eD083657",
+            "address": "0x6782020Ead341BDA13b93c3c0fad22A68d75d839",
             "args": [
-                "0xeF5FB31276D5D4FB229D1d777c5bC82E77b91ba5"
+                "0x164e754A1dB89f77aE08c3ac9143E978B7Dc3520"
             ],
             "abi": [
                 {
@@ -8300,12 +8300,12 @@
             "verified": true
         },
         "RoleManager": {
-            "address": "0xb00e925cE219Dabab33A6B61C0512840543586C6",
+            "address": "0x1116270CF79a7804347df73aeD572f5ED2d3a191",
             "args": [
-                "0xBED951f3869D6CBdBbB85ea550ac8Ac399a27f9A",
-                "0xA4E950b590e504aF26fdf75d8B09cFbd02d144DC",
-                "0xeC82BA28E193697Fd5a6DCA680DA17983B2d5f21",
-                "0x8a97426C1a720a45B8d69E974631f01f1168232B"
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0xbeeF69b41A166A8696478F117cE92DbaC35250F4"
             ],
             "abi": [
                 {
@@ -8682,7 +8682,7 @@
             "verified": true
         },
         "VestingPlanManager": {
-            "address": "0xDcb5E630EC772436f259A0eCE411118aC5888aE7",
+            "address": "0x7b3917FAfa786992602f8B6Ca02a3A6CE233a746",
             "args": [],
             "abi": [
                 {
@@ -9117,12 +9117,1786 @@
                     ]
                 }
             ],
+            "verified": false
+        },
+        "OperatorFilter": {
+            "address": "",
+            "args": [],
+            "abi": [
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "OwnershipTransferred",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "previousOwner",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "newOwner",
+                            "indexed": true
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "blockedAddresses",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "blockedCodeHashes",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "bytes32"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "mayTransfer",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_operator"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "owner",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "registerAddress",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_account"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_blocked"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "registerCodeHash",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "bytes32",
+                            "name": "_codeHash"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_blocked"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "renounceOwnership",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "transferOwnership",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "newOwner"
+                        }
+                    ],
+                    "outputs": []
+                }
+            ],
+            "verified": false
+        },
+        "JBChainlinkV3PriceFeed": {
+            "address": "0xc9D7BC45aB3C735E1038E61Dbc5662dD56D1Ca75",
+            "args": [
+                "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
+            ],
+            "abi": [
+                {
+                    "type": "constructor",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_feed"
+                        }
+                    ]
+                },
+                {
+                    "type": "error",
+                    "name": "INCOMPLETE_ROUND",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "NEGATIVE_PRICE",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "STALE_PRICE",
+                    "inputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "currentPrice",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_decimals"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "feed",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                }
+            ],
             "verified": true
+        },
+        "JBDAIPaymentTerminal": {
+            "address": "0x408Bec501D3e47DE430801754Ea10B08cA6DC071",
+            "args": [
+                "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+                2,
+                1,
+                2,
+                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8",
+                "0xb352398671Bc178f078891caDd13c58bd224A8d1",
+                "0x433d9D1687f5d71540eAbC27558Ff51F6728C8dd",
+                "0x164e754A1dB89f77aE08c3ac9143E978B7Dc3520",
+                "0x48915495E42564532Fc7E90db002A8Dd67f83aC1",
+                "0x1D16e454327Bb42946409445ef9410c29A9F41a1",
+                "0xbeeF69b41A166A8696478F117cE92DbaC35250F4"
+            ],
+            "abi": [
+                {
+                    "type": "constructor",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_currency"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_baseWeightCurrency"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_payoutSplitsGroup"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_operatorStore"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_projects"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_directory"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_splitsStore"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_prices"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_store"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_owner"
+                        }
+                    ]
+                },
+                {
+                    "type": "error",
+                    "name": "FEE_TOO_HIGH",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INADEQUATE_DISTRIBUTION_AMOUNT",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INADEQUATE_RECLAIM_AMOUNT",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INADEQUATE_TOKEN_COUNT",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "NO_MSG_VALUE_ALLOWED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "PAY_TO_ZERO_ADDRESS",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "PRBMath__MulDivOverflow",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "prod1"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "denominator"
+                        }
+                    ]
+                },
+                {
+                    "type": "error",
+                    "name": "PROJECT_TERMINAL_MISMATCH",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "REDEEM_TO_ZERO_ADDRESS",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "TERMINAL_IN_SPLIT_ZERO_ADDRESS",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "TERMINAL_TOKENS_INCOMPATIBLE",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "UNAUTHORIZED",
+                    "inputs": []
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "AddToBalance",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "refundedFees",
+                            "indexed": false
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo",
+                            "indexed": false
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "metadata",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "DelegateDidPay",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "delegate",
+                            "indexed": true
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "data",
+                            "indexed": false,
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "payer"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "amount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "forwardedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectTokenCount"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "preferClaimedTokens"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "delegatedAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "DelegateDidRedeem",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "delegate",
+                            "indexed": true
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "data",
+                            "indexed": false,
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "holder"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectTokenCount"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "reclaimedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "forwardedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "delegatedAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "DistributePayouts",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleConfiguration",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleNumber",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "distributedAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "fee",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "beneficiaryDistributionAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "DistributeToPayoutSplit",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "domain",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "group",
+                            "indexed": true
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "split",
+                            "indexed": false,
+                            "components": [
+                                {
+                                    "type": "bool",
+                                    "name": "preferClaimed"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "preferAddToBalance"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "percent"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "lockedUntil"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "allocator"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "HoldFee",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "fee",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "feeDiscount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "Migrate",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "to",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "OwnershipTransferred",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "previousOwner",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "newOwner",
+                            "indexed": true
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "Pay",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleConfiguration",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleNumber",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "payer",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "beneficiaryTokenCount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo",
+                            "indexed": false
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "metadata",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "ProcessFee",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": true
+                        },
+                        {
+                            "type": "bool",
+                            "name": "wasHeld",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "RedeemTokens",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleConfiguration",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleNumber",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "holder",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenCount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "reclaimedAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo",
+                            "indexed": false
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "metadata",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "RefundHeldFees",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "refundedFees",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "leftoverAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetFee",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "fee",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetFeeGauge",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "feeGauge",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetFeelessAddress",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "addrs",
+                            "indexed": true
+                        },
+                        {
+                            "type": "bool",
+                            "name": "flag",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "UseAllowance",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleConfiguration",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "fundingCycleNumber",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "projectId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "amount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "distributedAmount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "netDistributedamount",
+                            "indexed": false
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "acceptsToken",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "addToBalanceOf",
+                    "constant": false,
+                    "stateMutability": "payable",
+                    "payable": true,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_amount"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_memo"
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "_metadata"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "baseWeightCurrency",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "currency",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "currencyForToken",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "currentEthOverflowOf",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "decimals",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "decimalsForToken",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "directory",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "distributePayoutsOf",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_amount"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_currency"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_minReturnedTokens"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_memo"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "netLeftoverDistributionAmount"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "fee",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "feeGauge",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "heldFeesOf",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "tuple[]",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "amount"
+                                },
+                                {
+                                    "type": "uint32",
+                                    "name": "fee"
+                                },
+                                {
+                                    "type": "uint32",
+                                    "name": "feeDiscount"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "isFeelessAddress",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "migrate",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_to"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "balance"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "operatorStore",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "owner",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "pay",
+                    "constant": false,
+                    "stateMutability": "payable",
+                    "payable": true,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_amount"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_beneficiary"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_minReturnedTokens"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_preferClaimedTokens"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_memo"
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "_metadata"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "payoutSplitsGroup",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "prices",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "processFees",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "projects",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "redeemTokensOf",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_holder"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_tokenCount"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_minReturnedTokens"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_beneficiary"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_memo"
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "_metadata"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "reclaimAmount"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "renounceOwnership",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setFee",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_fee"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setFeeGauge",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_feeGauge"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setFeelessAddress",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_address"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "_flag"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "splitsStore",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "store",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "supportsInterface",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "bytes4",
+                            "name": "_interfaceId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "token",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "transferOwnership",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "newOwner"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "useAllowanceOf",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_amount"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_currency"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_token"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_minReturnedTokens"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_beneficiary"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_memo"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "netDistributedAmount"
+                        }
+                    ]
+                }
+            ],
+            "verified": false,
+            "type": "JBERC20PaymentTerminal"
         }
     },
     "constants": {
         "JBCurrencies_ETH": 1,
         "JBCurrencies_USD": 2,
-        "chainlinkV2UsdEthPriceFeed": "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
+        "chainlinkV2UsdEthPriceFeed": "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e",
+        "usdToken": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+        "primaryBeneficiary": "0xbeeF69b41A166A8696478F117cE92DbaC35250F4",
+        "payoutSplits": [
+            {
+                "address": "0x5d95baEBB8412AD827287240A5c281E3bB30d27E",
+                "share": 142857142
+            },
+            {
+                "address": "0xF1cfA747Cd743B81d48966717e3627a5ab44eD7C",
+                "share": 142857142
+            },
+            {
+                "address": "0x1DD2091f250876Ba87B6fE17e6ca925e1B1c0CF0",
+                "share": 142857142
+            },
+            {
+                "address": "0x57a16a385e86cd215deF121E6887D23Be8080d37",
+                "share": 142857142
+            },
+            {
+                "address": "0x4823e65c10daa3ef320e5e262cfa8d0a059e02a6",
+                "share": 142857142
+            },
+            {
+                "address": "0xE41188926607921763D25392475f1156AC5f9033",
+                "share": 142857142
+            },
+            {
+                "address": "0xA4e6C2B6264652444B3F0cc1bB37496AE916931c",
+                "share": 142857142
+            }
+        ],
+        "tokenSplits": [
+            {
+                "address": "0x5d95baEBB8412AD827287240A5c281E3bB30d27E",
+                "share": 50000000
+            },
+            {
+                "address": "0xF1cfA747Cd743B81d48966717e3627a5ab44eD7C",
+                "share": 50000000
+            },
+            {
+                "address": "0x1DD2091f250876Ba87B6fE17e6ca925e1B1c0CF0",
+                "share": 50000000
+            },
+            {
+                "address": "0x57a16a385e86cd215deF121E6887D23Be8080d37",
+                "share": 50000000
+            },
+            {
+                "address": "0x4823e65c10daa3ef320e5e262cfa8d0a059e02a6",
+                "share": 50000000
+            },
+            {
+                "address": "0xE41188926607921763D25392475f1156AC5f9033",
+                "share": 50000000
+            },
+            {
+                "address": "0xA4e6C2B6264652444B3F0cc1bB37496AE916931c",
+                "share": 50000000
+            }
+        ]
     }
 }

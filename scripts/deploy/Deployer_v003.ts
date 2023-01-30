@@ -58,11 +58,13 @@ async function main() {
 
     await deployRecordContract('DutchAuctionHouse', [], deployer, 'DutchAuctionHouse', deploymentLogPath);
     await deployRecordContract('EnglishAuctionHouse', [], deployer, 'EnglishAuctionHouse', deploymentLogPath);
+    await deployRecordContract('FixedPriceSale', [], deployer, 'FixedPriceSale', deploymentLogPath);
 
     const sourceDutchAuctionHouseAddress = getContractRecord('DutchAuctionHouse', deploymentLogPath).address;
     const sourceEnglishAuctionHouseAddress = getContractRecord('EnglishAuctionHouse', deploymentLogPath).address;
+    const sourceFixedPriceSaleAddress = getContractRecord('FixedPriceSale', deploymentLogPath).address;
 
-    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress] } });
+    const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address)', args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress] } });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);
     await deployerProxy.deployed();
     const implementationAddress = await upgrades.erc1967.getImplementationAddress(deployerProxy.address);

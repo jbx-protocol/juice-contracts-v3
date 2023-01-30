@@ -37,27 +37,15 @@ interface INFTAuction {
     string calldata
   ) external;
 
-  function bid(
-    IERC721,
-    uint256,
-    string calldata
-  ) external payable;
+  function bid(IERC721, uint256, string calldata) external payable;
 
-  function settle(
-    IERC721,
-    uint256,
-    string calldata
-  ) external;
+  function settle(IERC721, uint256, string calldata) external;
 
   function distributeProceeds(IERC721, uint256) external;
 
   function currentPrice(IERC721, uint256) external view returns (uint256);
 
-  function updateAuctionSplits(
-    IERC721,
-    uint256,
-    JBSplit[] calldata
-  ) external;
+  function updateAuctionSplits(IERC721, uint256, JBSplit[] calldata) external;
 
   function setFeeRate(uint256) external;
 

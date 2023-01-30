@@ -61,7 +61,9 @@ contract PaymentProcessor is JBOperatable, ReentrancyGuard {
     uint256 _jbxProjectId,
     bool _ignoreFailures,
     bool _defaultLiquidation
-  ) JBOperatable(_jbxOperatorStore) {
+  ) {
+    operatorStore = _jbxOperatorStore;
+
     jbxDirectory = _jbxDirectory;
     jbxProjects = _jbxProjects;
     liquidator = _liquidator;
@@ -87,11 +89,10 @@ contract PaymentProcessor is JBOperatable, ReentrancyGuard {
    * @param _memo Memo for the payment, can be blank, will be forwarded to the Juicebox terminal for event publication.
    * @param _metadata Metadata for the payment, can be blank, will be forwarded to the Juicebox terminal for event publication.
    */
-  function processPayment(string memory _memo, bytes memory _metadata)
-    external
-    payable
-    nonReentrant
-  {
+  function processPayment(
+    string memory _memo,
+    bytes memory _metadata
+  ) external payable nonReentrant {
     _processPayment(jbxProjectId, _memo, _metadata);
   }
 
@@ -176,7 +177,10 @@ contract PaymentProcessor is JBOperatable, ReentrancyGuard {
    * @param _ignoreFailures Ignore some payment failures, this results in processPayment() calls succeeding in more cases and the contract accumulating an Ether or token balance.
    * @param _defaultLiquidation If a given token doesn't have a specific configuration, the payment would still be accepted and liquidated into WETH as part of the payment transaction.
    */
-  function setDefaults(bool _ignoreFailures, bool _defaultLiquidation)
+  function setDefaults(
+    bool _ignoreFailures,
+    bool _defaultLiquidation
+  )
     external
     requirePermissionAllowingOverride(
       jbxProjects.ownerOf(jbxProjectId),
@@ -192,7 +196,10 @@ contract PaymentProcessor is JBOperatable, ReentrancyGuard {
   /**
    * @notice Allows a caller with JBOperations.MANAGE_PAYMENTS permission for the given project, or the project controller to transfer an Ether balance held in this contract.
    */
-  function transferBalance(address payable _destination, uint256 _amount)
+  function transferBalance(
+    address payable _destination,
+    uint256 _amount
+  )
     external
     nonReentrant
     requirePermissionAllowingOverride(

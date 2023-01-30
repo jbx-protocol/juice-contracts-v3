@@ -9,6 +9,7 @@ import '../../../interfaces/IJBPaymentTerminal.sol';
 
 import '../../Auctions/DutchAuction.sol';
 import '../../Auctions/EnglishAuction.sol';
+import '../../Auctions/FixedPriceSale.sol';
 
 library AuctionsFactory {
   error INVALID_SOURCE_CONTRACT();
@@ -58,6 +59,30 @@ library AuctionsFactory {
       _feeReceiver,
       _feeRate,
       _allowPublicAuctions,
+      _owner,
+      _directory
+    );
+  }
+
+  function createFixedPriceSale(
+    address _source,
+    uint256 _projectId,
+    IJBPaymentTerminal _feeReceiver,
+    uint256 _feeRate,
+    bool _allowPublicSales,
+    address _owner,
+    IJBDirectory _directory
+  ) public returns (address auctionClone) {
+    if (!IERC165(_source).supportsInterface(type(IFixedPriceSale).interfaceId)) {
+      revert INVALID_SOURCE_CONTRACT();
+    }
+
+    auctionClone = Clones.clone(_source);
+    FixedPriceSale(auctionClone).initialize(
+      _projectId,
+      _feeReceiver,
+      _feeRate,
+      _allowPublicSales,
       _owner,
       _directory
     );
