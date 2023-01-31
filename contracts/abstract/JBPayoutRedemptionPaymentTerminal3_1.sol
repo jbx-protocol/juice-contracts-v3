@@ -915,8 +915,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         _feeDiscount
       );
 
-      // TODO: if any payouts reverted, add balance back to project.
-
       if (_feeDiscount != JBConstants.MAX_FEE_DISCOUNT) {
         // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
         unchecked {
@@ -1127,6 +1125,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
             // Set the net payout amount to 0 to signal the reversion.
             _netPayoutAmount = 0;
+
+            // Add undistributed amount back to project's balance.
+            store.recordAddedBalanceFor(_projectId, _payoutAmount);
           }
 
           // Otherwise, if a project is specified, make a payment to it.
@@ -1186,6 +1187,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
               // Set the net payout amount to 0 to signal the reversion.
               _netPayoutAmount = 0;
+
+              // Add undistributed amount back to project's balance.
+              store.recordAddedBalanceFor(_projectId, _payoutAmount);
             }
         } else {
           // Keep a reference to the beneficiary.
