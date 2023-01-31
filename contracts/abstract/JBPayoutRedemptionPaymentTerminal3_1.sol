@@ -915,6 +915,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         _feeDiscount
       );
 
+      // TODO: if any payouts reverted, add balance back to project.
+
       if (_feeDiscount != JBConstants.MAX_FEE_DISCOUNT) {
         // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
         unchecked {
