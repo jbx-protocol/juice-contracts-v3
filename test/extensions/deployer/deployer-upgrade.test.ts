@@ -10,6 +10,23 @@ import jbOperatorStore from '../../../artifacts/contracts/JBOperatorStore.sol/JB
 import jbProjects from '../../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbTerminal from '../../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
 
+interface OpenRewardTier {
+    contributionFloor: number | BigNumber
+}
+
+interface RewardTier {
+    contributionFloor: number | BigNumber;
+    idCeiling: number | BigNumber;
+    remainingAllowance: number | BigNumber;
+}
+
+interface JBTokenAmount {
+    token: string;
+    value: BigNumber | number;
+    decimals: BigNumber | number;
+    currency: BigNumber | number;
+}
+
 describe('Deployer upgrade tests', () => {
     const jbxJbTokensEth = '0x000000000000000000000000000000000000EEEe';
     const provider = ethers.provider;
@@ -21,6 +38,7 @@ describe('Deployer upgrade tests', () => {
     let mockJbDirectory;
     let mockJbOperatorStore;
     let mockJbProjects;
+    let mockJbEthTerminal;
 
     let deployerProxy: any;
     let nfTokenFactoryLibrary: any;
@@ -50,6 +68,7 @@ describe('Deployer upgrade tests', () => {
     let dutchAuctionHouse: any;
     let englishAuctionHouse: any;
     let fixedPriceSale: any;
+    let thinPayer: any;
 
     before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
@@ -59,6 +78,7 @@ describe('Deployer upgrade tests', () => {
         mockJbDirectory = await smock.fake(jbDirectory.abi);
         mockJbOperatorStore = await smock.fake(jbOperatorStore.abi);
         mockJbProjects = await smock.fake(jbProjects.abi);
+        mockJbEthTerminal = await smock.fake(jbTerminal.abi);
     });
 
     it('Deploy Deployer_v001', async () => {
@@ -471,6 +491,73 @@ describe('Deployer upgrade tests', () => {
         await expect(dutchAuctionMachineSource.transferOwnership(deployerProxy.address)).not.to.be.reverted;
     });
 
+    it('Deploy OpenTieredTokenUriResolver (v006)', async () => {
+        const baseuri = 'ipfs://';
+
+        await expect(deployerProxy.connect(deployer).deployOpenTieredTokenUriResolver(baseuri, { value: defaultOperationFee }))
+            .not.to.be.reverted;
+    });
+
+    it('Deploy OpenTieredPriceResolver (v006)', async () => {
+        const tiers: OpenRewardTier[] = [
+            { contributionFloor: ethers.utils.parseEther('0.0001') },
+            { contributionFloor: ethers.utils.parseEther('0.001') },
+            { contributionFloor: ethers.utils.parseEther('0.01') }];
+
+        await expect(deployerProxy.connect(deployer).deployOpenTieredPriceResolver(
+            accounts[1].address, tiers, { value: defaultOperationFee }
+        )).not.to.be.reverted;
+    });
+
+    it('Deploy TieredTokenUriResolver (v006)', async () => {
+        const baseuri = 'ipfs://';
+        const range: number[] | BigNumber[] = [1000, 2000];
+
+        await expect(deployerProxy.connect(deployer).deployTieredTokenUriResolver(
+            baseuri, range, { value: defaultOperationFee }
+        )).not.to.be.reverted;
+    });
+
+    it('Deploy TieredPriceResolver (v006)', async () => {
+        const tiers: RewardTier[] = [
+            { contributionFloor: ethers.utils.parseEther('0.001'), idCeiling: 1000, remainingAllowance: 1000 },
+            { contributionFloor: ethers.utils.parseEther('0.01'), idCeiling: 2000, remainingAllowance: 1000 },
+            { contributionFloor: ethers.utils.parseEther('0.1'), idCeiling: 3000, remainingAllowance: 1000 },
+        ];
+
+        await expect(deployerProxy.connect(deployer).deployTieredPriceResolver(
+            accounts[1].address, 2000, 10, tiers, { value: defaultOperationFee }
+        )).not.to.be.reverted;
+    });
+
+    it('Deploy NFTRewardDataSource (v006)', async () => {
+        const projectId = 1;
+        const maxSupply = 10000;
+        const minContribution: JBTokenAmount = { token: accounts[1].address, value: ethers.utils.parseEther('0.001'), decimals: 18, currency: 1 };
+        const name = 'NFT Reward';
+        const symbol = 'RRR';
+        const uri = 'ipfs://';
+        const tokenUriResolverAddress = accounts[1].address;
+        const contractMetadataUri = 'ipfs://';
+        const admin = deployer.address
+        const priceResolver = ethers.constants.AddressZero;
+
+        await expect(deployerProxy.connect(deployer).deployNFTRewardDataSource(
+            projectId,
+            mockJbDirectory.address,
+            maxSupply,
+            minContribution,
+            name,
+            symbol,
+            uri,
+            tokenUriResolverAddress,
+            contractMetadataUri,
+            admin,
+            priceResolver,
+            { value: defaultOperationFee }
+        )).not.to.be.reverted;
+    });
+
     it('Deploy EnglishAuctionMachine clone (v007)', async () => {
         const nfuTokenFactory = await ethers.getContractFactory('NFUToken', { signer: deployer });
         const englishAuctionMachineFactory = await ethers.getContractFactory('EnglishAuctionMachine', { signer: deployer });
@@ -633,6 +720,93 @@ describe('Deployer upgrade tests', () => {
 
         let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
         expect(contractType).to.equal('ThinProjectPayer');
-        const payer = await thinProjectPayerFactory.attach(contractAddress);
+        thinPayer = await thinProjectPayerFactory.attach(contractAddress);
+    });
+
+    it('ThinProjectPayer clone (v007): receive', async () => {
+        const projectId = 2;
+
+        mockJbDirectory.primaryTerminalOf.whenCalledWith(projectId, jbxJbTokensEth).returns(mockJbEthTerminal.address);
+        mockJbEthTerminal.pay.returns(1);
+        mockJbEthTerminal.decimalsForToken.whenCalledWith(jbxJbTokensEth).returns(18);
+
+        await expect(deployer.sendTransaction({ to: thinPayer.address, value: ethers.utils.parseEther('1') }))
+            .not.to.be.reverted;
+    });
+
+    it('ThinProjectPayer clone (v007): setDefaultValues', async () => {
+        const projectId = 2;
+        const beneficiary = deployer.address;
+        const preferClaimedTokens = false;
+        const memo = '';
+        const metadata = '0x00';
+        const defaultPreferAddToBalance = false;
+
+        const JBOperations_MANAGE_PAYMENTS = 1001;
+        mockJbOperatorStore.hasPermission.whenCalledWith(deployer.address, deployer.address, projectId, JBOperations_MANAGE_PAYMENTS).returns(true);
+        mockJbDirectory.controllerOf.whenCalledWith(projectId).returns(deployer.address);
+        mockJbProjects.ownerOf.whenCalledWith(projectId).returns(deployer.address);
+
+        await expect(thinPayer.connect(deployer).setDefaultValues(
+            projectId,
+            beneficiary,
+            preferClaimedTokens,
+            memo,
+            metadata,
+            defaultPreferAddToBalance
+        )).not.to.be.reverted;
+
+        await expect(thinPayer.connect(accounts[0]).setDefaultValues(
+            projectId,
+            beneficiary,
+            preferClaimedTokens,
+            memo,
+            metadata,
+            defaultPreferAddToBalance
+        )).to.be.reverted;
+    });
+
+    it('ThinProjectPayer clone (v007): pay', async () => {
+        const projectId = 2;
+        const token = jbxJbTokensEth;
+        const amount = ethers.utils.parseEther('0.1');
+        const decimals = 18;
+        const beneficiary = deployer.address;
+        const minReturnedTokens = 0;
+        const preferClaimedTokens = false;
+        const memo = '';
+        const metadata = '';
+
+        await expect(thinPayer.connect(accounts[0]).pay(
+            projectId,
+            token,
+            amount,
+            decimals,
+            beneficiary,
+            minReturnedTokens,
+            preferClaimedTokens,
+            memo,
+            metadata,
+            { value: amount }
+        )).to.be.reverted;
+    });
+
+    it('ThinProjectPayer clone (v007): addToBalanceOf', async () => {
+        const projectId = 2;
+        const token = jbxJbTokensEth;
+        const amount = ethers.utils.parseEther('0.1');
+        const decimals = 18;
+        const memo = '';
+        const metadata = '';
+
+        await expect(thinPayer.connect(accounts[0]).addToBalanceOf(
+            projectId,
+            token,
+            amount,
+            decimals,
+            memo,
+            metadata,
+            { value: amount }
+        )).to.be.reverted;
     });
 });
