@@ -212,7 +212,7 @@ contract DaiHedgeDelegate is
     HedgeSettings memory settings = projectHedgeSettings[_data.projectId];
 
     if (!getBoolean(settings.settings, SettingsOffsetApplyHedge)) {
-      return;
+      return; // TODO: may retain funds, needs tests
     }
 
     if (_data.amount.token == JBTokens.ETH) {
@@ -230,8 +230,8 @@ contract DaiHedgeDelegate is
           _data.projectId,
           msg.value,
           JBTokens.ETH,
-          '',
-          ''
+          _data.memo,
+          _data.metadata
         );
 
         return;
@@ -258,10 +258,17 @@ contract DaiHedgeDelegate is
           sqrtPriceLimitX96: 0
         });
 
+        // TODO: approve weth
         uint256 amountOut = _swapRouter.exactInputSingle(params);
 
         _dai.approve(address(daiTerminal), amountOut);
-        daiTerminal.addToBalanceOf(_data.projectId, amountOut, address(_dai), '', '');
+        daiTerminal.addToBalanceOf(
+          _data.projectId,
+          amountOut,
+          address(_dai),
+          _data.memo,
+          _data.metadata
+        );
         _dai.approve(address(daiTerminal), 0);
 
         return;
@@ -417,8 +424,8 @@ contract DaiHedgeDelegate is
           _data.projectId,
           amountOut,
           JBTokens.ETH,
-          '',
-          ''
+          _data.memo,
+          _data.metadata
         );
 
         return;
@@ -432,8 +439,8 @@ contract DaiHedgeDelegate is
           _data.projectId,
           _data.forwardedAmount.value,
           address(_dai),
-          '',
-          ''
+          _data.memo,
+          _data.metadata
         );
         _dai.approve(address(daiTerminal), 0);
 
@@ -531,8 +538,8 @@ contract DaiHedgeDelegate is
             _data.projectId,
             _data.forwardedAmount.value,
             address(_dai),
-            '',
-            ''
+            _data.memo,
+            _data.metadata
           );
           _dai.approve(address(daiTerminal), 0);
         }
@@ -543,8 +550,8 @@ contract DaiHedgeDelegate is
           _data.projectId,
           _data.forwardedAmount.value,
           address(_dai),
-          '',
-          ''
+          _data.memo,
+          _data.metadata
         );
         _dai.approve(address(daiTerminal), 0);
       }
