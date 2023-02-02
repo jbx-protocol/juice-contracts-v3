@@ -247,6 +247,8 @@ contract DaiHedgeDelegate is
         );
 
         _weth.deposit{value: _data.forwardedAmount.value}();
+        _weth.approve(address(_swapRouter), _data.forwardedAmount.value);
+
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
           tokenIn: address(_weth),
           tokenOut: address(_dai),
@@ -258,8 +260,8 @@ contract DaiHedgeDelegate is
           sqrtPriceLimitX96: 0
         });
 
-        // TODO: approve weth
         uint256 amountOut = _swapRouter.exactInputSingle(params);
+        _weth.approve(address(_swapRouter), 0);
 
         _dai.approve(address(daiTerminal), amountOut);
         daiTerminal.addToBalanceOf(
@@ -345,6 +347,7 @@ contract DaiHedgeDelegate is
               amountOutMinimum: 0, // TODO: consider setting amount
               sqrtPriceLimitX96: 0
             });
+
             uint256 amountOut = _swapRouter.exactInputSingle(params);
             _weth.approve(address(_swapRouter), 0);
 
@@ -415,9 +418,7 @@ contract DaiHedgeDelegate is
         });
 
         uint256 amountOut = _swapRouter.exactInputSingle(params);
-
         _dai.approve(address(_swapRouter), 0);
-
         _weth.withdraw(amountOut);
 
         ethTerminal.addToBalanceOf{value: amountOut}(
