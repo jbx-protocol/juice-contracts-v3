@@ -623,7 +623,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       );
 
       // Process the fee.
-      _processFee(_amount, _heldFees[_i].beneficiary);
+      _processFee(_amount, _heldFees[_i].beneficiary, _projectId);
 
       emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, msg.sender);
 
@@ -1263,7 +1263,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       emit HoldFee(_projectId, _amount, fee, _feeDiscount, _beneficiary, msg.sender);
     } else {
       // Process the fee.
-      _processFee(feeAmount, _beneficiary); // Take the fee.
+      _processFee(feeAmount, _beneficiary, _projectId); // Take the fee.
 
       emit ProcessFee(_projectId, feeAmount, false, _beneficiary, msg.sender);
     }
@@ -1275,31 +1275,28 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @param _amount The fee amount, as a floating point number with 18 decimals.
     @param _beneficiary The address to mint the platform's tokens for.
+    @param _from The project ID the fee is being paid from.
   */
-  function _processFee(uint256 _amount, address _beneficiary) internal {
+  function _processFee(
+    uint256 _amount,
+    address _beneficiary,
+    uint256 _from
+  ) internal {
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
-    // When processing the admin fee, save gas if the admin is using this contract as its terminal.
-    if (_terminal == this)
-      _pay(
-        _amount,
-        address(this),
-        _FEE_BENEFICIARY_PROJECT_ID,
-        _beneficiary,
-        0,
-        false,
-        '',
-        bytes('')
-      ); // Use the local pay call.
-    else {
-      // Trigger any inherited pre-transfer logic.
-      _beforeTransferTo(address(_terminal), _amount);
+    // Trigger any inherited pre-transfer logic.
+    _beforeTransferTo(address(_terminal), _amount);
 
-      // If this terminal's token is ETH, send it in msg.value.
-      uint256 _payableValue = token == JBTokens.ETH ? _amount : 0;
+    // If this terminal's token is ETH, send it in msg.value.
+    uint256 _payableValue = token == JBTokens.ETH ? _amount : 0;
 
-      // Send the payment.
+    // Send the projectId in the metadata.
+    bytes memory _projectMetadata = new bytes(32);
+    _projectMetadata = bytes(abi.encodePacked(_from));
+
+    try
+      // Send the fee.
       _terminal.pay{value: _payableValue}(
         _FEE_BENEFICIARY_PROJECT_ID,
         _amount,
@@ -1308,8 +1305,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         0,
         false,
         '',
-        bytes('')
-      ); // Use the external pay call of the correct terminal.
+        _projectMetadata
+      )
+    {} catch {
+      // Add fee amount back to project's balance.
+      store.recordAddedBalanceFor(_from, _amount);
     }
   }
 
