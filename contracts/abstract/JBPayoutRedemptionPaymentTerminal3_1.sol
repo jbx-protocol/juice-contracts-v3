@@ -1094,140 +1094,19 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       leftoverPercentage -= _split.percent;
 
       // The payout amount substracting any applicable incurred fees.
-      uint256 _netPayoutAmount;
+      uint256 _netPayoutAmount = _distributeToPayoutSplitsOf(
+        _split,
+        _projectId,
+        _group,
+        _payoutAmount,
+        _feeDiscount
+      );
+
+      // If the split allocator is set as feeless, this distribution is not eligible for a fee.
+      if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount)
+        feeEligibleDistributionAmount += _payoutAmount;
 
       if (_payoutAmount > 0) {
-        // Transfer tokens to the split.
-        // If there's an allocator set, transfer to its `allocate` function.
-        if (_split.allocator != IJBSplitAllocator(address(0))) {
-          // If the split allocator is set as feeless, this distribution is not eligible for a fee.
-          if (
-            _feeDiscount == JBConstants.MAX_FEE_DISCOUNT ||
-            isFeelessAddress[address(_split.allocator)]
-          )
-            _netPayoutAmount = _payoutAmount;
-            // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
-          else {
-            unchecked {
-              _netPayoutAmount = _payoutAmount - _feeAmount(_payoutAmount, fee, _feeDiscount);
-            }
-
-            // This distribution is eligible for a fee since the funds are leaving the ecosystem.
-            feeEligibleDistributionAmount += _payoutAmount;
-          }
-
-          // Trigger any inherited pre-transfer logic.
-          _beforeTransferTo(address(_split.allocator), _netPayoutAmount);
-
-          // Create the data to send to the allocator.
-          JBSplitAllocationData memory _data = JBSplitAllocationData(
-            token,
-            _netPayoutAmount,
-            decimals,
-            _projectId,
-            _group,
-            _split
-          );
-
-          // Trigger the allocator's `allocate` function.
-          // If this terminal's token is ETH, send it in msg.value.
-          try
-            _split.allocator.allocate{value: token == JBTokens.ETH ? _netPayoutAmount : 0}(_data)
-          {} catch {
-            // If the payout reverted, don't charge a fee.
-            if (_netPayoutAmount != _payoutAmount) feeEligibleDistributionAmount -= _payoutAmount;
-
-            // Set the net payout amount to 0 to signal the reversion.
-            _netPayoutAmount = 0;
-
-            // Add undistributed amount back to project's balance.
-            store.recordAddedBalanceFor(_projectId, _payoutAmount);
-          }
-
-          // Otherwise, if a project is specified, make a payment to it.
-        } else if (_split.projectId != 0) {
-          // Get a reference to the Juicebox terminal being used.
-          IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_split.projectId, token);
-
-          // The project must have a terminal to send funds to.
-          if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_IN_SPLIT_ZERO_ADDRESS();
-
-          // If the terminal is set as feeless, this distribution is not eligible for a fee.
-          if (_feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_terminal)])
-            _netPayoutAmount = _payoutAmount;
-            // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
-          else {
-            unchecked {
-              _netPayoutAmount = _payoutAmount - _feeAmount(_payoutAmount, fee, _feeDiscount);
-            }
-
-            feeEligibleDistributionAmount += _payoutAmount;
-          }
-
-          // Trigger any inherited pre-transfer logic.
-          _beforeTransferTo(address(_terminal), _netPayoutAmount);
-
-          // If this terminal's token is ETH, send it in msg.value.
-          uint256 _payableValue = token == JBTokens.ETH ? _netPayoutAmount : 0;
-
-          // Send the projectId in the metadata.
-          bytes memory _projectMetadata = new bytes(32);
-          _projectMetadata = bytes(abi.encodePacked(_projectId));
-
-          // Add to balance if prefered.
-          if (_split.preferAddToBalance)
-            _terminal.addToBalanceOf{value: _payableValue}(
-              _split.projectId,
-              _netPayoutAmount,
-              token,
-              '',
-              _projectMetadata
-            );
-          else
-            try
-              _terminal.pay{value: _payableValue}(
-                _split.projectId,
-                _netPayoutAmount,
-                token,
-                _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
-                0,
-                _split.preferClaimed,
-                '',
-                _projectMetadata
-              )
-            {} catch {
-              // If the payout reverted, don't charge a fee.
-              if (_netPayoutAmount != _payoutAmount) feeEligibleDistributionAmount -= _payoutAmount;
-
-              // Set the net payout amount to 0 to signal the reversion.
-              _netPayoutAmount = 0;
-
-              // Add undistributed amount back to project's balance.
-              store.recordAddedBalanceFor(_projectId, _payoutAmount);
-            }
-        } else {
-          // Keep a reference to the beneficiary.
-          address payable _beneficiary = _split.beneficiary != address(0)
-            ? _split.beneficiary
-            : payable(msg.sender);
-
-          // If there's a full discount, this distribution is not eligible for a fee.
-          // Don't enforce feeless address for the beneficiary since the funds are leaving the ecosystem.
-          if (_feeDiscount == JBConstants.MAX_FEE_DISCOUNT)
-            _netPayoutAmount = _payoutAmount;
-            // This distribution is eligible for a fee since the funds are leaving this contract and the beneficiary isn't listed as feeless.
-          else {
-            unchecked {
-              _netPayoutAmount = _payoutAmount - _feeAmount(_payoutAmount, fee, _feeDiscount);
-            }
-
-            feeEligibleDistributionAmount += _payoutAmount;
-          }
-
-          // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
-          _transferFrom(address(this), _beneficiary, _netPayoutAmount);
-        }
-
         // Subtract from the amount to be sent to the beneficiary.
         unchecked {
           leftoverAmount = leftoverAmount - _payoutAmount;
@@ -1246,6 +1125,145 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       unchecked {
         ++_i;
       }
+    }
+  }
+
+  /**
+    @notice
+    Pays out a split for a project's funding cycle configuration.
+  
+    @param _split The split to distribute payouts to.
+    @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
+    @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
+
+    @return netPayoutAmount The amount sent to the split after subtracting fees.
+  */
+  function _distributeToPayoutSplitsOf(
+    JBSplit memory _split,
+    uint256 _projectId,
+    uint256 _group,
+    uint256 _amount,
+    uint256 _feeDiscount
+  ) internal returns (uint256 netPayoutAmount) {
+    // If there's an allocator set, transfer to its `allocate` function.
+    if (_split.allocator != IJBSplitAllocator(address(0))) {
+      // If the split allocator is set as feeless, this distribution is not eligible for a fee.
+      if (
+        _feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_split.allocator)]
+      )
+        netPayoutAmount = _amount;
+        // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
+      else {
+        unchecked {
+          netPayoutAmount = _amount - _feeAmount(_amount, fee, _feeDiscount);
+        }
+      }
+
+      // Trigger any inherited pre-transfer logic.
+      _beforeTransferTo(address(_split.allocator), netPayoutAmount);
+
+      // Create the data to send to the allocator.
+      JBSplitAllocationData memory _data = JBSplitAllocationData(
+        token,
+        netPayoutAmount,
+        decimals,
+        _projectId,
+        _group,
+        _split
+      );
+
+      // Trigger the allocator's `allocate` function.
+      // If this terminal's token is ETH, send it in msg.value.
+      try
+        _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data)
+      {} catch {
+        // Set the net payout amount to 0 to signal the reversion.
+        netPayoutAmount = 0;
+
+        // Add undistributed amount back to project's balance.
+        store.recordAddedBalanceFor(_projectId, _amount);
+      }
+
+      // Otherwise, if a project is specified, make a payment to it.
+    } else if (_split.projectId != 0) {
+      // Get a reference to the Juicebox terminal being used.
+      IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_split.projectId, token);
+
+      // The project must have a terminal to send funds to.
+      if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_IN_SPLIT_ZERO_ADDRESS();
+
+      // If the terminal is set as feeless, this distribution is not eligible for a fee.
+      if (_feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_terminal)])
+        netPayoutAmount = _amount;
+        // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
+      else {
+        unchecked {
+          netPayoutAmount = _amount - _feeAmount(_amount, fee, _feeDiscount);
+        }
+      }
+
+      // Trigger any inherited pre-transfer logic.
+      _beforeTransferTo(address(_terminal), netPayoutAmount);
+
+      // Send the projectId in the metadata.
+      bytes memory _projectMetadata = new bytes(32);
+      _projectMetadata = bytes(abi.encodePacked(_projectId));
+
+      // Add to balance if prefered.
+      if (_split.preferAddToBalance)
+        try
+          _terminal.addToBalanceOf{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
+            _split.projectId,
+            netPayoutAmount,
+            token,
+            '',
+            _projectMetadata
+          )
+        {} catch {
+          // Set the net payout amount to 0 to signal the reversion.
+          netPayoutAmount = 0;
+
+          // Add undistributed amount back to project's balance.
+          store.recordAddedBalanceFor(_projectId, _amount);
+        }
+      else
+        try
+          _terminal.pay{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
+            _split.projectId,
+            netPayoutAmount,
+            token,
+            _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
+            0,
+            _split.preferClaimed,
+            '',
+            _projectMetadata
+          )
+        {} catch {
+          // Set the net payout amount to 0 to signal the reversion.
+          netPayoutAmount = 0;
+
+          // Add undistributed amount back to project's balance.
+          store.recordAddedBalanceFor(_projectId, _amount);
+        }
+    } else {
+      // Keep a reference to the beneficiary.
+      address payable _beneficiary = _split.beneficiary != address(0)
+        ? _split.beneficiary
+        : payable(msg.sender);
+
+      // If there's a full discount, this distribution is not eligible for a fee.
+      // Don't enforce feeless address for the beneficiary since the funds are leaving the ecosystem.
+      if (_feeDiscount == JBConstants.MAX_FEE_DISCOUNT)
+        netPayoutAmount = _amount;
+        // This distribution is eligible for a fee since the funds are leaving this contract and the beneficiary isn't listed as feeless.
+      else {
+        unchecked {
+          netPayoutAmount = _amount - _feeAmount(_amount, fee, _feeDiscount);
+        }
+      }
+
+      // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
+      _transferFrom(address(this), _beneficiary, netPayoutAmount);
     }
   }
 
