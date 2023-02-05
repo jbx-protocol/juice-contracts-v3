@@ -4,7 +4,7 @@ pragma solidity ^0.8.16;
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@paulrberg/contracts/math/PRBMath.sol';
 import './../interfaces/IJBController.sol';
-import './../interfaces/IJBPayoutRedemptionPaymentTerminal.sol';
+import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import './../libraries/JBConstants.sol';
 import './../libraries/JBCurrencies.sol';
 import './../libraries/JBFixedPointNumber.sol';
@@ -25,7 +25,7 @@ import './JBSingleTokenPaymentTerminal.sol';
 
   @dev
   Adheres to -
-  IJBPayoutRedemptionPaymentTerminal: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
+  IJBPayoutRedemptionPaymentTerminal3_1: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
 
   @dev
   Inherits from -
@@ -37,7 +37,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
   JBSingleTokenPaymentTerminal,
   JBOperatable,
   Ownable,
-  IJBPayoutRedemptionPaymentTerminal
+  IJBPayoutRedemptionPaymentTerminal3_1
 {
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
@@ -253,9 +253,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     returns (bool)
   {
     return
-      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal).interfaceId ||
-      _interfaceId == type(IJBPayoutTerminal).interfaceId ||
-      _interfaceId == type(IJBAllowanceTerminal).interfaceId ||
+      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId ||
+      _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
+      _interfaceId == type(IJBAllowanceTerminal3_1).interfaceId ||
       _interfaceId == type(IJBRedemptionTerminal).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);
@@ -447,7 +447,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
     @param _token The token being distributed. This terminal ignores this property since it only manages one token. 
     @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
-    @param _memo A memo to pass along to the emitted event.
+    @param _metadata Bytes to send along to the emitted event, if provided.
 
     @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
   */
@@ -457,11 +457,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     uint256 _currency,
     address _token,
     uint256 _minReturnedTokens,
-    string calldata _memo
+    bytes calldata _metadata
   ) external virtual override returns (uint256 netLeftoverDistributionAmount) {
     _token; // Prevents unused var compiler and natspec complaints.
 
-    return _distributePayoutsOf(_projectId, _amount, _currency, _minReturnedTokens, _memo);
+    return _distributePayoutsOf(_projectId, _amount, _currency, _minReturnedTokens, _metadata);
   }
 
   /**
@@ -481,6 +481,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
     @param _beneficiary The address to send the funds to.
     @param _memo A memo to pass along to the emitted event.
+    @param _metadata Bytes to send along to the emitted event, if provided.
 
     @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
   */
@@ -491,7 +492,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     address _token,
     uint256 _minReturnedTokens,
     address payable _beneficiary,
-    string memory _memo
+    string memory _memo,
+    bytes calldata _metadata
   )
     external
     virtual
@@ -501,7 +503,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
   {
     _token; // Prevents unused var compiler and natspec complaints.
 
-    return _useAllowanceOf(_projectId, _amount, _currency, _minReturnedTokens, _beneficiary, _memo);
+    return
+      _useAllowanceOf(
+        _projectId,
+        _amount,
+        _currency,
+        _minReturnedTokens,
+        _beneficiary,
+        _memo,
+        _metadata
+      );
   }
 
   /**
@@ -862,7 +873,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
     @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
     @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
-    @param _memo A memo to pass along to the emitted event.
+    @param _metadata Bytes to send along to the emitted event, if provided.
 
     @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
   */
@@ -871,7 +882,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     uint256 _amount,
     uint256 _currency,
     uint256 _minReturnedTokens,
-    string calldata _memo
+    bytes calldata _metadata
   ) internal returns (uint256 netLeftoverDistributionAmount) {
     // Record the distribution.
     (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordDistributionFor(
@@ -954,7 +965,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       _distributedAmount,
       _fee,
       netLeftoverDistributionAmount,
-      _memo,
+      _metadata,
       msg.sender
     );
   }
@@ -975,6 +986,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
     @param _beneficiary The address to send the funds to.
     @param _memo A memo to pass along to the emitted event.
+    @param _metadata Bytes to send along to the emitted event, if provided.
 
     @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
   */
@@ -984,7 +996,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     uint256 _currency,
     uint256 _minReturnedTokens,
     address payable _beneficiary,
-    string memory _memo
+    string memory _memo,
+    bytes calldata _metadata
   ) internal returns (uint256 netDistributedAmount) {
     // Record the use of the allowance.
     (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordUsedAllowanceOf(
@@ -1034,6 +1047,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       _distributedAmount,
       netDistributedAmount,
       _memo,
+      _metadata,
       msg.sender
     );
   }
@@ -1189,7 +1203,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
               _netPayoutAmount = 0;
 
               // Add undistributed amount back to project's balance.
-              store.recordAddedBalanceFor(_projectId, _payoutAmount);
+              // store.recordAddedBalanceFor(_projectId, _payoutAmount);
             }
         } else {
           // Keep a reference to the beneficiary.
