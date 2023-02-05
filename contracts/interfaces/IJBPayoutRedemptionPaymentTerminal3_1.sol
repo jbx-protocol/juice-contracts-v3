@@ -5,6 +5,7 @@ import './../structs/JBFee.sol';
 import './IJBAllowanceTerminal3_1.sol';
 import './IJBDirectory.sol';
 import './IJBFeeGauge.sol';
+import './IJBFeeHoldingTerminal.sol';
 import './IJBPayDelegate.sol';
 import './IJBPaymentTerminal.sol';
 import './IJBPayoutTerminal3_1.sol';
@@ -19,7 +20,8 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
   IJBPaymentTerminal,
   IJBPayoutTerminal3_1,
   IJBAllowanceTerminal3_1,
-  IJBRedemptionTerminal
+  IJBRedemptionTerminal,
+  IJBFeeHoldingTerminal
 {
   event AddToBalance(
     uint256 indexed projectId,

@@ -572,27 +572,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     string calldata _memo,
     bytes calldata _metadata
   ) external payable virtual override isTerminalOf(_projectId) {
-    _token; // Prevents unused var compiler and natspec complaints.
-
-    // If this terminal's token isn't ETH, make sure no msg.value was sent, then transfer the tokens in from msg.sender.
-    if (token != JBTokens.ETH) {
-      // Amount must be greater than 0.
-      if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
-
-      // Get a reference to the balance before receiving tokens.
-      uint256 _balanceBefore = _balance();
-
-      // Transfer tokens to this terminal from the msg sender.
-      _transferFrom(msg.sender, payable(address(this)), _amount);
-
-      // The amount should reflect the change in balance.
-      _amount = _balance() - _balanceBefore;
-    }
-    // If the terminal's token is ETH, override `_amount` with msg.value.
-    else _amount = msg.value;
-
-    // Add to balance while only refunding held fees if the funds aren't originating from a feeless terminal.
-    _addToBalanceOf(_projectId, _amount, !isFeelessAddress[msg.sender], _memo, _metadata);
+    // Do not refund held fees by default.
+    addToBalanceOf(_projectId, _amount, _token, false, _memo, _metadata);
   }
 
   /**
@@ -694,6 +675,52 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     isFeelessAddress[_address] = _flag;
 
     emit SetFeelessAddress(_address, _flag, msg.sender);
+  }
+
+  //*********************************************************************//
+  // ----------------------- public transactions ----------------------- //
+  //*********************************************************************//
+
+  /**
+    @notice
+    Receives funds belonging to the specified project.
+
+    @param _projectId The ID of the project to which the funds received belong.
+    @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
+    @param _token The token being paid. This terminal ignores this property since it only manages one currency. 
+    @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+    @param _memo A memo to pass along to the emitted event.
+    @param _metadata Extra data to pass along to the emitted event.
+  */
+  function addToBalanceOf(
+    uint256 _projectId,
+    uint256 _amount,
+    address _token,
+    bool _shouldRefundHeldFees,
+    string calldata _memo,
+    bytes calldata _metadata
+  ) public payable virtual override isTerminalOf(_projectId) {
+    _token; // Prevents unused var compiler and natspec complaints.
+
+    // If this terminal's token isn't ETH, make sure no msg.value was sent, then transfer the tokens in from msg.sender.
+    if (token != JBTokens.ETH) {
+      // Amount must be greater than 0.
+      if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
+
+      // Get a reference to the balance before receiving tokens.
+      uint256 _balanceBefore = _balance();
+
+      // Transfer tokens to this terminal from the msg sender.
+      _transferFrom(msg.sender, payable(address(this)), _amount);
+
+      // The amount should reflect the change in balance.
+      _amount = _balance() - _balanceBefore;
+    }
+    // If the terminal's token is ETH, override `_amount` with msg.value.
+    else _amount = msg.value;
+
+    // Add to balance.
+    _addToBalanceOf(_projectId, _amount, _shouldRefundHeldFees, _memo, _metadata);
   }
 
   //*********************************************************************//
