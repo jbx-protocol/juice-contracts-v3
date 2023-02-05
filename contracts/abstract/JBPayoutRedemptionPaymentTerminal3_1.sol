@@ -1203,7 +1203,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
               _netPayoutAmount = 0;
 
               // Add undistributed amount back to project's balance.
-              // store.recordAddedBalanceFor(_projectId, _payoutAmount);
+              store.recordAddedBalanceFor(_projectId, _payoutAmount);
             }
         } else {
           // Keep a reference to the beneficiary.
