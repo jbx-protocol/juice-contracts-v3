@@ -68,14 +68,14 @@ contract TestController31_Fork is Test {
 
         // Collect the mainnet deployment addresses
         jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(
-            stdJson.readAddress(vm.readFile("deployments/mainnet/JBETHPaymentTerminal.json"), "address")
+            stdJson.readAddress(vm.readFile("deployments/mainnet/JBETHPaymentTerminal.json"), ".address")
         );
  
         oldJbController =
-            IJBController(stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), "address"));
+            IJBController(stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), ".address"));
 
         jbOperatorStore =
-            IJBOperatorStore(stdJson.readAddress(vm.readFile("deployments/mainnet/JBOperatorStore.json"), "address"));
+            IJBOperatorStore(stdJson.readAddress(vm.readFile("deployments/mainnet/JBOperatorStore.json"), ".address"));
 
         jbProjects = oldJbController.projects();
         jbDirectory = oldJbController.directory();
