@@ -68,14 +68,14 @@ contract TestController31_Fork is Test {
 
         // Collect the mainnet deployment addresses
         jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(
-            stdJson.readAddress(vm.readFile("./deployments/mainnet/JBETHPaymentTerminal.json"), "address")
+            stdJson.readAddress(vm.readFile("deployments/mainnet/JBETHPaymentTerminal.json"), ".address")
         );
-
+ 
         oldJbController =
-            IJBController(stdJson.readAddress(vm.readFile("./deployments/mainnet/JBController.json"), "address"));
+            IJBController(stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), ".address"));
 
         jbOperatorStore =
-            IJBOperatorStore(stdJson.readAddress(vm.readFile("./deployments/mainnet/JBOperatorStore.json"), "address"));
+            IJBOperatorStore(stdJson.readAddress(vm.readFile("deployments/mainnet/JBOperatorStore.json"), ".address"));
 
         jbProjects = oldJbController.projects();
         jbDirectory = oldJbController.directory();
@@ -282,9 +282,9 @@ contract TestController31_Fork is Test {
      * @notice  Test if the new controller might launch new projects
      * @dev     The controller need to be allowed to set a new controller in new projects, in JBDirectory
      */
-    function testController31_Migration_launchNewProjectViaNewController(uint16 _reservedRate) external {
+    function testController31_Migration_launchNewProjectViaNewController(uint256 _reservedRate) external {
         // Pass only valid reserved rates
-        vm.assume(_reservedRate <= JBConstants.MAX_RESERVED_RATE);
+        _reservedRate = bound(_reservedRate, 0, JBConstants.MAX_RESERVED_RATE);
 
         address _userWallet = makeAddr("_userWallet");
         address _projectOwner = makeAddr("projectOwner");

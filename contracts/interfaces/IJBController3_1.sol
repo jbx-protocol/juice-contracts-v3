@@ -7,6 +7,7 @@ import './../structs/JBFundingCycleData.sol';
 import './../structs/JBFundingCycleMetadata.sol';
 import './../structs/JBGroupedSplits.sol';
 import './../structs/JBProjectMetadata.sol';
+import './IJBController3_0_1.sol';
 import './IJBDirectory.sol';
 import './IJBFundingCycleStore.sol';
 import './IJBMigratable.sol';
@@ -14,7 +15,7 @@ import './IJBPaymentTerminal.sol';
 import './IJBSplitsStore.sol';
 import './IJBTokenStore.sol';
 
-interface IJBController3_1 is IERC165 {
+interface IJBController3_1 is IJBController3_0_1, IERC165 {
   event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
 
   event LaunchFundingCycles(uint256 configuration, uint256 projectId, string memo, address caller);
@@ -86,8 +87,6 @@ interface IJBController3_1 is IERC165 {
 
   function directory() external view returns (IJBDirectory);
 
-  function reservedTokenBalanceOf(uint256 _projectId) external view returns (uint256);
-
   function distributionLimitOf(
     uint256 _projectId,
     uint256 _configuration,
@@ -101,8 +100,6 @@ interface IJBController3_1 is IERC165 {
     IJBPaymentTerminal _terminal,
     address _token
   ) external view returns (uint256 overflowAllowance, uint256 overflowAllowanceCurrency);
-
-  function totalOutstandingTokensOf(uint256 _projectId) external view returns (uint256);
 
   function getFundingCycleOf(uint256 _projectId, uint256 _configuration)
     external

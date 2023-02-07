@@ -150,8 +150,8 @@ contract TestAllowance_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_beneficiary, projectId), 0);
     }
 
-    function testFuzzAllowance(uint232 ALLOWANCE, uint232 TARGET, uint96 BALANCE) public {
-        vm.assume(jbToken().totalSupply() >= BALANCE);
+    function testFuzzAllowance(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
+        BALANCE = bound(BALANCE, 0, jbToken().totalSupply());
 
         unchecked {
             // Check for overflow

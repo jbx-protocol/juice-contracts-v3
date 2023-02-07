@@ -318,6 +318,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   {
     return
       _interfaceId == type(IJBController3_1).interfaceId ||
+      _interfaceId == type(IJBController3_0_1).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);
