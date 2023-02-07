@@ -282,9 +282,9 @@ contract TestController31_Fork is Test {
      * @notice  Test if the new controller might launch new projects
      * @dev     The controller need to be allowed to set a new controller in new projects, in JBDirectory
      */
-    function testController31_Migration_launchNewProjectViaNewController(uint16 _reservedRate) external {
+    function testController31_Migration_launchNewProjectViaNewController(uint256 _reservedRate) external {
         // Pass only valid reserved rates
-        vm.assume(_reservedRate <= JBConstants.MAX_RESERVED_RATE);
+        _reservedRate = bound(_reservedRate, 0, JBConstants.MAX_RESERVED_RATE);
 
         address _userWallet = makeAddr("_userWallet");
         address _projectOwner = makeAddr("projectOwner");
