@@ -20,4 +20,4 @@ jobs:
           node-version: 14
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: ls -al
+        run: cat deployments/mainnet/JBETHPaymentTerminal.json
