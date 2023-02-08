@@ -2,6 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as hre from 'hardhat';
+import * as path from 'path';
 import * as winston from 'winston';
 
 import { type DeployResult } from '../lib/types';
@@ -200,5 +201,26 @@ export async function abiFromAddress(contractAddress: string, etherscanKey: stri
         await sleep(1_500); // throttle etherscan
         await fs.promises.writeFile(`./abicache/${hre.network.name}/${contractAddress}.json`, data, 'utf-8');
         return JSON.parse(data);
+    }
+}
+
+export function exportContractInterfaces(logPath = `./deployments/${hre.network.name}/platform.json`, outputPath = `./exports/daolabs`) {
+    const combinedLog = JSON.parse(fs.readFileSync(logPath).toString());
+
+    const network = Object.keys(combinedLog)[0];
+    const contractList = Object.keys(combinedLog[network]);
+
+    for (const c of contractList) {
+        const contractFilePath = path.join(outputPath, `${c}.json`);
+        let fileContent = {};
+
+        if (fs.existsSync(contractFilePath)) {
+            fileContent = JSON.parse(fs.readFileSync(contractFilePath).toString());
+        }
+
+        fileContent[network] = combinedLog[network][c]['address'];
+        fileContent['abi'] = combinedLog[network][c]['abi'];
+
+        fs.writeFileSync(contractFilePath, JSON.stringify(fileContent, undefined, 4));
     }
 }
