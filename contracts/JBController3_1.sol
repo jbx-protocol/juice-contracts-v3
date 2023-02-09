@@ -39,14 +39,11 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
+
   error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_DELEGATE();
   error CANT_MIGRATE_TO_CURRENT_CONTROLLER();
   error FUNDING_CYCLE_ALREADY_LAUNCHED();
   error INVALID_BALLOT_REDEMPTION_RATE();
-  error INVALID_DISTRIBUTION_LIMIT();
-  error INVALID_DISTRIBUTION_LIMIT_CURRENCY();
-  error INVALID_OVERFLOW_ALLOWANCE();
-  error INVALID_OVERFLOW_ALLOWANCE_CURRENCY();
   error INVALID_REDEMPTION_RATE();
   error INVALID_RESERVED_RATE();
   error MIGRATION_NOT_ALLOWED();
@@ -124,6 +121,12 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   */
   IJBSplitsStore public immutable override splitsStore;
 
+  /** 
+    @notice
+    A contract that stores fund access constraints for each project. 
+  */
+  IJBFundAccessStore public immutable override fundAccessStore;
+
   /**
     @notice
     The directory of terminals and controllers for projects.
@@ -145,62 +148,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
-
-  /**
-    @notice
-    The amount of token that a project can distribute per funding cycle, and the currency it's in terms of.
-
-    @dev
-    The number of decimals in the returned fixed point amount is the same as that of the specified terminal. 
-
-    @param _projectId The ID of the project to get the distribution limit of.
-    @param _configuration The configuration during which the distribution limit applies.
-    @param _terminal The terminal from which distributions are being limited.
-    @param _token The token for which the distribution limit applies.
-
-    @return The distribution limit, as a fixed point number with the same number of decimals as the provided terminal.
-    @return The currency of the distribution limit.
-  */
-  function distributionLimitOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
-  ) external view override returns (uint256, uint256) {
-    // Get a reference to the packed data.
-    uint256 _data = _packedDistributionLimitDataOf[_projectId][_configuration][_terminal][_token];
-
-    // The limit is in bits 0-231. The currency is in bits 232-255.
-    return (uint256(uint232(_data)), _data >> 232);
-  }
-
-  /**
-    @notice
-    The amount of overflow that a project is allowed to tap into on-demand throughout a configuration, and the currency it's in terms of.
-
-    @dev
-    The number of decimals in the returned fixed point amount is the same as that of the specified terminal. 
-
-    @param _projectId The ID of the project to get the overflow allowance of.
-    @param _configuration The configuration of the during which the allowance applies.
-    @param _terminal The terminal managing the overflow.
-    @param _token The token for which the overflow allowance applies.
-
-    @return The overflow allowance, as a fixed point number with the same number of decimals as the provided terminal.
-    @return The currency of the overflow allowance.
-  */
-  function overflowAllowanceOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
-  ) external view override returns (uint256, uint256) {
-    // Get a reference to the packed data.
-    uint256 _data = _packedOverflowAllowanceDataOf[_projectId][_configuration][_terminal][_token];
-
-    // The allowance is in bits 0-231. The currency is in bits 232-255.
-    return (uint256(uint232(_data)), _data >> 232);
-  }
 
   /** 
     @notice
@@ -334,6 +281,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     @param _fundingCycleStore A contract storing all funding cycle configurations.
     @param _tokenStore A contract that manages token minting and burning.
     @param _splitsStore A contract that stores splits for each project.
+    @param _fundAccessStore A contract that stores fund access constraints for each project.
   */
   constructor(
     IJBOperatorStore _operatorStore,
@@ -341,13 +289,15 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     IJBDirectory _directory,
     IJBFundingCycleStore _fundingCycleStore,
     IJBTokenStore _tokenStore,
-    IJBSplitsStore _splitsStore
+    IJBSplitsStore _splitsStore,
+    IJBFundAccessStore _fundAccessStore
   ) JBOperatable(_operatorStore) {
     projects = _projects;
     directory = _directory;
     fundingCycleStore = _fundingCycleStore;
     tokenStore = _tokenStore;
     splitsStore = _splitsStore;
+    fundAccessStore = _fundAccessStore;
   }
 
   //*********************************************************************//
@@ -915,52 +865,8 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     // Set splits for the group.
     splitsStore.set(_projectId, _fundingCycle.configuration, _groupedSplits);
 
-    // Set distribution limits if there are any.
-    for (uint256 _i; _i < _fundAccessConstraints.length; ) {
-      JBFundAccessConstraints memory _constraints = _fundAccessConstraints[_i];
-
-      // If distribution limit value is larger than 232 bits, revert.
-      if (_constraints.distributionLimit > type(uint232).max) revert INVALID_DISTRIBUTION_LIMIT();
-
-      // If distribution limit currency value is larger than 24 bits, revert.
-      if (_constraints.distributionLimitCurrency > type(uint24).max)
-        revert INVALID_DISTRIBUTION_LIMIT_CURRENCY();
-
-      // If overflow allowance value is larger than 232 bits, revert.
-      if (_constraints.overflowAllowance > type(uint232).max) revert INVALID_OVERFLOW_ALLOWANCE();
-
-      // If overflow allowance currency value is larger than 24 bits, revert.
-      if (_constraints.overflowAllowanceCurrency > type(uint24).max)
-        revert INVALID_OVERFLOW_ALLOWANCE_CURRENCY();
-
-      // Set the distribution limit if there is one.
-      if (_constraints.distributionLimit > 0)
-        _packedDistributionLimitDataOf[_projectId][_fundingCycle.configuration][
-          _constraints.terminal
-        ][_constraints.token] =
-          _constraints.distributionLimit |
-          (_constraints.distributionLimitCurrency << 232);
-
-      // Set the overflow allowance if there is one.
-      if (_constraints.overflowAllowance > 0)
-        _packedOverflowAllowanceDataOf[_projectId][_fundingCycle.configuration][
-          _constraints.terminal
-        ][_constraints.token] =
-          _constraints.overflowAllowance |
-          (_constraints.overflowAllowanceCurrency << 232);
-
-      emit SetFundAccessConstraints(
-        _fundingCycle.configuration,
-        _fundingCycle.number,
-        _projectId,
-        _constraints,
-        msg.sender
-      );
-
-      unchecked {
-        ++_i;
-      }
-    }
+    // Set the funds access constraints.
+    fundAccessStore.setFundAccessConstraints(_fundAccessConstraints);
 
     return _fundingCycle.configuration;
   }
