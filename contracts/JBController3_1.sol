@@ -125,7 +125,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     @notice
     A contract that stores fund access constraints for each project. 
   */
-  IJBFundAccessStore public immutable override fundAccessStore;
+  IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
 
   /**
     @notice
@@ -281,7 +281,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     @param _fundingCycleStore A contract storing all funding cycle configurations.
     @param _tokenStore A contract that manages token minting and burning.
     @param _splitsStore A contract that stores splits for each project.
-    @param _fundAccessStore A contract that stores fund access constraints for each project.
+    @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
   */
   constructor(
     IJBOperatorStore _operatorStore,
@@ -290,14 +290,14 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     IJBFundingCycleStore _fundingCycleStore,
     IJBTokenStore _tokenStore,
     IJBSplitsStore _splitsStore,
-    IJBFundAccessStore _fundAccessStore
+    IJBFundAccessConstraintsStore _fundAccessConstraintsStore
   ) JBOperatable(_operatorStore) {
     projects = _projects;
     directory = _directory;
     fundingCycleStore = _fundingCycleStore;
     tokenStore = _tokenStore;
     splitsStore = _splitsStore;
-    fundAccessStore = _fundAccessStore;
+    fundAccessConstraintsStore = _fundAccessConstraintsStore;
   }
 
   //*********************************************************************//
@@ -866,7 +866,11 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     splitsStore.set(_projectId, _fundingCycle.configuration, _groupedSplits);
 
     // Set the funds access constraints.
-    fundAccessStore.setFundAccessConstraints(_fundAccessConstraints);
+    fundAccessConstraintsStore.setFor(
+      _projectId,
+      _fundingCycle.configuration,
+      _fundAccessConstraints
+    );
 
     return _fundingCycle.configuration;
   }

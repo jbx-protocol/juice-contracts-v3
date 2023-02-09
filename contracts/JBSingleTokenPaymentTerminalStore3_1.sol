@@ -625,7 +625,7 @@ contract JBSingleTokenPaymentTerminalStore3_1 is
     // Amount must be within what is still distributable.
     (uint256 _distributionLimitOf, uint256 _distributionLimitCurrencyOf) = IJBController3_1(
       directory.controllerOf(_projectId)
-    ).fundAccessStore().distributionLimitOf(
+    ).fundAccessConstraintsStore().distributionLimitOf(
         _projectId,
         fundingCycle.configuration,
         IJBSingleTokenPaymentTerminal(msg.sender),
@@ -703,7 +703,7 @@ contract JBSingleTokenPaymentTerminalStore3_1 is
     // There must be sufficient allowance available.
     (uint256 _overflowAllowanceOf, uint256 _overflowAllowanceCurrency) = IJBController3_1(
       directory.controllerOf(_projectId)
-    ).fundAccessStore().overflowAllowanceOf(
+    ).fundAccessConstraintsStore().overflowAllowanceOf(
         _projectId,
         fundingCycle.configuration,
         IJBSingleTokenPaymentTerminal(msg.sender),
@@ -884,7 +884,7 @@ contract JBSingleTokenPaymentTerminalStore3_1 is
     // Get a reference to the distribution limit during the funding cycle.
     (uint256 _distributionLimit, uint256 _distributionLimitCurrency) = IJBController3_1(
       directory.controllerOf(_projectId)
-    ).fundAccessStore().distributionLimitOf(
+    ).fundAccessConstraintsStore().distributionLimitOf(
         _projectId,
         _fundingCycle.configuration,
         _terminal,

@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import './abstract/JBControllerUtility.sol';
-import './interfaces/IJBFundAccessStore.sol';
+import './interfaces/IJBFundAccessConstraintsStore.sol';
 
 /**
   @notice
@@ -11,14 +11,18 @@ import './interfaces/IJBFundAccessStore.sol';
   
   @dev
   Adheres to -
-  IJBFundAccessStore: General interface for the generic controller methods in this contract that interacts with funding cycles and tokens according to the protocol's rules.
+  IJBFundAccessConstraintsStore: General interface for the generic controller methods in this contract that interacts with funding cycles and tokens according to the protocol's rules.
 
   @dev
   Inherits from -
   JBControllerUtility: Several functions in this contract can only be accessed by a project owner, or an address that has been preconfifigured to be an operator of the project.
   ERC165: Introspection on interface adherance. 
 */
-contract JBFundAccessStore is JBControllerUtility, ERC165, IJBFundAccessStore {
+contract JBFundAccessConstraintsStore is
+  JBControllerUtility,
+  ERC165,
+  IJBFundAccessConstraintsStore
+{
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
@@ -153,7 +157,7 @@ contract JBFundAccessStore is JBControllerUtility, ERC165, IJBFundAccessStore {
     @param _configuration The funding cycle configuration the constraints apply within.
     @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
   */
-  function setFundAccessConstraints(
+  function setFor(
     uint256 _projectId,
     uint256 _configuration,
     JBFundAccessConstraints[] memory _fundAccessConstraints

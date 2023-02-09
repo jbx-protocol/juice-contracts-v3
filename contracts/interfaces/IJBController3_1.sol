@@ -8,7 +8,7 @@ import './../structs/JBFundingCycleMetadata.sol';
 import './../structs/JBGroupedSplits.sol';
 import './../structs/JBProjectMetadata.sol';
 import './IJBDirectory.sol';
-import './IJBFundAccessStore.sol';
+import './IJBFundAccessConstraintsStore.sol';
 import './IJBFundingCycleStore.sol';
 import './IJBMigratable.sol';
 import './IJBPaymentTerminal.sol';
@@ -77,7 +77,7 @@ interface IJBController3_1 is IERC165 {
 
   function splitsStore() external view returns (IJBSplitsStore);
 
-  function fundAccessStore() external view returns (IJBFundAccessStore);
+  function fundAccessConstraintsStore() external view returns (IJBFundAccessConstraintsStore);
 
   function directory() external view returns (IJBDirectory);
 

@@ -5,7 +5,7 @@ import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import './../structs/JBFundAccessConstraints.sol';
 import './IJBPaymentTerminal.sol';
 
-interface IJBFundAccessStore is IERC165 {
+interface IJBFundAccessConstraintsStore is IERC165 {
   event SetFundAccessConstraints(
     uint256 indexed fundingCycleConfiguration,
     uint256 indexed projectId,
@@ -27,7 +27,7 @@ interface IJBFundAccessStore is IERC165 {
     address _token
   ) external view returns (uint256 overflowAllowance, uint256 overflowAllowanceCurrency);
 
-  function setFundAccessConstraints(
+  function setFor(
     uint256 _projectId,
     uint256 _configuration,
     JBFundAccessConstraints[] memory _fundAccessConstaints
