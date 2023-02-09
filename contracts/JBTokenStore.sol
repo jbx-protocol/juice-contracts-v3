@@ -279,7 +279,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
       unclaimedTotalSupplyOf[_projectId] = unclaimedTotalSupplyOf[_projectId] + _amount;
     }
 
-    // The total supply can't exceed the maximum value storable in a int256.
+    // The total supply can't exceed the maximum value storable in a uint224.
     if (totalSupplyOf(_projectId) > type(uint224).max) revert OVERFLOW_ALERT();
 
     emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, _preferClaimedTokens, msg.sender);
@@ -323,16 +323,16 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     // Get a reference to how many claimed tokens should be burned
     if (_claimedBalance != 0)
       if (_preferClaimedTokens)
-        // If prefer converted, redeem tokens before redeeming unclaimed tokens.
+        // If prefer converted, burn the claimed tokens before the unclaimed.
         _claimedTokensToBurn = _claimedBalance < _amount ? _claimedBalance : _amount;
-        // Otherwise, redeem unclaimed tokens before claimed tokens.
+        // Otherwise, burn unclaimed tokens before claimed tokens.
       else {
         unchecked {
           _claimedTokensToBurn = _unclaimedBalance < _amount ? _amount - _unclaimedBalance : 0;
         }
       }
 
-    // The amount of unclaimed tokens to redeem.
+    // The amount of unclaimed tokens to burn.
     uint256 _unclaimedTokensToBurn;
     unchecked {
       _unclaimedTokensToBurn = _amount - _claimedTokensToBurn;
