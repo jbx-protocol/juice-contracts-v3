@@ -30,6 +30,7 @@ npx hardhat run scripts/platform/verify.ts --network goerli
 npx hardhat run scripts/deploy/Deployer_v001.ts --network goerli
 npx hardhat run scripts/deploy/Deployer_v002.ts --network goerli
 npx hardhat run scripts/deploy/Deployer_v003.ts --network goerli
+...
 ```
 
 ## Differences
@@ -50,7 +51,25 @@ These commands will require a .env file to be placed at the root of the project.
 
 There are two sets of deployment scripts, one for the core platform in [scripts/platform](./scripts/platform/) and another set for the extended features in [scripts/deploy/](./scripts/deploy/). To deploy the core platform run `npx hardhat run scripts/platform/deploy.ts --network goerli` then `npx hardhat run scripts/platform/configure.ts --network goerli` and `npx hardhat run scripts/platform/verify.ts --network goerli`. The configure and verify steps can be run in parallel. The verification step is optional, it publishes the contract code to etherscan. It's worth reviewing the configuration script to make sure it's in line with what you require.
 
-To deploy the extra components... \[TBD\]
+Some contracts are not included in the above scripts. You'll need to separately run the following scripts to get the rest of them deployed. These contracts are optional.
+
+```bash
+npx hardhat run scripts/deploy/NFToken.ts --network goerli
+npx hardhat run scripts/deploy/RoleManager.ts --network goerli
+npx hardhat run scripts/deploy/VestingPlanManager.ts --network goerli
+```
+
+When deploying this platform with the intent of using the Svelte UI, also run
+
+```bash
+npx hardhat run scripts/platform/export.ts --network goerli
+```
+
+This creates files for that code to import which contain contract addresses and ABIs.
+
+## Economics
+
+There are some economic differences between this fork and the original. Notably it deploys a DAI payment terminal. This happens in the deploy script. There is also a new contract, `DaiHedgeDelegate` which allows projects to automatically maintain a DAI and Ether treasury subject to configuration which is described in more detail in the documentation of that contract.
 
 ## Extras
 
