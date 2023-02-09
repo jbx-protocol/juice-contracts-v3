@@ -310,7 +310,7 @@ contract MixedPaymentSplitter is Ownable {
   }
 
   //*********************************************************************//
-  // -------------------- priviledged transactions --------------------- //
+  // --------------------- privileged transactions --------------------- //
   //*********************************************************************//
 
   function addPayee(address _account, uint256 _shares) external onlyOwner {
