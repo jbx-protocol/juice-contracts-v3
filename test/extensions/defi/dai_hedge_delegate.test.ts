@@ -81,7 +81,7 @@ describe(`DAI hedge delegate workflow tests (forked ${testNetwork})`, () => {
         const twoEth = ethers.utils.parseEther('2');
         tx = await wethToken.connect(testAccounts[1]).deposit({ value: twoEth });
         await tx.wait();
-        tx = await wethToken.connect(testAccounts[1]).approve(uniswapRouter3Address, twoEth);
+        tx = await wethToken.connect(testAccounts[1]).approve(uniswapRouter3.address, twoEth);
         await tx.wait();
 
         const referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
@@ -92,7 +92,7 @@ describe(`DAI hedge delegate workflow tests (forked ${testNetwork})`, () => {
             fee: 3000,
             recipient: testAccounts[1].address,
             deadline: referenceTime + 60,
-            amountIn: twoEth,
+            amountIn: twoEth.sub('100000'),
             amountOutMinimum: 0,
             sqrtPriceLimitX96: 0
         };
