@@ -10,8 +10,13 @@ Contracts in this section are (alphabetically):
 - [DutchActionMachine](#dutchactionmachine) - Perpetual NFT minting Dutch auction.
 - [EnglishAuctionMachine](#englishauctionmachine) - Perpetual NFT minting English auction.
 - [NFToken](#nftoken) - Deployable NFT contract.
+- [NFUEdition](#nfuedition) - TBD.
 - [NFUToken](#nfutoken) - Deployable, upgradeable NFT contract.
+- [OperatorFilter](#operatorfilter) - TBD.
+- [RandomizedTokenIdProvider](#randomizedtokenidprovider) - TBD
+- [SequentialTokenIdProvider](#sequentialtokenidprovider) - TBD
 - [SupplyPriceResolver](#supplypriceresolver) - NFT pricing contract based on total supply.
+- [TraitToken](#traittoken) - TBD.
 
 ## NFToken
 
@@ -45,9 +50,25 @@ Several other features are available. `setContractURI(string memory _contractUri
 
 The `mint` functions require payment.
 
+## NFUEdition
+
+TBD
+
 ## NFUToken
 
 This contract is exactly like NFToken, but instead of a constructor collects parameters via an initializer function. U is for Upgradeable.
+
+## OperatorFilter
+
+TBD
+
+## RandomizedTokenIdProvider
+
+TBD
+
+## SequentialTokenIdProvider
+
+TBD
 
 ## SupplyPriceResolver
 
@@ -119,6 +140,6 @@ The constructor parameters are as follows.
 - jbxDirectory: Juicebox directory, used to transfer auction proceeds to the correct terminal.
 - token: Token contract to operate on.
 
-## OperatorFilter
+## TraitToken
 
-blah
+TBD

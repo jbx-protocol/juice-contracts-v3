@@ -274,21 +274,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
-    if (totalSupply == maxSupply) {
-      revert SUPPLY_EXHAUSTED();
-    }
-
-    if (isPaused) {
-      revert MINTING_PAUSED();
-    }
-
-    processPayment('', '', unitPrice);
-
-    unchecked {
-      ++totalSupply;
-    }
-    tokenId = generateTokenId(msg.sender, msg.value);
-    _mint(msg.sender, tokenId);
+    mintActual(msg.sender, '', '');
   }
 
   /**
@@ -308,21 +294,28 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
-    if (totalSupply == maxSupply) {
-      revert SUPPLY_EXHAUSTED();
-    }
+    mintActual(msg.sender, _memo, _metadata);
+  }
 
-    if (isPaused) {
-      revert MINTING_PAUSED();
-    }
-
-    processPayment(_memo, _metadata, unitPrice);
-
-    unchecked {
-      ++totalSupply;
-    }
-    tokenId = generateTokenId(msg.sender, msg.value);
-    _mint(msg.sender, tokenId);
+  /**
+   * @notice Mints a token to the provided account rather than the caller. Must be paid in Ether if price is non-zero.
+   *
+   * @dev Proceeds are forwarded to the default Juicebox terminal for the project id set in the constructor. Payment will fail if the terminal is not set in the jbx directory.
+   */
+  function mint(
+    address _account,
+    string calldata _memo,
+    bytes calldata _metadata
+  )
+    external
+    payable
+    virtual
+    nonReentrant
+    onlyDuringMintPeriod
+    callerNotBlocked(msg.sender)
+    returns (uint256 tokenId)
+  {
+    mintActual(_account, _memo, _metadata);
   }
 
   /**
@@ -368,7 +361,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   }
 
   //*********************************************************************//
-  // -------------------- priviledged transactions --------------------- //
+  // --------------------- privileged transactions --------------------- //
   //*********************************************************************//
 
   /**
@@ -510,6 +503,37 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     if (royaltyRate == 0) {
       royaltyRate = _royaltyRate;
     }
+  }
+
+  /**
+   * @notice Function to consolidate functionality for external mint calls.
+   *
+   * @dev External calls should be validated by modifiers like `onlyDuringMintPeriod` and `callerNotBlocked`.
+   *
+   * @param _account Address to assign the new token to.
+   * @param _memo JBX terminal payment memo.
+   * @param _metadata JBX terminal payment metadata.
+   */
+  function mintActual(
+    address _account,
+    string memory _memo,
+    bytes memory _metadata
+  ) internal virtual returns (uint256 tokenId) {
+    if (totalSupply == maxSupply) {
+      revert SUPPLY_EXHAUSTED();
+    }
+
+    if (isPaused) {
+      revert MINTING_PAUSED();
+    }
+
+    processPayment(_memo, _metadata, unitPrice);
+
+    unchecked {
+      ++totalSupply;
+    }
+    tokenId = generateTokenId(_account, msg.value);
+    _mint(_account, tokenId);
   }
 
   /**
