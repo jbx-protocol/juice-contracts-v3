@@ -182,8 +182,10 @@ contract TestRescueDistribute_Fork is Test {
         assertGe(_terminalBalanceAfter, _terminalBalance - _ethAmountDistributed);
         assertLe(_terminalBalanceAfter, _terminalBalance - (_ethAmountDistributed * 259 / 10000));
 
-        // // Check: reserved token balance in the v3.1 unchanged?
-        // assertEq(_reservedTokenV3_1After, _reservedTokenV3_1);
+        // Check: reserved token balance in the v3.1 unchanged?
+        assertEq(_reservedTokenV3_1After, _reservedTokenV3_1);
+
+// -------------- This one change actually (and is not zero before, we still have undistributed reserve):
 
         // // Check: reserved token balance in the v3 unchanged?
         // assertEq(_reservedTokenV3After, _reservedTokenV3);
