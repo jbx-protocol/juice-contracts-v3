@@ -151,7 +151,7 @@ contract JBFundAccessConstraintsStore is
     Sets a project's constraints for accessing treasury funds.
 
     @dev
-    Only a project's current controller can configure its funding cycles.
+    Only a project's current controller can set its fund access constraints.
 
     @param _projectId The ID of the project whose fund access constraints are being set.
     @param _configuration The funding cycle configuration the constraints apply within.
