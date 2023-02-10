@@ -69,11 +69,11 @@ contract Deployer_v007 is Deployer_v006 {
     nfuEditionSource = _nfuEditionSource;
     projectPayerSource = _projectPayerSource;
 
-    prices[deployDutchAuctionMachineKey] = 1000000000000000; // 0.001 eth
-    prices[deployEnglishAuctionMachineKey] = 1000000000000000; // 0.001 eth
-    prices[deployTraitTokenKey] = 1000000000000000; // 0.001 eth
-    prices[deployNFUEditionKey] = 1000000000000000; // 0.001 eth
-    prices[deployProjectPayerKey] = 1000000000000000; // 0.001 eth
+    prices[deployDutchAuctionMachineKey] = baseFee;
+    prices[deployEnglishAuctionMachineKey] = baseFee;
+    prices[deployTraitTokenKey] = baseFee;
+    prices[deployNFUEditionKey] = baseFee;
+    prices[deployProjectPayerKey] = baseFee;
   }
 
   /**

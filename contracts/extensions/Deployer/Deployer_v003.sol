@@ -40,9 +40,9 @@ contract Deployer_v003 is Deployer_v002 {
     englishAuctionSource = EnglishAuctionHouse(_englishAuctionSource);
     fixedPriceSaleSource = FixedPriceSale(_fixedPriceSaleSource);
 
-    prices[deployDutchAuctionKey] = 1000000000000000; // 0.001 eth
-    prices[deployEnglishAuctionKey] = 1000000000000000; // 0.001 eth
-    prices[deployFixedPriceSaleKey] = 1000000000000000; // 0.001 eth
+    prices[deployDutchAuctionKey] = baseFee;
+    prices[deployEnglishAuctionKey] = baseFee;
+    prices[deployFixedPriceSaleKey] = baseFee;
   }
 
   function deployDutchAuction(

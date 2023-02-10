@@ -21,7 +21,7 @@ contract Deployer_v002 is Deployer_v001 {
     __Ownable_init();
     __UUPSUpgradeable_init();
 
-    prices[deployMixedPaymentSplitterKey] = 1000000000000000; // 0.001 eth
+    prices[deployMixedPaymentSplitterKey] = baseFee;
   }
 
   function deployMixedPaymentSplitter(

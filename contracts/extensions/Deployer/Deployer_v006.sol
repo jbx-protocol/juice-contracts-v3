@@ -46,11 +46,11 @@ contract Deployer_v006 is Deployer_v005 {
     nfuTokenSource = _nfuTokenSource;
     tokenLiquidator = _tokenLiquidator;
 
-    prices[deployOpenTieredTokenUriResolverKey] = 1000000000000000; // 0.001 eth
-    prices[deployOpenTieredPriceResolverKey] = 1000000000000000; // 0.001 eth
-    prices[deployTieredTokenUriResolverKey] = 1000000000000000; // 0.001 eth
-    prices[deployTieredPriceResolverKey] = 1000000000000000; // 0.001 eth
-    prices[deployNFTRewardDataSourceKey] = 1000000000000000; // 0.001 eth
+    prices[deployOpenTieredTokenUriResolverKey] = baseFee;
+    prices[deployOpenTieredPriceResolverKey] = baseFee;
+    prices[deployTieredTokenUriResolverKey] = baseFee;
+    prices[deployTieredPriceResolverKey] = baseFee;
+    prices[deployNFTRewardDataSourceKey] = baseFee;
   }
 
   function deployOpenTieredTokenUriResolver(
