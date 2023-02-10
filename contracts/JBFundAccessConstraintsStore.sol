@@ -160,42 +160,40 @@ contract JBFundAccessConstraintsStore is
   function setFor(
     uint256 _projectId,
     uint256 _configuration,
-    JBFundAccessConstraints[] memory _fundAccessConstraints
+    JBFundAccessConstraints[] calldata _fundAccessConstraints
   ) external override onlyController(_projectId) {
     // Save the number of constraints.
     uint256 _numberOfFundAccessConstraints = _fundAccessConstraints.length;
 
     // Set distribution limits if there are any.
     for (uint256 _i; _i < _numberOfFundAccessConstraints; ) {
-      JBFundAccessConstraints memory _constraints = _fundAccessConstraints[_i];
-
       // If distribution limit value is larger than 232 bits, revert.
-      if (_constraints.distributionLimit > type(uint232).max) revert INVALID_DISTRIBUTION_LIMIT();
+      if (_fundAccessConstraints[_i].distributionLimit > type(uint232).max) revert INVALID_DISTRIBUTION_LIMIT();
 
       // If distribution limit currency value is larger than 24 bits, revert.
-      if (_constraints.distributionLimitCurrency > type(uint24).max)
+      if (_fundAccessConstraints[_i].distributionLimitCurrency > type(uint24).max)
         revert INVALID_DISTRIBUTION_LIMIT_CURRENCY();
 
       // If overflow allowance value is larger than 232 bits, revert.
-      if (_constraints.overflowAllowance > type(uint232).max) revert INVALID_OVERFLOW_ALLOWANCE();
+      if (_fundAccessConstraints[_i].overflowAllowance > type(uint232).max) revert INVALID_OVERFLOW_ALLOWANCE();
 
       // If overflow allowance currency value is larger than 24 bits, revert.
-      if (_constraints.overflowAllowanceCurrency > type(uint24).max)
+      if (_fundAccessConstraints[_i].overflowAllowanceCurrency > type(uint24).max)
         revert INVALID_OVERFLOW_ALLOWANCE_CURRENCY();
 
       // Set the distribution limit if there is one.
-      if (_constraints.distributionLimit > 0)
-        _packedDistributionLimitDataOf[_projectId][_configuration][_constraints.terminal][
-          _constraints.token
-        ] = _constraints.distributionLimit | (_constraints.distributionLimitCurrency << 232);
+      if (_fundAccessConstraints[_i].distributionLimit > 0)
+        _packedDistributionLimitDataOf[_projectId][_configuration][_fundAccessConstraints[_i].terminal][
+          _fundAccessConstraints[_i].token
+        ] = _fundAccessConstraints[_i].distributionLimit | (_fundAccessConstraints[_i].distributionLimitCurrency << 232);
 
       // Set the overflow allowance if there is one.
-      if (_constraints.overflowAllowance > 0)
-        _packedOverflowAllowanceDataOf[_projectId][_configuration][_constraints.terminal][
-          _constraints.token
-        ] = _constraints.overflowAllowance | (_constraints.overflowAllowanceCurrency << 232);
+      if (_fundAccessConstraints[_i].overflowAllowance > 0)
+        _packedOverflowAllowanceDataOf[_projectId][_configuration][_fundAccessConstraints[_i].terminal][
+          _fundAccessConstraints[_i].token
+        ] = _fundAccessConstraints[_i].overflowAllowance | (_fundAccessConstraints[_i].overflowAllowanceCurrency << 232);
 
-      emit SetFundAccessConstraints(_configuration, _projectId, _constraints, msg.sender);
+      emit SetFundAccessConstraints(_configuration, _projectId, _fundAccessConstraints[_i], msg.sender);
 
       unchecked {
         ++_i;
