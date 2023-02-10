@@ -6,7 +6,7 @@ import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import * as helpers from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { getContractRecord } from '../../../scripts/lib/lib';
+import { getContractRecord, getPlatformConstant } from '../../../scripts/lib/lib';
 
 const testNetwork = 'goerli';
 
@@ -34,8 +34,15 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         [deployer, ...accounts] = await ethers.getSigners();
 
         if (hre.network.name === 'hardhat') {
+            // we're on a fork, we need to impersonate the deployer
+            const deployerAddress = getPlatformConstant('primaryBeneficiary', '', platformDeploymentLogPath);
+            await hre.network.provider.request({ method: 'hardhat_impersonateAccount', params: [deployerAddress] });
+            deployer = await ethers.getSigner(deployerAddress);
+
             await helpers.setBalance(deployer.address, ethers.utils.parseEther('10').toHexString());
             await helpers.setBalance(accounts[0].address, ethers.utils.parseEther('10').toHexString());
+
+            console.log(`impersonated ${deployerAddress}`);
         }
 
     });
@@ -56,6 +63,30 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         deployerProxy = await ethers.getContractAt(deployerProxyInfo.abi, deployerProxyInfo.address);
     });
 
+    it('Platform fees', async () => {
+        const JBOperations_PROCESS_FEES = 5;
+
+        expect(await jbxProjects.ownerOf(1)).to.equal(deployer.address);
+
+        expect(await jbxOperatorStore.permissionsOf(deployer.address, deployer.address, 1)).to.equal(0);
+        await expect(jbxOperatorStore.connect(deployer).setOperator({ operator: deployer.address, domain: 1, permissionIndexes: [JBOperations_PROCESS_FEES] }))
+            .to.emit(jbxOperatorStore, 'SetOperator')
+            .withArgs(deployer.address, deployer.address, 1, anyValue, 32)
+        expect(await jbxOperatorStore.permissionsOf(deployer.address, deployer.address, 1)).to.equal(32);
+        expect(await jbxOperatorStore.hasPermission(deployer.address, deployer.address, 1, JBOperations_PROCESS_FEES)).to.equal(true);
+
+        const actionKey = ethers.utils.solidityKeccak256(['string'], ['deployNFToken']);
+        await expect(deployerProxy.connect(accounts[1]).updatePrice(actionKey, 0)).to.be.reverted;
+
+        let price = await deployerProxy.prices(actionKey);
+        expect(price).to.equal(defaultOperationFee);
+
+        await expect(deployerProxy.connect(deployer).updatePrice(actionKey, 0)).not.to.be.reverted;
+
+        price = await deployerProxy.prices(actionKey);
+        expect(price).to.equal(0);
+    });
+
     it('Deploy NFToken (v1)', async () => {
         let owner = hre.network.name === 'hardhat' ? accounts[0] : deployer;
 
@@ -64,28 +95,19 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         const symbol = 'SNFT';
         const baseUri = 'ipfs://contract-metadata';
         const contractUri = 'ipfs://contract-metadata';
-        const jbxProjectId = 2;
         const maxSupply = 100;
         const unitPrice = ethers.utils.parseEther('0.0001');
         const mintAllowance = 10;
         const reveal = false;
-
-        // const tx = deployerProxy.connect(owner)
-        //     .deployNFToken(ownerAddress, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance, reveal, { value: defaultOperationFee });
-
-        // await expect(tx).not.to.be.reverted;
-        // await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', anyValue);
 
         const tx = await deployerProxy.connect(owner)
             .deployNFToken(ownerAddress, name, symbol, baseUri, contractUri, maxSupply, unitPrice, mintAllowance, reveal, { value: defaultOperationFee });
 
         const receipt = await tx.wait();
 
-        console.log('tx')
-        console.log(tx);
-        console.log('receipt')
-        console.log(receipt);
-        console.log('-----')
+        const tokenAddress = receipt.events.filter(e => e.event === 'Deployment' && e.args[0] === 'NFToken')[0].args[1];
+
+        await expect(tx).to.emit(deployerProxy, 'Deployment').withArgs('NFToken', tokenAddress);
     });
 
     it('Deploy MixedPaymentSplitter (v2)', async () => {
@@ -131,13 +153,12 @@ describe(`Deployer workflow tests (forked ${testNetwork})`, () => {
         const symbol = 'SNFT';
         const baseUri = 'ipfs://contract-metadata';
         const contractUri = 'ipfs://contract-metadata';
-        const jbxProjectId = 2;
         const maxSupply = 100;
         const unitPrice = ethers.utils.parseEther('0.0001');
         const mintAllowance = 10;
 
-        const tx = deployerProxy.connect(accounts[0]).deployNFUToken(owner, name, symbol, baseUri, contractUri, jbxProjectId, jbxDirectory.address, maxSupply, unitPrice, mintAllowance);
-        const receipt = await (await tx).wait();
+        const tx = await deployerProxy.connect(accounts[0]).deployNFUToken(owner, name, symbol, baseUri, contractUri, maxSupply, unitPrice, mintAllowance);
+        const receipt = await tx.wait();
 
         const tokenAddress = receipt.events.filter(e => e.event === 'Deployment' && e.args[0] === 'NFUToken')[0].args[1];
 
