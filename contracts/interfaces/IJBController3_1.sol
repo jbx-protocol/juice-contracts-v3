@@ -7,6 +7,7 @@ import './../structs/JBFundingCycleData.sol';
 import './../structs/JBFundingCycleMetadata.sol';
 import './../structs/JBGroupedSplits.sol';
 import './../structs/JBProjectMetadata.sol';
+import './IJBController3_0_1.sol';
 import './IJBDirectory.sol';
 import './IJBFundAccessConstraintsStore.sol';
 import './IJBFundingCycleStore.sol';
@@ -15,7 +16,7 @@ import './IJBPaymentTerminal.sol';
 import './IJBSplitsStore.sol';
 import './IJBTokenStore.sol';
 
-interface IJBController3_1 is IERC165 {
+interface IJBController3_1 is IJBController3_0_1, IERC165 {
   event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
 
   event LaunchFundingCycles(uint256 configuration, uint256 projectId, string memo, address caller);

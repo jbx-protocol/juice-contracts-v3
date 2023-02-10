@@ -92,13 +92,12 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         );
     }
 
-    function testHeldFeeReimburse(uint256 payAmountInWei, uint16 fee, uint256 feeDiscount) external {
-        // Assuming we don't revert when distributing too much
-        vm.assume(payAmountInWei <= _targetInWei);
-        // Avoid rounding error
-        vm.assume(payAmountInWei > 1);
-        vm.assume(feeDiscount <= jbLibraries().MAX_FEE());
-        vm.assume(fee <= 50_000_000); // fee cap
+    function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
+        // Assuming we don't revert when distributing too much and avoid rounding errors
+        payAmountInWei = bound(payAmountInWei, 1, _targetInWei);
+        fee = bound(fee, 0, 50_000_000);
+        feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
+        
         address _userWallet = address(1234);
 
         vm.prank(multisig());
@@ -153,8 +152,8 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             "lfg"
         );
 
-        // verify: should have held the fee
-        if (fee > 0) {
+        // verify: should have held the fee, if there is one
+        if (discountedFee > 0) {
             assertEq(_terminal.heldFeesOf(_projectId)[0].fee, _terminal.fee());
             assertEq(_terminal.heldFeesOf(_projectId)[0].feeDiscount, feeDiscount);
             assertEq(_terminal.heldFeesOf(_projectId)[0].amount, payAmountInWei);

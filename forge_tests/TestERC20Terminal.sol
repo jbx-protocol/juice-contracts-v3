@@ -156,8 +156,8 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(msg.sender, projectId), 0);
     }
 
-    function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint96 BALANCE) public {
-        vm.assume(jbToken().totalSupply() >= BALANCE);
+    function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
+        BALANCE = bound(BALANCE, 0, jbToken().totalSupply());
 
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 

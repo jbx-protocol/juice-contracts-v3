@@ -80,31 +80,36 @@ contract TestDelegates_Local is TestBaseWorkflow {
         );
     }
 
-    function testPayDelegates(uint128[] memory payDelegateAmounts) public {
-        JBPayDelegateAllocation[] memory _allocations = new JBPayDelegateAllocation[](
-      payDelegateAmounts.length
-    );
-        address _beneficiary = address(bytes20(keccak256("beneficiary")));
-        uint256 _paySum;
+    function testPayDelegates(uint256 _numberOfAllocations, uint256 _totalToAllocate) public {
+        _numberOfAllocations = bound(_numberOfAllocations, 1, 5);
+
+        JBPayDelegateAllocation[] memory _allocations = new JBPayDelegateAllocation[](_numberOfAllocations);
+        uint256[] memory payDelegateAmounts = new uint256[](_numberOfAllocations);
+
+        _beneficiary = address(bytes20(keccak256("beneficiary")));
+
 
         // Check that we are not going to overflow uint256 and calculate the total pay amount
-        for (uint256 i = 0; i < payDelegateAmounts.length; i++) {
-            vm.assume(type(uint256).max - _paySum > payDelegateAmounts[i]);
-            _paySum += payDelegateAmounts[i];
+        _totalToAllocate = bound(_totalToAllocate, payDelegateAmounts.length, type(uint256).max - 1);
+        uint256 _paySum = _totalToAllocate;
+
+        // Allocate descending amounts (by half)
+        for (uint256 i ; i < payDelegateAmounts.length - 1; i++) {
+            payDelegateAmounts[i] = _totalToAllocate / (payDelegateAmounts.length * 2);
+            _totalToAllocate -= payDelegateAmounts[i];
         }
 
-        // We can't do a pay without paying
-        vm.assume(_paySum > 0);
+        // Rest to allocate into the last allocations
+        payDelegateAmounts[payDelegateAmounts.length - 1] = _totalToAllocate;
 
-        (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata) =
+        (JBFundingCycle memory fundingCycle, ) =
             controller.currentFundingCycleOf(_projectId);
         for (uint256 i = 0; i < payDelegateAmounts.length; i++) {
             address _delegateAddress = address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
 
             _allocations[i] = JBPayDelegateAllocation(IJBPayDelegate(_delegateAddress), payDelegateAmounts[i]);
 
-            bytes memory _metadata;
-            JBDidPayData memory _data = JBDidPayData(
+            JBDidPayData memory _didPayData = JBDidPayData(
                 _beneficiary,
                 _projectId,
                 fundingCycle.configuration,
@@ -124,7 +129,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
                 _beneficiary,
                 false,
                 "",
-                _metadata
+                new bytes(0) // empty metadata
             );
 
             // Mock the delegate
@@ -132,12 +137,12 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
             // Assert that the delegate gets called with the expected value
             vm.expectCall(
-                _delegateAddress, payDelegateAmounts[i], abi.encodeWithSelector(IJBPayDelegate.didPay.selector, _data)
+                _delegateAddress, payDelegateAmounts[i], abi.encodeWithSelector(IJBPayDelegate.didPay.selector, _didPayData)
             );
 
             // Expect an event to be emitted for every delegate
             vm.expectEmit(true, true, true, true);
-            emit DelegateDidPay(IJBPayDelegate(_delegateAddress), _data, payDelegateAmounts[i], _beneficiary);
+            emit DelegateDidPay(IJBPayDelegate(_delegateAddress), _didPayData, payDelegateAmounts[i], _beneficiary);
         }
 
         vm.mockCall(
