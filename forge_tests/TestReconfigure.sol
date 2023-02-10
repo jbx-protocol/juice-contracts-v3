@@ -286,9 +286,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }
     }
 
-    function testReconfigureProjectFuzzRates(uint96 RESERVED_RATE, uint96 REDEMPTION_RATE, uint96 BALANCE) public {
-        vm.assume(payable(msg.sender).balance / 2 >= BALANCE);
-        vm.assume(100 < BALANCE);
+    function testReconfigureProjectFuzzRates(uint96 RESERVED_RATE, uint96 REDEMPTION_RATE, uint256 BALANCE) public {
+        BALANCE = bound(BALANCE, 100, payable(msg.sender).balance / 2);
 
         address _beneficiary = address(69420);
         uint256 projectId = controller.launchProjectFor(

@@ -86,7 +86,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         bool burnPreferClaimed
     ) public {
         // Might overflow in processed token tracker if burn amount >= max int256 (ie (2**256)/2 -1 )
-        vm.assume(burnAmount < (2 ** 256) / 2);
+        burnAmount = bound(burnAmount, 0, ((2 ** 256) / 2) - 1);
 
         // calls will originate from projectOwner addr
         vm.startPrank(_projectOwner);
