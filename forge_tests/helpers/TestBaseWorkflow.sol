@@ -238,6 +238,8 @@ contract TestBaseWorkflow is Test {
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
+        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
+
         _jbController3_1 = new JBController3_1(
             _jbOperatorStore,
             _jbProjects,
