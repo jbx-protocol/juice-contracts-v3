@@ -89,14 +89,14 @@ async function main() {
     logger.info('deployment complete');
     logger.info('deploying DAOLABS extensions');
 
-    const jbControllerAddress = getContractRecord('JBSplitsStore').address;
-    await deployRecordContract('DaiTreasuryDelegate', [jbControllerAddress], deployer);
-
     await deployRecordContract('RoleManager', [jbDirectoryAddress, jbOperatorStoreAddress, jbProjectsAddress, deployer.address], deployer);
 
     await deployRecordContract('VestingPlanManager', [], deployer);
 
+    await deployRecordContract('PlatformDiscountManager', [jbDirectoryAddress, jbProjectsAddress, jbOperatorStoreAddress], deployer);
+
     await recordContractAbi('OperatorFilter', deployer);
+    await recordContractAbi('NFToken', deployer);
 
     logger.info('deployment complete');
 }
