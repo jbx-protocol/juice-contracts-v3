@@ -30,7 +30,7 @@ function makeFundingAccessConstraints({
   return constraints;
 }
 
-describe.only('JBFundAccessConstraintsStore::setFor(...)', function () {
+describe('JBFundAccessConstraintsStore::setFor(...)', function () {
   const PROJECT_ID = 1;
   const DISTRIBUTION_LIMIT = ethers.BigNumber.from('12345');
   const DISTRIBUTION_LIMIT_CURRENCY = ethers.BigNumber.from('1');
