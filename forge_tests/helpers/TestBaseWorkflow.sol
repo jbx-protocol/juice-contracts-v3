@@ -7,7 +7,9 @@ import "@juicebox/JBController.sol";
 import "@juicebox/JBController3_1.sol";
 import "@juicebox/JBDirectory.sol";
 import "@juicebox/JBETHPaymentTerminal.sol";
+import "@juicebox/JBETHPaymentTerminal3_1.sol";
 import "@juicebox/JBERC20PaymentTerminal.sol";
+import "@juicebox/JBERC20PaymentTerminal3_1.sol";
 import "@juicebox/JBSingleTokenPaymentTerminalStore.sol";
 import "@juicebox/JBSingleTokenPaymentTerminalStore3_1.sol";
 import "@juicebox/JBFundingCycleStore.sol";
@@ -79,11 +81,11 @@ contract TestBaseWorkflow is Test {
 
     // JBETHPaymentTerminal
     JBETHPaymentTerminal private _jbETHPaymentTerminal;
-    JBETHPaymentTerminal private _jbETHPaymentTerminal3_1;
+    JBETHPaymentTerminal3_1 private _jbETHPaymentTerminal3_1;
 
     // JBERC20PaymentTerminal
     JBERC20PaymentTerminal private _jbERC20PaymentTerminal;
-    JBERC20PaymentTerminal private _jbERC20PaymentTerminal3_1;
+    JBERC20PaymentTerminal3_1 private _jbERC20PaymentTerminal3_1;
     // AccessJBLib
     AccessJBLib private _accessJBLib;
 
@@ -147,12 +149,12 @@ contract TestBaseWorkflow is Test {
 
     function jbETHPaymentTerminal() internal returns (JBETHPaymentTerminal) {
         if (isUsingJbController3_0()) return _jbETHPaymentTerminal;
-        else return _jbETHPaymentTerminal3_1;
+        else return JBETHPaymentTerminal(address(_jbETHPaymentTerminal3_1));
     }
 
     function jbERC20PaymentTerminal() internal returns (JBERC20PaymentTerminal) {
         if (isUsingJbController3_0()) return _jbERC20PaymentTerminal;
-        else return _jbERC20PaymentTerminal3_1;
+        else return JBERC20PaymentTerminal(address(_jbERC20PaymentTerminal3_1));
     }
 
     function jbToken() internal view returns (JBToken) {
@@ -277,7 +279,7 @@ contract TestBaseWorkflow is Test {
         vm.label(address(_jbETHPaymentTerminal), "JBETHPaymentTerminal");
 
         // JBETHPaymentTerminal
-        _jbETHPaymentTerminal3_1 = new JBETHPaymentTerminal(
+        _jbETHPaymentTerminal3_1 = new JBETHPaymentTerminal3_1(
       _accessJBLib.ETH(),
       _jbOperatorStore,
       _jbProjects,
@@ -311,8 +313,8 @@ contract TestBaseWorkflow is Test {
     );
         vm.label(address(_jbERC20PaymentTerminal), "JBERC20PaymentTerminal");
 
-        // JBERC20PaymentTerminal
-        _jbERC20PaymentTerminal3_1 = new JBERC20PaymentTerminal(
+    // JBERC20PaymentTerminal
+    _jbERC20PaymentTerminal3_1 = new JBERC20PaymentTerminal3_1(
       _jbToken,
       _accessJBLib.ETH(), // currency
       _accessJBLib.ETH(), // base weight currency
@@ -325,7 +327,8 @@ contract TestBaseWorkflow is Test {
       _jbPaymentTerminalStore3_1,
       _multisig
     );
-        vm.label(address(_jbERC20PaymentTerminal3_1), "JBERC20PaymentTerminal3_1");
+
+    vm.label(address(_jbERC20PaymentTerminal3_1), "JBERC20PaymentTerminal3_1");
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so
