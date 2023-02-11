@@ -1284,6 +1284,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
             _projectMetadata
           )
         {} catch {
+          // Trigger any inhereted post-transfer cancelation logic.
+          _cancelTransferTo(address(_terminal), netPayoutAmount);
+
           // Set the net payout amount to 0 to signal the reversion.
           netPayoutAmount = 0;
 
