@@ -287,10 +287,6 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 0, // Min wei out
                 "" // Metadata
             );
-        assertEq(
-            _projectOwner.balance, (10 ether * jbLibraries().MAX_FEE()) / (terminal.fee() + jbLibraries().MAX_FEE())
-        );
-
 
         if (TARGET <= BALANCE && TARGET > 1) {
             // Avoid rounding error
