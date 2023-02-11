@@ -64,7 +64,8 @@ contract PlatformDiscountManager is JBOperatable {
     IJBProjects _jbxProjects,
     IJBOperatorStore _jbxOperatorStore
   ) {
-    operatorStore = _jbxOperatorStore;
+    operatorStore = _jbxOperatorStore; // JBOperatable
+
     jbxDirectory = _jbxDirectory;
     jbxProjects = _jbxProjects;
   }

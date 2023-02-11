@@ -67,6 +67,8 @@ npx hardhat run scripts/platform/export.ts --network goerli
 
 This creates files for that code to import which contain contract addresses and ABIs.
 
+When making new deployments, update the forking configuration in `hardhat.config.ts`.
+
 ## Economics
 
 There are some economic differences between this fork and the original. Notably it deploys a DAI payment terminal. This happens in the deploy script. There is also a new contract, `DaiHedgeDelegate` which allows projects to automatically maintain a DAI and Ether treasury subject to configuration which is described in more detail in the documentation of that contract.
