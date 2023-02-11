@@ -239,16 +239,29 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.prank(_projectOwner); // Prank only next call
-        terminal.useAllowanceOf(
-            projectId,
-            ALLOWANCE,
-            1, // Currency
-            address(0), //token (unused)
-            0, // Min wei out
-            payable(msg.sender), // Beneficiary
-            "MEMO"
-        );
-
+        if (isUsingJbController3_0())
+            terminal.useAllowanceOf(
+                projectId,
+                ALLOWANCE,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                payable(msg.sender), // Beneficiary
+                "MEMO"
+            );
+        else
+         IJBPayoutRedemptionPaymentTerminal3_1(address(terminal))
+            .useAllowanceOf(
+                projectId,
+                ALLOWANCE,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                payable(msg.sender), // Beneficiary
+                "MEMO",
+                ""
+            );
+            
         if (BALANCE > 1 && !willRevert) {
             assertEq(
                 jbToken().balanceOf(msg.sender),
@@ -268,14 +281,25 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.prank(_projectOwner);
-        terminal.distributePayoutsOf(
-            projectId,
-            TARGET,
-            1, // Currency
-            address(0), //token (unused)
-            0, // Min wei out
-            "Foundry payment" // Memo
-        );
+        if (isUsingJbController3_0())
+            terminal.distributePayoutsOf(
+                projectId,
+                TARGET,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "Foundry payment" // Memo
+            );
+        else 
+            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal))
+            .distributePayoutsOf(
+                projectId,
+                TARGET,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "Foundry payment" // Memo
+            );
         // Funds leaving the ecosystem -> fee taken
         if (TARGET <= BALANCE && TARGET > 1) {
             assertEq(
