@@ -107,15 +107,28 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         // Discretionary use of overflow allowance by project owner (allowance = 5ETH)
         vm.prank(_projectOwner); // Prank only next call
-        terminal.useAllowanceOf(
-            projectId,
-            5 * 10 ** 18,
-            1, // Currency
-            address(0), //token (unused)
-            0, // Min wei out
-            payable(msg.sender), // Beneficiary
-            "MEMO"
-        );
+        if (isUsingJbController3_0())
+            terminal.useAllowanceOf(
+                projectId,
+                5 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                payable(msg.sender), // Beneficiary
+                "MEMO"
+            );
+         else 
+            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+                projectId,
+                5 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                payable(msg.sender), // Beneficiary
+                "MEMO",
+                bytes('')
+            );
+
         assertEq(
             jbToken().balanceOf(msg.sender),
             PRBMath.mulDiv(5 * 10 ** 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee())
@@ -124,14 +137,26 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         // Distribute the funding target ETH -> splits[] is empty -> everything in left-over, to project owner
         uint256 initBalance = jbToken().balanceOf(_projectOwner);
         vm.prank(_projectOwner);
-        terminal.distributePayoutsOf(
-            projectId,
-            10 * 10 ** 18,
-            1, // Currency
-            address(0), //token (unused)
-            0, // Min wei out
-            "Foundry payment" // Memo
-        );
+
+        if (isUsingJbController3_0())
+              terminal.distributePayoutsOf(
+                projectId,
+                10 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "Foundry payment" // Memo
+            );
+        else 
+            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+                projectId,
+                10 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "" // metadata
+            );
+      
         // Funds leaving the ecosystem -> fee taken
         assertEq(
             jbToken().balanceOf(_projectOwner),
