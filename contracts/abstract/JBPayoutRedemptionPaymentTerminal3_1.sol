@@ -1344,15 +1344,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
-    // Trigger any inherited pre-transfer logic.
-    _beforeTransferTo(address(_terminal), _amount);
-
     // If this terminal's token is ETH, send it in msg.value.
     uint256 _payableValue = token == JBTokens.ETH ? _amount : 0;
 
     // Send the projectId in the metadata.
     bytes memory _projectMetadata = new bytes(32);
     _projectMetadata = bytes(abi.encodePacked(_from));
+
+    // Trigger any inherited pre-transfer logic if funds will be transferred.
+    if (address(_terminal) != address(this))
+       _beforeTransferTo(address(_terminal), _amount);
 
     try
       // Send the fee.
