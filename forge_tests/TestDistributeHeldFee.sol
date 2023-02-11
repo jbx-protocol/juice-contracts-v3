@@ -176,14 +176,27 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         uint256 heldFee = payAmountInWei
             - PRBMath.mulDiv(payAmountInWei, jbLibraries().MAX_FEE(), discountedFee + jbLibraries().MAX_FEE()); // no discount
         uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
-        _terminal.addToBalanceOf{value: payAmountInWei}(
-            _projectId,
-            payAmountInWei,
-            address(0),
-            "thanks for all the fish",
-            /* _delegateMetadata */
-            new bytes(0)
-        );
+
+        if (isUsingJbController3_0()) 
+            _terminal.addToBalanceOf{value: payAmountInWei}(
+                _projectId,
+                payAmountInWei,
+                address(0),
+                "thanks for all the fish",
+                /* _delegateMetadata */
+                new bytes(0)
+            );
+        else 
+            IJBFeeHoldingTerminal(address(_terminal)).addToBalanceOf{value: payAmountInWei}(
+                _projectId,
+                payAmountInWei,
+                address(0),
+                /* _shouldRefundHeldFees */
+                true,
+                "thanks for all the fish",
+                /* _delegateMetadata */
+                new bytes(0)
+            );
 
         // verify: project should get the fee back (plus the addToBalance amount)
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + heldFee + payAmountInWei);
