@@ -85,7 +85,36 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        ERC20terminal = jbERC20PaymentTerminal();
+        if (isUsingJbController3_0()) {
+            ERC20terminal = new JBERC20PaymentTerminal(
+                jbToken(),
+                jbLibraries().USD(), // currency
+                jbLibraries().ETH(), // base weight currency
+                1, // JBSplitsGroupe
+                jbOperatorStore(),
+                jbProjects(),
+                jbDirectory(),
+                jbSplitsStore(),
+                jbPrices(),
+                jbPaymentTerminalStore(),
+                multisig()
+            );
+        }else{
+            ERC20terminal = JBERC20PaymentTerminal(address(new JBERC20PaymentTerminal3_1(
+                jbToken(),
+                jbLibraries().USD(), // currency
+                jbLibraries().ETH(), // base weight currency
+                1, // JBSplitsGroupe
+                jbOperatorStore(),
+                jbProjects(),
+                jbDirectory(),
+                jbSplitsStore(),
+                jbPrices(),
+                jbPaymentTerminalStore(),
+                multisig()
+            )));
+        }
+        
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 
         ETHterminal = jbETHPaymentTerminal();
