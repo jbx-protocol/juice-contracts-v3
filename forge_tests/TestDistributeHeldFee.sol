@@ -141,16 +141,28 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        _terminal.distributePayoutsOf(
-            _projectId,
-            payAmountInWei,
-            jbLibraries().ETH(),
-            address(0), //token (unused)
-            /*min out*/
-            0,
-            /*LFG*/
-            "lfg"
-        );
+        if (isUsingJbController3_0())
+            _terminal.distributePayoutsOf(
+                _projectId,
+                payAmountInWei,
+                jbLibraries().ETH(),
+                address(0), //token (unused)
+                /*min out*/
+                0,
+                /*LFG*/
+                "lfg"
+            );
+        else 
+            IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
+               _projectId,
+                payAmountInWei,
+                jbLibraries().ETH(),
+                address(0), //token (unused)
+                /*min out*/
+                0,
+                ""
+            );
+        
 
         // verify: should have held the fee, if there is one
         if (discountedFee > 0) {
@@ -246,16 +258,28 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        _terminal.distributePayoutsOf(
-            _projectId,
-            payAmountInWei,
-            jbLibraries().ETH(),
-            address(0), //token (unused)
-            /*min out*/
-            0,
-            /*LFG*/
-            "lfg"
-        );
+        if (isUsingJbController3_0())
+            _terminal.distributePayoutsOf(
+               _projectId,
+                payAmountInWei,
+                jbLibraries().ETH(),
+                address(0), //token (unused)
+                /*min out*/
+                0,
+                /*LFG*/
+                "lfg"
+            );
+        else 
+            IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
+               _projectId,
+                payAmountInWei,
+                jbLibraries().ETH(),
+                address(0), //token (unused)
+                /*min out*/
+                0,
+                /*LFG*/
+                "lfg"
+            );
 
         // Verify that a fee was held
         assertEq(_terminal.heldFeesOf(_projectId).length, 1);
