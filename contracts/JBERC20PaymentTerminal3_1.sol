@@ -109,6 +109,17 @@ contract JBERC20PaymentTerminal3_1 is JBPayoutRedemptionPaymentTerminal3_1 {
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
   function _beforeTransferTo(address _to, uint256 _amount) internal override {
-    IERC20(token).safeApprove(_to, _amount);
+    IERC20(token).safeIncreaseAllowance(_to, _amount);
+  }
+
+  /** 
+    @notice
+    Logic to be triggered if a transfer should be undone
+
+    @param _to The address to which the transfer went.
+    @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
+  */
+  function _cancelTransferTo(address _to, uint256 _amount) internal override {
+    IERC20(token).safeDecreaseAllowance(_to, _amount);
   }
 }

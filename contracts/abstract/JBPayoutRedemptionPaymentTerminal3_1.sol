@@ -757,6 +757,18 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     _amount; // Prevents unused var compiler and natspec complaints.
   }
 
+  /** 
+    @notice
+    Logic to be triggered if a transfer should be undone
+
+    @param _to The address to which the transfer went.
+    @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
+  */
+  function _cancelTransferTo(address _to, uint256 _amount) internal virtual {
+    _to; // Prevents unused var compiler and natspec complaints.
+    _amount; // Prevents unused var compiler and natspec complaints.
+  }
+
   /**
     @notice
     Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -1204,6 +1216,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       try
         _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data)
       {} catch {
+        // Trigger any inhereted post-transfer cancelation logic.
+        _cancelTransferTo(address(_split.allocator), netPayoutAmount);
+
         // Set the net payout amount to 0 to signal the reversion.
         netPayoutAmount = 0;
 
@@ -1247,6 +1262,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
             _projectMetadata
           )
         {} catch {
+          // Trigger any inhereted post-transfer cancelation logic.
+          _cancelTransferTo(address(_terminal), netPayoutAmount);
+
           // Set the net payout amount to 0 to signal the reversion.
           netPayoutAmount = 0;
 
@@ -1368,6 +1386,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         _projectMetadata
       )
     {} catch {
+      // Trigger any inhereted post-transfer cancelation logic if the pre-transfer logic was triggered.
+      if (address(_terminal) != address(this))
+        _cancelTransferTo(address(_terminal), _amount);
+
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
     }
