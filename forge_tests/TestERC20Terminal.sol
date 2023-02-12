@@ -3,6 +3,7 @@ pragma solidity ^0.8.6;
 
 import "./helpers/TestBaseWorkflow.sol";
 import "./mock/MockMaliciousAllocator.sol";
+import "./mock/MockMaliciousTerminal.sol";
 
 
 contract TestERC20Terminal_Local is TestBaseWorkflow {
@@ -236,6 +237,246 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
           beneficiary: payable(_user),
           lockedUntil: 0,
           allocator: _allocator,
+          percent:  JBConstants.SPLITS_TOTAL_PERCENT
+        });
+
+        _allocationSplits[0] = JBGroupedSplits({
+          group: 1,
+          splits: _splits
+        });
+
+        (JBFundingCycle memory _currentFundingCycle, ) = controller.currentFundingCycleOf(projectId);
+
+        vm.prank(_projectOwner);
+        jbSplitsStore().set(projectId, _currentFundingCycle.configuration,  _allocationSplits);
+
+        // fund user
+        vm.prank(_projectOwner);
+        jbToken().transfer(_user, 20 * 10 ** 18);
+    
+        // pay project
+        vm.prank(_user);
+        jbToken().approve(address(terminal), 20 * 10 ** 18);
+        vm.prank(_user);
+        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        
+        if (!isUsingJbController3_0()) {
+          uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+          // using controller 3.1
+          vm.prank(_projectOwner);
+          IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+                projectId,
+                10 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "allocation" // metadata
+          );
+          uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+          assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+          assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+        }
+    }
+
+    function testDistribution_to_malicious_terminal_by_adding_balance() public {
+        address _user = makeAddr("user");
+
+        MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
+            jbToken(),
+            jbLibraries().ETH(), // currency
+            jbLibraries().ETH(), // base weight currency
+            1, // JBSplitsGroupe
+            jbOperatorStore(),
+            jbProjects(),
+            jbDirectory(),
+            jbSplitsStore(),
+            jbPrices(),
+            jbPaymentTerminalStore(),
+            multisig()
+        );
+        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
+        IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
+        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+
+        _fundAccessConstraints.push(
+            JBFundAccessConstraints({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            })
+        );
+
+        _splitProjectFundAccessConstraints[0] =
+            JBFundAccessConstraints({
+                terminal: _badTerminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            });
+        _splitProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _allocationSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
+
+        //project to allocato funds
+        uint256 allocationProjectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _groupedSplits,
+            _splitProjectFundAccessConstraints,
+            _splitProjectTerminals,
+            ""
+        );
+
+        // setting splits
+        JBSplit[] memory _splits = new JBSplit[](1);
+        _splits[0] = JBSplit({
+          preferClaimed: false,
+          preferAddToBalance: true,
+          projectId: allocationProjectId,
+          beneficiary: payable(_user),
+          lockedUntil: 0,
+          allocator: IJBSplitAllocator(address(0)),
+          percent:  JBConstants.SPLITS_TOTAL_PERCENT
+        });
+
+        _allocationSplits[0] = JBGroupedSplits({
+          group: 1,
+          splits: _splits
+        });
+
+        (JBFundingCycle memory _currentFundingCycle, ) = controller.currentFundingCycleOf(projectId);
+
+        vm.prank(_projectOwner);
+        jbSplitsStore().set(projectId, _currentFundingCycle.configuration,  _allocationSplits);
+
+        // fund user
+        vm.prank(_projectOwner);
+        jbToken().transfer(_user, 20 * 10 ** 18);
+    
+        // pay project
+        vm.prank(_user);
+        jbToken().approve(address(terminal), 20 * 10 ** 18);
+        vm.prank(_user);
+        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        
+        if (!isUsingJbController3_0()) {
+          uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+          // using controller 3.1
+          vm.prank(_projectOwner);
+          IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+                projectId,
+                10 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "allocation" // metadata
+          );
+          uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+          assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+          assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+        }
+    }
+
+    function testDistribution_to_malicious_terminal_by_paying_project() public {
+        address _user = makeAddr("user");
+
+        MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
+            jbToken(),
+            jbLibraries().ETH(), // currency
+            jbLibraries().ETH(), // base weight currency
+            1, // JBSplitsGroupe
+            jbOperatorStore(),
+            jbProjects(),
+            jbDirectory(),
+            jbSplitsStore(),
+            jbPrices(),
+            jbPaymentTerminalStore(),
+            multisig()
+        );
+        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
+        IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
+        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+
+        _fundAccessConstraints.push(
+            JBFundAccessConstraints({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            })
+        );
+
+        _splitProjectFundAccessConstraints[0] =
+            JBFundAccessConstraints({
+                terminal: _badTerminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            });
+        _splitProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _allocationSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
+
+        //project to allocato funds
+        uint256 allocationProjectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _groupedSplits,
+            _splitProjectFundAccessConstraints,
+            _splitProjectTerminals,
+            ""
+        );
+
+        // setting splits
+        JBSplit[] memory _splits = new JBSplit[](1);
+        _splits[0] = JBSplit({
+          preferClaimed: false,
+          preferAddToBalance: false,
+          projectId: allocationProjectId,
+          beneficiary: payable(_user),
+          lockedUntil: 0,
+          allocator: IJBSplitAllocator(address(0)),
           percent:  JBConstants.SPLITS_TOTAL_PERCENT
         });
 
