@@ -2,8 +2,11 @@
 pragma solidity ^0.8.6;
 
 import "./helpers/TestBaseWorkflow.sol";
+import "./mock/MockMaliciousAllocator.sol";
+
 
 contract TestERC20Terminal_Local is TestBaseWorkflow {
+    MockMaliciousAllocator _allocator;
     JBController controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
@@ -179,6 +182,95 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         // verify: beneficiary should have a balance of 0 JBTokens
         assertEq(_tokenStore.balanceOf(msg.sender, projectId), 0);
+    }
+
+    function testAllocation_to_malicious_allocator_should_revoke_allowance() public {
+        address _user = makeAddr("user");
+
+        _allocator = new MockMaliciousAllocator();
+        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+
+        _fundAccessConstraints.push(
+            JBFundAccessConstraints({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            })
+        );
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _allocationSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
+
+        //project to allocato funds
+        uint256 allocationProjectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _groupedSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
+
+        // setting splits
+        JBSplit[] memory _splits = new JBSplit[](1);
+        _splits[0] = JBSplit({
+          preferClaimed: false,
+          preferAddToBalance: true,
+          projectId: allocationProjectId,
+          beneficiary: payable(_user),
+          lockedUntil: 0,
+          allocator: _allocator,
+          percent:  JBConstants.SPLITS_TOTAL_PERCENT
+        });
+
+        _allocationSplits[0] = JBGroupedSplits({
+          group: 1,
+          splits: _splits
+        });
+
+        (JBFundingCycle memory _currentFundingCycle, ) = controller.currentFundingCycleOf(projectId);
+
+        vm.prank(_projectOwner);
+        jbSplitsStore().set(projectId, _currentFundingCycle.configuration,  _allocationSplits);
+
+        // fund user
+        vm.prank(_projectOwner);
+        jbToken().transfer(_user, 20 * 10 ** 18);
+    
+        // pay project
+        vm.prank(_user);
+        jbToken().approve(address(terminal), 20 * 10 ** 18);
+        vm.prank(_user);
+        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        
+        // using controller 3.1
+        vm.prank(_projectOwner);
+        IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+                projectId,
+                10 * 10 ** 18,
+                1, // Currency
+                address(0), //token (unused)
+                0, // Min wei out
+                "allocation" // metadata
+        );
+
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
     }
 
     function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
