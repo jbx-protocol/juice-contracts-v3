@@ -259,18 +259,20 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
         
-        // using controller 3.1
-        vm.prank(_projectOwner);
-        IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+        if (!isUsingJbController3_0()) {
+          // using controller 3.1
+          vm.prank(_projectOwner);
+          IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
                 address(0), //token (unused)
                 0, // Min wei out
                 "allocation" // metadata
-        );
+          );
 
-        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+          assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        }
     }
 
     function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
