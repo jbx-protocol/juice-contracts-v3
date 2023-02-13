@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
+import "@juicebox/JBController.sol";
 import "@juicebox/JBController3_0_1.sol";
 
 import "@juicebox/interfaces/IJBController.sol";
@@ -65,8 +66,7 @@ contract TestRescueDistribute_Fork is Test {
     uint256 targetInWei = 10 * 10 ** 18;
 
     function setUp() public {
-        vm.createSelectFork("https://rpc.ankr.com/eth", 16592298); // Block height 2days before new fc
-        vm.warp(block.timestamp + 3 days);
+        vm.createSelectFork("https://rpc.ankr.com/eth", 16620049); // no ballot and new controller set
 
         // Collect the mainnet deployment addresses
         jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(
@@ -105,8 +105,7 @@ contract TestRescueDistribute_Fork is Test {
      * @notice  Test if 
      * @dev     JuiceboxDAO (id 1) has already allowSetController set.
      */
-    function testController31_setController_changeJuiceboxDaoControllerWithoutReconfiguration() public {
-
+    function testController31_downgradeControllerDistributeUpgrade() public {
         uint256 _fundingTarget = 160_500*10**18;
         address _projectOwner = jbProjects.ownerOf(1);
 
@@ -174,7 +173,7 @@ contract TestRescueDistribute_Fork is Test {
         // Check: controller back to the new one?
         assertEq(jbDirectory.controllerOf(1), address(newJbController));
 
-        // Check: project balance decreased in the terminal store (74.1% of the recipient are within the ecosystem)
+        // Check: project balance decreased in the terminal store (74.1% of the recipient are within the ecosystem/feeless)
         assertGe(_projectBalanceAfter, _projectBalance - _ethAmountDistributed);
         assertLe(_projectBalanceAfter, _projectBalance - (_ethAmountDistributed * 259 / 1000));
 
@@ -187,8 +186,39 @@ contract TestRescueDistribute_Fork is Test {
 
 // -------------- This one change actually (and is not zero before, we still have undistributed reserve):
 
-        // // Check: reserved token balance in the v3 unchanged?
-        // assertEq(_reservedTokenV3After, _reservedTokenV3);
+        // Check: reserved token balance in the v3 is higher?
+        assertGt(_reservedTokenV3After, _reservedTokenV3);
+
+        // Check: cannot launch new projects if not allowed to set first controller
+        vm.expectRevert(abi.encodeWithSelector(JBOperatable.UNAUTHORIZED.selector));
+        newJbController.launchProjectFor(
+            tx.origin, // insure an eoa/_projectOwner etched supra
+            projectMetadata,
+            data,
+            metadata,
+            block.timestamp,
+            new JBGroupedSplits[](0),
+            fundAccessConstraints,
+            terminals,
+            "not gonna work"
+        );
+
+        vm.prank(_projectOwner);
+        jbDirectory.setIsAllowedToSetFirstController(address(newJbController), true);
+
+        // Check: able to launch new projects
+        uint256 _projectId = newJbController.launchProjectFor(
+            tx.origin, // insure an eoa/_projectOwner etched supra
+            projectMetadata,
+            data,
+            metadata,
+            block.timestamp,
+            new JBGroupedSplits[](0),
+            fundAccessConstraints,
+            terminals,
+            "gonna work"
+        );
+        assertGt(_projectId, 1);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -252,7 +282,7 @@ contract TestRescueDistribute_Fork is Test {
      * @notice Get the reserved rate of the project (stack management)
      */
     function _getReservedRate(uint256 _projectId) internal view returns(uint256) {
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(1);
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
         return fundingCycle.reservedRate();
     }
 }
