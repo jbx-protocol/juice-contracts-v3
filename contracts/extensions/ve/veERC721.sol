@@ -45,6 +45,7 @@ abstract contract veERC721 is ERC721Enumerable, IVotes {
   error NOT_OWNER();
   error LOCK_DURATION_NOT_OVER();
   error VOTING_POWER_ALREADY_ENABLED();
+  error LOCK_PERIOD_EXPIRED();
 
   /* ========== STATE VARIABLES ========== */
   /** 
@@ -527,6 +528,11 @@ abstract contract veERC721 is ERC721Enumerable, IVotes {
   function _newLock(uint256 _tokenId, LockedBalance memory _lock) internal {
     // round end date to nearest week
     _lock.end = (_lock.end / WEEK) * WEEK;
+
+    // TODO: this should really take the closest full week
+    if (_lock.end < block.timestamp) {
+      revert LOCK_PERIOD_EXPIRED();
+    }
 
     // Should be a zeroed struct,
     // but if it (somehow) exists checkpoint will update the lock
