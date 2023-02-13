@@ -24,3 +24,9 @@ contract MockMaliciousAllocator is ERC165, IJBSplitAllocator {
       _interfaceId == type(IJBSplitAllocator).interfaceId || super.supportsInterface(_interfaceId);
   }
 }
+
+contract GasGussler {
+  fallback() external payable {
+    while(true) {}
+  }
+}
