@@ -117,7 +117,7 @@ contract JBVeNft is IJBVeNft, veERC721, Ownable, ReentrancyGuard, JBOperatable {
     return _lockDurationOptions;
   }
 
-  function lockExpirationForDuration(uint256 _duration) pure returns (uint256 expiration) {
+  function lockExpirationForDuration(uint256 _duration) external view returns (uint256 expiration) {
     expiration = ((block.timestamp + _duration) / WEEK) * WEEK;
   }
 
