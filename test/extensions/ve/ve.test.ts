@@ -15,6 +15,7 @@ describe(`Vote escrow workflow tests (forked ${testNetwork})`, () => {
     const platformDeploymentLogPath = `./deployments/${testNetwork}/platform.json`;
     const eighteen = '1000000000000000000';
     const fundingCycleDuration = 10 * 60; // seconds
+    const minLockDuration = 60 * 60 * 24 * 7;
 
     const JBCurrencies_ETH = getPlatformConstant('JBCurrencies_ETH', 1, platformDeploymentLogPath);
     const ethToken = getPlatformConstant('ethToken', '0x000000000000000000000000000000000000EEEe', platformDeploymentLogPath);
@@ -209,7 +210,7 @@ describe(`Vote escrow workflow tests (forked ${testNetwork})`, () => {
             uriResolverAddress,
             jbTokenStore.address,
             jbOperatorStore.address,
-            [fundingCycleDuration, fundingCycleDuration * 2, fundingCycleDuration * 10],
+            [minLockDuration, minLockDuration * 2, minLockDuration * 10],
             projectOwner.address
         );
         receipt = await tx.wait();
@@ -244,11 +245,12 @@ describe(`Vote escrow workflow tests (forked ${testNetwork})`, () => {
 
         const projectTokenBalance = await projectToken.balanceOf(projectContributor.address);
         const lockAmount = projectTokenBalance.div(10);
+        let referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
         await projectToken.connect(projectContributor).approve(projectVeToken.address, lockAmount);
         let tx = await projectVeToken.connect(projectContributor).lock(
             projectContributor.address,
             lockAmount,
-            fundingCycleDuration,
+            minLockDuration,
             projectContributor.address,
             true, // _useJbToken,
             false // _allowPublicExtension
@@ -256,13 +258,16 @@ describe(`Vote escrow workflow tests (forked ${testNetwork})`, () => {
         let receipt = await tx.wait();
 
         let eventArgs = receipt.events.filter(e => e.event === 'Lock')[0].args;
-        expect(eventArgs['tokenId']).to.equal(1);
 
+        expect(eventArgs['tokenId']).to.equal(1);
+        expect(eventArgs['lockedUntil']).to.equal(BigNumber.from(referenceTime).add(minLockDuration).div(minLockDuration).mul(minLockDuration));
+
+        referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
         await projectToken.connect(projectContributor).approve(projectVeToken.address, lockAmount);
         tx = await projectVeToken.connect(projectContributor).lock(
             projectContributor.address,
             lockAmount,
-            fundingCycleDuration * 2,
+            minLockDuration * 10,
             projectContributor.address,
             true, // _useJbToken,
             false // _allowPublicExtension
@@ -276,12 +281,31 @@ describe(`Vote escrow workflow tests (forked ${testNetwork})`, () => {
         tx = projectVeToken.connect(projectContributor).lock(
             projectContributor.address,
             lockAmount,
-            fundingCycleDuration * 3,
+            minLockDuration * 3,
             projectContributor.address,
             true, // _useJbToken,
             false // _allowPublicExtension
         );
         await expect(tx).to.be.revertedWithCustomError(projectVeToken, 'INVALID_LOCK_DURATION');
+    });
+
+    it('Test: lock project tokens', async function () {
+        const projectContributor = testAccounts[2];
+        const nonContributor = testAccounts[3];
+
+        let referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
+        await expect(projectVeToken.connect(projectContributor).unlock([{ tokenId: 1, beneficiary: projectContributor.address }]))
+            .to.be.reverted;
+
+        referenceTime = (await ethers.provider.getBlock('latest')).timestamp;
+        await ethers.provider.send("evm_setNextBlockTimestamp", [referenceTime + minLockDuration + 10]);
+        await ethers.provider.send("evm_mine", []);
+
+        await expect(projectVeToken.connect(nonContributor).unlock([{ tokenId: 1, beneficiary: projectContributor.address }]))
+            .to.be.reverted;
+
+        await expect(projectVeToken.connect(projectContributor).unlock([{ tokenId: 1, beneficiary: projectContributor.address }]))
+            .not.to.be.reverted;
     });
 });
 
