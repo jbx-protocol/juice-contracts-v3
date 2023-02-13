@@ -2,6 +2,7 @@
 pragma solidity ^0.8.16;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
 import '@paulrberg/contracts/math/PRBMath.sol';
 import './../interfaces/IJBController.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
@@ -1213,9 +1214,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
       // Trigger the allocator's `allocate` function.
       // If this terminal's token is ETH, send it in msg.value.
-      try
-        _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data)
-      {} catch {
+      bool _success;
+
+      if(ERC165Checker.supportsInterface(address(_split.allocator), type(IJBSplitAllocator).interfaceId))
+        try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
+          _success = true;
+        }
+        catch {}
+      
+      if(!_success) {
         // Trigger any inhereted post-transfer cancelation logic.
         _cancelTransferTo(address(_split.allocator), netPayoutAmount);
 
