@@ -64,7 +64,7 @@ contract TestController31_Fork is Test {
     uint256 targetInWei = 10 * 10 ** 18;
 
     function setUp() public {
-        vm.createSelectFork("https://rpc.ankr.com/eth"); // Will start on latest block by default
+        vm.createSelectFork("https://rpc.ankr.com/eth", 16531301);
 
         // Collect the mainnet deployment addresses
         jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(
