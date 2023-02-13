@@ -117,6 +117,10 @@ contract JBVeNft is IJBVeNft, veERC721, Ownable, ReentrancyGuard, JBOperatable {
     return _lockDurationOptions;
   }
 
+  function lockExpirationForDuration(uint256 _duration) pure returns (uint256 expiration) {
+    expiration = ((block.timestamp + _duration) / WEEK) * WEEK;
+  }
+
   /**
    * @notice Provides the metadata for the storefront
    */
@@ -191,7 +195,7 @@ contract JBVeNft is IJBVeNft, veERC721, Ownable, ReentrancyGuard, JBOperatable {
    * @param _uriResolver Token uri resolver instance.
    * @param _tokenStore The JBTokenStore where unclaimed tokens are accounted for.
    * @param _operatorStore A contract storing operator assignments.
-   * @param __lockDurationOptions The lock options, in seconds, for lock durations.
+   * @param __lockDurationOptions The lock options, in seconds, for lock durations. NOTE, minumum lock duration is one week, minumum inter-period duration is one week.
    * @param _owner The address that'll own this contract.
    */
   constructor(
@@ -220,6 +224,7 @@ contract JBVeNft is IJBVeNft, veERC721, Ownable, ReentrancyGuard, JBOperatable {
       if (_lockDurationOptions[_i] > _maxTime) {
         revert EXCEEDS_MAX_LOCK_DURATION();
       }
+      // TODO: consider validatiing intervals against WEEK
       unchecked {
         ++_i;
       }
@@ -285,7 +290,7 @@ contract JBVeNft is IJBVeNft, veERC721, Ownable, ReentrancyGuard, JBOperatable {
       tokenId,
       LockedBalance(
         int128(int256(_amount)),
-        block.timestamp + _duration,
+        _lockedUntil,
         _duration,
         _useJbToken,
         _allowPublicExtension
@@ -312,7 +317,7 @@ contract JBVeNft is IJBVeNft, veERC721, Ownable, ReentrancyGuard, JBOperatable {
     }
 
     // Emit event.
-    emit Lock(tokenId, _account, _amount, _duration, _beneficiary, _lockedUntil, msg.sender);
+    emit Lock(tokenId, _account, _amount, _duration, _beneficiary, locked[tokenId].end, msg.sender);
   }
 
   /**
