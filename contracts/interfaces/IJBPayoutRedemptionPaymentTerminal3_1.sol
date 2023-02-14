@@ -136,6 +136,7 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     uint256 indexed group,
     JBSplit split,
     uint256 amount,
+    uint256 netAmount,
     address caller
   );
 

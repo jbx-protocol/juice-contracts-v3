@@ -1134,7 +1134,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       leftoverPercentage -= _split.percent;
 
       // The payout amount substracting any applicable incurred fees.
-      uint256 _netPayoutAmount = _distributeToPayoutSplitsOf(
+      uint256 _netPayoutAmount = _distributeToPayoutSplit(
         _split,
         _projectId,
         _group,
@@ -1158,6 +1158,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         _domain,
         _group,
         _split,
+        _payoutAmount,
         _netPayoutAmount,
         msg.sender
       );
@@ -1178,7 +1179,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @return netPayoutAmount The amount sent to the split after subtracting fees.
   */
-  function _distributeToPayoutSplitsOf(
+  function _distributeToPayoutSplit(
     JBSplit memory _split,
     uint256 _projectId,
     uint256 _group,
@@ -1213,16 +1214,20 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       );
 
       // Trigger the allocator's `allocate` function.
-      // If this terminal's token is ETH, send it in msg.value.
       bool _success;
 
-      if(ERC165Checker.supportsInterface(address(_split.allocator), type(IJBSplitAllocator).interfaceId))
+      if (
+        ERC165Checker.supportsInterface(
+          address(_split.allocator),
+          type(IJBSplitAllocator).interfaceId
+        )
+      )
+        // If this terminal's token is ETH, send it in msg.value.
         try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
           _success = true;
-        }
-        catch {}
-      
-      if(!_success) {
+        } catch {}
+
+      if (!_success) {
         // Trigger any inhereted post-transfer cancelation logic.
         _cancelTransferTo(address(_split.allocator), netPayoutAmount);
 
@@ -1380,8 +1385,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     _projectMetadata = bytes(abi.encodePacked(_from));
 
     // Trigger any inherited pre-transfer logic if funds will be transferred.
-    if (address(_terminal) != address(this))
-       _beforeTransferTo(address(_terminal), _amount);
+    if (address(_terminal) != address(this)) _beforeTransferTo(address(_terminal), _amount);
 
     try
       // Send the fee.
@@ -1397,8 +1401,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       )
     {} catch {
       // Trigger any inhereted post-transfer cancelation logic if the pre-transfer logic was triggered.
-      if (address(_terminal) != address(this))
-        _cancelTransferTo(address(_terminal), _amount);
+      if (address(_terminal) != address(this)) _cancelTransferTo(address(_terminal), _amount);
 
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
