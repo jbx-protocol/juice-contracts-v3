@@ -10,6 +10,7 @@ import "@juicebox/JBETHPaymentTerminal.sol";
 import "@juicebox/JBERC20PaymentTerminal.sol";
 import "@juicebox/JBSingleTokenPaymentTerminalStore.sol";
 import "@juicebox/JBSingleTokenPaymentTerminalStore3_1.sol";
+import "@juicebox/JBFundAccessConstraintsStore.sol";
 import "@juicebox/JBFundingCycleStore.sol";
 import "@juicebox/JBOperatorStore.sol";
 import "@juicebox/JBPrices.sol";
@@ -72,6 +73,8 @@ contract TestBaseWorkflow is Test {
     // JBController(s)
     JBController private _jbController;
     JBController3_1 private _jbController3_1;
+
+    JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
 
     // JBETHPaymentTerminalStore
     JBSingleTokenPaymentTerminalStore private _jbPaymentTerminalStore;
@@ -138,6 +141,10 @@ contract TestBaseWorkflow is Test {
         } else {
             revert("Invalid 'JBX_CONTROLLER_VERSION' specified");
         }
+    }
+
+    function jbAccessConstraintStore() internal view returns (JBFundAccessConstraintsStore) {
+        return _jbFundAccessConstraintsStore;
     }
 
     function jbPaymentTerminalStore() internal returns (JBSingleTokenPaymentTerminalStore) {
@@ -219,26 +226,29 @@ contract TestBaseWorkflow is Test {
 
         // JBController
         _jbController = new JBController(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbTokenStore,
-      _jbSplitsStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbTokenStore,
+            _jbSplitsStore
+        );
         vm.label(address(_jbController), "JBController");
 
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
+        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
+
         _jbController3_1 = new JBController3_1(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbTokenStore,
-      _jbSplitsStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbTokenStore,
+            _jbSplitsStore,
+            _jbFundAccessConstraintsStore
+        );
         vm.label(address(_jbController3_1), "JBController3_1");
 
         vm.prank(_multisig);
@@ -246,18 +256,18 @@ contract TestBaseWorkflow is Test {
 
         // JBETHPaymentTerminalStore
         _jbPaymentTerminalStore = new JBSingleTokenPaymentTerminalStore(
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbPrices
-    );
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbPrices
+        );
         vm.label(address(_jbPaymentTerminalStore), "JBSingleTokenPaymentTerminalStore");
 
         // JBETHPaymentTerminalStore
         _jbPaymentTerminalStore3_1 = new JBSingleTokenPaymentTerminalStore3_1(
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbPrices
-    );
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbPrices
+        );
         vm.label(address(_jbPaymentTerminalStore3_1), "JBSingleTokenPaymentTerminalStore3_1");
 
         // AccessJBLib

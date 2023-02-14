@@ -9,6 +9,7 @@ import './../structs/JBGroupedSplits.sol';
 import './../structs/JBProjectMetadata.sol';
 import './IJBController3_0_1.sol';
 import './IJBDirectory.sol';
+import './IJBFundAccessConstraintsStore.sol';
 import './IJBFundingCycleStore.sol';
 import './IJBMigratable.sol';
 import './IJBPaymentTerminal.sol';
@@ -24,14 +25,6 @@ interface IJBController3_1 is IJBController3_0_1, IERC165 {
     uint256 configuration,
     uint256 projectId,
     string memo,
-    address caller
-  );
-
-  event SetFundAccessConstraints(
-    uint256 indexed fundingCycleConfiguration,
-    uint256 indexed fundingCycleNumber,
-    uint256 indexed projectId,
-    JBFundAccessConstraints constraints,
     address caller
   );
 
@@ -85,21 +78,13 @@ interface IJBController3_1 is IJBController3_0_1, IERC165 {
 
   function splitsStore() external view returns (IJBSplitsStore);
 
+  function fundAccessConstraintsStore() external view returns (IJBFundAccessConstraintsStore);
+
   function directory() external view returns (IJBDirectory);
 
-  function distributionLimitOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
-  ) external view returns (uint256 distributionLimit, uint256 distributionLimitCurrency);
+  function reservedTokenBalanceOf(uint256 _projectId) external view returns (uint256);
 
-  function overflowAllowanceOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
-  ) external view returns (uint256 overflowAllowance, uint256 overflowAllowanceCurrency);
+  function totalOutstandingTokensOf(uint256 _projectId) external view returns (uint256);
 
   function getFundingCycleOf(uint256 _projectId, uint256 _configuration)
     external
