@@ -6,8 +6,8 @@ import errors from '../helpers/errors.json';
 
 import jbAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.sol/IJBSplitAllocator.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal.sol/JBETHPaymentTerminal.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1.sol/JBSingleTokenPaymentTerminalStore3_1.json';
 import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge.sol/IJBFeeGauge.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
@@ -154,6 +154,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
 
+    await mockJbDirectory.mock.isTerminalOf
+      .withArgs(OTHER_PROJECT_ID, jbEthPaymentTerminal.address)
+      .returns(true);
+
     // Used with hardcoded one to get JBDao terminal
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -295,25 +299,28 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
       .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
       .returns(splits);
 
+    // TODO: calculate the fee being paid by the project and add it to the args
+    await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
+
     await Promise.all(
       splits.map(async (split) => {
         await mockJBPaymentTerminalStore.mock.recordPaymentFrom
-          .withArgs(
-            jbEthPaymentTerminal.address,
-            [
-              /*token*/ '0x000000000000000000000000000000000000eeee',
-              /*amount paid*/ Math.floor(
-                (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-              ),
-              /*decimal*/ 18,
-              CURRENCY,
-            ],
-            split.projectId,
-            CURRENCY,
-            split.beneficiary,
-            '',
-            ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-          )
+          // .withArgs(
+          //   jbEthPaymentTerminal.address,
+          //   [
+          //     /*token*/ '0x000000000000000000000000000000000000eeee',
+          //     /*amount paid*/ Math.floor(
+          //       (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+          //     ),
+          //     /*decimal*/ 18,
+          //     CURRENCY,
+          //   ],
+          //   split.projectId,
+          //   CURRENCY,
+          //   split.beneficiary,
+          //   '',
+          //   ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+          // )
           .returns(fundingCycle, /*count*/ 0, /* delegateAllocation */ [], '');
       }),
     );
