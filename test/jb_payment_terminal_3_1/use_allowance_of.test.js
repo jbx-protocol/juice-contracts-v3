@@ -129,6 +129,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
       )
       .returns(true);
 
+    // JBDAO
+    await mockJbDirectory.mock.isTerminalOf
+      .withArgs(1, jbEthPaymentTerminal.address)
+      .returns(true);
+
     const fundingCycle = {
       number: FUNDING_CYCLE_NUM,
       configuration: timestamp,
@@ -342,7 +347,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -382,6 +387,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* _distributedAmount */ AMOUNT,
         /* _netDistributedAmount */ AMOUNT_MINUS_FEES,
         MEMO,
+        METADATA,
         /* msg.sender */ projectOwner.address,
       );
 
@@ -434,7 +440,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -476,6 +482,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* _distributedAmount */ AMOUNT,
         /* _netDistributedAmount */ AMOUNT_MINUS_DISCOUNTED_FEES,
         MEMO,
+        METADATA,
         /* msg.sender */ projectOwner.address,
       );
 
@@ -522,7 +529,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -564,6 +571,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* _distributedAmount */ AMOUNT,
         /* _netDistributedAmount */ AMOUNT_MINUS_FEES,
         MEMO,
+        METADATA,
         /* msg.sender */ projectOwner.address,
       );
 
@@ -610,7 +618,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -652,6 +660,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* _distributedAmount */ AMOUNT,
         /* _netDistributedAmount */ AMOUNT_MINUS_FEES,
         MEMO,
+        METADATA,
         /* msg.sender */ projectOwner.address,
       );
 
@@ -706,7 +715,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(newFundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -715,7 +724,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
       .returns(jbEthPaymentTerminal.address);
 
     // Give terminal sufficient ETH
-    await setBalance(jbEthPaymentTerminal.address, AMOUNT_MINUS_FEES);
+    await setBalance(jbEthPaymentTerminal.address, AMOUNT);
 
     // Set fee to default 5%
     await jbEthPaymentTerminal.connect(terminalOwner).setFee(DEFAULT_FEE);
@@ -732,6 +741,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
           /* minReturnedTokens */ AMOUNT,
           beneficiary.address,
           MEMO,
+          METADATA,
         ),
     )
       .to.emit(jbEthPaymentTerminal, 'HoldFee')
@@ -814,7 +824,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(newFundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -823,7 +833,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
       .returns(jbEthPaymentTerminal.address);
 
     // Give terminal sufficient ETH
-    await setBalance(jbEthPaymentTerminal.address, AMOUNT_MINUS_FEES);
+    await setBalance(jbEthPaymentTerminal.address, AMOUNT);
 
     // Set fee to default 5%
     await jbEthPaymentTerminal.connect(terminalOwner).setFee(DEFAULT_FEE);
@@ -840,6 +850,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
           /* minReturnedTokens */ AMOUNT,
           beneficiary.address,
           MEMO,
+          METADATA
         ),
     )
       .to.emit(jbEthPaymentTerminal, 'HoldFee')
@@ -926,7 +937,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         CURRENCY_ETH,
         projectOwner.address,
         /* memo */ '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(newFundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -935,7 +946,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
       .returns(jbEthPaymentTerminal.address);
 
     // Give terminal sufficient ETH
-    await setBalance(jbEthPaymentTerminal.address, AMOUNT_MINUS_FEES);
+    await setBalance(jbEthPaymentTerminal.address, AMOUNT);
 
     // Set fee to default 5%
     await jbEthPaymentTerminal.connect(terminalOwner).setFee(DEFAULT_FEE);
@@ -952,6 +963,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
           /* minReturnedTokens */ AMOUNT,
           beneficiary.address,
           MEMO,
+          METADATA
         ),
     )
       .to.emit(jbEthPaymentTerminal, 'HoldFee')
@@ -999,6 +1011,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
           /* minReturnedTokens */ AMOUNT,
           beneficiary.address,
           MEMO,
+          METADATA
         ),
     ).to.be.revertedWith(errors.UNAUTHORIZED);
   });
@@ -1031,6 +1044,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
           /* minReturnedTokens */ 1,
           beneficiary.address,
           MEMO,
+          METADATA
         ),
     ).to.be.revertedWith(errors.INADEQUATE_DISTRIBUTION_AMOUNT);
   });
