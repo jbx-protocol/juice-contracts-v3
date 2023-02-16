@@ -1247,7 +1247,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_IN_SPLIT_ZERO_ADDRESS();
 
       // If the terminal is set as feeless, this distribution is not eligible for a fee.
-      if (_feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_terminal)])
+      if (_terminal == this || _feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_terminal)])
         netPayoutAmount = _amount;
         // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
       else {
