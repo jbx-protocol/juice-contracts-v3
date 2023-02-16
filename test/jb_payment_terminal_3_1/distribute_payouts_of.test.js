@@ -358,19 +358,19 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
             Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           )
-          .and.to.emit(jbEthPaymentTerminal, 'Pay');
-        // .withArgs(
-        //   timestamp,
-        //   1,
-        //   split.projectId,
-        //   jbEthPaymentTerminal.address,
-        //   split.beneficiary,
-        //   Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
-        //   0,
-        //   '',
-        //   ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-        //   caller.address,
-        // );
+          .and.to.emit(jbEthPaymentTerminal, 'Pay')
+          .withArgs(
+            timestamp,
+            1,
+            split.projectId,
+            jbEthPaymentTerminal.address,
+            split.beneficiary,
+            Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
+            0,
+            '',
+            ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+            jbEthPaymentTerminal.address,
+          );
       }),
     );
 
