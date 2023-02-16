@@ -6,6 +6,16 @@ import { ethers } from 'hardhat';
 import { abiFromAddress } from '../lib/lib';
 import { BigNumber } from 'ethers';
 
+interface LogItem {
+    address: string;
+    contribution: BigNumber | number;
+    contributionCurrency: number; // 0: eth, 1: dai
+    contributionTokens: BigNumber | number;
+    redeemedTokens: BigNumber | number;
+    redemption: BigNumber | number;
+    redemptionCurrency: number; // 0: eth, 1: dai
+}
+
 const JBCurrencies_ETH = 1;
 const JBCurrencies_USD = 2;
 const ethToken = '0x000000000000000000000000000000000000EEEe';
@@ -37,6 +47,8 @@ const platformRedemptionRate = 1_000; // bps 10%
 const platformBallotRedemptionRate = 1_000; // bps 10%
 const platformDistributionLimit = ethers.utils.parseUnits('100000', 18);
 const platformDistributionLimitCurrency = JBCurrencies_USD;
+
+let log: LogItem[] = [];
 
 async function deployContract(contractName: string, constructorArgs: any[], deployer: SignerWithAddress, libraries: { [key: string]: string } = {}): Promise<any> {
     const contractFactory = await hre.ethers.getContractFactory(contractName, { libraries, signer: deployer });
@@ -521,6 +533,16 @@ async function applyContributions() {
         contributionLog += `${address},${value},${tokenAmount}\n`;
 
         console.log(`contributed ${ethers.utils.formatUnits(value, 18)} eth for ${ethers.utils.formatUnits(tokenAmount, 18)} by ${truncateAddress(account.address)}`);
+
+        log.push({
+            address: account.address,
+            contribution: value,
+            contributionCurrency: 0,
+            contributionTokens: tokenAmount,
+            redeemedTokens: 0,
+            redemption: 0,
+            redemptionCurrency: 0
+        });
     }
 
     contributionLog = 'account,contribution,tokens\n' + contributionLog;
@@ -536,6 +558,7 @@ async function applyRedemptions() {
     const tokensIndex = columnNames.indexOf('tokens');
 
     let redemptionLog = '';
+    let logIndex = 0;
     for await (const r of tokenList) {
         let address = r[accountIndex];
         let account;
@@ -548,11 +571,25 @@ async function applyRedemptions() {
         }
 
         const halfTokens = BigNumber.from(r[tokensIndex].replace(/"/g, '')).div(2);
-        if (halfTokens.eq(0)) { continue; }
-        const redeemedAmount = await redeemTokens(1, account, JBCurrencies_ETH, halfTokens);
-        redemptionLog += `${address},${halfTokens},${redeemedAmount}\n`;
+        if (halfTokens.eq(0)) { logIndex++; continue; }
 
-        console.log(`redeemed ${ethers.utils.formatUnits(halfTokens, 18)} for ${ethers.utils.formatUnits(redeemedAmount, 18)} by ${truncateAddress(account.address)}`);
+        try {
+            const redeemedAmount = await redeemTokens(1, account, JBCurrencies_ETH, halfTokens);
+            redemptionLog += `${address},${halfTokens},${redeemedAmount}\n`;
+
+            console.log(`redeemed ${ethers.utils.formatUnits(halfTokens, 18)} for ${ethers.utils.formatUnits(redeemedAmount, 18)} by ${truncateAddress(account.address)}`);
+
+            const logItem = log[logIndex];
+            if (logItem.address === account.address) {
+                log[logIndex].redeemedTokens = halfTokens;
+                log[logIndex].redemption = redeemedAmount;
+            } else {
+                console.error('Log item mismatch')
+            }
+        } catch {
+            console.error(`failed to redeem for ${account.address} at ${logIndex}`);
+        }
+        logIndex++;
     }
 
     redemptionLog = 'account,tokens,redemption\n' + redemptionLog;
@@ -630,6 +667,24 @@ function truncateAddress(address: string) {
     return address.slice(0, 6) + '...' + address.slice(-4);
 }
 
+function printLog() {
+    console.log('address,contribution,contributionCurrency,contributionTokens,redeemedTokens,redemption,redemptionCurrency');
+
+    for (const logItem of log) {
+        let item = '';
+
+        item += `${logItem.address},`;
+        item += `${ethers.utils.formatUnits(logItem.contribution)},`;
+        item += `${logItem.contributionCurrency},`;
+        item += `${ethers.utils.formatUnits(logItem.contributionTokens)},`;
+        item += `${ethers.utils.formatUnits(logItem.redeemedTokens)},`;
+        item += `${ethers.utils.formatUnits(logItem.redemption)},`;
+        item += `${logItem.redemptionCurrency}`;
+
+        console.log(item);
+    }
+}
+
 async function main() {
     let projectId = 0;
 
@@ -650,11 +705,13 @@ async function main() {
 
     await projectBalance();
     await applyContributions();
-    let balance = await projectBalance();
-    await addProjectBalance(1, testAccounts[2], 0, balance);
+    // let balance = await projectBalance();
+    // await addProjectBalance(1, testAccounts[2], 0, balance);
     await projectBalance();
     await applyRedemptions();
     await projectBalance();
+
+    printLog();
 }
 
 main().catch((error) => {
