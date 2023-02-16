@@ -15,7 +15,7 @@ import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsS
 import jbPrices from '../../artifacts/contracts/JBPrices.sol/JBPrices.json';
 import IERC20Metadata from '../../artifacts/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol/IERC20Metadata.json';
 
-describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', function () {
+describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', function () {
   const PLATFORM_PROJECT_ID = 1;
   const PROJECT_ID = 2;
   const OTHER_PROJECT_ID = 3;
@@ -154,6 +154,11 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
 
+    // JBDAO
+    await mockJbDirectory.mock.isTerminalOf
+    .withArgs(1, jbEthPaymentTerminal.address)
+    .returns(true);
+
     await mockJbDirectory.mock.isTerminalOf
       .withArgs(OTHER_PROJECT_ID, jbEthPaymentTerminal.address)
       .returns(true);
@@ -174,6 +179,14 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
       .returns(fundingCycle, AMOUNT_DISTRIBUTED);
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
+
+    // Mock the JBAllocator supports interface check
+    await mockJbAllocator.mock.supportsInterface.withArgs("0x01ffc9a7")
+          .returns(true);
+    await mockJbAllocator.mock.supportsInterface.withArgs("0x9d740bfa")
+          .returns(true);
+    await mockJbAllocator.mock.supportsInterface.withArgs("0xffffffff")
+          .returns(false);
 
     await setBalance(jbEthPaymentTerminal.address, AMOUNT_DISTRIBUTED);
 
@@ -642,7 +655,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         0,
         /*preferedClaimedToken*/ false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
 
@@ -875,7 +888,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
@@ -972,7 +988,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+             /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
@@ -1032,19 +1051,9 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         0,
         /*preferedClaimedToken*/ false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
-
-    await mockJbEthPaymentTerminal.mock.addToBalanceOf
-      .withArgs(
-        1, //JBX Dao
-        AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES,
-        ETH_ADDRESS,
-        '',
-        '0x',
-      )
-      .returns();
 
     let tx = await jbEthPaymentTerminal
       .connect(caller)
@@ -1074,7 +1083,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1132,11 +1144,11 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         0,
         /*preferedClaimedToken*/ false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
 
-    await mockJbEthPaymentTerminal.mock.addToBalanceOf
+    await mockJbEthPaymentTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(
         1, //JBX Dao
         AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES,
@@ -1174,7 +1186,11 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            ///*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1218,6 +1234,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
       .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
       .returns(splits);
 
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(jbEthPaymentTerminal.address);
+
     await mockJBPaymentTerminalStore.mock.recordPaymentFrom
       .withArgs(
         jbEthPaymentTerminal.address,
@@ -1231,7 +1251,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         /*CURRENCY*/ CURRENCY,
         projectOwner.address,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
 
@@ -1299,8 +1319,8 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
             Math.floor(AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES),
             0,
             '',
-            '0x',
-            caller.address,
+            ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+            jbEthPaymentTerminal.address,
           );
       }),
     );
@@ -1369,7 +1389,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         0,
         false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
 
@@ -1418,7 +1438,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1483,7 +1506,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         0,
         false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
 
@@ -1532,7 +1555,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1597,7 +1623,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         0,
         false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
 
@@ -1646,7 +1672,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1715,6 +1744,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
 
     await Promise.all(
       splits.map(async (split) => {
+        // NetAmount and Amount are the same since the fee was set to 0 
         await expect(tx)
           .to.emit(jbEthPaymentTerminal, 'DistributeToPayoutSplit')
           .withArgs(
@@ -1730,9 +1760,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
+            /*NetAmount*/ Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1845,7 +1876,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            AMOUNT_MINUS_FEES,
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -1953,6 +1987,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.allocator,
             ],
             AMOUNT_DISTRIBUTED,
+            AMOUNT_DISTRIBUTED,
             caller.address,
           );
       }),
@@ -2048,9 +2083,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
+            /*NetAmount*/ Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -2119,7 +2155,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
@@ -2220,7 +2259,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
@@ -2297,7 +2339,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
 
     await Promise.all(
       splits.map(async (split) => {
-        await mockJbEthPaymentTerminal.mock.addToBalanceOf
+        await mockJbEthPaymentTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
           .withArgs(
             split.projectId,
             AMOUNT_MINUS_FEES,
@@ -2337,7 +2379,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -2422,7 +2467,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
           )
           .returns(true);
 
-        await mockJbEthPaymentTerminal.mock.addToBalanceOf
+        await mockJbEthPaymentTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
           .withArgs(
             split.projectId,
             /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
@@ -2444,7 +2489,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
         /*minReturnedToken*/ 0,
         false,
         '',
-        '0x',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
       .returns(0);
 
@@ -2480,7 +2525,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -2582,7 +2630,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
@@ -2598,7 +2649,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
             0,
             '',
             ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-            caller.address,
+            jbEthPaymentTerminal.address,
           );
       }),
     );
@@ -2697,7 +2748,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
             0,
             '',
             ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-            caller.address,
+            jbEthPaymentTerminal.address,
           );
       }),
     );
@@ -2770,7 +2821,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
@@ -2914,7 +2968,8 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ amountToReceive,
+            /*Amount*/ amountToReceive,
+            /*NetAmount*/ amountToReceive,
             caller.address,
           );
       }),
@@ -2988,7 +3043,8 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((0 * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*Amount*/ Math.floor((0 * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*NetAmount*/ Math.floor((0 * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -3079,7 +3135,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            /*Amount*/ Math.floor(
+              (AMOUNT_TO_DISTRIBUTE * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_TO_DISTRIBUTE * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
