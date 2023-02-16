@@ -173,6 +173,8 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
       .withArgs(PROJECT_ID, AMOUNT_TO_DISTRIBUTE, CURRENCY)
       .returns(fundingCycle, AMOUNT_DISTRIBUTED);
 
+    await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
+
     await setBalance(jbEthPaymentTerminal.address, AMOUNT_DISTRIBUTED);
 
     return {
@@ -614,6 +616,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
       jbEthPaymentTerminal,
       timestamp,
       mockJbEthPaymentTerminal,
+      mockJBPaymentTerminalStore,
       mockJbDirectory,
       mockJbSplitsStore,
     } = await setup();
@@ -671,7 +674,8 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /* Amount */ Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
+            /* NetAmount */ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           );
       }),
@@ -716,7 +720,8 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
 
     await Promise.all(
       splits.map(async (split) => {
-        await mockJbEthPaymentTerminal.mock.addToBalanceOf
+        // Since this function name is overloaded we need to specify the entire signature
+        await mockJbEthPaymentTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
           .withArgs(
             split.projectId,
             /*payoutAmount*/ Math.floor(
@@ -762,7 +767,11 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', 
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor(
+            // Amount and NetAmount are the same since there is no fee being paid
+            /*Amount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*NetAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,
