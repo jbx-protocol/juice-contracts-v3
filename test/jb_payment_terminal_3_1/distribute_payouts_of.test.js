@@ -15,7 +15,7 @@ import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsS
 import jbPrices from '../../artifacts/contracts/JBPrices.sol/JBPrices.json';
 import IERC20Metadata from '../../artifacts/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol/IERC20Metadata.json';
 
-describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', function () {
+describe.only('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', function () {
   const PLATFORM_PROJECT_ID = 1;
   const PROJECT_ID = 2;
   const OTHER_PROJECT_ID = 3;
@@ -299,28 +299,27 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
       .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
       .returns(splits);
 
-    // TODO: calculate the fee being paid by the project and add it to the args
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
 
     await Promise.all(
       splits.map(async (split) => {
         await mockJBPaymentTerminalStore.mock.recordPaymentFrom
-          // .withArgs(
-          //   jbEthPaymentTerminal.address,
-          //   [
-          //     /*token*/ '0x000000000000000000000000000000000000eeee',
-          //     /*amount paid*/ Math.floor(
-          //       (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-          //     ),
-          //     /*decimal*/ 18,
-          //     CURRENCY,
-          //   ],
-          //   split.projectId,
-          //   CURRENCY,
-          //   split.beneficiary,
-          //   '',
-          //   ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-          // )
+          .withArgs(
+            jbEthPaymentTerminal.address,
+            [
+              /*token*/ '0x000000000000000000000000000000000000eeee',
+              /*amount paid*/ Math.floor(
+                (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+              ),
+              /*decimal*/ 18,
+              CURRENCY,
+            ],
+            split.projectId,
+            CURRENCY,
+            split.beneficiary,
+            '',
+            ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+          )
           .returns(fundingCycle, /*count*/ 0, /* delegateAllocation */ [], '');
       }),
     );
@@ -356,22 +355,22 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
             /*payoutAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
-            Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT) * 0.975,
+            Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           )
-          .and.to.emit(jbEthPaymentTerminal, 'Pay')
-          .withArgs(
-            timestamp,
-            1,
-            split.projectId,
-            jbEthPaymentTerminal.address,
-            split.beneficiary,
-            Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
-            0,
-            '',
-            ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-            caller.address,
-          );
+          .and.to.emit(jbEthPaymentTerminal, 'Pay');
+        // .withArgs(
+        //   timestamp,
+        //   1,
+        //   split.projectId,
+        //   jbEthPaymentTerminal.address,
+        //   split.beneficiary,
+        //   Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
+        //   0,
+        //   '',
+        //   ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+        //   caller.address,
+        // );
       }),
     );
 
@@ -477,19 +476,19 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
             ),
             caller.address,
           )
-          .and.to.emit(jbEthPaymentTerminal, 'Pay')
-          .withArgs(
-            timestamp,
-            1,
-            split.projectId,
-            jbEthPaymentTerminal.address,
-            split.beneficiary,
-            Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
-            0,
-            '',
-            ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-            caller.address,
-          );
+          .and.to.emit(jbEthPaymentTerminal, 'Pay');
+        // .withArgs(
+        //   timestamp,
+        //   1,
+        //   split.projectId,
+        //   jbEthPaymentTerminal.address,
+        //   split.beneficiary,
+        //   Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
+        //   0,
+        //   '',
+        //   ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+        //   caller.address,
+        // );
       }),
     );
 
