@@ -204,7 +204,7 @@ contract TestController31_Fork is Test {
 
     // migrate any other project
     
-    function testController31_Migration_migrateJuiceboxDAO(uint256 _projectId) public {
+    function testController31_Migration_migrateOtherProjects(uint256 _projectId) public {
         // Migrate only existing projects
         _projectId = bound(_projectId, 1, jbProjects.count());
 
@@ -220,15 +220,22 @@ contract TestController31_Fork is Test {
         metadata.allowTerminalMigration = true;
         metadata.global.allowSetTerminals = true;
 
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+
         // reconfigure
         vm.prank(_projectOwner);
         oldJbController.reconfigureFundingCyclesOf(
-            _projectId, data, metadata, 0, _groupedSplits, fundAccessConstraints, ""
+            _projectId, data, metadata, block.timestamp, _groupedSplits, fundAccessConstraints, ""
         );
 
         // warp to the next funding cycle
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-        vm.warp(fundingCycle.start + (fundingCycle.duration) * 2); // skip 2 fc to avoid ballot
+        vm.warp(
+            fundingCycle.duration == 0 ?
+                fundingCycle.ballot != IJBFundingCycleBallot(address(0)) ?
+                    block.timestamp + fundingCycle.ballot.duration() + 1 :
+                    block.timestamp + 1
+                : fundingCycle.start + fundingCycle.duration * 2 // skip 2 fc to easily avoid ballot
+        );
         
         // lez go
         IJBPaymentTerminal[] memory _newTerminal = new IJBPaymentTerminal[](1);
@@ -248,7 +255,6 @@ contract TestController31_Fork is Test {
         assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
         assertEq(address(jbEthTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
     }
-
 
 
     // use pay on terminal 3.1 issues tokens
