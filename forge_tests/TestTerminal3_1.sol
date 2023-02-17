@@ -35,13 +35,12 @@ import "forge-std/Test.sol";
  *  @dev This test runs on a fork and will NOT be executed by forge test by default (only on CI). To run it locally, you need to run:
  *       `FOUNDRY_PROFILE=CI forge test`
  */
-contract TestController31_Fork is Test {
+contract TestTerminal31_Fork is Test {
     using JBFundingCycleMetadataResolver for JBFundingCycle;
 
     // New contract
     JBETHPaymentTerminal3_1 jbEthTerminal3_1;
     JBSingleTokenPaymentTerminalStore3_1 jbTerminalStore3_1;
-
 
     // Contracts needed
     IJBController oldJbController;
@@ -106,6 +105,166 @@ contract TestController31_Fork is Test {
             Ownable(address(jbEthTerminal)).owner()
         );
 
+        _initMetadata();
+
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //                                                //
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice  Test the migration of the JuiceboxDAO terminal (migrate, pay, redeem)
+     * @dev     This flow is reproduced
+     */
+    function testController31_Migration_migrateJuiceboxDAO() public {
+        uint256 _balanceJbOldTerminal = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), 1);
+        uint256 _ETHBalanceJbOldTerminal = address(jbEthTerminal).balance;
+        
+        _migrateTerminal(1);
+
+        // Check: balances updated?
+        assertEq(jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1), _balanceJbOldTerminal);
+        assertEq(jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), 1), 0);
+
+        // Check: ETH actually transfered?
+        assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
+        assertEq(address(jbEthTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
+    }
+
+    // migrate any other project
+    function testController31_Migration_migrateOtherProjects(uint256 _projectId) public {
+        // Migrate only existing projects
+        _projectId = bound(_projectId, 1, jbProjects.count());
+
+        // Migrate only project which are not archived/have a controller
+        vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
+
+        uint256 _balanceJbOldTerminal = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _projectId);
+        uint256 _ETHBalanceJbOldTerminal = address(jbEthTerminal).balance;
+        
+        _migrateTerminal(_projectId);
+
+        // Check: balances updated?
+        assertEq(jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), _projectId), _balanceJbOldTerminal);
+        assertEq(jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _projectId), 0);
+
+        // Check: ETH actually transfered?
+        assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
+        assertEq(address(jbEthTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
+    }
+
+    // use pay on terminal 3.1 issues tokens
+    function testController31_Migration_newTerminalIssueTokenWhenPay(uint256 _projectId, uint256 _amount) public {
+        address _beneficiary = makeAddr("_beneficiary");
+        vm.deal(_beneficiary, 10 ether);
+
+        _amount = bound(_amount, 1, 10 ether);
+
+        // Migrate only existing projects
+        _projectId = bound(_projectId, 1, jbProjects.count());
+
+        // Migrate only project which are not archived/have a controller
+        vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
+
+        _migrateTerminal(_projectId);
+
+        uint256 _jbTokenBalanceBefore = jbTokenStore.balanceOf(_beneficiary, _projectId);
+
+        // pay terminal
+        vm.prank(_beneficiary);
+        jbEthTerminal3_1.pay{value: _amount}(
+            _projectId,
+            _amount,
+            address(0),
+            _beneficiary,
+            /* _minReturnedTokens */
+            0,
+            /* _preferClaimedTokens */
+            false,
+            /* _memo */
+            "Take my money!",
+            /* _delegateMetadata */
+            new bytes(0)
+        );
+
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+        uint256 _weight = fundingCycle.weight;
+
+        assertEq(jbTokenStore.balanceOf(_beneficiary, _projectId), _jbTokenBalanceBefore + (_amount * _weight / 10**18));
+    }
+
+    // Migration jbdao then other projects pay fees to terminal 3.1, even when using other terminal versions (3 and 3.0.1)
+    function testController31_Migration_newTerminalIssueTokenWhenPay() public {
+        // Find a project with a distribution, at a given block (Peel?)
+
+        // Set a block where the project has a distribution to do
+
+        _migrateTerminal(1);
+
+        // Check balance jbdao in jbterminal3.1
+
+        // Check project JBX balance
+
+        // Distribute
+
+        // Check jbdao balance again -> bigger?
+
+        // Check project JBX balance -> bigger?
+
+    }
+
+    // distribution from the new terminal to jbdao
+
+    // use new controller to reconfigure jbdao
+
+    // jbdao can pay other projects, on other terminals
+
+
+
+
+    ////////////////////////////////////////////////////////////////////
+    //                            Helpers                             //
+    ////////////////////////////////////////////////////////////////////
+
+    function _migrateTerminal(uint256 _projectId) internal {
+        address _projectOwner = jbProjects.ownerOf(_projectId);
+ 
+        JBGroupedSplits[] memory _groupedSplits;
+
+        metadata.allowTerminalMigration = true;
+        metadata.global.allowSetTerminals = true;
+
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+
+        // reconfigure
+        vm.prank(_projectOwner);
+        oldJbController.reconfigureFundingCyclesOf(
+            _projectId, data, metadata, block.timestamp, _groupedSplits, fundAccessConstraints, ""
+        );
+
+        // warp to the next funding cycle
+        vm.warp(
+            fundingCycle.duration == 0 ?
+                fundingCycle.ballot != IJBFundingCycleBallot(address(0)) ?
+                    block.timestamp + fundingCycle.ballot.duration() + 1 :
+                    block.timestamp + 1
+                : fundingCycle.start + fundingCycle.duration * 2 // skip 2 fc to easily avoid ballot
+        );
+        
+        // lez go
+        IJBPaymentTerminal[] memory _newTerminal = new IJBPaymentTerminal[](1);
+        _newTerminal[0] = IJBPaymentTerminal(address(jbEthTerminal3_1));
+
+        vm.prank(_projectOwner);
+        jbDirectory.setTerminalsOf(_projectId, _newTerminal);
+
+        vm.prank(_projectOwner);
+        jbEthTerminal.migrate(_projectId, jbEthTerminal3_1);
+    }
+
+    function _initMetadata() internal {
+
         // Set some mock fc data
         projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
 
@@ -154,117 +313,4 @@ contract TestController31_Fork is Test {
             })
         );
     }
-
-    ////////////////////////////////////////////////////////////////////
-    //                                                //
-    ////////////////////////////////////////////////////////////////////
-
-    /**
-     * @notice  Test the migration of the JuiceboxDAO terminal (migrate, pay, redeem)
-     * @dev     
-     */
-    function testController31_Migration_migrateJuiceboxDAO() public {
-        address _projectOwner = jbProjects.ownerOf(1);
-        uint256 _balanceJbOldTerminal = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), 1);
-        uint256 _ETHBalanceJbOldTerminal = address(jbEthTerminal).balance;
-        
-        JBGroupedSplits[] memory _groupedSplits;
-
-        metadata.allowTerminalMigration = true;
-        metadata.global.allowSetTerminals = true;
-
-        // reconfigure
-        vm.prank(_projectOwner);
-        oldJbController.reconfigureFundingCyclesOf(
-            1, data, metadata, 0, _groupedSplits, fundAccessConstraints, ""
-        );
-
-        // warp to the next funding cycle
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(1);
-        vm.warp(fundingCycle.start + (fundingCycle.duration) * 2); // skip 2 fc to avoid ballot
-        
-        // lez go
-        IJBPaymentTerminal[] memory _newTerminal = new IJBPaymentTerminal[](1);
-        _newTerminal[0] = IJBPaymentTerminal(address(jbEthTerminal3_1));
-
-        vm.prank(_projectOwner);
-        jbDirectory.setTerminalsOf(1, _newTerminal);
-
-        vm.prank(_projectOwner);
-        jbEthTerminal.migrate(1, jbEthTerminal3_1);
-
-        // Check: balances updated?
-        assertEq(jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1), _balanceJbOldTerminal);
-        assertEq(jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), 1), 0);
-
-        // Check: ETH actually transfered?
-        assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
-        assertEq(address(jbEthTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
-    }
-
-    // migrate any other project
-    
-    function testController31_Migration_migrateOtherProjects(uint256 _projectId) public {
-        // Migrate only existing projects
-        _projectId = bound(_projectId, 1, jbProjects.count());
-
-        // Migrate only project which are not archived/have a controller
-        vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
-
-        address _projectOwner = jbProjects.ownerOf(_projectId);
-        uint256 _balanceJbOldTerminal = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _projectId);
-        uint256 _ETHBalanceJbOldTerminal = address(jbEthTerminal).balance;
-        
-        JBGroupedSplits[] memory _groupedSplits;
-
-        metadata.allowTerminalMigration = true;
-        metadata.global.allowSetTerminals = true;
-
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-
-        // reconfigure
-        vm.prank(_projectOwner);
-        oldJbController.reconfigureFundingCyclesOf(
-            _projectId, data, metadata, block.timestamp, _groupedSplits, fundAccessConstraints, ""
-        );
-
-        // warp to the next funding cycle
-        vm.warp(
-            fundingCycle.duration == 0 ?
-                fundingCycle.ballot != IJBFundingCycleBallot(address(0)) ?
-                    block.timestamp + fundingCycle.ballot.duration() + 1 :
-                    block.timestamp + 1
-                : fundingCycle.start + fundingCycle.duration * 2 // skip 2 fc to easily avoid ballot
-        );
-        
-        // lez go
-        IJBPaymentTerminal[] memory _newTerminal = new IJBPaymentTerminal[](1);
-        _newTerminal[0] = IJBPaymentTerminal(address(jbEthTerminal3_1));
-
-        vm.prank(_projectOwner);
-        jbDirectory.setTerminalsOf(_projectId, _newTerminal);
-
-        vm.prank(_projectOwner);
-        jbEthTerminal.migrate(_projectId, jbEthTerminal3_1);
-
-        // Check: balances updated?
-        assertEq(jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), _projectId), _balanceJbOldTerminal);
-        assertEq(jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _projectId), 0);
-
-        // Check: ETH actually transfered?
-        assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
-        assertEq(address(jbEthTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
-    }
-
-
-    // use pay on terminal 3.1 issues tokens
-
-    // Migration jbdao then other projects pay fees to terminal 3.1, even when using other terminal versions (3 and 3.0.1)
-
-    // distribution from the new terminal to jbdao
-
-    // use new controller to reconfigure jbdao
-
-    // jbdao can pay other projects, on other terminals
-
 }
