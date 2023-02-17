@@ -123,3 +123,5 @@ Reason: Already Verified
 2022-11-15T04:51:33.353Z|info|verification complete
 2022-11-15T04:51:33.366Z|info|verification complete
 2022-11-15T05:57:51.600Z|info|NFTokenFactory already exists on goerli at 0x74537Baf4CB612C35869e0B09aC1d63c02527b0E
+2023-02-17T04:22:19.822Z|info|getting abi for 0x6B175474E89094C44Da98b954EedeAC495271d0F on hardhat
+2023-02-17T04:22:21.738Z|info|getting abi for 0xE592427A0AEce92De3Edee1F18E0157C05861564 on hardhat
