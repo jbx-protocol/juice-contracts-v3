@@ -269,7 +269,7 @@ contract TestTerminal31_Fork is Test {
                 token: JBTokens.ETH,
                 distributionLimit: targetInWei, // 10 ETH target
                 overflowAllowance: 0,
-                distributionLimitCurrency: 1, // Currency = ETH
+                distributionLimitCurrency: 2, // Currency = ETH
                 overflowAllowanceCurrency: 1
             });
 
@@ -277,6 +277,8 @@ contract TestTerminal31_Fork is Test {
         jbController3_1.reconfigureFundingCyclesOf(
             1, data, metadata, 0, _groupedSplits, fundAccessConstraints, ""
         );
+
+        fundingCycle = jbFundingCycleStore.currentOf(1);
 
         // warp to the next funding cycle
         vm.warp(fundingCycle.start + (fundingCycle.duration) * 2); // skip 2 fc to avoid ballot
