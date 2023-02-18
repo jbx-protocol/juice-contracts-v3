@@ -67,7 +67,7 @@ contract TestTerminal31_Fork is Test {
 
     // Weight equals to 1 eth
     uint256 weight = 1 * 10 ** 18;
-    uint256 targetInWei = 10 * 10 ** 18;
+    uint256 targetInWei = 100 * 10 ** 18;
 
     function setUp() public {
         vm.createSelectFork("https://rpc.ankr.com/eth", 16531301);
@@ -240,6 +240,7 @@ contract TestTerminal31_Fork is Test {
     }
 
     // distribution from the new terminal to jbdao, after migrating to new controller + reconfigure from new controller
+    // some of the payouts are for projects which are on the previous terminal
     function testTerminal31_Migration_newTerminalDistribute() public {
         JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(1);
         address _projectOwner = jbProjects.ownerOf(1);
@@ -250,8 +251,8 @@ contract TestTerminal31_Fork is Test {
         // migrate controller
         JBSplit[] memory _split = jbSplitsStore.splitsOf(
             1, /*id*/
-            1, /**group*/
-            fundingCycle.configuration
+            fundingCycle.configuration, /**domain*/
+            JBSplitsGroups.ETH_PAYOUT /**group**/
         );
 
         JBGroupedSplits[] memory _groupedSplits = new JBGroupedSplits[](1);
@@ -259,6 +260,20 @@ contract TestTerminal31_Fork is Test {
 
         _migrateControllerWithGroupedsplits(1, _groupedSplits);
 
+        // Check: at least one split for a project on previous terminal?
+        bool _hasProjectSplit;
+        
+        // keep track of the balances (eoa and projects) on the old terminal
+        uint256[] memory _balances = new uint256[](_split.length);
+
+        for(uint256 i = 0; i < _split.length; i++) {
+            if(_split[i].projectId != 0) {
+                _hasProjectSplit = true;
+                _balances[i] = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _split[i].projectId);
+            }
+            else if(_split[i].allocator == IJBSplitAllocator(address(0))) _balances[i] = _split[i].beneficiary.balance;
+        }
+        assertTrue(_hasProjectSplit);
 
         // Reconfigure with new distribution limit, in the new controller
         fundAccessConstraints[0] =
@@ -281,8 +296,6 @@ contract TestTerminal31_Fork is Test {
         // warp to the next funding cycle
         vm.warp(fundingCycle.start + (fundingCycle.duration) * 2); // skip 2 fc to avoid ballot
 
-
-
         // Terminal token balance before distributing
         uint256 _terminalBalanceBeforeFeeDistribution = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
 
@@ -293,7 +306,7 @@ contract TestTerminal31_Fork is Test {
         jbEthTerminal3_1.distributePayoutsOf(
             1,
             _distributionLimit,
-            2,
+            _distributionCurrency,
             address(0), //token (unused)
             /*min out*/
             0,
@@ -301,56 +314,40 @@ contract TestTerminal31_Fork is Test {
             "distribution"
         );
 
-        // Check: JuiceboxDAO project received the fee?
-        assertLt(
-            jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1),
-            _terminalBalanceBeforeFeeDistribution
-        );
-    }
+        // Check: beneficiaries received the correct amount (project-> no fee, eoa -> fee)?
+        uint256 _feeCollected;
 
-    // jbdao can pay other projects, on other terminals
-    function testTerminal31_Migration_newTerminalCanPayOldTerminal(uint256 _projectId) public {
-        // migrate jb dao terminal
-        _migrateTerminal(1);
+        for(uint256 i = 0; i < _split.length; i++) {
+            uint256 _shareInDistributionCurrency = _distributionLimit * _split[i].percent / JBConstants.SPLITS_TOTAL_PERCENT;
+            uint256 _shareInTerminalToken = _shareInDistributionCurrency * jbPrices.priceFor(JBCurrencies.ETH, _distributionCurrency, 18) / 10**18;
 
-        // Terminal token balance before distributing
-        uint256 _newTerminalBalanceBeforePay = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
-        uint256 _oldTerminalBalanceBeforePay = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _projectId);
+            if(_split[i].projectId != 0) {
+                // project received the amount
+                emit log_string("project");
+                assertEq(
+                    jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _split[i].projectId),
+                    _balances[i] + _shareInTerminalToken
+                );
+            }
 
+            else if(_split[i].allocator == IJBSplitAllocator(address(0))) {
+                emit log_string("eoa");
 
+                // eoa received the amount minus fee
+                assertEq(
+                    _split[i].beneficiary.balance,
+                    _balances[i] + _shareInTerminalToken - (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE))
+                );
+                _feeCollected += (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE));
 
-// -- wip:
-
-
-        // $JBX project balance before distributing
-        uint256 _projectJbxBalanceBefore = jbTokenStore.balanceOf(jbProjects.ownerOf(397), 1);
-
-        // Distribute
-        uint256 _distributionProjectId = 397; // peel project id
-        address _projectOwner = jbProjects.ownerOf(_distributionProjectId);
-
-        vm.prank(_projectOwner);
-        jbEthTerminal.distributePayoutsOf(
-            _distributionProjectId,
-            30000 ether,
-            2,
-            address(0), //token (unused)
-            /*min out*/
-            0,
-            /*LFG*/
-            "distribution"
-        );
+                // eoa received jbx for the fee
+            }
+        }
 
         // Check: JuiceboxDAO project received the fee?
-        assertGt(
+        assertEq(
             jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1),
-            _terminalBalanceBeforeFeeDistribution
-        );
-
-        // Check: the project received $JBX?
-        assertGt(
-            jbTokenStore.balanceOf(jbProjects.ownerOf(397), 1), 
-            _projectJbxBalanceBefore
+            _terminalBalanceBeforeFeeDistribution + _feeCollected
         );
     }
 
