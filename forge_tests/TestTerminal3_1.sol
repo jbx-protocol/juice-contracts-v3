@@ -196,9 +196,6 @@ contract TestTerminal31_Fork is Test {
 
     // Migration jbdao then other projects pay fees to terminal 3.1, even when using other terminal versions (3 and 3.0.1)
     function testTerminal31_Migration_fee_distribution_from_project_on_old_terminal_to_project_on_new_terminal() public {
-        // rolling to block where distribution will happen from old terminal
-        vm.roll(16652900);
-
         // migrate jb dao terminal
         _migrateTerminal(1);
 
