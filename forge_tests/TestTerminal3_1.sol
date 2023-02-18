@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@juicebox/JBController3_0_1.sol";
+import "@juicebox/JBController3_1.sol";
+import "@juicebox/JBFundAccessConstraintsStore.sol";
 
 import "@juicebox/interfaces/IJBController.sol";
 import "@juicebox/interfaces/IJBMigratable.sol";
@@ -41,6 +42,8 @@ contract TestTerminal31_Fork is Test {
     // New contract
     JBETHPaymentTerminal3_1 jbEthTerminal3_1;
     JBSingleTokenPaymentTerminalStore3_1 jbTerminalStore3_1;
+    JBController3_1 jbController3_1;
+    JBFundAccessConstraintsStore jbFundsAccessConstraintsStore;
 
     // Contracts needed
     IJBController oldJbController;
@@ -104,6 +107,8 @@ contract TestTerminal31_Fork is Test {
             jbTerminalStore3_1,
             Ownable(address(jbEthTerminal)).owner()
         );
+
+        jbFundsAccessConstraintsStore = new JBFundAccessConstraintsStore(jbDirectory);
 
         _initMetadata();
 
@@ -195,17 +200,20 @@ contract TestTerminal31_Fork is Test {
     }
 
     // Migration jbdao then other projects pay fees to terminal 3.1, even when using other terminal versions (3 and 3.0.1)
-    function testTerminal31_Migration_fee_distribution_from_project_on_old_terminal_to_project_on_new_terminal() public {
+    function testTerminal31_Migration_newTerminalAcceptFeeFromOldTerminal() public {
         // migrate jb dao terminal
         _migrateTerminal(1);
 
+        // Terminal token balance before distributing
         uint256 _terminalBalanceBeforeFeeDistribution = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
 
-        // Check project JBX balance
+        // $JBX project balance before distributing
+        uint256 _projectJbxBalanceBefore = jbTokenStore.balanceOf(jbProjects.ownerOf(397), 1);
 
         // Distribute
         uint256 _distributionProjectId = 397; // peel project id
         address _projectOwner = jbProjects.ownerOf(_distributionProjectId);
+
         vm.prank(_projectOwner);
         jbEthTerminal.distributePayoutsOf(
             _distributionProjectId,
@@ -218,19 +226,93 @@ contract TestTerminal31_Fork is Test {
             "distribution"
         );
 
-        uint256 _terminalBalanceAfterFeeDistribution = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
+        // Check: JuiceboxDAO project received the fee?
+        assertGt(
+            jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1),
+            _terminalBalanceBeforeFeeDistribution
+        );
 
-        // Check project JBX balance -> bigger?
-        assertGt(_terminalBalanceAfterFeeDistribution, _terminalBalanceBeforeFeeDistribution);
+        // Check: the project received $JBX?
+        assertGt(
+            jbTokenStore.balanceOf(jbProjects.ownerOf(397), 1), 
+            _projectJbxBalanceBefore
+        );
     }
 
-    // distribution from the new terminal to jbdao
+    // distribution from the new terminal to jbdao, after migrating to new controller
+    function testTerminal31_Migration_newTerminalDistribute() public {
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(1);
+        address _projectOwner = jbProjects.ownerOf(1);
+
+        // migrate terminal
+        _migrateTerminal(1);
+
+        // migrate controller
+        JBSplit[] memory _split = jbSplitsStore.splitsOf(
+            1, /*id*/
+            1, /**group*/
+            fundingCycle.configuration
+        );
+
+        JBGroupedSplits[] memory _groupedSplits = new JBGroupedSplits[](1);
+        _groupedSplits[0] = JBGroupedSplits({group: JBSplitsGroups.ETH_PAYOUT, splits: _split});
+
+        _migrateControllerWithGroupedsplits(1, _groupedSplits);
+
+
+// Debug here:
+
+        // Reconfigure with new distribution limit, in the new controller
+        fundAccessConstraints[0] =
+            JBFundAccessConstraints({
+                terminal: jbEthTerminal3_1,
+                token: JBTokens.ETH,
+                distributionLimit: targetInWei, // 10 ETH target
+                overflowAllowance: 0,
+                distributionLimitCurrency: 1, // Currency = ETH
+                overflowAllowanceCurrency: 1
+            });
+
+        vm.prank(_projectOwner);
+        jbController3_1.reconfigureFundingCyclesOf(
+            1, data, metadata, 0, _groupedSplits, fundAccessConstraints, ""
+        );
+
+        // warp to the next funding cycle
+        vm.warp(fundingCycle.start + (fundingCycle.duration) * 2); // skip 2 fc to avoid ballot
+
+
+
+
+
+        // Terminal token balance before distributing
+        uint256 _terminalBalanceBeforeFeeDistribution = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
+
+        // Distribute
+        (uint256 _distributionLimit, uint256 _distributionCurrency) = jbFundsAccessConstraintsStore.distributionLimitOf(1, fundingCycle.configuration, jbEthTerminal3_1, JBTokens.ETH);
+
+        vm.prank(_projectOwner);
+        jbEthTerminal3_1.distributePayoutsOf(
+            1,
+            _distributionLimit,
+            2,
+            address(0), //token (unused)
+            /*min out*/
+            0,
+            /*LFG*/
+            "distribution"
+        );
+
+        // Check: JuiceboxDAO project received the fee?
+        assertLt(
+            jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1),
+            _terminalBalanceBeforeFeeDistribution
+        );
+    }
 
     // use new controller to reconfigure jbdao
 
     // jbdao can pay other projects, on other terminals
-
-
 
 
     ////////////////////////////////////////////////////////////////////
@@ -271,6 +353,46 @@ contract TestTerminal31_Fork is Test {
 
         vm.prank(_projectOwner);
         jbEthTerminal.migrate(_projectId, jbEthTerminal3_1);
+    }
+
+
+    /**
+     * @notice  Create a new controller, set a new fc with the allowControllerMigration flag set to true
+     *          then warp and migrate the project to the new controller
+     * @param   _projectId      The id of the project to migrate
+     * @param   _groupedSplits  A grouped splits for the reserved tokens
+     */
+    function _migrateControllerWithGroupedsplits(uint256 _projectId, JBGroupedSplits[] memory _groupedSplits)
+        internal
+    {
+        // Create a new controller
+        jbController3_1 = new JBController3_1(
+            jbOperatorStore,
+            jbProjects,
+            jbDirectory,
+            jbFundingCycleStore,
+            jbTokenStore,
+            jbSplitsStore,
+            jbFundsAccessConstraintsStore
+        );
+
+        address _projectOwner = jbProjects.ownerOf(_projectId);
+
+        // Allow controller migration in the fc
+        metadata.allowControllerMigration = true;
+
+        vm.prank(_projectOwner);
+        oldJbController.reconfigureFundingCyclesOf(
+            _projectId, data, metadata, 0, _groupedSplits, fundAccessConstraints, ""
+        );
+
+        // warp to the next funding cycle
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+        vm.warp(fundingCycle.start + (fundingCycle.duration) * 2); // skip 2 fc to avoid ballot
+
+        // Migrate the project to the new controller (no prepForMigration(..) needed anymore)
+        vm.prank(_projectOwner);
+        oldJbController.migrate(_projectId, jbController3_1);
     }
 
     function _initMetadata() internal {
