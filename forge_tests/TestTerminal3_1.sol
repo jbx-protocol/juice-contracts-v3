@@ -107,11 +107,10 @@ contract TestTerminal31_Fork is Test {
             jbTerminalStore3_1,
             Ownable(address(jbEthTerminal)).owner()
         );
-
+      
         jbFundsAccessConstraintsStore = new JBFundAccessConstraintsStore(jbDirectory);
 
         _initMetadata();
-
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -248,6 +247,10 @@ contract TestTerminal31_Fork is Test {
         // migrate terminal
         _migrateTerminal(1);
 
+        // Set the previous terminal as feeless for the new one
+        vm.prank(Ownable(address(jbEthTerminal3_1)).owner());
+        jbEthTerminal3_1.setFeelessAddress(address(jbEthTerminal), true);
+
         // migrate controller
         JBSplit[] memory _split = jbSplitsStore.splitsOf(
             1, /*id*/
@@ -319,7 +322,11 @@ contract TestTerminal31_Fork is Test {
 
         for(uint256 i = 0; i < _split.length; i++) {
             uint256 _shareInDistributionCurrency = _distributionLimit * _split[i].percent / JBConstants.SPLITS_TOTAL_PERCENT;
-            uint256 _shareInTerminalToken = _shareInDistributionCurrency * jbPrices.priceFor(JBCurrencies.ETH, _distributionCurrency, 18) / 10**18;
+            uint256 _shareInTerminalToken = PRBMath.mulDiv(
+                _shareInDistributionCurrency,
+                jbPrices.priceFor(JBCurrencies.ETH, _distributionCurrency, 18),
+                10**18
+            );
 
             if(_split[i].projectId != 0) {
                 // project received the amount
