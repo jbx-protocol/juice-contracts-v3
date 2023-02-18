@@ -77,7 +77,7 @@ describe('NFUEdition tests', () => {
     });
 
     it('Mint failures', async () => {
-        await expect(editionToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
+        await expect(editionToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(editionToken, 'INVALID_OPERATION');
 
         await expect(editionToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
@@ -116,7 +116,7 @@ describe('NFUEdition tests', () => {
         await expect(editionToken.connect(accounts[0])['mint(uint256)'](2, { value: ethers.utils.parseEther('0.001') })).to.be.reverted;
         await expect(editionToken.connect(accounts[0])['mint(uint256)'](3, { value: ethers.utils.parseEther('1') })).to.be.reverted;
 
-        await editionToken.connect(accounts[0])['mint(uint256,string,bytes)'](1, '', '0x00', { value: ethers.utils.parseEther('0.001') });
+        await editionToken.connect(accounts[0])['mint(uint256)'](1, { value: ethers.utils.parseEther('0.001') });
         expect(await editionToken.totalSupply()).to.equal(3);
         expect(await editionToken.balanceOf(accounts[0].address)).to.equal(2);
         expect(await editionToken.mintedEditions(1)).to.equal(2);
@@ -177,3 +177,5 @@ describe('NFUEdition tests', () => {
         expect(await randomizedEditionToken.totalSupply()).to.equal(2);
     });
 });
+
+// npx hardhat test test/extensions/nft/nfuedition.test.ts

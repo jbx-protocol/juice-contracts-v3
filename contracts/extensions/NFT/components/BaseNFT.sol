@@ -301,9 +301,13 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    *
    * @dev This version of the NFT does not directly accept Ether and will fail to process mint payment if there is a misconfiguration of the JBX terminal.
    *
+   * @dev In case of multi-mint where the amount passed to the transaction is greater than the cost of a single mint, it would be up to the caller of this function to refund the difference. Here we'll take only the required amount to mint the tokens we're allowed to.
+   *
    * @param _unitPrice Expected price of the mint, for reusability with NFUEdition contract.
    */
-  function processPayment(uint256 _unitPrice) internal virtual {
+  function processPayment(
+    uint256 _unitPrice
+  ) internal virtual returns (uint256 balance, uint256 refund) {
     uint256 accountBalance = _balanceOf[msg.sender];
     if (accountBalance == mintAllowance) {
       revert ALLOWANCE_EXHAUSTED();
@@ -314,16 +318,38 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       expectedPrice = priceResolver.getPrice(address(this), msg.sender, 0);
     }
 
-    if (msg.value != expectedPrice) {
+    if (msg.value < expectedPrice) {
       revert INCORRECT_PAYMENT(expectedPrice);
     }
 
-    if (msg.value == 0) {
-      return;
+    if (msg.value == 0 || msg.value == expectedPrice) {
+      balance = 1;
+      refund = 0;
+    } else if (msg.value > expectedPrice) {
+      if (address(priceResolver) != address(0)) {
+        // TODO: pending changes to INFTPriceResolver
+        balance = 1;
+        refund = msg.value - expectedPrice;
+      } else {
+        balance = msg.value / expectedPrice;
+
+        if (totalSupply + balance > maxSupply) {
+          // reduce to max supply
+          balance -= totalSupply + balance - maxSupply;
+        }
+
+        uint256 accountBalance = _balanceOf[msg.sender];
+        if (accountBalance + balance > mintAllowance) {
+          // reduce to mint allowance; since we're here, final balance shouuld be >= 1
+          balance -= accountBalance + balance - mintAllowance;
+        }
+
+        refund = msg.value - (balance * expectedPrice);
+      }
     }
 
     if (payoutReceiver != address(0)) {
-      (bool success, ) = payoutReceiver.call{value: msg.value}('');
+      (bool success, ) = payoutReceiver.call{value: msg.value - refund}('');
       if (!success) {
         revert PAYMENT_FAILURE();
       }
@@ -493,13 +519,22 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       revert MINTING_PAUSED();
     }
 
-    processPayment(unitPrice);
+    (uint256 balance, uint256 refund) = processPayment(unitPrice);
 
-    unchecked {
-      ++totalSupply;
+    for (; balance != 0; ) {
+      unchecked {
+        ++totalSupply;
+      }
+      tokenId = generateTokenId(_account, msg.value); // NOTE: this call requires totalSupply to be incremented by 1
+      _mint(_account, tokenId);
+      unchecked {
+        --balance;
+      }
     }
-    tokenId = generateTokenId(_account, msg.value);
-    _mint(_account, tokenId);
+
+    if (refund != 0) {
+      msg.sender.call{value: refund}('');
+    }
   }
 
   /**

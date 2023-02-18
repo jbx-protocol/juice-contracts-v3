@@ -27,7 +27,7 @@ describe('NFToken tests', () => {
     const basicProjectId = 99;
     const basicUnitPrice = ethers.utils.parseEther('0.001');
     const basicMaxSupply = 20;
-    const basicMintAllowance = 2
+    const basicMintAllowance = 2;
     let basicMintPeriodStart: number;
     let basicMintPeriodEnd: number;
 
@@ -75,18 +75,18 @@ describe('NFToken tests', () => {
     });
 
     it('Fail to mint before mint period start', async () => {
-        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
+        await expect(basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'MINT_NOT_STARTED');
     });
 
     it('Mint a token', async () => {
         await helpers.time.increaseTo(basicMintPeriodStart + 10);
-        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice.sub(1000) }))
+        await expect(basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice.sub(1000) }))
             .to.be.revertedWithCustomError(basicToken, 'INCORRECT_PAYMENT');
 
         expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
 
-        await basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
         await basicToken.connect(accounts[4])['mint()']({ value: basicUnitPrice });
         expect(await basicToken.balanceOf(accounts[0].address)).to.equal(1);
     });
@@ -185,7 +185,7 @@ describe('NFToken tests', () => {
 
         await expect(basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'MINTING_PAUSED');
-        await expect(basicToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
+        await expect(basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'MINTING_PAUSED');
 
         await basicToken.connect(deployer).setPause(false);
@@ -252,7 +252,7 @@ describe('NFToken tests', () => {
 
         await expect(basicToken.connect(accounts[4])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
-        await expect(basicToken.connect(accounts[4])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice }))
+        await expect(basicToken.connect(accounts[4])['mint()']({ value: basicUnitPrice }))
             .to.be.revertedWithCustomError(basicToken, 'SUPPLY_EXHAUSTED');
     });
 
@@ -339,12 +339,12 @@ describe('NFToken tests', () => {
 
         await expect(nonSequentialToken.connect(accounts[0]).setRandomizedMint(true)).to.be.reverted;
 
-        await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        await nonSequentialToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
         expect(await nonSequentialToken.ownerOf(1)).to.equal(accounts[0].address);
 
         await nonSequentialToken.connect(deployer).setRandomizedMint(true);
 
-        const tx = await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        const tx = await nonSequentialToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
         const receipt = await tx.wait();
         const [AddressZero, owner, tokenId] = receipt.events.filter(e => e.event === 'Transfer')[0].args;
 
@@ -354,7 +354,7 @@ describe('NFToken tests', () => {
 
         await nonSequentialToken.connect(deployer).setRandomizedMint(false);
 
-        await nonSequentialToken.connect(accounts[0])['mint(string,bytes)']('', '0x00', { value: basicUnitPrice });
+        await nonSequentialToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
         expect(await nonSequentialToken.ownerOf(2)).to.equal(ethers.constants.AddressZero);
     });
 
@@ -386,3 +386,5 @@ describe('NFToken tests', () => {
         console.log(`minimum expected gas: ${totalGas.div(samples)}`);
     });
 });
+
+// npx hardhat test test/extensions/nft/nftoken.test.ts
