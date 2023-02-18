@@ -117,7 +117,7 @@ contract TestTerminal31_Fork is Test {
      * @notice  Test the migration of the JuiceboxDAO terminal (migrate, pay, redeem)
      * @dev     This flow is reproduced
      */
-    function testController31_Migration_migrateJuiceboxDAO() public {
+    function testTerminal31_Migration_migrateJuiceboxDAO() public {
         uint256 _balanceJbOldTerminal = jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), 1);
         uint256 _ETHBalanceJbOldTerminal = address(jbEthTerminal).balance;
         
@@ -133,7 +133,7 @@ contract TestTerminal31_Fork is Test {
     }
 
     // migrate any other project
-    function testController31_Migration_migrateOtherProjects(uint256 _projectId) public {
+    function testTerminal31_Migration_migrateOtherProjects(uint256 _projectId) public {
         // Migrate only existing projects
         _projectId = bound(_projectId, 1, jbProjects.count());
 
@@ -155,7 +155,7 @@ contract TestTerminal31_Fork is Test {
     }
 
     // use pay on terminal 3.1 issues tokens
-    function testController31_Migration_newTerminalIssueTokenWhenPay(uint256 _projectId, uint256 _amount) public {
+    function testTerminal31_Migration_newTerminalIssueTokenWhenPay(uint256 _projectId, uint256 _amount) public {
         address _beneficiary = makeAddr("_beneficiary");
         vm.deal(_beneficiary, 10 ether);
 
@@ -195,23 +195,36 @@ contract TestTerminal31_Fork is Test {
     }
 
     // Migration jbdao then other projects pay fees to terminal 3.1, even when using other terminal versions (3 and 3.0.1)
-    function testController31_Migration_newTerminalIssueTokenWhenPay() public {
-        // Find a project with a distribution, at a given block (Peel?)
+    function testTerminal31_Migration_fee_distribution_from_project_on_old_terminal_to_project_on_new_terminal() public {
+        // rolling to block where distribution will happen from old terminal
+        vm.roll(16652900);
 
-        // Set a block where the project has a distribution to do
-
+        // migrate jb dao terminal
         _migrateTerminal(1);
 
-        // Check balance jbdao in jbterminal3.1
+        uint256 _terminalBalanceBeforeFeeDistribution = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
 
         // Check project JBX balance
 
         // Distribute
+        uint256 _distributionProjectId = 397; // peel project id
+        address _projectOwner = jbProjects.ownerOf(_distributionProjectId);
+        vm.prank(_projectOwner);
+        jbEthTerminal.distributePayoutsOf(
+            _distributionProjectId,
+            30000 ether,
+            2,
+            address(0), //token (unused)
+            /*min out*/
+            0,
+            /*LFG*/
+            "distribution"
+        );
 
-        // Check jbdao balance again -> bigger?
+        uint256 _terminalBalanceAfterFeeDistribution = jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1);
 
         // Check project JBX balance -> bigger?
-
+        assertGt(_terminalBalanceAfterFeeDistribution, _terminalBalanceBeforeFeeDistribution);
     }
 
     // distribution from the new terminal to jbdao
