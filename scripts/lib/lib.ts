@@ -2,7 +2,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as hre from 'hardhat';
-import type { BigNumber } from 'ethers';
 import * as path from 'path';
 import * as winston from 'winston';
 
@@ -223,24 +222,4 @@ export function exportContractInterfaces(logPath = `./deployments/${hre.network.
 
         fs.writeFileSync(contractFilePath, JSON.stringify(fileContent, undefined, 4));
     }
-}
-
-export interface FundingCycleInfo {
-    Duration: number; // seconds
-    DistributionLimit: BigNumber | number;
-    DistributionCurrency: BigNumber | number; // enum
-    TokenMintRate: BigNumber | number; // 18 decimals, per eth
-    ReserveRate: BigNumber | number; // bps
-    RedemptionRate: BigNumber | number; // bps
-    DiscountRate: BigNumber | number; // 100% = 1_000_000_000
-    ReconfigurationStrategy: string; // contract address
-    Ballot: string; // contract address
-    Payments: boolean;
-    Redemptions: boolean;
-    Distribution: boolean;
-    TokenMinting: boolean;
-    TerminalConfiguration: boolean;
-    ControllerConfiguration: boolean;
-    TerminalMigration: boolean;
-    ControllerMigration: boolean;
 }
