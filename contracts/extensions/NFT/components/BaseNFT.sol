@@ -274,27 +274,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
-    mintActual(msg.sender, '', '');
-  }
-
-  /**
-   * @notice Mints a token to the calling account. Must be paid in Ether if price is non-zero.
-   *
-   * @dev Proceeds are forwarded to the default Juicebox terminal for the project id set in the constructor. Payment will fail if the terminal is not set in the jbx directory.
-   */
-  function mint(
-    string calldata _memo,
-    bytes calldata _metadata
-  )
-    external
-    payable
-    virtual
-    nonReentrant
-    onlyDuringMintPeriod
-    callerNotBlocked(msg.sender)
-    returns (uint256 tokenId)
-  {
-    mintActual(msg.sender, _memo, _metadata);
+    mintActual(msg.sender);
   }
 
   /**
@@ -303,9 +283,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @dev Proceeds are forwarded to the default Juicebox terminal for the project id set in the constructor. Payment will fail if the terminal is not set in the jbx directory.
    */
   function mint(
-    address _account,
-    string calldata _memo,
-    bytes calldata _metadata
+    address _account
   )
     external
     payable
@@ -315,7 +293,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     callerNotBlocked(msg.sender)
     returns (uint256 tokenId)
   {
-    mintActual(_account, _memo, _metadata);
+    mintActual(_account);
   }
 
   /**
@@ -323,15 +301,9 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    *
    * @dev This version of the NFT does not directly accept Ether and will fail to process mint payment if there is a misconfiguration of the JBX terminal.
    *
-   * @param _memo Juicebox memo to pass to a IJBPaymentTerminal.
-   * @param _metadata Juicebox metadata to pass to a IJBPaymentTerminal.
    * @param _unitPrice Expected price of the mint, for reusability with NFUEdition contract.
    */
-  function processPayment(
-    string memory _memo,
-    bytes memory _metadata,
-    uint256 _unitPrice
-  ) internal virtual {
+  function processPayment(uint256 _unitPrice) internal virtual {
     uint256 accountBalance = _balanceOf[msg.sender];
     if (accountBalance == mintAllowance) {
       revert ALLOWANCE_EXHAUSTED();
@@ -511,14 +483,8 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @dev External calls should be validated by modifiers like `onlyDuringMintPeriod` and `callerNotBlocked`.
    *
    * @param _account Address to assign the new token to.
-   * @param _memo JBX terminal payment memo.
-   * @param _metadata JBX terminal payment metadata.
    */
-  function mintActual(
-    address _account,
-    string memory _memo,
-    bytes memory _metadata
-  ) internal virtual returns (uint256 tokenId) {
+  function mintActual(address _account) internal virtual returns (uint256 tokenId) {
     if (totalSupply == maxSupply) {
       revert SUPPLY_EXHAUSTED();
     }
@@ -527,7 +493,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       revert MINTING_PAUSED();
     }
 
-    processPayment(_memo, _metadata, unitPrice);
+    processPayment(unitPrice);
 
     unchecked {
       ++totalSupply;
