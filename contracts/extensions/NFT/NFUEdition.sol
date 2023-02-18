@@ -138,7 +138,7 @@ contract NFUEdition is BaseNFT {
     supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    // TODO
+    mintActual(_edition, _account);
   }
 
   //*********************************************************************//
@@ -228,14 +228,96 @@ contract NFUEdition is BaseNFT {
       revert MINTING_PAUSED();
     }
 
-    processPayment(editionPrices[_edition]); // validates price
+    (uint256 balance, uint256 refund) = processPayment(_edition); // validates price
 
-    unchecked {
-      ++totalSupply;
-      ++mintedEditions[_edition];
+    for (; balance != 0; ) {
+      unchecked {
+        ++totalSupply;
+        ++mintedEditions[_edition];
+      }
+      tokenId = generateTokenId(msg.sender, msg.value, _edition);
+      _mint(msg.sender, tokenId);
+      unchecked {
+        --balance;
+      }
     }
-    tokenId = generateTokenId(msg.sender, msg.value, _edition);
-    _mint(msg.sender, tokenId);
+
+    if (refund != 0) {
+      msg.sender.call{value: refund}('');
+    }
+  }
+
+  /**
+   * @dev Prevent calls to processPayment without edition id parameter.
+   */
+  function processPayment() internal override returns (uint256, uint256) {
+    revert INVALID_OPERATION();
+  }
+
+  /**
+   * @notice Accepts Ether payment and forwards it to the appropriate jbx terminal during the mint phase.
+   *
+   * @dev This version of the NFT does not directly accept Ether and will fail to process mint payment if there is no payoutReceiver set.
+   *
+   * @dev In case of multi-mint where the amount passed to the transaction is greater than the cost of a single mint, it would be up to the caller of this function to refund the difference. Here we'll take only the required amount to mint the tokens we're allowed to.
+   *
+   * @param _edition Edition id being minted.
+   */
+  function processPayment(
+    uint256 _edition
+  ) internal virtual returns (uint256 balance, uint256 refund) {
+    uint256 accountBalance = _balanceOf[msg.sender];
+    if (accountBalance == mintAllowance) {
+      revert ALLOWANCE_EXHAUSTED();
+    }
+
+    uint256 expectedPrice = editionPrices[_edition];
+    if (address(priceResolver) != address(0)) {
+      expectedPrice = priceResolver.getPrice(address(this), msg.sender, 0);
+    }
+
+    if (msg.value < expectedPrice) {
+      revert INCORRECT_PAYMENT(expectedPrice);
+    }
+
+    if (msg.value == 0 || msg.value == expectedPrice) {
+      balance = 1;
+      refund = 0;
+    } else if (msg.value > expectedPrice) {
+      if (address(priceResolver) != address(0)) {
+        // TODO: pending changes to INFTPriceResolver
+        balance = 1;
+        refund = msg.value - expectedPrice;
+      } else {
+        balance = msg.value / expectedPrice;
+
+        if (totalSupply + balance > maxSupply) {
+          // reduce to max supply
+          balance -= totalSupply + balance - maxSupply;
+        }
+
+        if (mintedEditions[_edition] + balance > editions[_edition]) {
+          balance -= mintedEditions[_edition] + balance - editions[_edition];
+        }
+
+        uint256 accountBalance = _balanceOf[msg.sender];
+        if (accountBalance + balance > mintAllowance) {
+          // reduce to mint allowance; since we're here, final balance shouuld be >= 1
+          balance -= accountBalance + balance - mintAllowance;
+        }
+
+        refund = msg.value - (balance * expectedPrice);
+      }
+    }
+
+    if (payoutReceiver != address(0)) {
+      (bool success, ) = payoutReceiver.call{value: msg.value - refund}('');
+      if (!success) {
+        revert PAYMENT_FAILURE();
+      }
+    } else {
+      revert PAYMENT_FAILURE();
+    }
   }
 
   /**

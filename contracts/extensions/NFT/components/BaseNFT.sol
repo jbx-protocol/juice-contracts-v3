@@ -249,6 +249,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   }
 
   function getMintPrice(address _minter) external view returns (uint256) {
+    // TODO: virtual
     if (address(priceResolver) == address(0)) {
       return unitPrice;
     }
@@ -299,21 +300,17 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   /**
    * @notice Accepts Ether payment and forwards it to the appropriate jbx terminal during the mint phase.
    *
-   * @dev This version of the NFT does not directly accept Ether and will fail to process mint payment if there is a misconfiguration of the JBX terminal.
+   * @dev This version of the NFT does not directly accept Ether and will fail to process mint payment if there is no payoutReceiver set.
    *
    * @dev In case of multi-mint where the amount passed to the transaction is greater than the cost of a single mint, it would be up to the caller of this function to refund the difference. Here we'll take only the required amount to mint the tokens we're allowed to.
-   *
-   * @param _unitPrice Expected price of the mint, for reusability with NFUEdition contract.
    */
-  function processPayment(
-    uint256 _unitPrice
-  ) internal virtual returns (uint256 balance, uint256 refund) {
+  function processPayment() internal virtual returns (uint256 balance, uint256 refund) {
     uint256 accountBalance = _balanceOf[msg.sender];
     if (accountBalance == mintAllowance) {
       revert ALLOWANCE_EXHAUSTED();
     }
 
-    uint256 expectedPrice = _unitPrice;
+    uint256 expectedPrice = unitPrice;
     if (address(priceResolver) != address(0)) {
       expectedPrice = priceResolver.getPrice(address(this), msg.sender, 0);
     }
@@ -519,7 +516,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       revert MINTING_PAUSED();
     }
 
-    (uint256 balance, uint256 refund) = processPayment(unitPrice);
+    (uint256 balance, uint256 refund) = processPayment();
 
     for (; balance != 0; ) {
       unchecked {

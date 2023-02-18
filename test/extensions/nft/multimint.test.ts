@@ -31,8 +31,8 @@ describe('Multi-mint NFT tests (static price)', () => {
     const basicUnitPrice = ethers.utils.parseEther('0.001');
     const basicMaxSupply = 20;
     const basicMintAllowance = 4;
-    let basicMintPeriodStart: number;
-    let basicMintPeriodEnd: number;
+    const basicMintPeriodStart = 0;
+    const basicMintPeriodEnd = 0;
 
     before('Initialize accounts', async () => {
         [deployer, ...accounts] = await ethers.getSigners();
@@ -52,9 +52,6 @@ describe('Multi-mint NFT tests (static price)', () => {
     before('Initialize contracts', async () => {
         const basicName = 'Test NFT'
         const basicSymbol = 'NFT';
-
-        basicMintPeriodStart = 0;
-        basicMintPeriodEnd = 0;
 
         nfTokenFactory = await ethers.getContractFactory('NFToken');
         basicToken = await nfTokenFactory
@@ -82,9 +79,12 @@ describe('Multi-mint NFT tests (static price)', () => {
             basicMaxSupply,
             basicUnitPrice,
             basicMintAllowance,
-            0,
-            0,
+            basicMintPeriodStart,
+            basicMintPeriodEnd
         );
+
+        await editionToken.connect(deployer).registerEdition(10, basicUnitPrice);
+        await editionToken.connect(deployer).registerEdition(10, basicUnitPrice);
 
         randomizedEditionToken = await editionTokenFactory.connect(deployer).deploy();
         await randomizedEditionToken.connect(deployer).initialize(
@@ -96,11 +96,13 @@ describe('Multi-mint NFT tests (static price)', () => {
             basicMaxSupply,
             basicUnitPrice,
             basicMintAllowance,
-            0,
-            0,
+            basicMintPeriodStart,
+            basicMintPeriodEnd
         );
 
         await randomizedEditionToken.connect(deployer).setRandomizedMint(true);
+        await randomizedEditionToken.connect(deployer).registerEdition(10, basicUnitPrice);
+        await randomizedEditionToken.connect(deployer).registerEdition(10, basicUnitPrice);
     });
 
     it('Mint a single token', async () => {
@@ -108,41 +110,124 @@ describe('Multi-mint NFT tests (static price)', () => {
 
         expect(await basicToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
 
-        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice });
-        expect(await basicToken.balanceOf(accounts[0].address)).to.equal(1);
+        await basicToken.connect(minter)['mint()']({ value: basicUnitPrice });
+        expect(await basicToken.balanceOf(minter.address)).to.equal(1);
     });
 
     it('Mint multiple tokens up to allowance', async () => {
         const minter = accounts[0];
 
-        expect(await basicToken.getMintPrice(accounts[0].address)).to.equal(basicUnitPrice);
+        expect(await basicToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
 
-        const accountBalance = await basicToken.balanceOf(accounts[0].address);
-        await basicToken.connect(accounts[0])['mint()']({ value: basicUnitPrice.mul(basicMintAllowance - accountBalance) });
-        expect(await basicToken.balanceOf(accounts[0].address)).to.equal(4);
+        const accountBalance = await basicToken.balanceOf(minter.address);
+        await basicToken.connect(minter)['mint()']({ value: basicUnitPrice.mul(basicMintAllowance - accountBalance) });
+        expect(await basicToken.balanceOf(minter.address)).to.equal(4);
     });
 
     it('Mint multiple tokens with refund', async () => {
-        const minter = accounts[0];
+        const minter = accounts[1];
 
-        expect(await basicToken.getMintPrice(accounts[1].address)).to.equal(basicUnitPrice);
+        expect(await basicToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
 
-        const accountBalance = await ethers.provider.getBalance(accounts[1].address);
-        await basicToken.connect(accounts[1])['mint()']({ value: basicUnitPrice.mul(2).add(basicUnitPrice.div(2)) });
-        expect(await basicToken.balanceOf(accounts[1].address)).to.equal(2);
-        expect(await ethers.provider.getBalance(accounts[1].address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(2).add(basicUnitPrice.div(2))));
+        const accountBalance = await ethers.provider.getBalance(minter.address);
+        await basicToken.connect(minter)['mint()']({ value: basicUnitPrice.mul(2).add(basicUnitPrice.div(2)) });
+        expect(await basicToken.balanceOf(minter.address)).to.equal(2);
+        expect(await ethers.provider.getBalance(minter.address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(2).add(basicUnitPrice.div(2))));
     });
 
     it('Mint multiple tokens up to allowance with refund', async () => {
-        const minter = accounts[0];
+        const minter = accounts[2];
 
-        expect(await basicToken.getMintPrice(accounts[2].address)).to.equal(basicUnitPrice);
+        expect(await basicToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
 
         const accountBalance = await ethers.provider.getBalance(accounts[2].address);
-        await basicToken.connect(accounts[2])['mint()']({ value: basicUnitPrice.mul(5) });
-        expect(await basicToken.balanceOf(accounts[2].address)).to.equal(4);
-        expect(await ethers.provider.getBalance(accounts[2].address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(5)));
+        await basicToken.connect(minter)['mint()']({ value: basicUnitPrice.mul(5) });
+        expect(await basicToken.balanceOf(minter.address)).to.equal(4);
+        expect(await ethers.provider.getBalance(minter.address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(5)));
     });
+
+    it('Mint a single edition token', async () => {
+        const minter = accounts[0];
+
+        // expect(await editionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        await editionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice });
+        expect(await editionToken.balanceOf(minter.address)).to.equal(1);
+    });
+
+    it('Mint multiple edition tokens up to allowance', async () => {
+        const minter = accounts[0];
+
+        // expect(await editionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        const accountBalance = await editionToken.balanceOf(minter.address);
+        await editionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice.mul(basicMintAllowance - accountBalance) });
+        expect(await editionToken.balanceOf(minter.address)).to.equal(4);
+    });
+
+    it('Mint multiple edition tokens with refund', async () => {
+        const minter = accounts[1];
+
+        // expect(await editionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        const accountBalance = await ethers.provider.getBalance(minter.address);
+        await editionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice.mul(2).add(basicUnitPrice.div(2)) });
+        expect(await editionToken.balanceOf(minter.address)).to.equal(2);
+        expect(await ethers.provider.getBalance(minter.address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(2).add(basicUnitPrice.div(2))));
+    });
+
+    it('Mint multiple edition tokens up to allowance with refund', async () => {
+        const minter = accounts[2];
+
+        // expect(await editionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        const accountBalance = await ethers.provider.getBalance(accounts[2].address);
+        await editionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice.mul(5) });
+        expect(await editionToken.balanceOf(minter.address)).to.equal(4);
+        expect(await ethers.provider.getBalance(minter.address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(5)));
+    });
+
+    it('Mint a single randomized edition token', async () => {
+        const minter = accounts[0];
+
+        // expect(await randomizedEditionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        await randomizedEditionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice });
+        expect(await randomizedEditionToken.balanceOf(minter.address)).to.equal(1);
+    });
+
+    it('Mint multiple randomized edition tokens up to allowance', async () => {
+        const minter = accounts[0];
+
+        // expect(await randomizedEditionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        const accountBalance = await randomizedEditionToken.balanceOf(minter.address);
+        await randomizedEditionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice.mul(basicMintAllowance - accountBalance) });
+        expect(await randomizedEditionToken.balanceOf(minter.address)).to.equal(4);
+    });
+
+    it('Mint multiple randomized edition tokens with refund', async () => {
+        const minter = accounts[1];
+
+        // expect(await randomizedEditionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        const accountBalance = await ethers.provider.getBalance(minter.address);
+        await randomizedEditionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice.mul(2).add(basicUnitPrice.div(2)) });
+        expect(await randomizedEditionToken.balanceOf(minter.address)).to.equal(2);
+        expect(await ethers.provider.getBalance(minter.address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(2).add(basicUnitPrice.div(2))));
+    });
+
+    it('Mint multiple randomized edition tokens up to allowance with refund', async () => {
+        const minter = accounts[2];
+
+        // expect(await randomizedEditionToken.getMintPrice(minter.address)).to.equal(basicUnitPrice);
+
+        const accountBalance = await ethers.provider.getBalance(accounts[2].address);
+        await randomizedEditionToken.connect(minter)['mint(uint256)'](1, { value: basicUnitPrice.mul(5) });
+        expect(await randomizedEditionToken.balanceOf(minter.address)).to.equal(4);
+        expect(await ethers.provider.getBalance(minter.address)).to.be.greaterThan(accountBalance.sub(basicUnitPrice.mul(5)));
+    });
+
 });
 
 // npx hardhat test test/extensions/nft/multimint.test.ts
