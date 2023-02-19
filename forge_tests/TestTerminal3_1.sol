@@ -319,24 +319,22 @@ contract TestTerminal31_Fork is Test {
 
         // Check: beneficiaries received the correct amount (project-> no fee, eoa -> fee)?
         uint256 _feeCollected;
-        // to accomodate for some small differences on avg
-        uint256 _delta = 90000000000000000;
 
         for(uint256 i = 0; i < _split.length; i++) {
             uint256 _shareInDistributionCurrency = _distributionLimit * _split[i].percent / JBConstants.SPLITS_TOTAL_PERCENT;
+
             uint256 _shareInTerminalToken = PRBMath.mulDiv(
                 _shareInDistributionCurrency,
-                jbPrices.priceFor(JBCurrencies.ETH, _distributionCurrency, 18),
-                10**18
+                10**18,
+                jbPrices.priceFor(_distributionCurrency, JBCurrencies.ETH, 18)
             );
 
             if(_split[i].projectId != 0) {
                 // project received the amount
                 emit log_string("project");
-                assertApproxEqAbs(
+                assertEq(
                     jbTerminalStore.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal)), _split[i].projectId),
-                    _balances[i] + _shareInTerminalToken,
-                    _delta
+                    _balances[i] + _shareInTerminalToken
                 );
             }
 
@@ -344,10 +342,9 @@ contract TestTerminal31_Fork is Test {
                 emit log_string("eoa");
 
                 // eoa received the amount minus fee
-                assertApproxEqAbs(
+                assertEq(
                     _split[i].beneficiary.balance,
-                    _balances[i] + _shareInTerminalToken - (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE)),
-                    _delta
+                    _balances[i] + _shareInTerminalToken - (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE))
                 );
                 _feeCollected += (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE));
 
@@ -356,10 +353,9 @@ contract TestTerminal31_Fork is Test {
         }
 
         // Check: JuiceboxDAO project received the fee?
-        assertApproxEqAbs(
+        assertEq(
             jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), 1),
-            _terminalBalanceBeforeFeeDistribution + _feeCollected,
-            _delta
+            _terminalBalanceBeforeFeeDistribution + _feeCollected
         );
     }
 
