@@ -321,7 +321,7 @@ contract TestTerminal31_Fork is Test {
         uint256 _feeCollected;
 
         for(uint256 i = 0; i < _split.length; i++) {
-            uint256 _shareInDistributionCurrency = _distributionLimit * _split[i].percent / JBConstants.SPLITS_TOTAL_PERCENT;
+            uint256 _shareInDistributionCurrency = PRBMath.mulDiv(_distributionLimit, _split[i].percent, JBConstants.SPLITS_TOTAL_PERCENT);
 
             uint256 _shareInTerminalToken = PRBMath.mulDiv(
                 _shareInDistributionCurrency,
@@ -344,11 +344,12 @@ contract TestTerminal31_Fork is Test {
                 // eoa received the amount minus fee
                 assertEq(
                     _split[i].beneficiary.balance,
-                    _balances[i] + _shareInTerminalToken - (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE))
+                    _balances[i] + _shareInTerminalToken - PRBMath.mulDiv(_shareInTerminalToken, JBConstants.MAX_FEE, jbEthTerminal3_1.fee() + JBConstants.MAX_FEE)
                 );
-                _feeCollected += (_shareInTerminalToken * JBConstants.MAX_FEE / (jbEthTerminal3_1.fee() + JBConstants.MAX_FEE));
+                _feeCollected += PRBMath.mulDiv(_shareInTerminalToken, JBConstants.MAX_FEE, jbEthTerminal3_1.fee() + JBConstants.MAX_FEE);
 
-                // eoa received jbx for the fee
+                // Check: eoa received jbx for the fee
+                // TODO
             }
         }
 
