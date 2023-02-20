@@ -1225,7 +1225,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         // If this terminal's token is ETH, send it in msg.value.
         try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
           _success = true;
-        } catch {}
+        } catch {
+          emit PayoutReverted(address(_split.allocator), 0);
+        }
 
       if (!_success) {
         // Trigger any inhereted post-transfer cancelation logic.
@@ -1282,6 +1284,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
+
+          emit PayoutReverted(address(_terminal), _projectId);
         }
       else
         try
@@ -1304,6 +1308,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
+
+          emit PayoutReverted(address(_terminal), _projectId);
         }
     } else {
       // Keep a reference to the beneficiary.
@@ -1405,6 +1411,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
+
+      emit PayoutReverted(address(_terminal), 1);
     }
   }
 

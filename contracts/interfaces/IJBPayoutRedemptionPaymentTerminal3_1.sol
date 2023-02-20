@@ -140,6 +140,8 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     address caller
   );
 
+  event PayoutReverted(address indexed beneficiary, uint256 indexed projectId);
+
   event SetFee(uint256 fee, address caller);
 
   event SetFeeGauge(IJBFeeGauge indexed feeGauge, address caller);
