@@ -1236,6 +1236,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
         // Add undistributed amount back to project's balance.
         store.recordAddedBalanceFor(_projectId, _amount);
+
+        emit PayoutReverted(_projectId, _split, _amount, msg.sender);
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1247,7 +1249,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_IN_SPLIT_ZERO_ADDRESS();
 
       // If the terminal is set as feeless, this distribution is not eligible for a fee.
-      if (_terminal == this || _feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_terminal)])
+      if (
+        _terminal == this ||
+        _feeDiscount == JBConstants.MAX_FEE_DISCOUNT ||
+        isFeelessAddress[address(_terminal)]
+      )
         netPayoutAmount = _amount;
         // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
       else {
@@ -1282,6 +1288,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
+
+          emit PayoutReverted(_projectId, _split, _amount, msg.sender);
         }
       else
         try
@@ -1304,6 +1312,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
+
+          emit PayoutReverted(_projectId, _split, _amount, msg.sender);
         }
     } else {
       // Keep a reference to the beneficiary.
@@ -1405,6 +1415,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
+
+      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, msg.sender);
     }
   }
 
