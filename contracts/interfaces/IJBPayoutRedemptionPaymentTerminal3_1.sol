@@ -146,13 +146,14 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
-  event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, address caller);
+  event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, address caller, bytes reason);
 
   event FeeReverted(
     uint256 indexed projectId,
     uint256 indexed feeProjectId,
     uint256 amount,
-    address caller
+    address caller,
+    bytes reason
   );
 
   function projects() external view returns (IJBProjects);

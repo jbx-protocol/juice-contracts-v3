@@ -1215,6 +1215,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
       // Trigger the allocator's `allocate` function.
       bool _success;
+      bytes memory _reason;
 
       if (
         ERC165Checker.supportsInterface(
@@ -1225,7 +1226,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         // If this terminal's token is ETH, send it in msg.value.
         try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
           _success = true;
-        } catch {}
+        } catch (bytes memory reason) {
+          _reason = reason;
+        }
 
       if (!_success) {
         // Trigger any inhereted post-transfer cancelation logic.
@@ -1237,7 +1240,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         // Add undistributed amount back to project's balance.
         store.recordAddedBalanceFor(_projectId, _amount);
 
-        emit PayoutReverted(_projectId, _split, _amount, msg.sender);
+        emit PayoutReverted(_projectId, _split, _amount, msg.sender, _reason);
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1279,7 +1282,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
             '',
             _projectMetadata
           )
-        {} catch {
+        {} catch (bytes memory reason) {
           // Trigger any inhereted post-transfer cancelation logic.
           _cancelTransferTo(address(_terminal), netPayoutAmount);
 
@@ -1289,7 +1292,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
 
-          emit PayoutReverted(_projectId, _split, _amount, msg.sender);
+          emit PayoutReverted(_projectId, _split, _amount, msg.sender, reason);
         }
       else
         try
@@ -1303,7 +1306,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
             '',
             _projectMetadata
           )
-        {} catch {
+        {} catch (bytes memory reason) {
           // Trigger any inhereted post-transfer cancelation logic.
           _cancelTransferTo(address(_terminal), netPayoutAmount);
 
@@ -1313,7 +1316,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
 
-          emit PayoutReverted(_projectId, _split, _amount, msg.sender);
+          emit PayoutReverted(_projectId, _split, _amount, msg.sender, reason);
         }
     } else {
       // Keep a reference to the beneficiary.
@@ -1409,14 +1412,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         '',
         _projectMetadata
       )
-    {} catch {
+    {} catch (bytes memory reason) {
       // Trigger any inhereted post-transfer cancelation logic if the pre-transfer logic was triggered.
       if (address(_terminal) != address(this)) _cancelTransferTo(address(_terminal), _amount);
 
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
 
-      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, msg.sender);
+      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, msg.sender, reason);
     }
   }
 
