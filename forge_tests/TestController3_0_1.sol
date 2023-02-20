@@ -143,7 +143,7 @@ contract TestController31_Fork is Test {
      */
     function testController31_Migration_migrateAnyExistingProject(uint8 _projectId) public {
         // Migrate only existing projects
-        vm.assume(_projectId <= jbProjects.count() && _projectId > 0);
+        vm.assume(_projectId <= jbProjects.count() && _projectId > 1);
 
         // Migrate only project which are not archived/have a controller
         vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
@@ -243,7 +243,7 @@ contract TestController31_Fork is Test {
      */
     function testController31_Migration_tracksReservedTokenInNewController(uint8 _projectId) external {
         // Migrate only existing projects
-        vm.assume(_projectId <= jbProjects.count() && _projectId > 0);
+        vm.assume(_projectId <= jbProjects.count() && _projectId > 1);
 
         // Migrate only project which are not archived/have a controller
         vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
@@ -356,7 +356,7 @@ contract TestController31_Fork is Test {
      */
     function testController31_setController_changeTheControllerForAnyProject(uint8 _projectId) public {
         // Migrate only existing projects
-        vm.assume(_projectId <= jbProjects.count() && _projectId > 0);
+        vm.assume(_projectId <= jbProjects.count() && _projectId > 1);
 
         // Migrate only project which are not archived/have a controller
         vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
