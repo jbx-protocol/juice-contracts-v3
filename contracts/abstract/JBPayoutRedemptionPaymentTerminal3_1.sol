@@ -1214,7 +1214,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       );
 
       // Trigger the allocator's `allocate` function.
-      bool _success;
+      uint256 _error;
       bytes memory _reason;
 
       if (
@@ -1225,12 +1225,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       )
         // If this terminal's token is ETH, send it in msg.value.
         try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
-          _success = true;
+
         } catch (bytes memory reason) {
           _reason = reason;
+          _error = 1;
         }
+      else _error = 2;
 
-      if (!_success) {
+
+      if (_error != 0) {
         // Trigger any inhereted post-transfer cancelation logic.
         _cancelTransferTo(address(_split.allocator), netPayoutAmount);
 
@@ -1240,7 +1243,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         // Add undistributed amount back to project's balance.
         store.recordAddedBalanceFor(_projectId, _amount);
 
-        emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
+        emit PayoutReverted(_projectId, _split, _amount, _error == 1 ? _reason : abi.encode("IERC165 fail"), msg.sender);
       }
 
       // Otherwise, if a project is specified, make a payment to it.
