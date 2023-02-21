@@ -1214,7 +1214,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       );
 
       // Trigger the allocator's `allocate` function.
-      bool _success;
+      uint256 _error;
+      bytes memory _reason;
 
       if (
         ERC165Checker.supportsInterface(
@@ -1224,10 +1225,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       )
         // If this terminal's token is ETH, send it in msg.value.
         try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
-          _success = true;
-        } catch {}
 
-      if (!_success) {
+        } catch (bytes memory reason) {
+          _reason = reason;
+          _error = 1;
+        }
+      else _error = 2;
+
+
+      if (_error != 0) {
         // Trigger any inhereted post-transfer cancelation logic.
         _cancelTransferTo(address(_split.allocator), netPayoutAmount);
 
@@ -1236,6 +1242,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
         // Add undistributed amount back to project's balance.
         store.recordAddedBalanceFor(_projectId, _amount);
+
+        emit PayoutReverted(_projectId, _split, _amount, _error == 1 ? _reason : abi.encode("IERC165 fail"), msg.sender);
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1247,7 +1255,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_IN_SPLIT_ZERO_ADDRESS();
 
       // If the terminal is set as feeless, this distribution is not eligible for a fee.
-      if (_terminal == this || _feeDiscount == JBConstants.MAX_FEE_DISCOUNT || isFeelessAddress[address(_terminal)])
+      if (
+        _terminal == this ||
+        _feeDiscount == JBConstants.MAX_FEE_DISCOUNT ||
+        isFeelessAddress[address(_terminal)]
+      )
         netPayoutAmount = _amount;
         // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
       else {
@@ -1273,7 +1285,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
             '',
             _projectMetadata
           )
-        {} catch {
+        {} catch (bytes memory reason) {
           // Trigger any inhereted post-transfer cancelation logic.
           _cancelTransferTo(address(_terminal), netPayoutAmount);
 
@@ -1282,6 +1294,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
+
+          emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
         }
       else
         try
@@ -1295,7 +1309,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
             '',
             _projectMetadata
           )
-        {} catch {
+        {} catch (bytes memory reason) {
           // Trigger any inhereted post-transfer cancelation logic.
           _cancelTransferTo(address(_terminal), netPayoutAmount);
 
@@ -1304,6 +1318,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
+
+          emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
         }
     } else {
       // Keep a reference to the beneficiary.
@@ -1399,12 +1415,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         '',
         _projectMetadata
       )
-    {} catch {
+    {} catch (bytes memory reason) {
       // Trigger any inhereted post-transfer cancelation logic if the pre-transfer logic was triggered.
       if (address(_terminal) != address(this)) _cancelTransferTo(address(_terminal), _amount);
 
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
+
+      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, reason,  msg.sender);
     }
   }
 

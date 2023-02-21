@@ -6,6 +6,9 @@ import '../../contracts/JBERC20PaymentTerminal3_1.sol';
 
 
 contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
+  error NopeNotGonnaDoIt();
+
+  uint256 revertMode;
 
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
@@ -73,7 +76,19 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
       _preferClaimedTokens;
       _memo;
       _metadata;
-      revert();
+
+      if(revertMode == 0)
+        revert();
+      else if(revertMode == 1)
+        revert NopeNotGonnaDoIt();
+      else if(revertMode == 2)
+        require(false, "thanks no thanks");
+      else {
+        uint256 a = 3;
+        uint256 b = 6;
+        uint256 c = a - b;
+        c;
+      }
   }
 
   function addToBalanceOf(
@@ -88,6 +103,23 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
       _token;
       _memo;
       _metadata;
-      revert();
+
+      if(revertMode == 0)
+        revert();
+      else if(revertMode == 1)
+        revert NopeNotGonnaDoIt();
+      else if(revertMode == 2)
+        require(false, "thanks no thanks");
+      else {
+        uint256 a = 3;
+        uint256 b = 6;
+        uint256 c = a - b;
+        c;
+      }
   }
+
+  function setRevertMode(uint256 _newMode) external {
+    revertMode = _newMode;
+  }
+  
 }
