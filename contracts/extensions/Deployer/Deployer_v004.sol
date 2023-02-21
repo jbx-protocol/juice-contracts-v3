@@ -4,9 +4,11 @@ pragma solidity ^0.8.0;
 import '../Auctions/DutchAuction.sol';
 import '../Auctions/EnglishAuction.sol';
 import '../Auctions/FixedPriceSale.sol';
+import '../NFT/NFUMembership.sol';
 import '../NFT/NFUToken.sol';
 import './Deployer_v003.sol';
 import './Factories/NFUTokenFactory.sol';
+import './Factories/NFUMembershipFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to create ERC721 NFTs from a reusable instance.
@@ -14,7 +16,11 @@ import './Factories/NFUTokenFactory.sol';
 /// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Deployer_v004 is Deployer_v003 {
   bytes32 internal constant deployNFUTokenKey = keccak256(abi.encodePacked('deployNFUToken'));
+  bytes32 internal constant deployNFUMembershipKey =
+    keccak256(abi.encodePacked('deployNFUMembership'));
+
   NFUToken internal nfuTokenSource;
+  NFUMembership internal nfuMembershipSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -28,7 +34,8 @@ contract Deployer_v004 is Deployer_v003 {
     DutchAuctionHouse _dutchAuctionSource,
     EnglishAuctionHouse _englishAuctionSource,
     FixedPriceSale _fixedPriceSaleSource,
-    NFUToken _nfuTokenSource
+    NFUToken _nfuTokenSource,
+    NFUMembership _nfuMembershipSource
   ) public virtual reinitializer(4) {
     __Ownable_init();
     __UUPSUpgradeable_init();
@@ -37,8 +44,10 @@ contract Deployer_v004 is Deployer_v003 {
     englishAuctionSource = _englishAuctionSource;
     fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
+    nfuMembershipSource = _nfuMembershipSource;
 
     prices[deployNFUTokenKey] = baseFee;
+    prices[deployNFUMembershipKey] = baseFee;
   }
 
   /**
@@ -69,5 +78,37 @@ contract Deployer_v004 is Deployer_v003 {
     );
 
     emit Deployment('NFUToken', token);
+  }
+
+  /**
+   * @dev This creates a token that can be minted immediately, to discourage this, unitPrice can be set high, then mint period can be defined before setting price to a "reasonable" value.
+   */
+  function deployNFUMembership(
+    address _owner,
+    string memory _name,
+    string memory _symbol,
+    string memory _baseUri,
+    string memory _contractUri,
+    uint256 _maxSupply,
+    uint256 _unitPrice,
+    uint256 _mintAllowance,
+    uint256 _mintEnd
+  ) external payable returns (address token) {
+    validatePayment(deployNFUTokenKey);
+
+    token = NFUMembershipFactory.createNFUMembership(
+      address(nfuMembershipSource),
+      _owner,
+      _name,
+      _symbol,
+      _baseUri,
+      _contractUri,
+      _maxSupply,
+      _unitPrice,
+      _mintAllowance,
+      _mintEnd
+    );
+
+    emit Deployment('NFUMembership', token);
   }
 }

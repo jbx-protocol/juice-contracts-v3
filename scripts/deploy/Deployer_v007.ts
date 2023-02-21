@@ -45,6 +45,8 @@ async function main() {
     const sourceFixedPriceSaleAddress = getContractRecord('FixedPriceSale', deploymentLogPath).address;
     const nfuTokenFactoryLibraryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
     const sourceNFUTokenAddress = getContractRecord('NFUToken', deploymentLogPath).address;
+    const nfuMembershipFactoryLibraryAddress = getContractRecord('NFUMembershipFactory', deploymentLogPath).address;
+    const sourceNFUMembershipAddress = getContractRecord('NFUMembership', deploymentLogPath).address;
     const paymentProcessorFactoryLibraryAddress = getContractRecord('PaymentProcessorFactory', deploymentLogPath).address;
     const sourceTokenLiquidatorAddress = getContractRecord('TokenLiquidator', deploymentLogPath).address;
     const nftRewardDataSourceFactoryAddress = getContractRecord('NFTRewardDataSourceFactory', deploymentLogPath).address;
@@ -62,6 +64,8 @@ async function main() {
     logger.info(`found existing deployment of FixedPriceSale at ${sourceFixedPriceSaleAddress}`);
     logger.info(`found existing deployment of NFUTokenFactory at ${nfuTokenFactoryLibraryAddress}`);
     logger.info(`found existing deployment of NFUToken at ${sourceNFUTokenAddress}`);
+    logger.info(`found existing deployment of NFUMembershipFactory at ${nfuMembershipFactoryLibraryAddress}`);
+    logger.info(`found existing deployment of NFUMembership at ${sourceNFUMembershipAddress}`);
     logger.info(`found existing deployment of PaymentProcessorFactory at ${paymentProcessorFactoryLibraryAddress}`);
     logger.info(`found existing deployment of TokenLiquidator at ${sourceTokenLiquidatorAddress}`);
     logger.info(`found existing deployment of NFTRewardDataSourceFactory at ${nftRewardDataSourceFactoryAddress}`);
@@ -92,6 +96,7 @@ async function main() {
             TraitTokenFactory: traitTokenFactoryAddress,
             AuctionMachineFactory: auctionMachineFactoryAddress,
             NFUEditionFactory: nfuEditionFactoryAddress,
+            NFTMembershipFactory: nfuMembershipFactoryLibraryAddress,
             ThinProjectPayerFactory: thinProjectPayerFactoryAddress
         },
         signer: deployer
@@ -112,12 +117,13 @@ async function main() {
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory, {
         kind: 'uups',
         call: {
-            fn: 'initialize(address,address,address,address,address,address,address,address,address,address)',
+            fn: 'initialize(address,address,address,address,address,address,address,address,address,address,address)',
             args: [
                 sourceDutchAuctionHouseAddress,
                 sourceEnglishAuctionHouseAddress,
                 sourceFixedPriceSaleAddress,
                 sourceNFUTokenAddress,
+                sourceNFUMembershipAddress,
                 sourceTokenLiquidatorAddress,
                 dutchAuctionMachineAddress,
                 englishAuctionMachineAddress,

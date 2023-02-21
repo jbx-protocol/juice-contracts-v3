@@ -45,6 +45,8 @@ async function main() {
     const sourceFixedPriceSaleAddress = getContractRecord('FixedPriceSale', deploymentLogPath).address;
     const nfuTokenFactoryLibraryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
     const sourceNFUTokenAddress = getContractRecord('NFUToken', deploymentLogPath).address;
+    const nfuMembershipFactoryLibraryAddress = getContractRecord('NFUMembershipFactory', deploymentLogPath).address;
+    const sourceNFUMembershipAddress = getContractRecord('NFUMembership', deploymentLogPath).address;
     const paymentProcessorFactoryLibraryAddress = getContractRecord('PaymentProcessorFactory', deploymentLogPath).address;
     const sourceTokenLiquidatorAddress = getContractRecord('TokenLiquidator', deploymentLogPath).address;
 
@@ -61,6 +63,8 @@ async function main() {
     logger.info(`found existing deployment of FixedPriceSale at ${sourceFixedPriceSaleAddress}`);
     logger.info(`found existing deployment of NFUTokenFactory at ${nfuTokenFactoryLibraryAddress}`);
     logger.info(`found existing deployment of NFUToken at ${sourceNFUTokenAddress}`);
+    logger.info(`found existing deployment of NFUMembershipFactory at ${nfuMembershipFactoryLibraryAddress}`);
+    logger.info(`found existing deployment of NFUMembership at ${sourceNFUMembershipAddress}`);
     logger.info(`found existing deployment of PaymentProcessorFactory at ${paymentProcessorFactoryLibraryAddress}`);
     logger.info(`found existing deployment of TokenLiquidator at ${sourceTokenLiquidatorAddress}`);
     logger.info(`found existing deployment of JBDirectory at ${jbxDirectoryAddress}`);
@@ -76,6 +80,7 @@ async function main() {
             MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibraryAddress,
             AuctionsFactory: auctionsFactoryFactoryLibraryAddress,
             NFUTokenFactory: nfuTokenFactoryLibraryAddress,
+            NFTMembershipFactory: nfuMembershipFactoryLibraryAddress,
             PaymentProcessorFactory: paymentProcessorFactoryLibraryAddress,
             NFTRewardDataSourceFactory: nftRewardDataSourceFactoryAddress
         },
@@ -86,8 +91,8 @@ async function main() {
         {
             kind: 'uups',
             call: {
-                fn: 'initialize(address,address,address,address,address)',
-                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenAddress, sourceTokenLiquidatorAddress]
+                fn: 'initialize(address,address,address,address,address,address)',
+                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenAddress, sourceNFUMembershipAddress, sourceTokenLiquidatorAddress]
             }
         });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);

@@ -28,6 +28,7 @@ contract Deployer_v005 is Deployer_v004 {
     EnglishAuctionHouse _englishAuctionSource,
     FixedPriceSale _fixedPriceSaleSource,
     NFUToken _nfuTokenSource,
+    NFUMembership _nfuMembershipSource,
     ITokenLiquidator _tokenLiquidator
   ) public virtual reinitializer(5) {
     __Ownable_init();
@@ -37,6 +38,7 @@ contract Deployer_v005 is Deployer_v004 {
     englishAuctionSource = _englishAuctionSource;
     fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
+    nfuMembershipSource = _nfuMembershipSource;
     tokenLiquidator = _tokenLiquidator;
 
     prices[deployPaymentProcessorKey] = baseFee;
