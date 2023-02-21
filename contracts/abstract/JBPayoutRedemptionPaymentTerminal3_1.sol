@@ -1240,7 +1240,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         // Add undistributed amount back to project's balance.
         store.recordAddedBalanceFor(_projectId, _amount);
 
-        emit PayoutReverted(_projectId, _split, _amount, msg.sender, _reason);
+        emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1292,7 +1292,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
 
-          emit PayoutReverted(_projectId, _split, _amount, msg.sender, reason);
+          emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
         }
       else
         try
@@ -1316,7 +1316,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           // Add undistributed amount back to project's balance.
           store.recordAddedBalanceFor(_projectId, _amount);
 
-          emit PayoutReverted(_projectId, _split, _amount, msg.sender, reason);
+          emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
         }
     } else {
       // Keep a reference to the beneficiary.
@@ -1419,7 +1419,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
 
-      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, msg.sender, reason);
+      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, reason,  msg.sender);
     }
   }
 

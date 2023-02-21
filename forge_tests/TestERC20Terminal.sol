@@ -6,14 +6,14 @@ import { MockMaliciousAllocator, GasGussler } from "./mock/MockMaliciousAllocato
 import "./mock/MockMaliciousTerminal.sol";
 
 contract TestERC20Terminal_Local is TestBaseWorkflow {
-    event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, address caller, bytes reason);
+    event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     event FeeReverted(
         uint256 indexed projectId,
         uint256 indexed feeProjectId,
         uint256 amount,
-        address caller,
-        bytes reason
+        bytes reason,
+        address caller
     );
 
     IJBSplitAllocator _allocator;
@@ -509,7 +509,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
             // Revert without reason
             vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, address(this), new bytes(0));
+            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, new bytes(0), address(this));
 
             IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                     projectId,
@@ -524,7 +524,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             MockMaliciousAllocator(address(_allocator)).setRevertMode(1);
 
             vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, address(this), abi.encodeWithSignature("NopeNotGonnaDoIt()"));
+            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, abi.encodeWithSignature("NopeNotGonnaDoIt()"),  address(this));
 
             IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                     projectId,
@@ -542,7 +542,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             bytes memory _reasonWithString = hex"08c379a0" hex"000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000107468616e6b73206e6f207468616e6b7300000000000000000000000000000000";
 
             vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, address(this), _reasonWithString);
+            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reasonWithString,  address(this));
 
             IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                     projectId,
@@ -561,7 +561,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             _reasonWithString = abi.encodePacked(_panickSelector, uint256(0x11));
 
             vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, address(this), _reasonWithString);
+            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reasonWithString, address(this));
 
             IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                     projectId,
