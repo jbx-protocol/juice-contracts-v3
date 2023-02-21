@@ -140,6 +140,7 @@ module.exports = async ({ deployments, getChainId }) => {
       JBFundingCycleStore.address,
       JBTokenStore.address,
       JBSplitStore.address,
+      JBFundAccessConstraintsStore.address,
     ],
   });
 
