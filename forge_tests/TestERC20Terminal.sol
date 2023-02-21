@@ -441,9 +441,10 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
     }
 
-    function testAllocation_should_emit_event_with_correct_reason_when_reverting() public {
+    function testAllocation_should_emit_event_with_correct_reason_when_reverting(uint256 _revertReason) public {
         // Test only for v3.1
         if (!isUsingJbController3_0()) {
+            _revertReason = bound(_revertReason, 0, 3);
             address _user = makeAddr("user");
 
             _allocator = new MockMaliciousAllocator();
@@ -507,61 +508,20 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             vm.prank(_user);
             terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-            // Revert without reason
-            vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, new bytes(0), address(this));
+            MockMaliciousAllocator(address(_allocator)).setRevertMode(_revertReason);
+            bytes memory _reason;
 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
-                    projectId,
-                    1 * 10 ** 18,
-                    1, // Currency
-                    address(0), //token (unused)
-                    0, // Min wei out
-                    "allocation" // metadata
-            );
-
-            // Revert with an error
-            MockMaliciousAllocator(address(_allocator)).setRevertMode(1);
+            if(_revertReason == 1)
+                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+            else if(_revertReason == 2)
+                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+            else if(_revertReason == 3){
+                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+                _reason = abi.encodePacked(_panickSelector, uint256(0x11));  // eg underflow, panick code 0x11
+            }
 
             vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, abi.encodeWithSignature("NopeNotGonnaDoIt()"),  address(this));
-
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
-                    projectId,
-                    1 * 10 ** 18,
-                    1, // Currency
-                    address(0), //token (unused)
-                    0, // Min wei out
-                    "allocation" // metadata
-            );
-
-            // Revert with a custom string
-            MockMaliciousAllocator(address(_allocator)).setRevertMode(2);
-
-            // function selector of Error(string) then the string itself, abi encoded
-            bytes memory _reasonWithString = hex"08c379a0" hex"000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000107468616e6b73206e6f207468616e6b7300000000000000000000000000000000";
-
-            vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reasonWithString,  address(this));
-
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
-                    projectId,
-                    1 * 10 ** 18,
-                    1, // Currency
-                    address(0), //token (unused)
-                    0, // Min wei out
-                    "allocation" // metadata
-            );
-
-            // Revert from a panic (eg underflow) - panick code for underflow=0x11
-            // List here https://docs.soliditylang.org/en/v0.8.17/control-structures.html#panic-via-assert-and-error-via-require
-            MockMaliciousAllocator(address(_allocator)).setRevertMode(3);
-
-            bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
-            _reasonWithString = abi.encodePacked(_panickSelector, uint256(0x11));
-
-            vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reasonWithString, address(this));
+            emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reason, address(this));
 
             IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                     projectId,
@@ -574,9 +534,11 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
     }
 
-    function testFeeDistribution_to_malicious_terminal() public {
+    function testFeeDistribution_to_malicious_terminal(uint256 _revertReason) public {        
         // Test only for v3.1
         if (!isUsingJbController3_0()) {
+            _revertReason = bound(_revertReason, 0, 3);
+
             address _user = makeAddr("user");
             address _beneficiary = makeAddr("beneficiary");
 
@@ -683,8 +645,20 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             uint256 _feeCollected = _distributionAmount -  (PRBMath.mulDiv(_distributionAmount, JBConstants.MAX_FEE, terminal.fee() + JBConstants.MAX_FEE));
             
             // fee distribution
+            _badTerminal.setRevertMode(_revertReason);
+            bytes memory _reason;
+
+            if(_revertReason == 1)
+                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+            else if(_revertReason == 2)
+                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+            else if(_revertReason == 3){
+                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
+            }
+
             vm.expectEmit(true, true, true, true);
-            emit FeeReverted(distributionProjectId, feeBeneficiaryProjectId, _feeCollected, new bytes(0), _projectOwner);
+            emit FeeReverted(distributionProjectId, feeBeneficiaryProjectId, _feeCollected, _reason, _projectOwner);
 
             vm.prank(_projectOwner);
             IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
@@ -695,10 +669,12 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
                 0, // Min wei out
                 "distribution" // metadata
             );
+
         }
     }
 
-    function testDistribution_to_malicious_terminal_by_adding_balance() public {
+    function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason) public {
+        _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
 
         MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
@@ -799,10 +775,24 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
         
         if (!isUsingJbController3_0()) {
-          uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+            uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-          // using controller 3.1
-          vm.prank(_projectOwner);
+            // using controller 3.1
+            _badTerminal.setRevertMode(_revertReason);
+            bytes memory _reason;
+
+            if(_revertReason == 1)
+                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+            else if(_revertReason == 2)
+                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+            else if(_revertReason == 3){
+                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
+            }
+
+            vm.expectEmit(true, true, true, true);
+            emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
+          
           IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
@@ -818,7 +808,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
     }
 
-    function testDistribution_to_malicious_terminal_by_paying_project() public {
+    function testDistribution_to_malicious_terminal_by_paying_project(uint256 _revertReason) public {
+        _revertReason = bound(_revertReason, 0, 3);
+
         address _user = makeAddr("user");
 
         MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
@@ -921,8 +913,21 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         if (!isUsingJbController3_0()) {
           uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-          // using controller 3.1
-          vm.prank(_projectOwner);
+            _badTerminal.setRevertMode(_revertReason);
+            bytes memory _reason;
+
+            if(_revertReason == 1)
+                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+            else if(_revertReason == 2)
+                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+            else if(_revertReason == 3){
+                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
+            }
+
+            vm.expectEmit(true, true, true, true);
+            emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
+
           IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
