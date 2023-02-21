@@ -122,6 +122,13 @@ module.exports = async ({ deployments, getChainId }) => {
     args: [JBOperatorStore.address, JBProjects.address, JBDirectory.address],
   });
 
+  // Deploy a fund access constraints store
+  const JBFundAccessConstraintsStore = await deploy('JBFundAccessConstraintsStore', {
+    ...baseDeployArgs,
+    contract: 'contracts/JBFundAccessConstraintsStore.sol:JBFundAccessConstraintsStore',
+    args: [JBDirectory.address],
+  });
+
   // Deploy a JBController contract.
   const JBController = await deploy('JBController3_1', {
     ...baseDeployArgs,
