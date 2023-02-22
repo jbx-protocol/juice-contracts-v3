@@ -369,9 +369,9 @@ contract TestMigrationOperator_Fork is Test {
    * @notice  Test if a project using the controller V3 can be migrated to the controller V3.1
    * @dev     The project must have a controller, not archived and the allowControllerMigration flag must be set
    */
-  function testMigrationOperator_migrateAnyExistingProject(uint8 _projectId) public {
+  function testMigrationOperator_migrateAnyExistingProject(uint256 _projectId) public {
     // Migrate only existing projects
-    vm.assume(_projectId <= jbProjects.count() && _projectId > 1);
+    _projectId = bound(_projectId, 1, jbProjects.count());
 
     // Migrate only project which are not archived/have a controller
     vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
