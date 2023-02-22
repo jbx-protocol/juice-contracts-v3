@@ -286,22 +286,27 @@ contract TestMigrationOperator_Fork is Test {
     jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(
       stdJson.readAddress(vm.readFile('deployments/mainnet/JBETHPaymentTerminal.json'), '.address')
     );
+    vm.label(address(jbEthTerminal), "jbEthTerminal");
 
     jbEthPaymentTerminal3_1 = IJBPayoutRedemptionPaymentTerminal3_1(
       stdJson.readAddress(vm.readFile('deployments/mainnet/JBETHPaymentTerminal3_1.json'), '.address')
     );
+    vm.label(address(jbEthPaymentTerminal3_1), "jbEthPaymentTerminal3_1");
 
     oldJbController = IJBController(
       stdJson.readAddress(vm.readFile('deployments/mainnet/JBController.json'), '.address')
     );
+    vm.label(address(oldJbController), "oldJbController");
 
     newJbController = IJBController3_0_1(
       stdJson.readAddress(vm.readFile('deployments/mainnet/JBController3_0_1.json'), '.address')
     );
+    vm.label(address(newJbController), "newJbController");
 
     jbOperatorStore = IJBOperatorStore(
       stdJson.readAddress(vm.readFile('deployments/mainnet/JBOperatorStore.json'), '.address')
     );
+    vm.label(address(jbOperatorStore), "jbOperatorStore");
 
     jbProjects = oldJbController.projects();
     jbDirectory = oldJbController.directory();
