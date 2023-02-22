@@ -13,11 +13,6 @@ import './interfaces/IJBPaymentTerminal.sol';
   Allows projects to migrate their controller & terminal to 3.1 version
 */
 contract JBMigrationOperator {
-  //*********************************************************************//
-  // --------------------------- custom errors ------------------------- //
-  //*********************************************************************//
-  error UNAUTHORIZED();
-
 
   //*********************************************************************//
   // --------------- public immutable stored properties ---------------- //
