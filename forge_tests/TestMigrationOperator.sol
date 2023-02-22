@@ -377,7 +377,8 @@ contract TestMigrationOperator_Fork is Test {
     vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
 
     _prepareAuthorizations(_projectId);
-
+    
+    vm.prank(jbProjects.ownerOf(_projectId));
     migrationOperator.migrate(
       _projectId,
       address(newJbController),
@@ -626,6 +627,13 @@ contract TestMigrationOperator_Fork is Test {
 
     // warp to the next funding cycle
     JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-    vm.warp(fundingCycle.start + (fundingCycle.duration) + 1);
+
+    vm.warp(
+        fundingCycle.duration == 0
+            ? fundingCycle.ballot != IJBFundingCycleBallot(address(0))
+                ? block.timestamp + fundingCycle.ballot.duration() + 1
+                : block.timestamp + 1
+            : fundingCycle.start + fundingCycle.duration * 2 // skip 2 fc to easily avoid ballot
+    );
   }
 }
