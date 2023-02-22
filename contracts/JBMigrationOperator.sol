@@ -6,6 +6,7 @@ import './interfaces/IJBDirectory.sol';
 import './interfaces/IJBMigratable.sol';
 import './interfaces/IJBPayoutRedemptionPaymentTerminal.sol';
 import './interfaces/IJBPaymentTerminal.sol';
+import './interfaces/IJBProjects.sol';
 
 
 /** 
@@ -13,6 +14,8 @@ import './interfaces/IJBPaymentTerminal.sol';
   Allows projects to migrate their controller & terminal to 3.1 version
 */
 contract JBMigrationOperator {
+
+  error UNAUTHORIZED();
 
   //*********************************************************************//
   // --------------- public immutable stored properties ---------------- //
@@ -24,6 +27,12 @@ contract JBMigrationOperator {
   */
   IJBDirectory immutable public jbDirectory;
 
+  /**
+    @notice
+    The NFT granting ownership to a Juicebox project
+  */
+  IJBProjects immutable public jbProjects;
+
 
   //*********************************************************************//
   // ---------------------------- constructor -------------------------- //
@@ -34,6 +43,7 @@ contract JBMigrationOperator {
   */
   constructor(IJBDirectory _jbDirectory) {
       jbDirectory = _jbDirectory;
+      jbProjects = IJBProjects(_jbDirectory.projects());
   }
 
   
@@ -51,6 +61,9 @@ contract JBMigrationOperator {
     @param _oldJbTerminal Old terminal address to migrate from.
   */
   function migrate(uint256 _projectId, address _newController, IJBPaymentTerminal _newJbTerminal, IJBPayoutRedemptionPaymentTerminal _oldJbTerminal) external {
+      // Only allow the project owner to migrate
+      if (jbProjects.ownerOf(_projectId) != msg.sender) revert UNAUTHORIZED();
+      
       // controller migration
       address _oldController = jbDirectory.controllerOf(_projectId);
 
