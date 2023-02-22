@@ -280,7 +280,7 @@ contract TestMigrationOperator_Fork is Test {
   uint256 targetInWei = 10 * 10**18;
 
   function setUp() public {
-    vm.createSelectFork('https://rpc.ankr.com/eth', 16531301);
+    vm.createSelectFork('https://rpc.ankr.com/eth', 16677461);
     
     // Collect the mainnet deployment addresses
     jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(
