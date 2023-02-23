@@ -16,6 +16,7 @@ async function main() {
 
     exportContractInterfaces(path.join('deployments', hre.network.name, 'platform.json'), outputPath);
     exportContractInterfaces(path.join('deployments', hre.network.name, 'extensions.json'), outputPath);
+    exportContractInterfaces(path.join('deployments', hre.network.name, 'nft-rewards.json'), outputPath);
 
     logger.info('interface export complete');
 }

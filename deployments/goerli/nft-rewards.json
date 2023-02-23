@@ -1,7 +1,1551 @@
 {
     "goerli": {
+        "JBTiered721Delegate": {
+            "address": "0x891504f87695B5b1CA17a476bBa1c2423cb2C46d",
+            "args": [],
+            "abi": [
+                {
+                    "type": "constructor",
+                    "payable": false,
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "ALEADY_MINTED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "APPROVAL_TO_CURRENT_OWNER",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "APPROVE_TO_CALLER",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "CALLER_NOT_OWNER_OR_APPROVED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INCORRECT_OWNER",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INVALID_PAYMENT_EVENT",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INVALID_REDEMPTION_EVENT",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INVALID_REDEMPTION_METADATA",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "INVALID_TOKEN_ID",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "MINT_TO_ZERO",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "NOT_AVAILABLE",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "OVERSPENDING",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "PRBMath__MulDivOverflow",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "prod1"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "denominator"
+                        }
+                    ]
+                },
+                {
+                    "type": "error",
+                    "name": "PRICING_RESOLVER_CHANGES_PAUSED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "RESERVED_TOKEN_MINTING_PAUSED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "TRANSFERS_PAUSED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "TRANSFER_TO_NON_IMPLEMENTER",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "TRANSFER_TO_ZERO_ADDRESS",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "UNAUTHORIZED",
+                    "inputs": []
+                },
+                {
+                    "type": "error",
+                    "name": "UNEXPECTED_TOKEN_REDEEMED",
+                    "inputs": []
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "AddTier",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "tierId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "data",
+                            "indexed": false,
+                            "components": [
+                                {
+                                    "type": "uint80",
+                                    "name": "contributionFloor"
+                                },
+                                {
+                                    "type": "uint48",
+                                    "name": "lockedUntil"
+                                },
+                                {
+                                    "type": "uint40",
+                                    "name": "initialQuantity"
+                                },
+                                {
+                                    "type": "uint16",
+                                    "name": "votingUnits"
+                                },
+                                {
+                                    "type": "uint16",
+                                    "name": "reservedRate"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "reservedTokenBeneficiary"
+                                },
+                                {
+                                    "type": "bytes32",
+                                    "name": "encodedIPFSUri"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "allowManualMint"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "shouldUseBeneficiaryAsDefault"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "transfersPausable"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "Approval",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "owner",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "approved",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenId",
+                            "indexed": true
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "ApprovalForAll",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "owner",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "operator",
+                            "indexed": true
+                        },
+                        {
+                            "type": "bool",
+                            "name": "approved",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "Mint",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "tokenId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tierId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "totalAmountContributed",
+                            "indexed": false
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "MintReservedToken",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "tokenId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tierId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "OwnershipTransferred",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "previousOwner",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "newOwner",
+                            "indexed": true
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "RemoveTier",
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "tierId",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetBaseUri",
+                    "inputs": [
+                        {
+                            "type": "string",
+                            "name": "baseUri",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetContractUri",
+                    "inputs": [
+                        {
+                            "type": "string",
+                            "name": "contractUri",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetDefaultReservedTokenBeneficiary",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "beneficiary",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "SetTokenUriResolver",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "newResolver",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "caller",
+                            "indexed": false
+                        }
+                    ]
+                },
+                {
+                    "type": "event",
+                    "anonymous": false,
+                    "name": "Transfer",
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "from",
+                            "indexed": true
+                        },
+                        {
+                            "type": "address",
+                            "name": "to",
+                            "indexed": true
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenId",
+                            "indexed": true
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "adjustTiers",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple[]",
+                            "name": "_tiersToAdd",
+                            "components": [
+                                {
+                                    "type": "uint80",
+                                    "name": "contributionFloor"
+                                },
+                                {
+                                    "type": "uint48",
+                                    "name": "lockedUntil"
+                                },
+                                {
+                                    "type": "uint40",
+                                    "name": "initialQuantity"
+                                },
+                                {
+                                    "type": "uint16",
+                                    "name": "votingUnits"
+                                },
+                                {
+                                    "type": "uint16",
+                                    "name": "reservedRate"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "reservedTokenBeneficiary"
+                                },
+                                {
+                                    "type": "bytes32",
+                                    "name": "encodedIPFSUri"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "allowManualMint"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "shouldUseBeneficiaryAsDefault"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "transfersPausable"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "uint256[]",
+                            "name": "_tierIdsToRemove"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "approve",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "to"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenId"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "balanceOf",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_owner"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "balance"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "codeOrigin",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "contractURI",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "creditsOf",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "didPay",
+                    "constant": false,
+                    "stateMutability": "payable",
+                    "payable": true,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "payer"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "amount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "forwardedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectTokenCount"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "preferClaimedTokens"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "didRedeem",
+                    "constant": false,
+                    "stateMutability": "payable",
+                    "payable": true,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "holder"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectTokenCount"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "reclaimedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "forwardedAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "directory",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "firstOwnerOf",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_tokenId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "fundingCycleStore",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "getApproved",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "tokenId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "initialize",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_projectId"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_directory"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_name"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_symbol"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_fundingCycleStore"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_baseUri"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_tokenUriResolver"
+                        },
+                        {
+                            "type": "string",
+                            "name": "_contractUri"
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "_pricing",
+                            "components": [
+                                {
+                                    "type": "tuple[]",
+                                    "name": "tiers",
+                                    "components": [
+                                        {
+                                            "type": "uint80",
+                                            "name": "contributionFloor"
+                                        },
+                                        {
+                                            "type": "uint48",
+                                            "name": "lockedUntil"
+                                        },
+                                        {
+                                            "type": "uint40",
+                                            "name": "initialQuantity"
+                                        },
+                                        {
+                                            "type": "uint16",
+                                            "name": "votingUnits"
+                                        },
+                                        {
+                                            "type": "uint16",
+                                            "name": "reservedRate"
+                                        },
+                                        {
+                                            "type": "address",
+                                            "name": "reservedTokenBeneficiary"
+                                        },
+                                        {
+                                            "type": "bytes32",
+                                            "name": "encodedIPFSUri"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "name": "allowManualMint"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "name": "shouldUseBeneficiaryAsDefault"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "name": "transfersPausable"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currency"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "decimals"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "prices"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "address",
+                            "name": "_store"
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "_flags",
+                            "components": [
+                                {
+                                    "type": "bool",
+                                    "name": "lockReservedTokenChanges"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "lockVotingUnitChanges"
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "lockManualMintingChanges"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "isApprovedForAll",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "owner"
+                        },
+                        {
+                            "type": "address",
+                            "name": "operator"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "mintFor",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple[]",
+                            "name": "_mintForTiersData",
+                            "components": [
+                                {
+                                    "type": "uint16[]",
+                                    "name": "tierIds"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "mintFor",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint16[]",
+                            "name": "_tierIds"
+                        },
+                        {
+                            "type": "address",
+                            "name": "_beneficiary"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256[]",
+                            "name": "tokenIds"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "mintReservesFor",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple[]",
+                            "name": "_mintReservesForTiersData",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "tierId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "count"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "mintReservesFor",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_tierId"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "_count"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "name",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "owner",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "ownerOf",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "tokenId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "payParams",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "terminal"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "payer"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "amount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "beneficiary"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "weight"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "reservedRate"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "weight"
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo"
+                        },
+                        {
+                            "type": "tuple[]",
+                            "name": "delegateAllocations",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "delegate"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "amount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "prices",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "pricingCurrency",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "pricingDecimals",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "projectId",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "redeemParams",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "tuple",
+                            "name": "_data",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "terminal"
+                                },
+                                {
+                                    "type": "address",
+                                    "name": "holder"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "projectId"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "currentFundingCycleConfiguration"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "tokenCount"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "totalSupply"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "overflow"
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "reclaimAmount",
+                                    "components": [
+                                        {
+                                            "type": "address",
+                                            "name": "token"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "value"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "decimals"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "currency"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "bool",
+                                    "name": "useTotalOverflow"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "redemptionRate"
+                                },
+                                {
+                                    "type": "string",
+                                    "name": "memo"
+                                },
+                                {
+                                    "type": "bytes",
+                                    "name": "metadata"
+                                }
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "uint256",
+                            "name": "reclaimAmount"
+                        },
+                        {
+                            "type": "string",
+                            "name": "memo"
+                        },
+                        {
+                            "type": "tuple[]",
+                            "name": "delegateAllocations",
+                            "components": [
+                                {
+                                    "type": "address",
+                                    "name": "delegate"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "amount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "renounceOwnership",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "safeTransferFrom",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "from"
+                        },
+                        {
+                            "type": "address",
+                            "name": "to"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenId"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "safeTransferFrom",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "from"
+                        },
+                        {
+                            "type": "address",
+                            "name": "to"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenId"
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "data"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setApprovalForAll",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "operator"
+                        },
+                        {
+                            "type": "bool",
+                            "name": "approved"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setBaseUri",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "string",
+                            "name": "_baseUri"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setContractUri",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "string",
+                            "name": "_contractUri"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setDefaultReservedTokenBeneficiary",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_beneficiary"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "setTokenUriResolver",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "_tokenUriResolver"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "store",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "supportsInterface",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "bytes4",
+                            "name": "_interfaceId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "bool"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "symbol",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "tokenURI",
+                    "constant": true,
+                    "stateMutability": "view",
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "uint256",
+                            "name": "_tokenId"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "name": "transferFrom",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "from"
+                        },
+                        {
+                            "type": "address",
+                            "name": "to"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "tokenId"
+                        }
+                    ],
+                    "outputs": []
+                },
+                {
+                    "type": "function",
+                    "name": "transferOwnership",
+                    "constant": false,
+                    "payable": false,
+                    "inputs": [
+                        {
+                            "type": "address",
+                            "name": "newOwner"
+                        }
+                    ],
+                    "outputs": []
+                }
+            ],
+            "verified": false,
+            "type": "JBTiered721Delegate"
+        },
         "JB721GlobalGovernance": {
-            "address": "0xD0b664685EEE290A27AFBE83Df8a9BEa580c8b2D",
+            "address": "0x511347E58361A768cD89104e0096e2af9f6341B9",
             "args": [],
             "abi": [
                 {
@@ -1688,7 +3232,7 @@
             "type": "JB721GlobalGovernance"
         },
         "JB721TieredGovernance": {
-            "address": "0x49DCceA86e72b4FE6da81a6A3eB5F428e17Cc1fa",
+            "address": "0xcc1A5daF799D44abe07950c135538EE6b9114258",
             "args": [],
             "abi": [
                 {
@@ -3473,7 +5017,7 @@
             "type": "JB721TieredGovernance"
         },
         "JBTiered721DelegateStore": {
-            "address": "0xB13ee35C3608c32C900BeBFeA2C3B46140Fca47c",
+            "address": "0x7b890C6a808cc62561d5a55BB38b70dDaF624b77",
             "args": [],
             "abi": [
                 {
@@ -4534,1556 +6078,12 @@
             "verified": false,
             "type": "JBTiered721DelegateStore"
         },
-        "JBTiered721Delegate": {
-            "address": "0x40a924537394a746E73f6Bec28cF4af30B3933e9",
-            "args": [],
-            "abi": [
-                {
-                    "type": "constructor",
-                    "payable": false,
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "ALEADY_MINTED",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "APPROVAL_TO_CURRENT_OWNER",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "APPROVE_TO_CALLER",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "CALLER_NOT_OWNER_OR_APPROVED",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "INCORRECT_OWNER",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "INVALID_PAYMENT_EVENT",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "INVALID_REDEMPTION_EVENT",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "INVALID_REDEMPTION_METADATA",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "INVALID_TOKEN_ID",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "MINT_TO_ZERO",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "NOT_AVAILABLE",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "OVERSPENDING",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "PRBMath__MulDivOverflow",
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "prod1"
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "denominator"
-                        }
-                    ]
-                },
-                {
-                    "type": "error",
-                    "name": "PRICING_RESOLVER_CHANGES_PAUSED",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "RESERVED_TOKEN_MINTING_PAUSED",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "TRANSFERS_PAUSED",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "TRANSFER_TO_NON_IMPLEMENTER",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "TRANSFER_TO_ZERO_ADDRESS",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "UNAUTHORIZED",
-                    "inputs": []
-                },
-                {
-                    "type": "error",
-                    "name": "UNEXPECTED_TOKEN_REDEEMED",
-                    "inputs": []
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "AddTier",
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "tierId",
-                            "indexed": true
-                        },
-                        {
-                            "type": "tuple",
-                            "name": "data",
-                            "indexed": false,
-                            "components": [
-                                {
-                                    "type": "uint80",
-                                    "name": "contributionFloor"
-                                },
-                                {
-                                    "type": "uint48",
-                                    "name": "lockedUntil"
-                                },
-                                {
-                                    "type": "uint40",
-                                    "name": "initialQuantity"
-                                },
-                                {
-                                    "type": "uint16",
-                                    "name": "votingUnits"
-                                },
-                                {
-                                    "type": "uint16",
-                                    "name": "reservedRate"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "reservedTokenBeneficiary"
-                                },
-                                {
-                                    "type": "bytes32",
-                                    "name": "encodedIPFSUri"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "allowManualMint"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "shouldUseBeneficiaryAsDefault"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "transfersPausable"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "Approval",
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "owner",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "approved",
-                            "indexed": true
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tokenId",
-                            "indexed": true
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "ApprovalForAll",
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "owner",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "operator",
-                            "indexed": true
-                        },
-                        {
-                            "type": "bool",
-                            "name": "approved",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "Mint",
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "tokenId",
-                            "indexed": true
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tierId",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "beneficiary",
-                            "indexed": true
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "totalAmountContributed",
-                            "indexed": false
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "MintReservedToken",
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "tokenId",
-                            "indexed": true
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tierId",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "beneficiary",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "OwnershipTransferred",
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "previousOwner",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "newOwner",
-                            "indexed": true
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "RemoveTier",
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "tierId",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "SetBaseUri",
-                    "inputs": [
-                        {
-                            "type": "string",
-                            "name": "baseUri",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "SetContractUri",
-                    "inputs": [
-                        {
-                            "type": "string",
-                            "name": "contractUri",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "SetDefaultReservedTokenBeneficiary",
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "beneficiary",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "SetTokenUriResolver",
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "newResolver",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "caller",
-                            "indexed": false
-                        }
-                    ]
-                },
-                {
-                    "type": "event",
-                    "anonymous": false,
-                    "name": "Transfer",
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "from",
-                            "indexed": true
-                        },
-                        {
-                            "type": "address",
-                            "name": "to",
-                            "indexed": true
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tokenId",
-                            "indexed": true
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "adjustTiers",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "tuple[]",
-                            "name": "_tiersToAdd",
-                            "components": [
-                                {
-                                    "type": "uint80",
-                                    "name": "contributionFloor"
-                                },
-                                {
-                                    "type": "uint48",
-                                    "name": "lockedUntil"
-                                },
-                                {
-                                    "type": "uint40",
-                                    "name": "initialQuantity"
-                                },
-                                {
-                                    "type": "uint16",
-                                    "name": "votingUnits"
-                                },
-                                {
-                                    "type": "uint16",
-                                    "name": "reservedRate"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "reservedTokenBeneficiary"
-                                },
-                                {
-                                    "type": "bytes32",
-                                    "name": "encodedIPFSUri"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "allowManualMint"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "shouldUseBeneficiaryAsDefault"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "transfersPausable"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "uint256[]",
-                            "name": "_tierIdsToRemove"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "approve",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "to"
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tokenId"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "balanceOf",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "_owner"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "uint256",
-                            "name": "balance"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "codeOrigin",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "contractURI",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "string"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "creditsOf",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "uint256"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "didPay",
-                    "constant": false,
-                    "stateMutability": "payable",
-                    "payable": true,
-                    "inputs": [
-                        {
-                            "type": "tuple",
-                            "name": "_data",
-                            "components": [
-                                {
-                                    "type": "address",
-                                    "name": "payer"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "projectId"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "currentFundingCycleConfiguration"
-                                },
-                                {
-                                    "type": "tuple",
-                                    "name": "amount",
-                                    "components": [
-                                        {
-                                            "type": "address",
-                                            "name": "token"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "value"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "decimals"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "currency"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "tuple",
-                                    "name": "forwardedAmount",
-                                    "components": [
-                                        {
-                                            "type": "address",
-                                            "name": "token"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "value"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "decimals"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "currency"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "projectTokenCount"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "beneficiary"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "preferClaimedTokens"
-                                },
-                                {
-                                    "type": "string",
-                                    "name": "memo"
-                                },
-                                {
-                                    "type": "bytes",
-                                    "name": "metadata"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "didRedeem",
-                    "constant": false,
-                    "stateMutability": "payable",
-                    "payable": true,
-                    "inputs": [
-                        {
-                            "type": "tuple",
-                            "name": "_data",
-                            "components": [
-                                {
-                                    "type": "address",
-                                    "name": "holder"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "projectId"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "currentFundingCycleConfiguration"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "projectTokenCount"
-                                },
-                                {
-                                    "type": "tuple",
-                                    "name": "reclaimedAmount",
-                                    "components": [
-                                        {
-                                            "type": "address",
-                                            "name": "token"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "value"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "decimals"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "currency"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "tuple",
-                                    "name": "forwardedAmount",
-                                    "components": [
-                                        {
-                                            "type": "address",
-                                            "name": "token"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "value"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "decimals"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "currency"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "beneficiary"
-                                },
-                                {
-                                    "type": "string",
-                                    "name": "memo"
-                                },
-                                {
-                                    "type": "bytes",
-                                    "name": "metadata"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "directory",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "firstOwnerOf",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "_tokenId"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "fundingCycleStore",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "getApproved",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "tokenId"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "initialize",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "_projectId"
-                        },
-                        {
-                            "type": "address",
-                            "name": "_directory"
-                        },
-                        {
-                            "type": "string",
-                            "name": "_name"
-                        },
-                        {
-                            "type": "string",
-                            "name": "_symbol"
-                        },
-                        {
-                            "type": "address",
-                            "name": "_fundingCycleStore"
-                        },
-                        {
-                            "type": "string",
-                            "name": "_baseUri"
-                        },
-                        {
-                            "type": "address",
-                            "name": "_tokenUriResolver"
-                        },
-                        {
-                            "type": "string",
-                            "name": "_contractUri"
-                        },
-                        {
-                            "type": "tuple",
-                            "name": "_pricing",
-                            "components": [
-                                {
-                                    "type": "tuple[]",
-                                    "name": "tiers",
-                                    "components": [
-                                        {
-                                            "type": "uint80",
-                                            "name": "contributionFloor"
-                                        },
-                                        {
-                                            "type": "uint48",
-                                            "name": "lockedUntil"
-                                        },
-                                        {
-                                            "type": "uint40",
-                                            "name": "initialQuantity"
-                                        },
-                                        {
-                                            "type": "uint16",
-                                            "name": "votingUnits"
-                                        },
-                                        {
-                                            "type": "uint16",
-                                            "name": "reservedRate"
-                                        },
-                                        {
-                                            "type": "address",
-                                            "name": "reservedTokenBeneficiary"
-                                        },
-                                        {
-                                            "type": "bytes32",
-                                            "name": "encodedIPFSUri"
-                                        },
-                                        {
-                                            "type": "bool",
-                                            "name": "allowManualMint"
-                                        },
-                                        {
-                                            "type": "bool",
-                                            "name": "shouldUseBeneficiaryAsDefault"
-                                        },
-                                        {
-                                            "type": "bool",
-                                            "name": "transfersPausable"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "currency"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "decimals"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "prices"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "address",
-                            "name": "_store"
-                        },
-                        {
-                            "type": "tuple",
-                            "name": "_flags",
-                            "components": [
-                                {
-                                    "type": "bool",
-                                    "name": "lockReservedTokenChanges"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "lockVotingUnitChanges"
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "lockManualMintingChanges"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "isApprovedForAll",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "owner"
-                        },
-                        {
-                            "type": "address",
-                            "name": "operator"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "bool"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "mintFor",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "tuple[]",
-                            "name": "_mintForTiersData",
-                            "components": [
-                                {
-                                    "type": "uint16[]",
-                                    "name": "tierIds"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "beneficiary"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "mintFor",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint16[]",
-                            "name": "_tierIds"
-                        },
-                        {
-                            "type": "address",
-                            "name": "_beneficiary"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "uint256[]",
-                            "name": "tokenIds"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "mintReservesFor",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "tuple[]",
-                            "name": "_mintReservesForTiersData",
-                            "components": [
-                                {
-                                    "type": "uint256",
-                                    "name": "tierId"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "count"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "mintReservesFor",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "_tierId"
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "_count"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "name",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "string"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "owner",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "ownerOf",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "tokenId"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "payParams",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "tuple",
-                            "name": "_data",
-                            "components": [
-                                {
-                                    "type": "address",
-                                    "name": "terminal"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "payer"
-                                },
-                                {
-                                    "type": "tuple",
-                                    "name": "amount",
-                                    "components": [
-                                        {
-                                            "type": "address",
-                                            "name": "token"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "value"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "decimals"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "currency"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "projectId"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "currentFundingCycleConfiguration"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "beneficiary"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "weight"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "reservedRate"
-                                },
-                                {
-                                    "type": "string",
-                                    "name": "memo"
-                                },
-                                {
-                                    "type": "bytes",
-                                    "name": "metadata"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "uint256",
-                            "name": "weight"
-                        },
-                        {
-                            "type": "string",
-                            "name": "memo"
-                        },
-                        {
-                            "type": "tuple[]",
-                            "name": "delegateAllocations",
-                            "components": [
-                                {
-                                    "type": "address",
-                                    "name": "delegate"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "amount"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "prices",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "pricingCurrency",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "uint256"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "pricingDecimals",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "uint256"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "projectId",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "uint256"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "redeemParams",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "tuple",
-                            "name": "_data",
-                            "components": [
-                                {
-                                    "type": "address",
-                                    "name": "terminal"
-                                },
-                                {
-                                    "type": "address",
-                                    "name": "holder"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "projectId"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "currentFundingCycleConfiguration"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "tokenCount"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "totalSupply"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "overflow"
-                                },
-                                {
-                                    "type": "tuple",
-                                    "name": "reclaimAmount",
-                                    "components": [
-                                        {
-                                            "type": "address",
-                                            "name": "token"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "value"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "decimals"
-                                        },
-                                        {
-                                            "type": "uint256",
-                                            "name": "currency"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "bool",
-                                    "name": "useTotalOverflow"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "redemptionRate"
-                                },
-                                {
-                                    "type": "string",
-                                    "name": "memo"
-                                },
-                                {
-                                    "type": "bytes",
-                                    "name": "metadata"
-                                }
-                            ]
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "uint256",
-                            "name": "reclaimAmount"
-                        },
-                        {
-                            "type": "string",
-                            "name": "memo"
-                        },
-                        {
-                            "type": "tuple[]",
-                            "name": "delegateAllocations",
-                            "components": [
-                                {
-                                    "type": "address",
-                                    "name": "delegate"
-                                },
-                                {
-                                    "type": "uint256",
-                                    "name": "amount"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "renounceOwnership",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "safeTransferFrom",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "from"
-                        },
-                        {
-                            "type": "address",
-                            "name": "to"
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tokenId"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "safeTransferFrom",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "from"
-                        },
-                        {
-                            "type": "address",
-                            "name": "to"
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tokenId"
-                        },
-                        {
-                            "type": "bytes",
-                            "name": "data"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "setApprovalForAll",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "operator"
-                        },
-                        {
-                            "type": "bool",
-                            "name": "approved"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "setBaseUri",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "string",
-                            "name": "_baseUri"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "setContractUri",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "string",
-                            "name": "_contractUri"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "setDefaultReservedTokenBeneficiary",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "_beneficiary"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "setTokenUriResolver",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "_tokenUriResolver"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "store",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "address"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "supportsInterface",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "bytes4",
-                            "name": "_interfaceId"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "bool"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "symbol",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [],
-                    "outputs": [
-                        {
-                            "type": "string"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "tokenURI",
-                    "constant": true,
-                    "stateMutability": "view",
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "uint256",
-                            "name": "_tokenId"
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "type": "string"
-                        }
-                    ]
-                },
-                {
-                    "type": "function",
-                    "name": "transferFrom",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "from"
-                        },
-                        {
-                            "type": "address",
-                            "name": "to"
-                        },
-                        {
-                            "type": "uint256",
-                            "name": "tokenId"
-                        }
-                    ],
-                    "outputs": []
-                },
-                {
-                    "type": "function",
-                    "name": "transferOwnership",
-                    "constant": false,
-                    "payable": false,
-                    "inputs": [
-                        {
-                            "type": "address",
-                            "name": "newOwner"
-                        }
-                    ],
-                    "outputs": []
-                }
-            ],
-            "verified": false,
-            "type": "JBTiered721Delegate"
-        },
         "JBTiered721DelegateDeployer": {
-            "address": "0x109537Bc542F36A45ACe445692D52Ee6AF0c076E",
+            "address": "0xF9C4E8Eb953A3F152C0fAbaccF352620988BF261",
             "args": [
-                "0xD0b664685EEE290A27AFBE83Df8a9BEa580c8b2D",
-                "0x49DCceA86e72b4FE6da81a6A3eB5F428e17Cc1fa",
-                "0x40a924537394a746E73f6Bec28cF4af30B3933e9"
+                "0x511347E58361A768cD89104e0096e2af9f6341B9",
+                "0xcc1A5daF799D44abe07950c135538EE6b9114258",
+                "0x891504f87695B5b1CA17a476bBa1c2423cb2C46d"
             ],
             "abi": [
                 {
@@ -6325,11 +6325,11 @@
             "type": "JBTiered721DelegateDeployer"
         },
         "JBTiered721DelegateProjectDeployer": {
-            "address": "0x57e089f710f94553a21F86eD40E91Fa2db445345",
+            "address": "0x7f945d27b6ae6114dF43c1C1931bBcb5453077F3",
             "args": [
-                "0xa01C872C6221DE5F3089FE309299c06750A74A6F",
-                "0x109537Bc542F36A45ACe445692D52Ee6AF0c076E",
-                "0xE3468AE0EC1b8380f5Ad28304EE990cf470565B8"
+                "0x89B5BbE67Be9886e7BD3dCdbBbd323a9e717382a",
+                "0xF9C4E8Eb953A3F152C0fAbaccF352620988BF261",
+                "0xE6C0530CE5DF6F7Cb6B8ceAFf2CcEE6b8565640e"
             ],
             "abi": [
                 {

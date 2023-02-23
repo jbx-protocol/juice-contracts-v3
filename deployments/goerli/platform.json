@@ -6109,7 +6109,7 @@
                     ]
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "JBCurrencies": {
             "address": "0xfa0CaC4c28b433E20Ff615b23C5E1142B9CCe4b0",
@@ -6142,7 +6142,7 @@
                     ]
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "JBETHPaymentTerminal": {
             "address": "0x15C4C2C07638409550431E362cAFE5b2e29122F5",
@@ -7629,7 +7629,7 @@
                     ]
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "JBDAIPaymentTerminal": {
             "address": "0xBadd7Df6aD3c2c9B8076Aeeb36a371082043bDD1",
@@ -9131,7 +9131,7 @@
                     ]
                 }
             ],
-            "verified": false,
+            "verified": true,
             "type": "JBERC20PaymentTerminal"
         },
         "DaiHedgeDelegate": {
@@ -9766,7 +9766,7 @@
                     ]
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "JB1DayReconfigurationBufferBallot": {
             "address": "0x9a7A1c85207159e2FBC12B4Ee52717E9329170EA",
@@ -9842,7 +9842,7 @@
                     ]
                 }
             ],
-            "verified": false,
+            "verified": true,
             "type": "JBReconfigurationBufferBallot"
         },
         "JB3DayReconfigurationBufferBallot": {
@@ -9919,7 +9919,7 @@
                     ]
                 }
             ],
-            "verified": false,
+            "verified": true,
             "type": "JBReconfigurationBufferBallot"
         },
         "JB7DayReconfigurationBufferBallot": {
@@ -9996,7 +9996,7 @@
                     ]
                 }
             ],
-            "verified": false,
+            "verified": true,
             "type": "JBReconfigurationBufferBallot"
         },
         "DaiTreasuryDelegate": {
@@ -10434,7 +10434,7 @@
                     ]
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "RoleManager": {
             "address": "0x0AB8F6b714aF8249fE6BC7aa8548637fdda5B54B",
@@ -10816,7 +10816,7 @@
                     "outputs": []
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "VestingPlanManager": {
             "address": "0xc83bD17603138Cbca4A9623a321d3eC628D49027",
@@ -11463,7 +11463,7 @@
                     ]
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "PlatformDiscountManager": {
             "address": "0x450C138a3Be9F3D161a37106d719c37c9688b874",
@@ -11729,7 +11729,7 @@
                     "outputs": []
                 }
             ],
-            "verified": false
+            "verified": true
         },
         "NFToken": {
             "address": "",

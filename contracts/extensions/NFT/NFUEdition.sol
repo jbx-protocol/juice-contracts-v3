@@ -122,20 +122,12 @@ contract NFUEdition is BaseNFT {
     supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    mintActual(_edition, msg.sender, '', '');
+    mintActual(_edition, msg.sender);
   }
 
-  /**
-   * @notice Mints a token for a given edition index after validating payment. Subject to maxSupply constraints set in the `initialize` function and edition limits set with `registerEdition`.
-   *
-   * @param _edition Edition index.
-   * @param _memo Juicebox payment memo param.
-   * @param _metadata Juicebox payment metadata param.
-   */
   function mint(
     uint256 _edition,
-    string calldata _memo,
-    bytes calldata _metadata
+    address _account
   )
     external
     payable
@@ -146,25 +138,7 @@ contract NFUEdition is BaseNFT {
     supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    mintActual(_edition, msg.sender, _memo, _metadata);
-  }
-
-  function mint(
-    uint256 _edition,
-    address _account,
-    string calldata _memo,
-    bytes calldata _metadata
-  )
-    external
-    payable
-    virtual
-    nonReentrant
-    onlyDuringMintPeriod
-    callerNotBlocked(msg.sender)
-    supplyAvailable(_edition)
-    returns (uint256 tokenId)
-  {
-    //
+    // TODO
   }
 
   //*********************************************************************//
@@ -227,13 +201,6 @@ contract NFUEdition is BaseNFT {
   /**
    * @dev Prevent mint without edition param.
    */
-  function mint(string calldata, bytes calldata) external payable override returns (uint256) {
-    revert INVALID_OPERATION();
-  }
-
-  /**
-   * @dev Prevent mint without edition param.
-   */
   function mintFor(address) external override returns (uint256) {
     revert INVALID_OPERATION();
   }
@@ -252,20 +219,16 @@ contract NFUEdition is BaseNFT {
    *
    * @param _edition Edition id to mint.
    * @param _account Address to assign the new token to.
-   * @param _memo JBX terminal payment memo.
-   * @param _metadata JBX terminal payment metadata.
    */
   function mintActual(
     uint256 _edition,
-    address _account,
-    string memory _memo,
-    bytes memory _metadata
+    address _account
   ) internal virtual returns (uint256 tokenId) {
     if (isPaused) {
       revert MINTING_PAUSED();
     }
 
-    processPayment(_memo, _metadata, editionPrices[_edition]); // validates price
+    processPayment(editionPrices[_edition]); // validates price
 
     unchecked {
       ++totalSupply;

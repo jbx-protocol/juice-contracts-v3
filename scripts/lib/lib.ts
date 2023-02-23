@@ -194,7 +194,6 @@ export async function abiFromAddress(contractAddress: string, etherscanKey: stri
         }
 
         logger.info(`getting abi for ${contractAddress} on ${hre.network.name}`);
-        console.log(``);
         const data = await fetch(`https://api.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${etherscanKey}`)
             .then((response: any) => response.json())
             .then((data: any) => data['result']);

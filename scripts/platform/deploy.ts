@@ -95,8 +95,12 @@ async function main() {
 
     await deployRecordContract('PlatformDiscountManager', [jbDirectoryAddress, jbProjectsAddress, jbOperatorStoreAddress], deployer);
 
+    await deployRecordContract('VeNftDeployer', [jbProjectsAddress, jbOperatorStoreAddress], deployer);
+
     await recordContractAbi('OperatorFilter', deployer);
     await recordContractAbi('NFToken', deployer);
+    await recordContractAbi('JBVeNft', deployer);
+    await recordContractAbi('VeTokenUriResolver', deployer);
 
     logger.info('deployment complete');
 }
