@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
@@ -12,26 +12,13 @@ import '../interfaces/IOperatorFilter.sol';
 import './ERC721FU.sol';
 
 /**
- * @notice Uniswap IQuoter interface snippet taken from uniswap v3 periphery library.
+ * @notice This is a reduced implementation similar to BaseNFT but with limitations on token transfers. This functionality was originally described in https://github.com/tankbottoms/juice-interface-svelte/issues/752.
  */
-interface IQuoter {
-  function quoteExactInputSingle(
-    address tokenIn,
-    address tokenOut,
-    uint24 fee,
-    uint256 amountIn,
-    uint160 sqrtPriceLimitX96
-  ) external returns (uint256 amountOut);
-}
-
-abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard {
+abstract contract BaseMembership is ERC721FU, AccessControlEnumerable, ReentrancyGuard {
   using Strings for uint256;
 
   bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
   bytes32 public constant REVEALER_ROLE = keccak256('REVEALER_ROLE');
-
-  address public constant WETH9 = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-  address public constant DAI = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
   /**
    * @notice NFT provenance hash reassignment prohibited.
@@ -75,6 +62,11 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   error CALLER_BLOCKED();
 
   /**
+   * @notice This ERC721 implementation is soul-bound, transfers and approvals are disabled. Tokens can be minted subject to OperatorFilter is any and can be burned by priviliged users.
+   */
+  error TRANSFER_DISABLED();
+
+  /**
    * @notice Prevents minting outside of the mint period if set. Can be set only to have a start or only and end date.
    */
   modifier onlyDuringMintPeriod() {
@@ -107,8 +99,6 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     _;
   }
 
-  IQuoter public constant uniswapQuoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
-
   uint256 public maxSupply;
   uint256 public unitPrice;
   uint256 public mintAllowance;
@@ -130,11 +120,6 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
    * @notice Pause minting flag
    */
   bool public isPaused;
-
-  /**
-   * @notice If set, token ids will not be sequential, but instead based on minting account, current blockNumber, and optionally, price of eth.
-   */
-  bool public randomizedMint;
 
   /**
    * @notice Address that receives payments from mint operations.
@@ -159,37 +144,38 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
   //*********************************************************************//
 
   /**
-   * @dev Override to apply callerNotBlocked modifier in case there is an OperatorFilter set
+   * @notice Soul-bound NFT, this ERC721 impelementation prevents transfer.
    */
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _id
-  ) public virtual override callerNotBlocked(msg.sender) {
-    super.transferFrom(_from, _to, _id);
+  function approve(address, uint256) public virtual override {
+    revert TRANSFER_DISABLED();
   }
 
   /**
-   * @dev Override to apply callerNotBlocked modifier in case there is an OperatorFilter set
+   * @notice Soul-bound NFT, this ERC721 impelementation prevents transfer.
    */
-  function safeTransferFrom(
-    address _from,
-    address _to,
-    uint256 _id
-  ) public virtual override callerNotBlocked(msg.sender) {
-    super.safeTransferFrom(_from, _to, _id);
+  function setApprovalForAll(address, bool) public virtual override {
+    revert TRANSFER_DISABLED();
   }
 
   /**
-   * @dev Override to apply callerNotBlocked modifier in case there is an OperatorFilter set
+   * @notice Soul-bound NFT, this ERC721 impelementation prevents transfer.
    */
-  function safeTransferFrom(
-    address _from,
-    address _to,
-    uint256 _id,
-    bytes calldata _data
-  ) public virtual override callerNotBlocked(msg.sender) {
-    super.safeTransferFrom(_from, _to, _id, _data);
+  function transferFrom(address, address, uint256) public virtual override {
+    revert TRANSFER_DISABLED();
+  }
+
+  /**
+   * @notice Soul-bound NFT, this ERC721 impelementation prevents transfer.
+   */
+  function safeTransferFrom(address, address, uint256) public virtual override {
+    revert TRANSFER_DISABLED();
+  }
+
+  /**
+   * @notice Soul-bound NFT, this ERC721 impelementation prevents transfer.
+   */
+  function safeTransferFrom(address, address, uint256, bytes calldata) public virtual override {
+    revert TRANSFER_DISABLED();
   }
 
   //*********************************************************************//
@@ -315,20 +301,22 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       expectedPrice = priceResolver.getPrice(address(this), msg.sender, 0);
     }
 
-    if (msg.value < expectedPrice) {
+    uint256 mintCost = msg.value; // TODO: - platformMintFee;
+
+    if (mintCost < expectedPrice) {
       revert INCORRECT_PAYMENT(expectedPrice);
     }
 
-    if (msg.value == 0 || msg.value == expectedPrice) {
+    if (mintCost == 0 || mintCost == expectedPrice) {
       balance = 1;
       refund = 0;
-    } else if (msg.value > expectedPrice) {
+    } else if (mintCost > expectedPrice) {
       if (address(priceResolver) != address(0)) {
         // TODO: pending changes to INFTPriceResolver
         balance = 1;
-        refund = msg.value - expectedPrice;
+        refund = mintCost - expectedPrice;
       } else {
-        balance = msg.value / expectedPrice;
+        balance = mintCost / expectedPrice;
 
         if (totalSupply + balance > maxSupply) {
           // reduce to max supply
@@ -341,18 +329,20 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
           balance -= accountBalance + balance - mintAllowance;
         }
 
-        refund = msg.value - (balance * expectedPrice);
+        refund = mintCost - (balance * expectedPrice);
       }
     }
 
     if (payoutReceiver != address(0)) {
-      (bool success, ) = payoutReceiver.call{value: msg.value - refund}('');
+      (bool success, ) = payoutReceiver.call{value: mintCost - refund}('');
       if (!success) {
         revert PAYMENT_FAILURE();
       }
     } else {
       revert PAYMENT_FAILURE();
     }
+
+    // tranfer platform fee
   }
 
   //*********************************************************************//
@@ -372,8 +362,15 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     unchecked {
       ++totalSupply;
     }
-    tokenId = generateTokenId(_account, 0);
+    tokenId = totalSupply;
     _mint(_account, tokenId);
+  }
+
+  /**
+   * @notice Privileged operation callable by accounts with MINTER_ROLE permission to burn a token.
+   */
+  function revoke(uint256 _tokenId) external virtual onlyRole(MINTER_ROLE) {
+    _burn(_tokenId);
   }
 
   function setPause(bool pause) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -442,10 +439,6 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
     IOperatorFilter _operatorFilter
   ) external onlyRole(DEFAULT_ADMIN_ROLE) {
     operatorFilter = _operatorFilter;
-  }
-
-  function setRandomizedMint(bool _randomizedMint) external onlyRole(DEFAULT_ADMIN_ROLE) {
-    randomizedMint = _randomizedMint;
   }
 
   /**
@@ -522,7 +515,7 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       unchecked {
         ++totalSupply;
       }
-      tokenId = generateTokenId(_account, msg.value); // NOTE: this call requires totalSupply to be incremented by 1
+      tokenId = totalSupply;
       _mint(_account, tokenId);
       unchecked {
         --balance;
@@ -544,39 +537,5 @@ abstract contract BaseNFT is ERC721FU, AccessControlEnumerable, ReentrancyGuard 
       interfaceId == type(IERC2981).interfaceId || // 0x2a55205a
       AccessControlEnumerable.supportsInterface(interfaceId) ||
       ERC721FU.supportsInterface(interfaceId);
-  }
-
-  /**
-   * @notice Generates a token id based on provided parameters. Id range is 1...(maxSupply + 1), 0 is considered invalid and never returned.
-   *
-   * @dev If randomizedMint is set token id will be based on account value, current price of eth for the amount provided (via Uniswap), current block number. Collisions are resolved via increment.
-   */
-  function generateTokenId(
-    address _account,
-    uint256 _amount
-  ) internal virtual returns (uint256 tokenId) {
-    if (!randomizedMint) {
-      tokenId = totalSupply;
-    } else {
-      uint256 ethPrice;
-      if (_amount != 0) {
-        ethPrice = uniswapQuoter.quoteExactInputSingle(
-          WETH9,
-          DAI,
-          3000, // fee
-          _amount,
-          0 // sqrtPriceLimitX96
-        );
-      }
-
-      tokenId =
-        uint256(keccak256(abi.encodePacked(_account, block.number, ethPrice))) %
-        (maxSupply + 1);
-
-      // resolve token id collisions
-      while (tokenId == 0 || _ownerOf[tokenId] != address(0)) {
-        tokenId = ++tokenId % (maxSupply + 1);
-      }
-    }
   }
 }

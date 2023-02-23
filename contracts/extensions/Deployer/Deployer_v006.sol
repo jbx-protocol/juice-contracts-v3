@@ -35,6 +35,7 @@ contract Deployer_v006 is Deployer_v005 {
     EnglishAuctionHouse _englishAuctionSource,
     FixedPriceSale _fixedPriceSaleSource,
     NFUToken _nfuTokenSource,
+    NFUMembership _nfuMembershipSource,
     ITokenLiquidator _tokenLiquidator
   ) public virtual override reinitializer(6) {
     __Ownable_init();
@@ -44,6 +45,7 @@ contract Deployer_v006 is Deployer_v005 {
     englishAuctionSource = _englishAuctionSource;
     fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
+    nfuMembershipSource = _nfuMembershipSource;
     tokenLiquidator = _tokenLiquidator;
 
     prices[deployOpenTieredTokenUriResolverKey] = baseFee;

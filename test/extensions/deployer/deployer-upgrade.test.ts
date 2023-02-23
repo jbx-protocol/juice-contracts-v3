@@ -45,6 +45,7 @@ describe('Deployer upgrade tests', () => {
     let mixedPaymentSplitterFactoryLibrary: any;
     let auctionsFactoryFactoryLibrary: any;
     let nfuTokenFactoryLibrary: any;
+    let nfuMembershipFactoryLibrary: any;
     let paymentProcessorFactoryLibrary: any;
     let nftRewardDataSourceFactoryLibrary: any;
     let auctionMachineFactoryLibrary: any;
@@ -56,6 +57,7 @@ describe('Deployer upgrade tests', () => {
     let sourceEnglishAuctionHouse: any;
     let sourceFixedPriceSale: any;
     let nfuToken: any;
+    let nfuMembership: any;
     let tokenLiquidator: any;
     let dutchAuctionMachineSource: any;
     let englishAuctionMachineSource: any;
@@ -304,12 +306,16 @@ describe('Deployer upgrade tests', () => {
         const nfuTokenFactoryFactory = await ethers.getContractFactory('NFUTokenFactory', deployer);
         nfuTokenFactoryLibrary = await nfuTokenFactoryFactory.connect(deployer).deploy();
 
+        const nfuMembershipFactoryFactory = await ethers.getContractFactory('NFUMembershipFactory', deployer);
+        nfuMembershipFactoryLibrary = await nfuMembershipFactoryFactory.connect(deployer).deploy();
+
         const deployerFactory = await ethers.getContractFactory('Deployer_v004', {
             libraries: {
                 NFTokenFactory: nfTokenFactoryLibrary.address,
                 MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibrary.address,
                 AuctionsFactory: auctionsFactoryFactoryLibrary.address,
-                NFUTokenFactory: nfuTokenFactoryLibrary.address
+                NFUTokenFactory: nfuTokenFactoryLibrary.address,
+                NFUMembershipFactory: nfuMembershipFactoryLibrary.address
             },
             signer: deployer
         });
@@ -318,7 +324,11 @@ describe('Deployer upgrade tests', () => {
         nfuToken = await nfuTokenFactory.connect(deployer).deploy();
         await nfuToken.deployed();
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, sourceFixedPriceSale.address, nfuToken.address] } });
+        const nfuMembershipFactory = await ethers.getContractFactory('NFUMembership', { signer: deployer });
+        nfuMembership = await nfuMembershipFactory.connect(deployer).deploy();
+        await nfuMembership.deployed();
+
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, sourceFixedPriceSale.address, nfuToken.address, nfuMembership.address] } });
     });
 
     it('Create cloned NFTs (v004)', async () => {
@@ -329,7 +339,6 @@ describe('Deployer upgrade tests', () => {
         const symbol = 'NFT';
         const baseUri = 'ipfs://hidden';
         const contractUri = 'ipfs://metadata';
-        const projectId = 99;
         const unitPrice = ethers.utils.parseEther('0.001');
         const maxSupply = 20;
         const mintAllowance = 2;
@@ -356,6 +365,35 @@ describe('Deployer upgrade tests', () => {
         expect(await tokenB.symbol()).to.equal(symbol + 'B');
     });
 
+    it('Create Membership NFT (v004)', async () => {
+        const now = await helpers.time.latest();
+        const nfuMembershipFactory = await ethers.getContractFactory('NFUMembership', { signer: deployer });
+
+        const baseUri = 'ipfs://hidden';
+        const contractUri = 'ipfs://metadata';
+        const unitPrice = ethers.utils.parseEther('0.001');
+        const maxSupply = 20;
+        const mintAllowance = 2;
+        const mintPeriodEnd = Math.floor(now + 24 * 60 * 60);
+
+        let tx = await deployerProxy.connect(deployer)
+            .deployNFUMembership(accounts[0].address, 'Test Membership Token', 'TMT', baseUri, contractUri, maxSupply, unitPrice, mintAllowance, mintPeriodEnd, { value: defaultOperationFee });
+        let receipt = await tx.wait();
+
+        let [contractType, contractAddress] = receipt.events.filter(e => e.event === 'Deployment')[0].args;
+        const membershipTokenContract = await nfuMembershipFactory.attach(contractAddress);
+
+        tx = await membershipTokenContract.connect(accounts[1])['mint()']({ value: '1000000000000000' });
+        receipt = await tx.wait();
+        const [AddressZero, owner, tokenId] = receipt.events.filter(e => e.event === 'Transfer')[0].args;
+        await expect(membershipTokenContract.connect(accounts[1]).transferFrom(accounts[1].address, accounts[1].address, tokenId)).to.be.revertedWithCustomError(membershipTokenContract, 'TRANSFER_DISABLED');
+
+        expect(await membershipTokenContract.balanceOf(accounts[1].address)).to.equal(1);
+        await expect(membershipTokenContract.connect(accounts[1]).revoke(tokenId)).to.be.reverted;
+        await membershipTokenContract.connect(accounts[0]).revoke(tokenId);
+        expect(await membershipTokenContract.balanceOf(accounts[0].address)).to.equal(0);
+    });
+
     it('Deploy Deployer_v005 as upgrade to v004', async () => {
         const paymentProcessorFactory = await ethers.getContractFactory('PaymentProcessorFactory', deployer);
         paymentProcessorFactoryLibrary = await paymentProcessorFactory.connect(deployer).deploy();
@@ -366,6 +404,7 @@ describe('Deployer upgrade tests', () => {
                 MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibrary.address,
                 AuctionsFactory: auctionsFactoryFactoryLibrary.address,
                 NFUTokenFactory: nfuTokenFactoryLibrary.address,
+                NFUMembershipFactory: nfuMembershipFactoryLibrary.address,
                 PaymentProcessorFactory: paymentProcessorFactoryLibrary.address
             },
             signer: deployer
@@ -378,7 +417,7 @@ describe('Deployer upgrade tests', () => {
             .deploy(ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero, feeBps, uniswapPoolFee);
         await tokenLiquidator.deployed();
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, sourceFixedPriceSale.address, nfuToken.address, tokenLiquidator.address] } });
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, sourceFixedPriceSale.address, nfuToken.address, nfuMembership.address, tokenLiquidator.address] } });
     });
 
     it('Deploy PaymentProcessor via Deployer (v005)', async () => {
@@ -408,13 +447,14 @@ describe('Deployer upgrade tests', () => {
                 MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibrary.address,
                 AuctionsFactory: auctionsFactoryFactoryLibrary.address,
                 NFUTokenFactory: nfuTokenFactoryLibrary.address,
+                NFUMembershipFactory: nfuMembershipFactoryLibrary.address,
                 PaymentProcessorFactory: paymentProcessorFactoryLibrary.address,
                 NFTRewardDataSourceFactory: nftRewardDataSourceFactoryLibrary.address
             },
             signer: deployer
         });
 
-        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, sourceFixedPriceSale.address, nfuToken.address, tokenLiquidator.address] } });
+        deployerProxy = await upgrades.upgradeProxy(deployerProxy, deployerFactory, { kind: 'uups', call: { fn: 'initialize(address,address,address,address,address,address)', args: [sourceDutchAuctionHouse.address, sourceEnglishAuctionHouse.address, sourceFixedPriceSale.address, nfuToken.address, nfuMembership.address, tokenLiquidator.address] } });
     });
 
     it('Deploy Deployer_v007 as upgrade to v006', async () => {
@@ -436,6 +476,7 @@ describe('Deployer upgrade tests', () => {
                 MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibrary.address,
                 AuctionsFactory: auctionsFactoryFactoryLibrary.address,
                 NFUTokenFactory: nfuTokenFactoryLibrary.address,
+                NFUMembershipFactory: nfuMembershipFactoryLibrary.address,
                 PaymentProcessorFactory: paymentProcessorFactoryLibrary.address,
                 NFTRewardDataSourceFactory: nftRewardDataSourceFactoryLibrary.address,
                 AuctionMachineFactory: auctionMachineFactoryLibrary.address,
@@ -472,12 +513,13 @@ describe('Deployer upgrade tests', () => {
             {
                 kind: 'uups',
                 call: {
-                    fn: 'initialize(address,address,address,address,address,address,address,address,address,address)',
+                    fn: 'initialize(address,address,address,address,address,address,address,address,address,address,address)',
                     args: [
                         sourceDutchAuctionHouse.address,
                         sourceEnglishAuctionHouse.address,
                         sourceFixedPriceSale.address,
                         nfuToken.address,
+                        nfuMembership.address,
                         tokenLiquidator.address,
                         dutchAuctionMachineSource.address,
                         englishAuctionMachineSource.address,
@@ -810,3 +852,5 @@ describe('Deployer upgrade tests', () => {
         )).to.be.reverted;
     });
 });
+
+// npx hardhat test test/extensions/deployer/deployer-upgrade.test.ts

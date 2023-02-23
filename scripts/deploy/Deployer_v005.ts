@@ -45,7 +45,8 @@ async function main() {
     const sourceFixedPriceSaleAddress = getContractRecord('FixedPriceSale', deploymentLogPath).address;
     const nfuTokenFactoryLibraryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
     const sourceNFUTokenAddress = getContractRecord('NFUToken', deploymentLogPath).address;
-
+    const nfuMembershipFactoryLibraryAddress = getContractRecord('NFUMembershipFactory', deploymentLogPath).address;
+    const sourceNFUMembershipAddress = getContractRecord('NFUMembership', deploymentLogPath).address;
     const jbxDirectoryAddress = getContractRecord('JBDirectory').address;
     const jbxOperatorStoreAddress = getContractRecord('JBOperatorStore').address;
     const jbxProjectsAddress = getContractRecord('JBProjects').address;
@@ -59,6 +60,8 @@ async function main() {
     logger.info(`found existing deployment of FixedPriceSale at ${sourceFixedPriceSaleAddress}`);
     logger.info(`found existing deployment of NFUTokenFactory at ${nfuTokenFactoryLibraryAddress}`);
     logger.info(`found existing deployment of NFUToken at ${sourceNFUTokenAddress}`);
+    logger.info(`found existing deployment of NFUMembershipFactory at ${nfuMembershipFactoryLibraryAddress}`);
+    logger.info(`found existing deployment of NFUMembership at ${sourceNFUMembershipAddress}`);
     logger.info(`found existing deployment of JBDirectory at ${jbxDirectoryAddress}`);
     logger.info(`found existing deployment of JBOperatorStore at ${jbxOperatorStoreAddress}`);
     logger.info(`found existing deployment of JBProjects at ${jbxProjectsAddress}`);
@@ -72,6 +75,7 @@ async function main() {
             MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryLibraryAddress,
             AuctionsFactory: auctionsFactoryFactoryLibraryAddress,
             NFUTokenFactory: nfuTokenFactoryLibraryAddress,
+            NFTMembershipFactory: nfuMembershipFactoryLibraryAddress,
             PaymentProcessorFactory: paymentProcessorFactoryAddress
         },
         signer: deployer
@@ -87,8 +91,8 @@ async function main() {
         {
             kind: 'uups',
             call: {
-                fn: 'initialize(address,address,address,address,address)',
-                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenAddress, tokenLiquidatorAddress]
+                fn: 'initialize(address,address,address,address,address,address)',
+                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenAddress, sourceNFUMembershipAddress, tokenLiquidatorAddress]
             }
         });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);

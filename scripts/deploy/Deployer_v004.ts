@@ -53,29 +53,35 @@ async function main() {
     logger.info(`found existing deployment of FixedPriceSale at ${sourceFixedPriceSaleAddress}`);
 
     await deployRecordContract('NFUTokenFactory', [], deployer, 'NFUTokenFactory', deploymentLogPath);
+    await deployRecordContract('NFUMembershipFactory', [], deployer, 'NFUMembershipFactory', deploymentLogPath);
 
-    const nfutokenFactoryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
+    const nfuTokenFactoryAddress = getContractRecord('NFUTokenFactory', deploymentLogPath).address;
+    const nfuMembershipFactoryAddress = getContractRecord('NFUMembershipFactory', deploymentLogPath).address;
     const deployerFactory = await ethers.getContractFactory('Deployer_v004', {
         libraries: {
             NFTokenFactory: nftokenFactoryAddress,
             MixedPaymentSplitterFactory: mixedPaymentSplitterFactoryAddress,
             AuctionsFactory: auctionsFactoryAddress,
-            NFUTokenFactory: nfutokenFactoryAddress
+            NFUTokenFactory: nfuTokenFactoryAddress,
+            NFUMembershipFactory: nfuMembershipFactoryAddress
         },
         signer: deployer
     });
 
     await deployRecordContract('NFUToken', [], deployer, 'NFUToken', deploymentLogPath);
-
     const sourceNFUTokenRecord = getContractRecord('NFUToken', deploymentLogPath);
     await verifyRecordContract('NFUToken', sourceNFUTokenRecord.address, sourceNFUTokenRecord.args, deploymentLogPath);
+
+    await deployRecordContract('NFUMembership', [], deployer, 'NFUMembership', deploymentLogPath);
+    const sourceNFUMembershipRecord = getContractRecord('NFUMembership', deploymentLogPath);
+    await verifyRecordContract('NFUMembership', sourceNFUMembershipRecord.address, sourceNFUMembershipRecord.args, deploymentLogPath);
 
     const deployerProxy = await upgrades.upgradeProxy(deployerProxyAddress, deployerFactory,
         {
             kind: 'uups',
             call: {
-                fn: 'initialize(address,address,address,address)',
-                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenRecord.address]
+                fn: 'initialize(address,address,address,address,address)',
+                args: [sourceDutchAuctionHouseAddress, sourceEnglishAuctionHouseAddress, sourceFixedPriceSaleAddress, sourceNFUTokenRecord.address, sourceNFUMembershipRecord.address]
             }
         });
     logger.info(`waiting for ${deployerProxy.deployTransaction.hash}`);

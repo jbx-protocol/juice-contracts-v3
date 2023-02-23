@@ -39,13 +39,16 @@ contract VeNftDeployer is IJBVeNftDeployer, JBOperatable {
 
   /**
    * @notice Deploys a new URI resolver instance for use with a VE NFT contract.
+   *
+   * @param _tokenRanges Token ranges, must be sorted in ascending order. Used to calcuate token uri.
    */
   function deployUriResolver(
     address _owner,
     string memory _baseUri,
-    string memory _contractUri
+    string memory _contractUri,
+    uint256[] memory _tokenRanges
   ) external returns (IJBVeTokenUriResolver resolver) {
-    resolver = new VeTokenUriResolver(_owner, _baseUri, _contractUri);
+    resolver = new VeTokenUriResolver(_owner, _baseUri, _contractUri, _tokenRanges);
 
     emit DeployVeUriResolver(address(resolver), _owner, _baseUri, _contractUri, msg.sender);
   }

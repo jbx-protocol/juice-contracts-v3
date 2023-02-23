@@ -48,6 +48,7 @@ contract Deployer_v007 is Deployer_v006 {
     EnglishAuctionHouse _englishAuctionSource,
     FixedPriceSale _fixedPriceSaleSource,
     NFUToken _nfuTokenSource,
+    NFUMembership _nfuMembershipSource,
     ITokenLiquidator _tokenLiquidator,
     DutchAuctionMachine _dutchAuctionMachineSource,
     EnglishAuctionMachine _englishAuctionMachineSource,
@@ -62,6 +63,7 @@ contract Deployer_v007 is Deployer_v006 {
     englishAuctionSource = _englishAuctionSource;
     fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
+    nfuMembershipSource = _nfuMembershipSource;
     tokenLiquidator = _tokenLiquidator;
     dutchAuctionMachineSource = _dutchAuctionMachineSource;
     englishAuctionMachineSource = _englishAuctionMachineSource;
