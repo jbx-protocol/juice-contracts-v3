@@ -43,8 +43,6 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
 
   JBMigrationOperator migrationOperator;
 
-  uint256 BALLOT_DURATION = 3 days;
-
   function setUp() public override {
     super.setUp();
 
@@ -296,10 +294,9 @@ contract TestMigrationOperator_Fork is Test {
     oldJbController = IJBController(
       stdJson.readAddress(vm.readFile('deployments/mainnet/JBController.json'), '.address')
     );
-    vm.label(address(oldJbController), "oldJbController");
 
-    newJbController = IJBController3_0_1(
-      stdJson.readAddress(vm.readFile('deployments/mainnet/JBController3_0_1.json'), '.address')
+    newJbController = IJBController3_1(
+      stdJson.readAddress(vm.readFile('deployments/mainnet/JBController3_1.json'), '.address')
     );
     vm.label(address(newJbController), "newJbController");
 
@@ -380,6 +377,9 @@ contract TestMigrationOperator_Fork is Test {
 
     // Migrate only project which are not archived/have a controller
     vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
+
+    // JuiceboxDAO is already using Controller 3.0.1 at that block height
+    if(_projectId == 1) oldJbController = IJBController(jbDirectory.controllerOf(1));
 
     _prepareAuthorizations(_projectId);
     
