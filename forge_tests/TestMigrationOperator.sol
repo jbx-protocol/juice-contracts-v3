@@ -48,7 +48,8 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         super.setUp();
 
         controller = jbController();
-
+        
+        // Set some mock fc data
         _initMetadata();
 
         projectId = jbController().launchProjectFor(
@@ -280,10 +281,6 @@ contract TestMigrationOperator_Fork is Test {
     IJBPaymentTerminal[] terminals;
     JBGroupedSplits[] groupedSplits;
 
-    // Weight equals to 1 eth
-    uint256 weight = 1 * 10 ** 18;
-    uint256 targetInWei = 10 * 10 ** 18;
-
     function setUp() public {
         vm.createSelectFork("https://rpc.ankr.com/eth", 16_677_461);
 
@@ -331,8 +328,7 @@ contract TestMigrationOperator_Fork is Test {
 
     /**
      * @notice  Test if a project can migrate its controller and terminals using the migrator
-     * @dev     The project must have a controller and the correct permission sets in fc and
-     * operator store
+     * @dev     The project must have a controller and the correct permission sets in fc and operator store
      *          JuiceboxDAO (id 1) is already using Controller 3.0.1 at that block height
      */
     function testMigrationOperator_migrateAnyExistingProject(uint256 _projectId) public {
@@ -429,8 +425,8 @@ contract TestMigrationOperator_Fork is Test {
                 allowSetController: false,
                 pauseTransfers: false
             }),
-            reservedRate: 0, // Reserved rate is set in tests, when needed
-            redemptionRate: 10_000, //100%
+            reservedRate: 0,
+            redemptionRate: 10_000,
             ballotRedemptionRate: 0,
             pausePay: false,
             pauseDistributions: false,
