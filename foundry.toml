@@ -38,4 +38,3 @@ line_length = 100
 tab_width = 4
 bracket_spacing = false
 number_underscore = "thousands"
-wrap_comments = true

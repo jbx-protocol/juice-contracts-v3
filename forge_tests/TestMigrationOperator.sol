@@ -26,8 +26,7 @@ import "./helpers/TestBaseWorkflow.sol";
 /**
  *  @title  Migration operator test
  *
- *  @notice This test suite is meant to test the migration operator contract, controller and
- * terminal
+ *  @notice This test suite is meant to test the migration operator contract, the controller and terminal
  *          tests are in their respective test suites.
  *
  *  @dev    One local and one fork test (only ran while using FOUNDRY_PROFILE=CI)
@@ -70,7 +69,12 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         migrationOperator = new JBMigrationOperator(jbDirectory());
     }
 
+    /**
+     *  @notice Migrate the project launched in the setup().
+     *  @dev    The controller and terminal should migrate
+     */
     function testMigrationOperator_shouldMigrate() public {
+        // deploy the new controller and terminal
         JBController3_0_1 _newJbController = new JBController3_0_1(
             jbOperatorStore(),
             jbProjects(),
@@ -98,32 +102,10 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
           Ownable(address(jbETHPaymentTerminal())).owner()
         );
 
-        uint256[] memory _permissionIndexes = new uint256[](3);
-        _permissionIndexes[0] = JBOperations.MIGRATE_CONTROLLER;
-        _permissionIndexes[1] = JBOperations.MIGRATE_TERMINAL;
-        _permissionIndexes[2] = JBOperations.SET_TERMINALS;
+        // Set the operator store authorization and reconfigure the funding cycle with correct flags
+        _prepareAuthorizations();
 
-        vm.prank(multisig());
-        jbOperatorStore().setOperator(
-            JBOperatorData({
-                operator: address(migrationOperator),
-                domain: projectId,
-                permissionIndexes: _permissionIndexes
-            })
-        );
-
-        metadata.allowControllerMigration = true;
-        metadata.allowTerminalMigration = true;
-        metadata.global.allowSetTerminals = true;
-
-        vm.prank(multisig());
-        jbController().reconfigureFundingCyclesOf(
-            projectId, data, metadata, 0, groupedSplits, fundAccessConstraints, ""
-        );
-        // warp to the next funding cycle
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
-        vm.warp(fundingCycle.start + (fundingCycle.duration) + 1);
-
+        // Migrate
         vm.prank(multisig());
         migrationOperator.migrate(
             projectId, address(_newJbController), jbEthTerminal3_1, jbETHPaymentTerminal()
@@ -139,6 +121,9 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         );
     }
 
+    /**
+     *  @notice Even with correct authorizations, the migration should fail if the caller isn't the project owner
+     */
     function testMigrationOperator_cannotMigrateIfNotProjectOwner(address _nonOwner) public {
         vm.assume(_nonOwner != multisig());
 
@@ -169,6 +154,25 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
           Ownable(address(jbETHPaymentTerminal())).owner()
         );
 
+        _prepareAuthorizations();
+
+        // Check: revert if not project owner?
+        vm.expectRevert(abi.encodeWithSelector(JBMigrationOperator.UNAUTHORIZED.selector));
+        vm.prank(_nonOwner);
+        migrationOperator.migrate(
+            projectId, address(_newJbController), jbEthTerminal3_1, jbETHPaymentTerminal()
+        );
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //                            Helpers                             //
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice  Set the correct premigration authorizations in the operator store and fc metadata
+     */
+    function _prepareAuthorizations() internal {
+        // Authorize the migrator contract to migrate by delegation
         uint256[] memory _permissionIndexes = new uint256[](3);
         _permissionIndexes[0] = JBOperations.MIGRATE_CONTROLLER;
         _permissionIndexes[1] = JBOperations.MIGRATE_TERMINAL;
@@ -183,6 +187,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
             })
         );
 
+        // Reconfigure the funding cycle to allow migration and set the new terminal as a project terminal
         metadata.allowControllerMigration = true;
         metadata.allowTerminalMigration = true;
         metadata.global.allowSetTerminals = true;
@@ -194,17 +199,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         // warp to the next funding cycle
         JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
         vm.warp(fundingCycle.start + (fundingCycle.duration) + 1);
-
-        vm.expectRevert(abi.encodeWithSelector(JBMigrationOperator.UNAUTHORIZED.selector));
-        vm.prank(_nonOwner);
-        migrationOperator.migrate(
-            projectId, address(_newJbController), jbEthTerminal3_1, jbETHPaymentTerminal()
-        );
     }
-
-    ////////////////////////////////////////////////////////////////////
-    //                            Helpers                             //
-    ////////////////////////////////////////////////////////////////////
 
     /**
      * @notice  Initialize the funding cycle and fund access constraints data to some generic values
@@ -453,15 +448,15 @@ contract TestMigrationOperator_Fork is Test {
             metadata: 0
         });
 
-        terminals.push(jbETHPaymentTerminal());
+        terminals.push(jbEthTerminal);
 
         fundAccessConstraints.push(
             JBFundAccessConstraints({
-                terminal: jbETHPaymentTerminal(),
+                terminal: jbEthTerminal,
                 token: JBTokens.ETH,
                 distributionLimit: 10 ether,
                 overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
+                distributionLimitCurrency: 1,
                 overflowAllowanceCurrency: 1
             })
         );
