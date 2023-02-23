@@ -23,6 +23,8 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
   error INVALID_ADDRESS();
   error INVALID_AMOUNT(uint256 amount);
 
+  uint256 internal constant baseFee = 1000000000000000; // 0.001 eth
+
   IJBDirectory internal jbxDirectory;
   IJBProjects internal jbxProjects;
 
@@ -49,7 +51,7 @@ contract Deployer_v001 is JBOperatable, OwnableUpgradeable, UUPSUpgradeable {
     jbxDirectory = IJBDirectory(_jbxDirectory);
     jbxProjects = IJBProjects(_jbxProjects);
 
-    prices[deployNFTokenKey] = 1000000000000000; // 0.001 eth
+    prices[deployNFTokenKey] = baseFee;
   }
 
   function _authorizeUpgrade(address) internal override onlyOwner {}

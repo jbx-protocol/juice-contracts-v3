@@ -39,7 +39,7 @@ contract Deployer_v005 is Deployer_v004 {
     nfuTokenSource = _nfuTokenSource;
     tokenLiquidator = _tokenLiquidator;
 
-    prices[deployPaymentProcessorKey] = 1000000000000000; // 0.001 eth
+    prices[deployPaymentProcessorKey] = baseFee;
   }
 
   function deployPaymentProcessor(

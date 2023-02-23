@@ -122,18 +122,7 @@ contract NFUEdition is BaseNFT {
     supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    if (isPaused) {
-      revert MINTING_PAUSED();
-    }
-
-    processPayment('', '', editionPrices[_edition]); // validates price
-
-    unchecked {
-      ++totalSupply;
-      ++mintedEditions[_edition];
-    }
-    tokenId = generateTokenId(msg.sender, msg.value, _edition);
-    _mint(msg.sender, tokenId);
+    mintActual(_edition, msg.sender, '', '');
   }
 
   /**
@@ -157,26 +146,33 @@ contract NFUEdition is BaseNFT {
     supplyAvailable(_edition)
     returns (uint256 tokenId)
   {
-    if (isPaused) {
-      revert MINTING_PAUSED();
-    }
+    mintActual(_edition, msg.sender, _memo, _metadata);
+  }
 
-    processPayment(_memo, _metadata, editionPrices[_edition]); // validates price
-
-    unchecked {
-      ++totalSupply;
-      ++mintedEditions[_edition];
-    }
-    tokenId = generateTokenId(msg.sender, msg.value, _edition);
-    _mint(msg.sender, tokenId);
+  function mint(
+    uint256 _edition,
+    address _account,
+    string calldata _memo,
+    bytes calldata _metadata
+  )
+    external
+    payable
+    virtual
+    nonReentrant
+    onlyDuringMintPeriod
+    callerNotBlocked(msg.sender)
+    supplyAvailable(_edition)
+    returns (uint256 tokenId)
+  {
+    //
   }
 
   //*********************************************************************//
-  // -------------------- priviledged transactions --------------------- //
+  // --------------------- privileged transactions --------------------- //
   //*********************************************************************//
 
   /**
-   * @notice Priviledged operation to mint an edition to an address. Does not accept payment, ignores paused flag, mint period and block list.
+   * @notice Privileged operation to mint an edition to an address. Does not accept payment, ignores paused flag, mint period and block list.
    */
   function mintEditionFor(
     uint256 _edition,
@@ -247,6 +243,36 @@ contract NFUEdition is BaseNFT {
    */
   function generateTokenId(address, uint256) internal virtual override returns (uint256 tokenId) {
     revert INVALID_OPERATION();
+  }
+
+  /**
+   * @notice Function to consolidate functionality for external mint calls.
+   *
+   * @dev External calls should be validated by modifiers like `onlyDuringMintPeriod`, `callerNotBlocked` and `supplyAvailable`.
+   *
+   * @param _edition Edition id to mint.
+   * @param _account Address to assign the new token to.
+   * @param _memo JBX terminal payment memo.
+   * @param _metadata JBX terminal payment metadata.
+   */
+  function mintActual(
+    uint256 _edition,
+    address _account,
+    string memory _memo,
+    bytes memory _metadata
+  ) internal virtual returns (uint256 tokenId) {
+    if (isPaused) {
+      revert MINTING_PAUSED();
+    }
+
+    processPayment(_memo, _metadata, editionPrices[_edition]); // validates price
+
+    unchecked {
+      ++totalSupply;
+      ++mintedEditions[_edition];
+    }
+    tokenId = generateTokenId(msg.sender, msg.value, _edition);
+    _mint(msg.sender, tokenId);
   }
 
   /**

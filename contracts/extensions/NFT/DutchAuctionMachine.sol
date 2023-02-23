@@ -219,12 +219,12 @@ contract DutchAuctionMachine is IDutchAuctionMachine, IERC165, Ownable, Reentran
     price = startingPrice - elapsedPeriods * periodPrice;
   }
 
-  function supportsInterface(bytes4 _interfaceId) public view override returns (bool) {
+  function supportsInterface(bytes4 _interfaceId) public pure override returns (bool) {
     return _interfaceId == type(IDutchAuctionMachine).interfaceId;
   }
 
   //*********************************************************************//
-  // -------------------- priviledged transactions --------------------- //
+  // --------------------- privileged transactions --------------------- //
   //*********************************************************************//
 
   /**

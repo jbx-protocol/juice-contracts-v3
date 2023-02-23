@@ -38,7 +38,7 @@ contract Deployer_v004 is Deployer_v003 {
     fixedPriceSaleSource = _fixedPriceSaleSource;
     nfuTokenSource = _nfuTokenSource;
 
-    prices[deployNFUTokenKey] = 1000000000000000; // 0.001 eth
+    prices[deployNFUTokenKey] = baseFee;
   }
 
   /**

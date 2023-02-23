@@ -10,11 +10,13 @@ import '../NFT/NFUEdition.sol';
 import '../NFT/NFUToken.sol';
 import '../NFT/TraitToken.sol';
 import '../TokenLiquidator.sol';
+import '../ThinProjectPayer.sol';
 
 import './Deployer_v006.sol';
 import './Factories/AuctionMachineFactory.sol';
 import './Factories/TraitTokenFactory.sol';
 import './Factories/NFUEditionFactory.sol';
+import './Factories/ThinProjectPayerFactory.sol';
 
 /**
  * @notice This version of the deployer adds the ability to deploy Dutch and English perpetual auctions for a specific NFT.
@@ -27,11 +29,14 @@ contract Deployer_v007 is Deployer_v006 {
     keccak256(abi.encodePacked('deployEnglishAuctionMachine'));
   bytes32 internal constant deployTraitTokenKey = keccak256(abi.encodePacked('deployTraitToken'));
   bytes32 internal constant deployNFUEditionKey = keccak256(abi.encodePacked('deployNFUEdition'));
+  bytes32 internal constant deployProjectPayerKey =
+    keccak256(abi.encodePacked('deployProjectPayer'));
 
   DutchAuctionMachine internal dutchAuctionMachineSource;
   EnglishAuctionMachine internal englishAuctionMachineSource;
   TraitToken internal traitTokenSource;
   NFUEdition internal nfuEditionSource;
+  ThinProjectPayer internal projectPayerSource;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -47,7 +52,8 @@ contract Deployer_v007 is Deployer_v006 {
     DutchAuctionMachine _dutchAuctionMachineSource,
     EnglishAuctionMachine _englishAuctionMachineSource,
     TraitToken _traitTokenSource,
-    NFUEdition _nfuEditionSource
+    NFUEdition _nfuEditionSource,
+    ThinProjectPayer _projectPayerSource
   ) public virtual reinitializer(7) {
     __Ownable_init();
     __UUPSUpgradeable_init();
@@ -61,11 +67,13 @@ contract Deployer_v007 is Deployer_v006 {
     englishAuctionMachineSource = _englishAuctionMachineSource;
     traitTokenSource = _traitTokenSource;
     nfuEditionSource = _nfuEditionSource;
+    projectPayerSource = _projectPayerSource;
 
-    prices[deployDutchAuctionMachineKey] = 1000000000000000; // 0.001 eth
-    prices[deployEnglishAuctionMachineKey] = 1000000000000000; // 0.001 eth
-    prices[deployTraitTokenKey] = 1000000000000000; // 0.001 eth
-    prices[deployNFUEditionKey] = 1000000000000000; // 0.001 eth
+    prices[deployDutchAuctionMachineKey] = baseFee;
+    prices[deployEnglishAuctionMachineKey] = baseFee;
+    prices[deployTraitTokenKey] = baseFee;
+    prices[deployNFUEditionKey] = baseFee;
+    prices[deployProjectPayerKey] = baseFee;
   }
 
   /**
@@ -168,8 +176,6 @@ contract Deployer_v007 is Deployer_v006 {
     string memory _symbol,
     string memory _baseUri,
     string memory _contractUri,
-    uint256 _jbxProjectId,
-    IJBDirectory _jbxDirectory,
     uint256 _maxSupply,
     uint256 _unitPrice,
     uint256 _mintAllowance
@@ -189,5 +195,37 @@ contract Deployer_v007 is Deployer_v006 {
     );
 
     emit Deployment('NFUEdition', token);
+  }
+
+  /**
+   * @notice Deploys a ThinProjectPayer by cloning a known instance.
+   */
+  function deployProjectPayer(
+    IJBDirectory _jbxDirectory,
+    IJBOperatorStore _jbxOperatorStore,
+    IJBProjects _jbxProjects,
+    uint256 _defaultProjectId,
+    address payable _defaultBeneficiary,
+    bool _defaultPreferClaimedTokens,
+    bool _defaultPreferAddToBalance,
+    string memory _defaultMemo,
+    bytes memory _defaultMetadata
+  ) external payable returns (address payer) {
+    validatePayment(deployProjectPayerKey);
+
+    payer = ThinProjectPayerFactory.createProjectPayer(
+      payable(projectPayerSource),
+      _jbxDirectory,
+      _jbxOperatorStore,
+      _jbxProjects,
+      _defaultProjectId,
+      _defaultBeneficiary,
+      _defaultPreferClaimedTokens,
+      _defaultPreferAddToBalance,
+      _defaultMemo,
+      _defaultMetadata
+    );
+
+    emit Deployment('ThinProjectPayer', payer);
   }
 }
