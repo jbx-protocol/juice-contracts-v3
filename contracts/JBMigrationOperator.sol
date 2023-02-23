@@ -12,9 +12,18 @@ import './interfaces/IJBProjects.sol';
 /** 
   @notice 
   Allows projects to migrate their controller & terminal to 3.1 version
+  
+  @dev
+  The project owner needs to give the migration permission to this contract for carrying out the migrations for both controller & terminal.
+
+  @dev
+  The current funding cycle needs to be a reconfigured one before migration, so metadata flags allowControllerMigration, allowTerminalMigration & global.allowSetTerminals need to be set true.
 */
 contract JBMigrationOperator {
 
+  //*********************************************************************//
+  // --------------------------- custom errors ------------------------- //
+  //*********************************************************************//
   error UNAUTHORIZED();
 
   //*********************************************************************//
@@ -53,7 +62,7 @@ contract JBMigrationOperator {
 
   /**
     @notice
-    Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first funding cycle, and set up any splits.
+    Allows project owners to migrate the controller & terminal linked to their project to the latest version
 
     @param _projectId The project id whose controller & terminal are to be migrated
     @param _newController Controller 3.1 address to migrate to.
