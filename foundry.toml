@@ -32,3 +32,10 @@ match_contract = "_Local" # Do not run fork tests
 [profile.CI] # run via FOUNDRY_PROFILE=CI foundry test
 fs_permissions = [{ access = "read", path = "./deployments/mainnet"}] # Get the deployment addresses for forking
 match_contract = "_Fork"
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+number_underscore = "thousands"
+wrap_comments = true
