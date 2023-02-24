@@ -62,8 +62,11 @@ module.exports = {
             default: 0,
         },
     },
+    paths: {
+        sources: './contracts/',
+    },
     solidity: {
-        version: '0.8.14',
+        version: '0.8.16',
         settings: {
             optimizer: {
                 enabled: true,
