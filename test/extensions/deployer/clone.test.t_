@@ -1,0 +1,55 @@
+import { expect } from 'chai';
+import { ethers, upgrades } from 'hardhat';
+import { BigNumber } from 'ethers';
+import { deployMockContract } from '@ethereum-waffle/mock-contract';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import * as helpers from '@nomicfoundation/hardhat-network-helpers';
+
+describe('Clone tests', () => {
+    const provider = ethers.provider;
+
+    let deployer: SignerWithAddress;
+    let accounts: SignerWithAddress[];
+
+    let clonableSource: any;
+    let cloneFactory: any;
+    let clones: any[] = [];
+
+    before('Initialize contracts', async () => {
+        [deployer, ...accounts] = await ethers.getSigners();
+    });
+
+    it('Deploy root contract', async () => {
+        const clonableFactory = await ethers.getContractFactory('Clonable', { signer: deployer });
+        clonableSource = await clonableFactory.connect(deployer).deploy();
+    });
+
+    it('Deploy factory contract', async () => {
+        const clonableFactoryFactory = await ethers.getContractFactory('ClonableFactory', { signer: deployer });
+        cloneFactory = await clonableFactoryFactory.connect(deployer).deploy();
+    });
+
+    it('Make clones', async () => {
+        const clonableFactory = await ethers.getContractFactory('Clonable', { signer: deployer });
+
+        let tx = await cloneFactory.createClone(0, 10, clonableSource.address);
+        let receipt = await tx.wait();
+
+        clones.push(clonableFactory.attach((receipt.events.filter(e => e.event === 'Deployment')[0].args).contractAddress));
+
+        tx = await cloneFactory.createClone(1, 875, clonableSource.address);
+        receipt = await tx.wait();
+        clones.push(clonableFactory.attach((receipt.events.filter(e => e.event === 'Deployment')[0].args).contractAddress));
+    });
+
+    it('Use clones', async () => {
+        for (let clone of clones) {
+            clone.update(Math.floor(Math.random() * 1000));
+            console.log('index', await clone.id(), await clone.index());
+        }
+
+        for (let i = 0; i < clones.length - 1; i++) {
+            expect(await clones[i].index).not.to.equal(await clones[i + 1].index);
+        }
+    });
+});

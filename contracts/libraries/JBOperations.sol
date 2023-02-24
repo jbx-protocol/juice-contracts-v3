@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/**
+ * @notice Defines permissions as indicies in a uint256, as such, must be between 1 and 255.
+ */
 library JBOperations {
   uint256 public constant RECONFIGURE = 1;
   uint256 public constant REDEEM = 2;
@@ -20,4 +23,6 @@ library JBOperations {
   uint256 public constant SET_PRIMARY_TERMINAL = 16;
   uint256 public constant USE_ALLOWANCE = 17;
   uint256 public constant SET_SPLITS = 18;
+  uint256 public constant MANAGE_PAYMENTS = 254;
+  uint256 public constant MANAGE_ROLES = 255;
 }
