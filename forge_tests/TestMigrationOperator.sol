@@ -106,10 +106,15 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         // Set the operator store authorization and reconfigure the funding cycle with correct flags
         _prepareAuthorizations();
 
+        JBETHPaymentTerminal _oldTerminal = jbETHPaymentTerminal();
+
+        uint256 _balanceJbOldTerminal = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(_oldTerminal)), projectId);
+        uint256 _ETHBalanceJbOldTerminal = address(_oldTerminal).balance;
+
         // Migrate
         vm.prank(multisig());
         migrationOperator.migrate(
-            projectId, address(_newJbController), jbEthTerminal3_1, jbETHPaymentTerminal()
+            projectId, address(_newJbController), jbEthTerminal3_1, _oldTerminal
         );
 
         // Check: the project must have the new controller
@@ -120,6 +125,18 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
             address(jbDirectory().primaryTerminalOf(projectId, JBTokens.ETH)),
             address(jbEthTerminal3_1)
         );
+        
+        // check that balances must have migrated
+        assertEq(
+            jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), projectId),
+            _balanceJbOldTerminal
+        );
+        assertEq(jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(_oldTerminal)), projectId), 0);
+
+        assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
+        assertEq(address(_oldTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
+
+        assertEq(address(jbDirectory().primaryTerminalOf(projectId, JBTokens.ETH)), address(jbEthTerminal3_1));
     }
 
     /**
