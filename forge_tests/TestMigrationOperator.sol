@@ -103,10 +103,29 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
           Ownable(address(jbETHPaymentTerminal())).owner()
         );
 
-        // Set the operator store authorization and reconfigure the funding cycle with correct flags
-        _prepareAuthorizations();
+        address _user = makeAddr("user");
+        vm.deal(_user, 10 ether);
 
         JBETHPaymentTerminal _oldTerminal = jbETHPaymentTerminal();
+
+        vm.prank(_user);
+        _oldTerminal.pay{value: 10 ether}(
+            projectId,
+            10 ether,
+            address(0),
+            _user,
+            /* _minReturnedTokens */
+            0,
+            /* _preferClaimedTokens */
+            false,
+            /* _memo */
+            "Take my money!",
+            /* _delegateMetadata */
+            new bytes(0)
+        );
+
+        // Set the operator store authorization and reconfigure the funding cycle with correct flags
+        _prepareAuthorizations();
 
         uint256 _balanceJbOldTerminal = jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(_oldTerminal)), projectId);
         uint256 _ETHBalanceJbOldTerminal = address(_oldTerminal).balance;
