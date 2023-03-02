@@ -4,14 +4,11 @@
 
 module.exports = {
   skipFiles: [
-    'abstract/',
     'enums/',
     'interfaces/',
     'libraries/',
     'structs/',
-    'system_tests/',
-    'contracts/extensions/interfaces/',
-    'contracts/extensions/NFT/interfaces/'],
+    'system_tests/'],
   configureYulOptimizer: true,
   measureStatementCoverage: false
 };

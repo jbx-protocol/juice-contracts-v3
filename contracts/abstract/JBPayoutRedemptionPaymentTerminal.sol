@@ -78,9 +78,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     Maximum fee that can be set for a funding cycle configuration.
 
     @dev
-    Out of MAX_FEE (100_000_000 / 1_000_000_000).
+    Out of MAX_FEE (50_000_000 / 1_000_000_000).
   */
-  uint256 internal constant _FEE_CAP = 100_000_000;
+  uint256 internal constant _FEE_CAP = 50_000_000;
 
   /**
     @notice
@@ -158,9 +158,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     The platform fee percent.
 
     @dev
-    Out of MAX_FEE (50_000_000 / 1_000_000_000)
+    Out of MAX_FEE (25_000_000 / 1_000_000_000)
   */
-  uint256 public override fee = 50_000_000; // 5%
+  uint256 public override fee = 25_000_000; // 2.5%
 
   /**
     @notice
@@ -194,9 +194,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
   */
-  function currentEthOverflowOf(
-    uint256 _projectId
-  ) external view virtual override returns (uint256) {
+  function currentEthOverflowOf(uint256 _projectId)
+    external
+    view
+    virtual
+    override
+    returns (uint256)
+  {
     // Get this terminal's current overflow.
     uint256 _overflow = store.currentOverflowOf(this, _projectId);
 
@@ -211,7 +215,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
         ? _adjustedOverflow
         : PRBMath.mulDiv(
           _adjustedOverflow,
-          10 ** decimals,
+          10**decimals,
           prices.priceFor(currency, JBCurrencies.ETH, decimals)
         );
   }
@@ -241,9 +245,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @param _interfaceId The ID of the interface to check for adherance to.
   */
-  function supportsInterface(
-    bytes4 _interfaceId
-  ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
+  function supportsInterface(bytes4 _interfaceId)
+    public
+    view
+    virtual
+    override(JBSingleTokenPaymentTerminal, IERC165)
+    returns (bool)
+  {
     return
       _interfaceId == type(IJBPayoutRedemptionPaymentTerminal).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal).interfaceId ||
@@ -297,8 +305,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     IJBPrices _prices,
     IJBSingleTokenPaymentTerminalStore _store,
     address _owner
-  ) payable JBSingleTokenPaymentTerminal(_token, _decimals, _currency) {
-    operatorStore = _operatorStore;
+  )
+    payable
+    JBSingleTokenPaymentTerminal(_token, _decimals, _currency)
+    JBOperatable(_operatorStore)
+  {
     baseWeightCurrency = _baseWeightCurrency;
     payoutSplitsGroup = _payoutSplitsGroup;
     projects = _projects;
@@ -505,10 +516,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
   */
-  function migrate(
-    uint256 _projectId,
-    IJBPaymentTerminal _to
-  )
+  function migrate(uint256 _projectId, IJBPaymentTerminal _to)
     external
     virtual
     override
@@ -585,9 +593,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @param _projectId The ID of the project whos held fees should be processed.
   */
-  function processFees(
-    uint256 _projectId
-  )
+  function processFees(uint256 _projectId)
     external
     virtual
     override
@@ -691,7 +697,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     @param _to The address to which the transfer should go.
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
-  function _transferFrom(address _from, address payable _to, uint256 _amount) internal virtual {
+  function _transferFrom(
+    address _from,
+    address payable _to,
+    uint256 _amount
+  ) internal virtual {
     _from; // Prevents unused var compiler and natspec complaints.
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
@@ -1107,8 +1117,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
           // Trigger the allocator's `allocate` function.
           // If this terminal's token is ETH, send it in msg.value.
-          uint256 amount = token == JBTokens.ETH ? _netPayoutAmount : 0;
-          _split.allocator.allocate{value: amount}(_data);
+          _split.allocator.allocate{value: token == JBTokens.ETH ? _netPayoutAmount : 0}(_data);
 
           // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
@@ -1251,9 +1260,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     uint256 _feeDiscount
   ) internal returns (uint256 feeAmount) {
     feeAmount = _feeAmount(_amount, fee, _feeDiscount);
-
-    // check for soft-block: allow payment, but don't take a free
-    // check for hard-block: block payment
 
     if (_fundingCycle.shouldHoldFees()) {
       // Store the held fee.
@@ -1480,10 +1486,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
   */
-  function _refundHeldFees(
-    uint256 _projectId,
-    uint256 _amount
-  ) internal returns (uint256 refundedFees) {
+  function _refundHeldFees(uint256 _projectId, uint256 _amount)
+    internal
+    returns (uint256 refundedFees)
+  {
     // Get a reference to the project's held fees.
     JBFee[] memory _heldFees = _heldFeesOf[_projectId];
 

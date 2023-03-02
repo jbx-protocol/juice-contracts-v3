@@ -109,10 +109,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
     @return balance The project token balance of the `_holder
   */
-  function balanceOf(
-    address _holder,
-    uint256 _projectId
-  ) external view override returns (uint256 balance) {
+  function balanceOf(address _holder, uint256 _projectId)
+    external
+    view
+    override
+    returns (uint256 balance)
+  {
     // Get a reference to the holder's unclaimed balance for the project.
     balance = unclaimedBalanceOf[_holder][_projectId];
 
@@ -161,8 +163,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBFundingCycleStore _fundingCycleStore
-  ) JBControllerUtility(_directory) {
-    operatorStore = _operatorStore;
+  ) JBOperatable(_operatorStore) JBControllerUtility(_directory) {
     projects = _projects;
     fundingCycleStore = _fundingCycleStore;
   }
@@ -225,10 +226,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     @param _projectId The ID of the project to which the set token belongs.
     @param _token The new token. 
   */
-  function setFor(
-    uint256 _projectId,
-    IJBToken _token
-  )
+  function setFor(uint256 _projectId, IJBToken _token)
     external
     override
     requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
@@ -429,7 +427,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
     // Must not be paused.
-    if (_fundingCycle.shared().pauseTransfers) revert TRANSFERS_PAUSED();
+    if (_fundingCycle.global().pauseTransfers) revert TRANSFERS_PAUSED();
 
     // Can't transfer to the zero address.
     if (_recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();

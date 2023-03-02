@@ -8,7 +8,7 @@ import './JBConstants.sol';
 import './JBGlobalFundingCycleMetadataResolver.sol';
 
 library JBFundingCycleMetadataResolver {
-  function shared(JBFundingCycle memory _fundingCycle)
+  function global(JBFundingCycle memory _fundingCycle)
     internal
     pure
     returns (JBGlobalFundingCycleMetadata memory)
@@ -182,7 +182,7 @@ library JBFundingCycleMetadataResolver {
   {
     return
       JBFundingCycleMetadata(
-        shared(_fundingCycle),
+        global(_fundingCycle),
         reservedRate(_fundingCycle),
         redemptionRate(_fundingCycle),
         ballotRedemptionRate(_fundingCycle),

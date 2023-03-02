@@ -887,17 +887,17 @@ describe('JBFundingCycleStore::configureFor(...)', function () {
         };
 
         // Wrap in try catch. If the new weight calculation breaks, it should default to equal 0.
-        // try {
-        //     expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql({
-        //         ...expectedSecondFundingCycleWithoutWeight,
-        //         weight: firstFundingCycleData.weight.div(1 / discountRate ** cycleDiff),
-        //     });
-        // } catch {
-        //     expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql({
-        //         ...expectedSecondFundingCycleWithoutWeight,
-        //         weight: ethers.BigNumber.from(0),
-        //     });
-        // }
+        try {
+            expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql({
+                ...expectedSecondFundingCycleWithoutWeight,
+                weight: firstFundingCycleData.weight.div(1 / discountRate ** cycleDiff),
+            });
+        } catch {
+            expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql({
+                ...expectedSecondFundingCycleWithoutWeight,
+                weight: ethers.BigNumber.from(0),
+            });
+        }
     });
 
     it('Should ignore failed configuration and roll over current configuration', async function () {
