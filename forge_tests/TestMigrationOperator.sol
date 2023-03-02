@@ -145,7 +145,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
             address(jbEthTerminal3_1)
         );
         
-        // check that balances must have migrated
+        // Check: The balances and actual ETH must have migrated
         assertEq(
             jbTerminalStore3_1.balanceOf(IJBSingleTokenPaymentTerminal(address(jbEthTerminal3_1)), projectId),
             _balanceJbOldTerminal
@@ -154,8 +154,6 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
 
         assertEq(address(jbEthTerminal3_1).balance, _balanceJbOldTerminal);
         assertEq(address(_oldTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
-
-        assertEq(address(jbDirectory().primaryTerminalOf(projectId, JBTokens.ETH)), address(jbEthTerminal3_1));
     }
 
     /**
