@@ -38,8 +38,6 @@
     "account": "hardhat account",
     "test": "mocha './test/**/*.test.js' -r esm --bail",
     "coverage": "node --require esm ./node_modules/.bin/hardhat coverage --network hardhat",
-    "deploy-goerli-migration-operator": "source .env && forge script DeployJBMigrationOperator_On_Goerli --rpc-url $GOERLI_RPC_PROVIDER_URL --broadcast --mnemonic-paths mnemonic.txt --verify --etherscan-api-key $ETHERSCAN_API_KEY --sender $SENDER_ADDRESS",
-    "deploy-mainnet-migration-operator": "source .env && forge script DeployJBMigrationOperator_On_Mainnet --rpc-url $MAINNET_RPC_PROVIDER_URL --broadcast --mnemonic-paths mnemonic.txt --verify --etherscan-api-key $ETHERSCAN_API_KEY --sender $SENDER_ADDRESS",
     "clean": "rimraf ./cache && rimraf ./artifacts",
     "compile": "yarn clean && hardhat compile",
     "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
