@@ -1,4 +1,6 @@
 const { ethers } = require('hardhat');
+const directoryGoerli = require('../deployments/goerli/JBDirectory.json')
+const directoryMainnet = require('../deployments/mainnet/JBDirectory.json')
 
 /**
  * Deploys the Migration Operator contract to migrate the controller & terminal.
@@ -28,12 +30,12 @@ module.exports = async ({ deployments, getChainId }) => {
     // mainnet
     case '1':
       multisigAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
-      jbDirectory = '0x65572FB928b46f9aDB7cfe5A4c41226F636161ea';
+      jbDirectory = directoryMainnet.address;
       break;
     // Goerli
     case '5':
       multisigAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
-      jbDirectory = '0x8E05bcD2812E1449f0EC3aE24E2C395F533d9A99';
+      jbDirectory = directoryGoerli.address;
       break;
   }
 
