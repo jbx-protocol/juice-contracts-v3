@@ -32,15 +32,15 @@ contract JBMigrationOperator {
 
   /**
     @notice
-    jbDirectory instance which keeps a track of which controller is linked to which project.
+    directory instance which keeps a track of which controller is linked to which project.
   */
-  IJBDirectory immutable public jbDirectory;
+  IJBDirectory immutable public directory;
 
   /**
     @notice
     The NFT granting ownership to a Juicebox project
   */
-  IJBProjects immutable public jbProjects;
+  IJBProjects immutable public project;
 
 
   //*********************************************************************//
@@ -48,11 +48,11 @@ contract JBMigrationOperator {
   //*********************************************************************//
 
   /**
-    @param _jbDirectory A contract storing directories of terminals and controllers for each project.
+    @param _directory A contract storing directories of terminals and controllers for each project.
   */
-  constructor(IJBDirectory _jbDirectory) {
-      jbDirectory = _jbDirectory;
-      jbProjects = IJBProjects(_jbDirectory.projects());
+  constructor(IJBDirectory _directory) {
+      directory = _directory;
+      project = IJBProjects(_directory.projects());
   }
 
   
@@ -69,22 +69,22 @@ contract JBMigrationOperator {
     @param _newJbTerminal Terminal 3.1 address to migrate to.
     @param _oldJbTerminal Old terminal address to migrate from.
   */
-  function migrate(uint256 _projectId, address _newController, IJBPaymentTerminal _newJbTerminal, IJBPayoutRedemptionPaymentTerminal _oldJbTerminal) external {
+  function migrate(uint256 _projectId, IJBMigratable _newController, IJBPaymentTerminal _newJbTerminal, IJBPayoutRedemptionPaymentTerminal _oldJbTerminal) external {
       // Only allow the project owner to migrate
-      if (jbProjects.ownerOf(_projectId) != msg.sender) revert UNAUTHORIZED();
+      if (project.ownerOf(_projectId) != msg.sender) revert UNAUTHORIZED();
       
       // controller migration
-      address _oldController = jbDirectory.controllerOf(_projectId);
+      address _oldController = directory.controllerOf(_projectId);
 
       // assuming the project owner has reconfigured the funding cycle with allowControllerMigration
-      IJBController(_oldController).migrate(_projectId, IJBMigratable(_newController));
+      IJBController(_oldController).migrate(_projectId, _newController);
 
       // terminal migration
       IJBPaymentTerminal[] memory _newTerminals = new IJBPaymentTerminal[](1);
       _newTerminals[0] = IJBPaymentTerminal(address(_newJbTerminal));
 
       // assuming the project owner has reconfigured the funding cycle with allowTerminalMigration & global.allowSetTerminals
-      jbDirectory.setTerminalsOf(_projectId, _newTerminals);
+      directory.setTerminalsOf(_projectId, _newTerminals);
       _oldJbTerminal.migrate(_projectId, _newJbTerminal);
   }
 }

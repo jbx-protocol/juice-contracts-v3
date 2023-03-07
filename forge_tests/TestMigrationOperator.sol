@@ -133,7 +133,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         // Migrate
         vm.prank(multisig());
         migrationOperator.migrate(
-            projectId, address(_newJbController), jbEthTerminal3_1, _oldTerminal
+            projectId, IJBMigratable(_newJbController), jbEthTerminal3_1, _oldTerminal
         );
 
         // Check: the project must have the new controller
@@ -195,7 +195,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         vm.expectRevert(abi.encodeWithSelector(JBMigrationOperator.UNAUTHORIZED.selector));
         vm.prank(_nonOwner);
         migrationOperator.migrate(
-            projectId, address(_newJbController), jbEthTerminal3_1, jbETHPaymentTerminal()
+            projectId, IJBMigratable(_newJbController), jbEthTerminal3_1, jbETHPaymentTerminal()
         );
     }
 
@@ -294,7 +294,7 @@ contract TestMigrationOperator_Fork is Test {
 
     // Contracts needed
     IJBController oldJbController;
-    IJBController3_0_1 newJbController;
+    IJBMigratable newJbController;
     IJBDirectory jbDirectory;
     IJBFundingCycleStore jbFundingCycleStore;
     IJBOperatorStore jbOperatorStore;
@@ -337,7 +337,7 @@ contract TestMigrationOperator_Fork is Test {
             stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), ".address")
         );
 
-        newJbController = IJBController3_1(
+        newJbController = IJBMigratable(
             stdJson.readAddress(vm.readFile("deployments/mainnet/JBController3_1.json"), ".address")
         );
         vm.label(address(newJbController), "newJbController");
@@ -379,7 +379,7 @@ contract TestMigrationOperator_Fork is Test {
 
         vm.prank(jbProjects.ownerOf(_projectId));
         migrationOperator.migrate(
-            _projectId, address(newJbController), jbEthPaymentTerminal3_1, jbEthTerminal
+            _projectId, newJbController, jbEthPaymentTerminal3_1, jbEthTerminal
         );
 
         // Check: the project must have the new controller
