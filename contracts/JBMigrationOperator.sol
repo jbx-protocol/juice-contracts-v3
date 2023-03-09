@@ -40,7 +40,7 @@ contract JBMigrationOperator {
     @notice
     The NFT granting ownership to a Juicebox project
   */
-  IJBProjects immutable public project;
+  IJBProjects immutable public projects;
 
 
   //*********************************************************************//
@@ -52,7 +52,7 @@ contract JBMigrationOperator {
   */
   constructor(IJBDirectory _directory) {
       directory = _directory;
-      project = IJBProjects(_directory.projects());
+      projects = IJBProjects(_directory.projects());
   }
 
   
@@ -71,7 +71,7 @@ contract JBMigrationOperator {
   */
   function migrate(uint256 _projectId, IJBMigratable _newController, IJBPaymentTerminal _newJbTerminal, IJBPayoutRedemptionPaymentTerminal _oldJbTerminal) external {
       // Only allow the project owner to migrate
-      if (project.ownerOf(_projectId) != msg.sender) revert UNAUTHORIZED();
+      if (projects.ownerOf(_projectId) != msg.sender) revert UNAUTHORIZED();
       
       // controller migration
       address _oldController = directory.controllerOf(_projectId);
