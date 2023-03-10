@@ -145,11 +145,9 @@ module.exports = async ({ deployments, getChainId }) => {
   });
 
   // Deploy a JBMigrationOperator contract.
-  const JBMigrationOperator = await deploy('JBMigrationOperator'. {
-      ...baseDeployArgs,
-      args: [
-        JBDirectory.address,
-      ],
+  const JBMigrationOperator = await deploy('JBMigrationOperator', {
+    ...baseDeployArgs,
+    args: [JBDirectory.address],
   });
 
   // Deploy a JBSingleTokenPaymentTerminalStore contract.
