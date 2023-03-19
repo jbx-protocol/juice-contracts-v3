@@ -223,6 +223,54 @@ contract TestTerminal31_Fork is Test {
     }
 
     /**
+     * @notice  Test if paying a project previously having a JB721Delegate attached still mint NFT when paying on the terminal v3.1
+     *          as well as redeem from this same terminal
+     */
+    function testTerminal31_Migration_newTerminalMintAndRedeemNFT() public {
+        uint256 _projectId = 403; // Had NFT and on old terminal at fork timestamp
+        uint256 _amount = 0.11 ether;
+
+        address _beneficiary = makeAddr("_beneficiary");
+        vm.deal(_beneficiary, 10 ether);
+
+        address _NFTRewardDataSource = jbFundingCycleStore.currentOf(_projectId).dataSource();
+
+        uint256 _jbTokenBalanceBefore = jbTokenStore.balanceOf(_beneficiary, _projectId);
+        uint256 _jbNFTBalanceBefore = IERC721(_NFTRewardDataSource).balanceOf(_beneficiary);
+
+        _migrateTerminal(_projectId);
+
+        // pay terminal
+        vm.prank(_beneficiary);
+        jbEthTerminal3_1.pay{value: _amount}(
+            _projectId,
+            _amount,
+            address(0),
+            _beneficiary,
+            /* _minReturnedTokens */
+            0,
+            /* _preferClaimedTokens */
+            false,
+            /* _memo */
+            "Take my money!",
+            /* _delegateMetadata */
+            new bytes(0)
+        );
+
+        // get the weight to compute the amount of project token minted
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+        uint256 _weight = fundingCycle.weight;
+
+        // Check: correct amount of project token minted to the beneficiary?
+        assertEq(
+            jbTokenStore.balanceOf(_beneficiary, _projectId), _jbTokenBalanceBefore + (_amount * _weight / 10 ** 18)
+        );
+
+        // Check: correct amount of NFT minted to the beneficiary?
+        assertEq(IERC721(_NFTRewardDataSource).balanceOf(_beneficiary), _jbNFTBalanceBefore + 1);
+    }
+
+    /**
      * @notice  After migrating jbdao terminal, other projects pay fees to the terminal 3.1,
      *          even if they are using another terminal versions (3 and 3.0.1)
      * @dev     We use a given project id (397), to insure having something to distribute at current fork height
@@ -452,10 +500,11 @@ contract TestTerminal31_Fork is Test {
 
         JBGroupedSplits[] memory _groupedSplits;
 
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+        address _datasource = fundingCycle.dataSource();
+        metadata.dataSource = _datasource;
         metadata.allowTerminalMigration = true;
         metadata.global.allowSetTerminals = true;
-
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
 
         // reconfigure
         vm.prank(_projectOwner);
