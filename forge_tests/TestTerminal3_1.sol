@@ -502,7 +502,13 @@ contract TestTerminal31_Fork is Test {
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
         address _datasource = fundingCycle.dataSource();
-        metadata.dataSource = _datasource;
+        
+        if(_datasource != address(0)) {
+            metadata.dataSource = _datasource;
+            metadata.useDataSourceForPay = fundingCycle.useDataSourceForPay();
+            metadata.useDataSourceForRedeem = fundingCycle.useDataSourceForRedeem();
+        }
+
         metadata.allowTerminalMigration = true;
         metadata.global.allowSetTerminals = true;
 
