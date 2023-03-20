@@ -273,6 +273,31 @@ contract TestTerminal31_Fork is Test {
 
         // Check: correct amount of NFT minted to the beneficiary?
         assertEq(IERC721(_NFTRewardDataSource).balanceOf(_beneficiary), _jbNFTBalanceBefore + 1);
+
+        // Compute the theoric tokan id minted (based on the tokenId at the time of the fork - can't be retrieved onchain)
+        uint256 tokenId = 3000000004;
+
+        // Craft the metadata: redeem the tokenId
+        uint256[] memory redemptionId = new uint256[](1);
+        redemptionId[0] = tokenId;
+
+        bytes memory redemptionMetadata = abi.encode(
+            bytes32(0),
+            0xb3bcbb79, // IJB721Delegate interfaceId
+            redemptionId
+        );
+
+        vm.prank(_beneficiary);
+        jbEthTerminal3_1.redeemTokensOf({
+            _holder: _beneficiary,
+            _projectId: _projectId,
+            _tokenCount: 0,
+            _token: address(0),
+            _minReturnedTokens: 0,
+            _beneficiary: payable(_beneficiary),
+            _memo: 'imma out of here',
+            _metadata: redemptionMetadata
+        });
     }
 
     /**
