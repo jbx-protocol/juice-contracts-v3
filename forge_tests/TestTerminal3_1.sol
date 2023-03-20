@@ -233,7 +233,12 @@ contract TestTerminal31_Fork is Test {
         address _beneficiary = makeAddr("_beneficiary");
         vm.deal(_beneficiary, 10 ether);
 
-        address _NFTRewardDataSource = jbFundingCycleStore.currentOf(_projectId).dataSource();
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+        address _NFTRewardDataSource = fundingCycle.dataSource();
+        
+        metadata.dataSource = _NFTRewardDataSource;
+        metadata.useDataSourceForPay = true;
+        metadata.useDataSourceForRedeem = true;
 
         uint256 _jbTokenBalanceBefore = jbTokenStore.balanceOf(_beneficiary, _projectId);
         uint256 _jbNFTBalanceBefore = IERC721(_NFTRewardDataSource).balanceOf(_beneficiary);
@@ -257,8 +262,8 @@ contract TestTerminal31_Fork is Test {
             new bytes(0)
         );
 
-        // get the weight to compute the amount of project token minted
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+        // get the (new) weight to compute the amount of project token minted
+        fundingCycle = jbFundingCycleStore.currentOf(_projectId);
         uint256 _weight = fundingCycle.weight;
 
         // Check: correct amount of project token minted to the beneficiary?
@@ -500,15 +505,6 @@ contract TestTerminal31_Fork is Test {
 
         JBGroupedSplits[] memory _groupedSplits;
 
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-        address _datasource = fundingCycle.dataSource();
-        
-        if(_datasource != address(0)) {
-            metadata.dataSource = _datasource;
-            metadata.useDataSourceForPay = fundingCycle.useDataSourceForPay();
-            metadata.useDataSourceForRedeem = fundingCycle.useDataSourceForRedeem();
-        }
-
         metadata.allowTerminalMigration = true;
         metadata.global.allowSetTerminals = true;
 
@@ -519,6 +515,7 @@ contract TestTerminal31_Fork is Test {
         );
 
         // warp to the next funding cycle
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
         vm.warp(
             fundingCycle.duration == 0
                 ? fundingCycle.ballot != IJBFundingCycleBallot(address(0))
