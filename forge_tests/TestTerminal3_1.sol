@@ -240,10 +240,21 @@ contract TestTerminal31_Fork is Test {
         metadata.useDataSourceForPay = true;
         metadata.useDataSourceForRedeem = true;
 
+        // Reconfigure with new distribution limit, in the new controller
+        fundAccessConstraints[0] = JBFundAccessConstraints({
+            terminal: jbEthTerminal3_1, 
+            token: JBTokens.ETH,
+            distributionLimit: 0, // Only overflow
+            overflowAllowance: 0,
+            distributionLimitCurrency: 2, // Currency = ETH
+            overflowAllowanceCurrency: 1
+        });
+
         uint256 _jbTokenBalanceBefore = jbTokenStore.balanceOf(_beneficiary, _projectId);
         uint256 _jbNFTBalanceBefore = IERC721(_NFTRewardDataSource).balanceOf(_beneficiary);
 
         _migrateTerminal(_projectId);
+        _migrateControllerWithGroupedsplits(_projectId, new JBGroupedSplits[](0));
 
         // pay terminal
         vm.prank(_beneficiary);
@@ -283,7 +294,7 @@ contract TestTerminal31_Fork is Test {
 
         bytes memory redemptionMetadata = abi.encode(
             bytes32(0),
-            0xb3bcbb79, // IJB721Delegate interfaceId
+            bytes4(0xb3bcbb79), // IJB721Delegate interfaceId
             redemptionId
         );
 
