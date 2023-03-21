@@ -234,9 +234,8 @@ contract TestTerminal31_Fork is Test {
         vm.deal(_beneficiary, 10 ether);
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-        address _NFTRewardDataSource = fundingCycle.dataSource();
         
-        metadata.dataSource = _NFTRewardDataSource;
+        metadata.dataSource = fundingCycle.dataSource();
         metadata.useDataSourceForPay = true;
         metadata.useDataSourceForRedeem = true;
 
@@ -251,7 +250,7 @@ contract TestTerminal31_Fork is Test {
         });
 
         uint256 _jbTokenBalanceBefore = jbTokenStore.balanceOf(_beneficiary, _projectId);
-        uint256 _jbNFTBalanceBefore = IERC721(_NFTRewardDataSource).balanceOf(_beneficiary);
+        uint256 _jbNFTBalanceBefore = IERC721(fundingCycle.dataSource()).balanceOf(_beneficiary);
 
         _migrateTerminal(_projectId);
         _migrateControllerWithGroupedsplits(_projectId, new JBGroupedSplits[](0));
@@ -273,33 +272,31 @@ contract TestTerminal31_Fork is Test {
             new bytes(0)
         );
 
-        // get the (new) weight to compute the amount of project token minted
         fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-        uint256 _weight = fundingCycle.weight;
 
         // Check: correct amount of project token minted to the beneficiary?
         assertEq(
-            jbTokenStore.balanceOf(_beneficiary, _projectId), _jbTokenBalanceBefore + (_amount * _weight / 10 ** 18)
+            jbTokenStore.balanceOf(_beneficiary, _projectId), _jbTokenBalanceBefore + (_amount * fundingCycle.weight / 10 ** 18)
         );
 
         // Check: correct amount of NFT minted to the beneficiary?
-        assertEq(IERC721(_NFTRewardDataSource).balanceOf(_beneficiary), _jbNFTBalanceBefore + 1);
-
-        // Compute the theoric tokan id minted (based on the tokenId at the time of the fork - can't be retrieved onchain)
-        uint256 tokenId = 3000000004;
+        assertEq(IERC721(fundingCycle.dataSource()).balanceOf(_beneficiary), _jbNFTBalanceBefore + 1);
 
         // Craft the metadata: redeem the tokenId
         uint256[] memory redemptionId = new uint256[](1);
-        redemptionId[0] = tokenId;
+        redemptionId[0] = 3000000004; // tokenId based on fork state;
 
         bytes memory redemptionMetadata = abi.encode(
             bytes32(0),
             bytes4(0xb3bcbb79), // IJB721Delegate interfaceId
             redemptionId
         );
+        
+        uint256 _beneficiaryEthBalanceBefore = address(_beneficiary).balance;
+        uint256 _terminalEthBalanceBefore = address(jbEthTerminal3_1).balance;
 
         vm.prank(_beneficiary);
-        jbEthTerminal3_1.redeemTokensOf({
+        uint256 _received = jbEthTerminal3_1.redeemTokensOf({
             _holder: _beneficiary,
             _projectId: _projectId,
             _tokenCount: 0,
@@ -309,6 +306,16 @@ contract TestTerminal31_Fork is Test {
             _memo: 'imma out of here',
             _metadata: redemptionMetadata
         });
+
+        // Check: we're should receive ETH
+        assertTrue(_received > 0);
+
+        // Check: ETH actually received
+        assertEq(_beneficiaryEthBalanceBefore + _received, address(_beneficiary).balance);
+        assertEq(_terminalEthBalanceBefore - _received, address(jbEthTerminal3_1).balance);
+
+        // Check: NFT is burned
+        assertEq(IERC721(fundingCycle.dataSource()).balanceOf(_beneficiary), _jbNFTBalanceBefore);
     }
 
     /**
