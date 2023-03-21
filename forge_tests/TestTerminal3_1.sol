@@ -344,7 +344,7 @@ contract TestTerminal31_Fork is Test {
             _metadata: redemptionMetadata
         });
 
-        // Check: we're should receive at least the ETH contributed, plus an overflow (if any)
+        // Check: should received token back, minus fee/ (reconfig from this test induces a redemption amount > contribution)
         assertGt(_received, _amount * 2);
 
         // Check: ETH actually received
