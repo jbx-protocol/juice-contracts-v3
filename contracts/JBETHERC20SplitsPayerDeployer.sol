@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import { Clones } from '@openzeppelin/contracts/proxy/Clones.sol';
+
 import './interfaces/IJBETHERC20SplitsPayerDeployer.sol';
 import './structs/JBSplit.sol';
 import './structs/JBGroupedSplits.sol';
@@ -15,6 +17,16 @@ import './JBETHERC20SplitsPayer.sol';
   IJBETHERC20SplitsPayerDeployer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
 */
 contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
+
+  address immutable implementation;
+
+  IJBSplitsStore immutable splitsStore;
+
+  constructor(IJBSplitsStore _splitsStore) {
+    implementation = address(new JBETHERC20SplitsPayer(_splitsStore));
+    splitsStore = _splitsStore;
+  }
+
   //*********************************************************************//
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
@@ -105,7 +117,6 @@ contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
     uint256 _defaultSplitsProjectId,
     uint256 _defaultSplitsDomain,
     uint256 _defaultSplitsGroup,
-    IJBSplitsStore _splitsStore,
     uint256 _defaultProjectId,
     address payable _defaultBeneficiary,
     bool _defaultPreferClaimedTokens,
@@ -114,12 +125,14 @@ contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
     bool _defaultPreferAddToBalance,
     address _owner
   ) public override returns (IJBSplitsPayer splitsPayer) {
+
     // Deploy the splits payer.
-    splitsPayer = new JBETHERC20SplitsPayer(
+    splitsPayer = IJBSplitsPayer(payable(Clones.clone(implementation)));
+
+    splitsPayer.initialize(
       _defaultSplitsProjectId,
       _defaultSplitsDomain,
       _defaultSplitsGroup,
-      _splitsStore,
       _defaultProjectId,
       _defaultBeneficiary,
       _defaultPreferClaimedTokens,
@@ -134,7 +147,7 @@ contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
       _defaultSplitsProjectId,
       _defaultSplitsDomain,
       _defaultSplitsGroup,
-      _splitsStore,
+      splitsStore,
       _defaultProjectId,
       _defaultBeneficiary,
       _defaultPreferClaimedTokens,
