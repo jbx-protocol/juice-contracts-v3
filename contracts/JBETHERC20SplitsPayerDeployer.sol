@@ -80,7 +80,6 @@ contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
         _defaultSplitsProjectId,
         _domain,
         _group,
-        _splitsStore,
         _defaultProjectId,
         _defaultBeneficiary,
         _defaultPreferClaimedTokens,
@@ -102,7 +101,6 @@ contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
     @param _defaultSplitsProjectId The ID of project for which the default splits are stored.
     @param _defaultSplitsDomain The splits domain to payout when this contract receives direct payments.
     @param _defaultSplitsGroup The splits group to payout when this contract receives direct payments.
-    @param _splitsStore A contract that stores splits for each project.
     @param _defaultProjectId The ID of the project whose treasury should be forwarded the splits payer contract's received payment leftovers after distributing to the default splits group.
     @param _defaultBeneficiary The address that'll receive the project's tokens when the splits payer receives payments. 
     @param _defaultPreferClaimedTokens A flag indicating whether issued tokens from the splits payer's received payments should be automatically claimed into the beneficiary's wallet. 
