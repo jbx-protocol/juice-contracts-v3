@@ -2,16 +2,7 @@
 src = 'contracts'
 test = 'forge_tests'
 out = 'out'
-libs = ['lib']
-remappings = [
-    '@juicebox=contracts/',
-    '@chainlink=lib/chainlink/',
-    '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
-    '@paulrberg/contracts/math/=lib/prb-math/contracts',
-    'prb-math=lib/prb-math/',
-    'ds-test/=lib/ds-test/src/',
-    'forge-std/=lib/forge-std/src/',
-]
+libs = ['node_modules', 'lib']
 libraries = []
 gas_reports = ['*']
 verbosity = 3

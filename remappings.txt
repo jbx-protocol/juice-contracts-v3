@@ -1,9 +1,1 @@
-@chainlink=node_modules/@chainlink/
 @juicebox=contracts/
-@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
-@paulrberg/contracts/math/=node_modules/@paulrberg/contracts/math/
-chainlink/=node_modules/@chainlink/
-ds-test/=lib/ds-test/src/
-forge-std/=lib/forge-std/src/
-openzeppelin-contracts/contracts/=lib/openzeppelin-contracts/contracts/
-prb-math/contracts=node_modules/prb-math/contracts/
