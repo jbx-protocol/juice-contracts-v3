@@ -25,7 +25,6 @@ interface IJBETHERC20SplitsPayerDeployer {
     uint256 _defaultSplitsProjectId,
     uint256 _defaultSplitsDomain,
     uint256 _defaultSplitsGroup,
-    IJBSplitsStore _splitsStore,
     uint256 _defaultProjectId,
     address payable _defaultBeneficiary,
     bool _defaultPreferClaimedTokens,

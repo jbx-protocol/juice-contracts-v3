@@ -23,12 +23,15 @@ describe('JBSplitsPayerDeployer::deploySplitsPayerWithSplits(...)', function () 
 
     let mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
     let mockJbSplitsStore = await deployMockContract(deployer, jbSplitsStore.abi);
+    await mockJbSplitsStore.mock.directory.returns(mockJbDirectory.address);
+
     let jbSplitsPayerDeployerFactory = await ethers.getContractFactory(
       'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
     );
-    let jbSplitsPayerDeployer = await jbSplitsPayerDeployerFactory.deploy();
 
-    await mockJbSplitsStore.mock.directory.returns(mockJbDirectory.address);
+    let jbSplitsPayerDeployer = await jbSplitsPayerDeployerFactory.deploy(
+      mockJbSplitsStore.address,
+    );
 
     return {
       deployer,

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import { Clones } from '@openzeppelin/contracts/proxy/Clones.sol';
+
 import './interfaces/IJBETHERC20ProjectPayerDeployer.sol';
 import './JBETHERC20ProjectPayer.sol';
 
@@ -13,6 +15,19 @@ import './JBETHERC20ProjectPayer.sol';
   IJBETHERC20ProjectPayerDeployer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
 */
 contract JBETHERC20ProjectPayerDeployer is IJBETHERC20ProjectPayerDeployer {
+
+  address immutable implementation;
+
+  IJBDirectory immutable directory;
+
+  /**
+    @param _directory A contract storing directories of terminals and controllers for each project.
+  */
+  constructor(IJBDirectory _directory) {
+    implementation = address(new JBETHERC20ProjectPayer(_directory));
+    directory = _directory;
+  }
+
   //*********************************************************************//
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
@@ -27,7 +42,6 @@ contract JBETHERC20ProjectPayerDeployer is IJBETHERC20ProjectPayerDeployer {
     @param _defaultMemo The memo that'll be forwarded with the project payer's received payments. 
     @param _defaultMetadata The metadata that'll be forwarded with the project payer's received payments. 
     @param _defaultPreferAddToBalance A flag indicating if received payments should call the `pay` function or the `addToBalance` function of a project.
-    @param _directory A contract storing directories of terminals and controllers for each project.
     @param _owner The address that will own the project payer.
 
     @return projectPayer The project payer contract.
@@ -39,18 +53,19 @@ contract JBETHERC20ProjectPayerDeployer is IJBETHERC20ProjectPayerDeployer {
     string memory _defaultMemo,
     bytes memory _defaultMetadata,
     bool _defaultPreferAddToBalance,
-    IJBDirectory _directory,
     address _owner
   ) external override returns (IJBProjectPayer projectPayer) {
     // Deploy the project payer.
-    projectPayer = new JBETHERC20ProjectPayer(
+    projectPayer = IJBProjectPayer(payable(Clones.clone(implementation)));
+
+    // Initialize the project payer.
+    projectPayer.initialize(
       _defaultProjectId,
       _defaultBeneficiary,
       _defaultPreferClaimedTokens,
       _defaultMemo,
       _defaultMetadata,
       _defaultPreferAddToBalance,
-      _directory,
       _owner
     );
 
@@ -62,7 +77,7 @@ contract JBETHERC20ProjectPayerDeployer is IJBETHERC20ProjectPayerDeployer {
       _defaultMemo,
       _defaultMetadata,
       _defaultPreferAddToBalance,
-      _directory,
+      directory,
       _owner,
       msg.sender
     );

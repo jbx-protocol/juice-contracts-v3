@@ -18,10 +18,25 @@ describe('JBProjectPayerDeployer::deployProjectPayer(...)', function () {
 
     const mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
 
-    const jbProjectPayerDeployerFactory = await ethers.getContractFactory(
+    let jbProjectPayerDeployerFactory = await ethers.getContractFactory(
       'JBETHERC20ProjectPayerDeployer',
     );
-    const jbProjectPayerDeployer = await jbProjectPayerDeployerFactory.deploy();
+    let jbProjectPayerDeployer = await jbProjectPayerDeployerFactory.deploy(
+      mockJbDirectory.address,
+    );
+
+    let jbProjectPayerFactory = await ethers.getContractFactory('JBETHERC20ProjectPayer');
+    let jbProjectPayer = jbProjectPayerFactory.attach(
+      await jbProjectPayerDeployer.callStatic.deployProjectPayer(
+        INITIAL_PROJECT_ID,
+        INITIAL_BENEFICIARY,
+        INITIAL_PREFER_CLAIMED_TOKENS,
+        INITIAL_MEMO,
+        INITIAL_METADATA,
+        INITIAL_PREFER_ADD_TO_BALANCE,
+        owner.address,
+      ),
+    );
 
     return {
       owner,
@@ -48,7 +63,6 @@ describe('JBProjectPayerDeployer::deployProjectPayer(...)', function () {
         INITIAL_MEMO,
         INITIAL_METADATA,
         INITIAL_PREFER_ADD_TO_BALANCE,
-        mockJbDirectory.address,
         owner.address,
       );
 

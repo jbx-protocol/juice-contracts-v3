@@ -17,6 +17,8 @@ interface IJBProjectPayer is IERC165 {
 
   function directory() external view returns (IJBDirectory);
 
+  function projectPayerDeployer() external view returns (address);
+
   function defaultProjectId() external view returns (uint256);
 
   function defaultBeneficiary() external view returns (address payable);
@@ -28,6 +30,16 @@ interface IJBProjectPayer is IERC165 {
   function defaultMetadata() external view returns (bytes memory);
 
   function defaultPreferAddToBalance() external view returns (bool);
+
+  function initialize(
+    uint256 _defaultProjectId,
+    address payable _defaultBeneficiary,
+    bool _defaultPreferClaimedTokens,
+    string memory _defaultMemo,
+    bytes memory _defaultMetadata,
+    bool _defaultPreferAddToBalance,
+    address _owner
+  ) external;
 
   function setDefaultValues(
     uint256 _projectId,

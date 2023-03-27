@@ -5,7 +5,7 @@ import { deployMockContract } from '@ethereum-waffle/mock-contract';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 
-describe('JBETHERC20ProjectPayer::setDefaultValues(...)', function () {
+describe('JBETHERC20ProjectPayer via Proxy::setDefaultValues(...)', function () {
   const INITIAL_PROJECT_ID = 1;
   const INITIAL_BENEFICIARY = ethers.Wallet.createRandom().address;
   const INITIAL_PREFER_CLAIMED_TOKENS = false;
@@ -24,14 +24,16 @@ describe('JBETHERC20ProjectPayer::setDefaultValues(...)', function () {
 
     let mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
 
-    let jbProjectPayerFactory = await ethers.getContractFactory('JBETHERC20ProjectPayer');
-    let jbProjectPayer = await jbProjectPayerFactory
-      .connect(deployer)
-      .deploy(mockJbDirectory.address);
+    let jbProjectPayerDeployerFactory = await ethers.getContractFactory(
+      'JBETHERC20ProjectPayerDeployer',
+    );
+    let jbProjectPayerDeployer = await jbProjectPayerDeployerFactory.deploy(
+      mockJbDirectory.address,
+    );
 
-    await jbProjectPayer
-      .connect(deployer)
-      .initialize(
+    let jbProjectPayerFactory = await ethers.getContractFactory('JBETHERC20ProjectPayer');
+    let jbProjectPayer = jbProjectPayerFactory.attach(
+      await jbProjectPayerDeployer.callStatic.deployProjectPayer(
         INITIAL_PROJECT_ID,
         INITIAL_BENEFICIARY,
         INITIAL_PREFER_CLAIMED_TOKENS,
@@ -39,7 +41,18 @@ describe('JBETHERC20ProjectPayer::setDefaultValues(...)', function () {
         INITIAL_METADATA,
         INITIAL_PREFER_ADD_TO_BALANCE,
         owner.address,
-      );
+      ),
+    );
+
+    await jbProjectPayerDeployer.deployProjectPayer(
+      INITIAL_PROJECT_ID,
+      INITIAL_BENEFICIARY,
+      INITIAL_PREFER_CLAIMED_TOKENS,
+      INITIAL_MEMO,
+      INITIAL_METADATA,
+      INITIAL_PREFER_ADD_TO_BALANCE,
+      owner.address,
+    );
 
     return {
       deployer,

@@ -25,7 +25,6 @@ interface IJBETHERC20ProjectPayerDeployer {
     string memory _defaultMemo,
     bytes memory _defaultMetadata,
     bool _preferAddToBalance,
-    IJBDirectory _directory,
     address _owner
   ) external returns (IJBProjectPayer projectPayer);
 }
