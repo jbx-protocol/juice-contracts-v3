@@ -63,17 +63,37 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
     let mockJbTerminal = await deployMockContract(deployer, jbTerminal.abi);
     let mockToken = await deployMockContract(deployer, ierc20.abi);
 
-    let jbSplitsPayerFactory = await ethers.getContractFactory(
-      'contracts/JBETHERC20SplitsPayer.sol:JBETHERC20SplitsPayer',
-    );
-
     await mockJbSplitsStore.mock.directory.returns(mockJbDirectory.address);
 
-    let jbSplitsPayer = await jbSplitsPayerFactory.deploy(
+    let jbSplitsPayerDeployerFactory = await ethers.getContractFactory(
+      'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+    );
+
+    let jbSplitsPayerDeployer = await jbSplitsPayerDeployerFactory.deploy(
+      mockJbSplitsStore.address,
+    );
+
+    let jbSplitsPayerFactory = await ethers.getContractFactory('JBETHERC20SplitsPayer');
+
+    let jbSplitsPayer = jbSplitsPayerFactory.attach(
+      await jbSplitsPayerDeployer.callStatic.deploySplitsPayer(
+        DEFAULT_SPLITS_PROJECT_ID,
+        DEFAULT_SPLITS_DOMAIN,
+        DEFAULT_SPLITS_GROUP,
+        DEFAULT_PROJECT_ID,
+        DEFAULT_BENEFICIARY,
+        DEFAULT_PREFER_CLAIMED_TOKENS,
+        DEFAULT_MEMO,
+        DEFAULT_METADATA,
+        PREFER_ADD_TO_BALANCE,
+        owner.address,
+      ),
+    );
+
+    await jbSplitsPayerDeployer.deploySplitsPayer(
       DEFAULT_SPLITS_PROJECT_ID,
       DEFAULT_SPLITS_DOMAIN,
       DEFAULT_SPLITS_GROUP,
-      mockJbSplitsStore.address,
       DEFAULT_PROJECT_ID,
       DEFAULT_BENEFICIARY,
       DEFAULT_PREFER_CLAIMED_TOKENS,
@@ -82,7 +102,6 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       PREFER_ADD_TO_BALANCE,
       owner.address,
     );
-
     return {
       beneficiaryOne,
       beneficiaryTwo,
@@ -98,6 +117,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       mockJbSplitsStore,
       jbSplitsPayer,
       jbSplitsPayerFactory,
+      jbSplitsPayerDeployer,
     };
   }
 
@@ -287,13 +307,28 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
   });
 
   it(`Should send fund directly to the caller, if no allocator, project ID, beneficiary or default beneficiary is set`, async function () {
-    const { caller, jbSplitsPayerFactory, mockJbSplitsStore, owner } = await setup();
+    const { caller, jbSplitsPayerFactory, jbSplitsPayerDeployer, mockJbSplitsStore, owner } =
+      await setup();
 
-    let jbSplitsPayerWithoutDefaultBeneficiary = await jbSplitsPayerFactory.deploy(
+    let jbSplitsPayerWithoutDefaultBeneficiary = jbSplitsPayerFactory.attach(
+      await jbSplitsPayerDeployer.callStatic.deploySplitsPayer(
+        DEFAULT_SPLITS_PROJECT_ID,
+        DEFAULT_SPLITS_DOMAIN,
+        DEFAULT_SPLITS_GROUP,
+        DEFAULT_PROJECT_ID,
+        ethers.constants.AddressZero,
+        DEFAULT_PREFER_CLAIMED_TOKENS,
+        DEFAULT_MEMO,
+        DEFAULT_METADATA,
+        PREFER_ADD_TO_BALANCE,
+        owner.address,
+      ),
+    );
+
+    await jbSplitsPayerDeployer.deploySplitsPayer(
       DEFAULT_SPLITS_PROJECT_ID,
       DEFAULT_SPLITS_DOMAIN,
       DEFAULT_SPLITS_GROUP,
-      mockJbSplitsStore.address,
       DEFAULT_PROJECT_ID,
       ethers.constants.AddressZero,
       DEFAULT_PREFER_CLAIMED_TOKENS,
@@ -375,6 +410,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       caller,
       owner,
       jbSplitsPayerFactory,
+      jbSplitsPayerDeployer,
       mockJbDirectory,
       mockJbSplitsStore,
       mockJbTerminal,
@@ -383,11 +419,25 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       beneficiaryThree,
     } = await setup();
 
-    let jbSplitsPayerPreferAddToBalance = await jbSplitsPayerFactory.deploy(
+    let jbSplitsPayerPreferAddToBalance = jbSplitsPayerFactory.attach(
+      await jbSplitsPayerDeployer.callStatic.deploySplitsPayer(
+        DEFAULT_SPLITS_PROJECT_ID,
+        DEFAULT_SPLITS_DOMAIN,
+        DEFAULT_SPLITS_GROUP,
+        DEFAULT_PROJECT_ID,
+        DEFAULT_BENEFICIARY,
+        DEFAULT_PREFER_CLAIMED_TOKENS,
+        DEFAULT_MEMO,
+        DEFAULT_METADATA,
+        true,
+        owner.address,
+      ),
+    );
+
+    await jbSplitsPayerDeployer.deploySplitsPayer(
       DEFAULT_SPLITS_PROJECT_ID,
       DEFAULT_SPLITS_DOMAIN,
       DEFAULT_SPLITS_GROUP,
-      mockJbSplitsStore.address,
       DEFAULT_PROJECT_ID,
       DEFAULT_BENEFICIARY,
       DEFAULT_PREFER_CLAIMED_TOKENS,
@@ -438,6 +488,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       caller,
       owner,
       jbSplitsPayerFactory,
+      jbSplitsPayerDeployer,
       mockJbSplitsStore,
       mockJbTerminal,
       beneficiaryOne,
@@ -445,11 +496,25 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       beneficiaryThree,
     } = await setup();
 
-    let jbSplitsPayer = await jbSplitsPayerFactory.deploy(
+    let jbSplitsPayer = jbSplitsPayerFactory.attach(
+      await jbSplitsPayerDeployer.callStatic.deploySplitsPayer(
+        DEFAULT_SPLITS_PROJECT_ID,
+        DEFAULT_SPLITS_DOMAIN,
+        DEFAULT_SPLITS_GROUP,
+        0,
+        beneficiaryThree.address,
+        DEFAULT_PREFER_CLAIMED_TOKENS,
+        DEFAULT_MEMO,
+        DEFAULT_METADATA,
+        true,
+        owner.address,
+      ),
+    );
+
+    await jbSplitsPayerDeployer.deploySplitsPayer(
       DEFAULT_SPLITS_PROJECT_ID,
       DEFAULT_SPLITS_DOMAIN,
       DEFAULT_SPLITS_GROUP,
-      mockJbSplitsStore.address,
       0,
       beneficiaryThree.address,
       DEFAULT_PREFER_CLAIMED_TOKENS,
@@ -458,6 +523,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       true,
       owner.address,
     );
+
     // 50% to beneficiaries
     let splits = makeSplits({
       count: 2,
@@ -493,6 +559,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       caller,
       owner,
       jbSplitsPayerFactory,
+      jbSplitsPayerDeployer,
       mockJbSplitsStore,
       mockJbTerminal,
       beneficiaryOne,
@@ -500,11 +567,25 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       beneficiaryThree,
     } = await setup();
 
-    let jbSplitsPayer = await jbSplitsPayerFactory.deploy(
+    let jbSplitsPayer = jbSplitsPayerFactory.attach(
+      await jbSplitsPayerDeployer.callStatic.deploySplitsPayer(
+        DEFAULT_SPLITS_PROJECT_ID,
+        DEFAULT_SPLITS_DOMAIN,
+        DEFAULT_SPLITS_GROUP,
+        0,
+        ethers.constants.AddressZero,
+        DEFAULT_PREFER_CLAIMED_TOKENS,
+        DEFAULT_MEMO,
+        DEFAULT_METADATA,
+        true,
+        owner.address,
+      ),
+    );
+
+    await jbSplitsPayerDeployer.deploySplitsPayer(
       DEFAULT_SPLITS_PROJECT_ID,
       DEFAULT_SPLITS_DOMAIN,
       DEFAULT_SPLITS_GROUP,
-      mockJbSplitsStore.address,
       0,
       ethers.constants.AddressZero,
       DEFAULT_PREFER_CLAIMED_TOKENS,
@@ -513,6 +594,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       true,
       owner.address,
     );
+
     // 50% to beneficiaries
     let splits = makeSplits({
       count: 2,

@@ -154,18 +154,24 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
   });
 
   it(`Should pay and use the caller if no beneficiary or default beneficiary is set`, async function () {
-    const { owner, caller, jbProjectPayerFactory, mockJbDirectory, mockJbTerminal } = await setup();
+    const { owner, caller, deployer, jbProjectPayerFactory, mockJbDirectory, mockJbTerminal } =
+      await setup();
 
-    let _jbProjectPayer = await jbProjectPayerFactory.deploy(
-      INITIAL_PROJECT_ID,
-      ethers.constants.AddressZero,
-      INITIAL_PREFER_CLAIMED_TOKENS,
-      INITIAL_MEMO,
-      INITIAL_METADATA,
-      INITIAL_PREFER_ADD_TO_BALANCE,
-      mockJbDirectory.address,
-      owner.address,
-    );
+    let _jbProjectPayer = await jbProjectPayerFactory
+      .connect(deployer)
+      .deploy(mockJbDirectory.address);
+
+    await _jbProjectPayer
+      .connect(deployer)
+      .initialize(
+        INITIAL_PROJECT_ID,
+        ethers.constants.AddressZero,
+        INITIAL_PREFER_CLAIMED_TOKENS,
+        INITIAL_MEMO,
+        INITIAL_METADATA,
+        INITIAL_PREFER_ADD_TO_BALANCE,
+        owner.address,
+      );
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(PROJECT_ID, ethToken)

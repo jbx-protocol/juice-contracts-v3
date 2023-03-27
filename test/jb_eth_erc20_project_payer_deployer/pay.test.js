@@ -79,6 +79,7 @@ describe('JBETHERC20ProjectPayer via Proxy::pay(...)', function () {
       mockJbDirectory,
       mockJbTerminal,
       jbProjectPayer,
+      jbProjectPayerDeployer,
       jbProjectPayerFactory,
     };
   }
@@ -167,7 +168,14 @@ describe('JBETHERC20ProjectPayer via Proxy::pay(...)', function () {
   });
 
   it(`Should pay and use the caller if no beneficiary or default beneficiary is set`, async function () {
-    const { owner, caller, jbProjectPayerFactory, mockJbDirectory, mockJbTerminal } = await setup();
+    const {
+      owner,
+      caller,
+      jbProjectPayerFactory,
+      jbProjectPayerDeployer,
+      mockJbDirectory,
+      mockJbTerminal,
+    } = await setup();
 
     let _jbProjectPayer = jbProjectPayerFactory.attach(
       await jbProjectPayerDeployer.callStatic.deployProjectPayer(
