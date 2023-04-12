@@ -28,18 +28,12 @@ import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
 import "forge-std/Test.sol";
 
 /**
- *  @title JBTerminal v3.1 mainnet fork test
- *
- *  @notice
- *  This test run on a mainnet fork and test the new terminal (v3.1) as well as migration scenarios
- *
- *
- *  This test too the JuiceboxDAO project migration
+ *  @title 
  *
  *  @dev This test runs on a fork and will NOT be executed by forge test by default (only on CI). To run it locally, you need to run:
  *       `FOUNDRY_PROFILE=CI forge test`
  */
-contract TestPlanetable_Local is Test {
+contract TestPlanetable_Fork is Test {
     using JBFundingCycleMetadataResolver for JBFundingCycle;
 
     JBETHPaymentTerminal3_1 jbEthTerminal3_1 = JBETHPaymentTerminal3_1(0xFA391De95Fcbcd3157268B91d8c7af083E607A5C);
@@ -53,7 +47,6 @@ contract TestPlanetable_Local is Test {
     JBSingleTokenPaymentTerminalStore3_1 jbTerminalStore3_1;
     IJBSplitsStore jbSplitsStore;
     
-
     // Structure needed
     JBProjectMetadata projectMetadata;
     JBFundingCycleData data;
@@ -63,12 +56,7 @@ contract TestPlanetable_Local is Test {
     JBGroupedSplits[] groupedSplits;
 
     function setUp() public {
-        vm.createSelectFork("https://rpc.ankr.com/eth", 16939325);
 
-        jbFundingCycleStore = jbController3_1.fundingCycleStore();
-        jbProjects = jbController3_1.projects();
-        jbDirectory = jbController3_1.directory();
-        jbSplitsStore = jbController3_1.splitsStore();
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -80,16 +68,18 @@ contract TestPlanetable_Local is Test {
      * @dev     Should migrate terminal, including funds and set it in directory then distribute
      */
     function testTerminal31_Migration_migratePlanetable() public {
+        vm.createSelectFork("https://rpc.ankr.com/eth", 16939325);
+
+        jbFundingCycleStore = jbController3_1.fundingCycleStore();
+        jbProjects = jbController3_1.projects();
+        jbDirectory = jbController3_1.directory();
+        jbSplitsStore = jbController3_1.splitsStore();
+
         uint256 _projectId = 471;
         jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)));
         address _projectOwner = jbProjects.ownerOf(_projectId);
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
-        // JBSplit[] memory _split = new JBSplit[](1);
-        // _split[0] = JBSplit({beneficiary: , percentage: PRBMathUD60x18.SCALE});
-
-        // 1,false,false,1000000000,0,0x04C8818e03BFEf53Ce61728CebfF63FaCB2c40c1,0,0x0000000000000000000000000000000000000000,2,
-
 
         JBGroupedSplits[] memory _groupedSplits = new JBGroupedSplits[](1);
         _groupedSplits[0] = JBGroupedSplits({
@@ -118,6 +108,58 @@ contract TestPlanetable_Local is Test {
         jbController3_1.reconfigureFundingCyclesOf(
             _projectId, data, metadata, block.timestamp, _groupedSplits, fundAccessConstraints, ""
         );
+
+        // warp to the next funding cycle (3 days ballot)
+        vm.warp(
+            fundingCycle.start + fundingCycle.duration
+        );
+
+        // lez go
+        IJBPaymentTerminal[] memory _newTerminal = new IJBPaymentTerminal[](1);
+        _newTerminal[0] = IJBPaymentTerminal(address(jbEthTerminal3_1));
+
+        // Can only migrate to one of the project's terminals
+        vm.prank(_projectOwner);
+        jbDirectory.setTerminalsOf(_projectId, _newTerminal);
+
+        vm.prank(_projectOwner);
+        jbEthTerminal.migrate(_projectId, jbEthTerminal3_1);
+
+        // Check: New terminal is the primary?
+        assertEq(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)), address(jbEthTerminal3_1));
+
+        // Check: distribute?
+        uint256 _balanceBefore = _groupedSplits[0].splits[0].beneficiary.balance;
+        jbEthTerminal3_1.distributePayoutsOf(_projectId, 2 ether, 1, JBTokens.ETH, 0, '');
+        assertApproxEqRel(_balanceBefore + 2 ether, _groupedSplits[0].splits[0].beneficiary.balance, 0.025 ether);
+    }
+
+        /**
+     * @notice  Test the migration of the Planetable project after the reconfig submitted at block 17034449
+     * @dev     Should migrate terminal, including funds and set it in directory then distribute
+     */
+    function testTerminal31_Migration_migratePlanetableAfterReconfig() public {
+        vm.createSelectFork("https://rpc.ankr.com/eth", 17034449);
+
+        jbFundingCycleStore = jbController3_1.fundingCycleStore();
+        jbProjects = jbController3_1.projects();
+        jbDirectory = jbController3_1.directory();
+        jbSplitsStore = jbController3_1.splitsStore();
+
+        uint256 _projectId = 471;
+        jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)));
+        address _projectOwner = jbProjects.ownerOf(_projectId);
+
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
+
+        JBGroupedSplits[] memory _groupedSplits = new JBGroupedSplits[](1);
+        _groupedSplits[0] = JBGroupedSplits({
+            group: 1,
+            splits: jbSplitsStore.splitsOf(
+                _projectId,
+                fundingCycle.configuration, /*domain*/
+                JBSplitsGroups.ETH_PAYOUT /*group*/)
+        });
 
         // warp to the next funding cycle (3 days ballot)
         vm.warp(
