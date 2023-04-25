@@ -11,3 +11,9 @@
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
 	branch = v1.3.0
+[submodule "lib/juice-v3-migration"]
+	path = lib/juice-v3-migration
+	url = https://github.com/jbx-protocol/juice-v3-migration
+[submodule "lib/juice-contracts-v1"]
+	path = lib/juice-contracts-v1
+	url = https://github.com/jbx-protocol/juice-contracts-v1
