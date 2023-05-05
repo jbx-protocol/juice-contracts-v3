@@ -9,14 +9,16 @@
   },
   "version": "3.1.1",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@chainlink/contracts": "^0.1.6",
+    "@paulrberg/contracts": "^3.4.0",
+    "@openzeppelin/contracts": "^4.5.0-rc.0"
+  },
+  "devDependencies": {
     "@defi-wonderland/smock": "^2.2.0",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.4",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@openzeppelin/contracts": "^4.5.0-rc.0",
-    "@paulrberg/contracts": "^3.4.0",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
     "esm": "^3.2.25",
