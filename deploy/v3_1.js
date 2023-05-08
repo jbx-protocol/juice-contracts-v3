@@ -32,10 +32,10 @@ module.exports = async ({ deployments, getChainId }) => {
       chainlinkV2UsdEthPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
       protocolProjectStartsAtOrAfter = 1664047173;
       break;
-    // Goerli
-    case '5':
-      multisigAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
-      chainlinkV2UsdEthPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
+    // Sepolia
+    case '11155111':
+      multisigAddress = '0x3443d0a6956e7E0A13Cd1c54F6bEf24B0d54f420';
+      chainlinkV2UsdEthPriceFeed = '0x694AA1769357215DE4FAC081bf1f309aDC325306';
       protocolProjectStartsAtOrAfter = 0;
       break;
     // hardhat / localhost
@@ -129,12 +129,6 @@ module.exports = async ({ deployments, getChainId }) => {
       JBSplitStore.address,
       JBFundAccessConstraintsStore.address,
     ],
-  });
-
-  // Deploy a JBMigrationOperator contract.
-  const JBMigrationOperator = await deploy('JBMigrationOperator', {
-    ...baseDeployArgs,
-    args: [JBDirectory.address],
   });
 
   // Deploy a JBSingleTokenPaymentTerminalStore contract.
