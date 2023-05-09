@@ -88,6 +88,12 @@ npx hardhat deploy --network $network
 
 Contract artifacts will be outputted to `./deployments/$network/**` and should be checked in to the repo.
 
+To deploy a new reconfiguration ballot, use the deploy-ballot hardhat task, following this format (duration is in seconds):
+
+```bash
+npx hardhat deploy-ballot --duration 3600 --network $network
+```
+
 ## Verification
 
 To verify the contracts on [Etherscan](https://etherscan.io), make sure you have an `ETHERSCAN_API_KEY` set in your `./.env` file. Then run the following:
