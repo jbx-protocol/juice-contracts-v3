@@ -13,7 +13,7 @@ module.exports = async ({ deployments, getChainId }) => {
   const { deploy } = deployments;
   const [deployer] = await ethers.getSigners();
 
-  let multisigAddress;
+  let governanceAddress;
   let chainlinkV2UsdEthPriceFeed;
   let chainId = await getChainId();
   let baseDeployArgs = {
@@ -21,31 +21,25 @@ module.exports = async ({ deployments, getChainId }) => {
     log: true,
     skipIfAlreadyDeployed: true,
   };
-  let protocolProjectStartsAtOrAfter;
-
-  console.log({ deployer: deployer.address, chain: chainId });
 
   switch (chainId) {
     // mainnet
     case '1':
-      multisigAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
+      governanceAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
       chainlinkV2UsdEthPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
-      protocolProjectStartsAtOrAfter = 1664047173;
       break;
     // Goerli
     case '5':
-      multisigAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
+      governanceAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
       chainlinkV2UsdEthPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
-      protocolProjectStartsAtOrAfter = 0;
       break;
     // hardhat / localhost
     case '31337':
-      multisigAddress = deployer.address;
-      protocolProjectStartsAtOrAfter = 0;
+      governanceAddress = deployer.address;
       break;
   }
 
-  console.log({ multisigAddress, protocolProjectStartsAtOrAfter });
+  console.log({ multisigovernanceAddress });
 
   // Deploy a JBETHERC20ProjectPayerDeployer contract.
   await deploy('JBETHERC20ProjectPayerDeployer', {
@@ -144,12 +138,6 @@ module.exports = async ({ deployments, getChainId }) => {
     ],
   });
 
-  // Deploy a JBMigrationOperator contract.
-  const JBMigrationOperator = await deploy('JBMigrationOperator', {
-    ...baseDeployArgs,
-    args: [JBDirectory.address],
-  });
-
   // Deploy a JBSingleTokenPaymentTerminalStore contract.
   const JBSingleTokenPaymentTerminalStore = await deploy('JBSingleTokenPaymentTerminalStore3_1', {
     ...baseDeployArgs,
@@ -167,8 +155,7 @@ module.exports = async ({ deployments, getChainId }) => {
   // Get references to contract that will have transactions triggered.
   const jbDirectoryContract = new ethers.Contract(JBDirectory.address, JBDirectory.abi);
   const jbPricesContract = new ethers.Contract(JBPrices.address, JBPrices.abi);
-  const jbControllerContract = new ethers.Contract(JBController.address, JBController.abi);
-  const jbProjects = new ethers.Contract(JBProjects.address, JBProjects.abi);
+  const jbProjectsContract = new ethers.Contract(JBProjects.address, JBProjects.abi);
   const jbCurrenciesLibrary = new ethers.Contract(JBCurrencies.address, JBCurrencies.abi);
 
   // Get a reference to USD and ETH currency indexes.
@@ -176,7 +163,7 @@ module.exports = async ({ deployments, getChainId }) => {
   const ETH = await jbCurrenciesLibrary.connect(deployer).ETH();
 
   // Deploy a JBETHPaymentTerminal contract.
-  const JBETHPaymentTerminal = await deploy('JBETHPaymentTerminal3_1', {
+  await deploy('JBETHPaymentTerminal3_1', {
     ...baseDeployArgs,
     contract: 'contracts/JBETHPaymentTerminal3_1.sol:JBETHPaymentTerminal3_1',
     args: [
@@ -187,7 +174,7 @@ module.exports = async ({ deployments, getChainId }) => {
       JBSplitStore.address,
       JBPrices.address,
       JBSingleTokenPaymentTerminalStore.address,
-      multisigAddress,
+      governanceAddress,
     ],
   });
 
@@ -209,14 +196,12 @@ module.exports = async ({ deployments, getChainId }) => {
   }
 
   // If needed, transfer the ownership of the JBPrices to to the multisig.
-  if ((await jbPricesContract.connect(deployer).owner()) != multisigAddress)
-    await jbPricesContract.connect(deployer).transferOwnership(multisigAddress);
+  if ((await jbPricesContract.connect(deployer).owner()) != governanceAddress)
+    await jbPricesContract.connect(deployer).transferOwnership(governanceAddress);
 
   let isAllowedToSetFirstController = await jbDirectoryContract
     .connect(deployer)
     .isAllowedToSetFirstController(JBController.address);
-
-  console.log({ isAllowedToSetFirstController });
 
   // If needed, allow the controller to set projects' first controller, then transfer the ownership of the JBDirectory to the multisig.
   if (!isAllowedToSetFirstController) {
@@ -227,31 +212,40 @@ module.exports = async ({ deployments, getChainId }) => {
   }
 
   // If needed, transfer the ownership of the JBDirectory contract to the multisig.
-  if ((await jbDirectoryContract.connect(deployer).owner()) != multisigAddress) {
-    let tx = await jbDirectoryContract.connect(deployer).transferOwnership(multisigAddress);
+  if ((await jbDirectoryContract.connect(deployer).owner()) != governanceAddress) {
+    let tx = await jbDirectoryContract.connect(deployer).transferOwnership(governanceAddress);
+    await tx.wait();
+  }
+  // If needed, transfer the ownership of the JBProjects contract to the multisig.
+  if ((await jbProjectsContract.connect(deployer).owner()) != governanceAddress) {
+    let tx = await jbProjectsContract.connect(deployer).transferOwnership(governanceAddress);
     await tx.wait();
   }
 
-  // Deploy a JB1DayReconfigurationBufferBallot.
-  await deploy('JB1DayReconfigurationBufferBallot', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
-    args: [86400],
-  });
+  //
+  // If you want, deploy funding cycle ballot contracts for projects to use.
+  //
 
-  // Deploy a JB3DayReconfigurationBufferBallot.
-  const JB3DayReconfigurationBufferBallot = await deploy('JB3DayReconfigurationBufferBallot', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
-    args: [259200],
-  });
+  // // Deploy a JB1DayReconfigurationBufferBallot.
+  // await deploy('JB1DayReconfigurationBufferBallot', {
+  //   ...baseDeployArgs,
+  //   contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
+  //   args: [86400],
+  // });
 
-  // Deploy a JB7DayReconfigurationBufferBallot.
-  await deploy('JB7DayReconfigurationBufferBallot', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
-    args: [604800],
-  });
+  // // Deploy a JB3DayReconfigurationBufferBallot.
+  // await deploy('JB3DayReconfigurationBufferBallot', {
+  //   ...baseDeployArgs,
+  //   contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
+  //   args: [259200],
+  // });
+
+  // // Deploy a JB7DayReconfigurationBufferBallot.
+  // await deploy('JB7DayReconfigurationBufferBallot', {
+  //   ...baseDeployArgs,
+  //   contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
+  //   args: [604800],
+  // });
 
   console.log('Done');
 };
