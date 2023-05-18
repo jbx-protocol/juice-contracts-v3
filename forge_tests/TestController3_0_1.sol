@@ -124,7 +124,7 @@ contract TestController31_Fork is Test {
         fundAccessConstraints.push(
             JBFundAccessConstraints({
                 terminal: jbEthTerminal,
-                token: JBTokens.ETH,
+                token: JBTokens.GAS_TOKEN,
                 distributionLimit: targetInWei, // 10 ETH target
                 overflowAllowance: 5 ether,
                 distributionLimitCurrency: 1, // Currency = ETH

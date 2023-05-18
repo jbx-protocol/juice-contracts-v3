@@ -54,11 +54,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::migrate(...)', function () {
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    const CURRENCY_ETH = await jbCurrencies.ETH();
+    const CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
 
     const jbTokensFactory = await ethers.getContractFactory('JBTokens');
     const jbTokens = await jbTokensFactory.deploy();
-    const TOKEN_ETH = await jbTokens.ETH();
+    const TOKEN_ETH = await JBTokens.GAS_TOKEN();
     const NON_ETH_TOKEN = mockJbToken.address;
 
     const SPLITS_GROUP = 1;

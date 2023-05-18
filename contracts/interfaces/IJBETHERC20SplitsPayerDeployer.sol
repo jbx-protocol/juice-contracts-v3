@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import './IJBSplitsPayer.sol';
 import './IJBSplitsStore.sol';
 
-interface IJBETHERC20SplitsPayerDeployer {
+interface IJBGasTokenERC20SplitsPayerDeployer {
   event DeploySplitsPayer(
     IJBSplitsPayer indexed splitsPayer,
     uint256 defaultSplitsProjectId,

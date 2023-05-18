@@ -141,7 +141,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
 
         // Check: the project must use the new terminal as primary terminal
         assertEq(
-            address(jbDirectory().primaryTerminalOf(projectId, JBTokens.ETH)),
+            address(jbDirectory().primaryTerminalOf(projectId, JBTokens.GAS_TOKEN)),
             address(jbEthTerminal3_1)
         );
         
@@ -279,7 +279,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
         fundAccessConstraints.push(
             JBFundAccessConstraints({
                 terminal: jbETHPaymentTerminal(),
-                token: JBTokens.ETH,
+                token: JBTokens.GAS_TOKEN,
                 distributionLimit: 10 ether,
                 overflowAllowance: 5 ether,
                 distributionLimitCurrency: 1, // Currency = ETH
@@ -387,7 +387,7 @@ contract TestMigrationOperator_Fork is Test {
 
         // Check: the project must use the new terminal as primary terminal
         assertEq(
-            address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)),
+            address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.GAS_TOKEN)),
             address(jbEthPaymentTerminal3_1)
         );
     }
@@ -483,7 +483,7 @@ contract TestMigrationOperator_Fork is Test {
         fundAccessConstraints.push(
             JBFundAccessConstraints({
                 terminal: jbEthTerminal,
-                token: JBTokens.ETH,
+                token: JBTokens.GAS_TOKEN,
                 distributionLimit: 10 ether,
                 overflowAllowance: 5 ether,
                 distributionLimitCurrency: 1,

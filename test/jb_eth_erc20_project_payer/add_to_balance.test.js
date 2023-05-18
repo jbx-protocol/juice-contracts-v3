@@ -9,7 +9,7 @@ import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPay
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import errors from '../helpers/errors.json';
 
-describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
+describe('JBGasTokenERC20ProjectPayer::addToBalanceOf(...)', function () {
   const INITIAL_PROJECT_ID = 1;
   const INITIAL_BENEFICIARY = ethers.Wallet.createRandom().address;
   const INITIAL_PREFER_CLAIMED_TOKENS = false;
@@ -30,7 +30,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     let jbTokensFactory = await ethers.getContractFactory('JBTokens');
     let jbTokens = await jbTokensFactory.deploy();
 
-    ethToken = await jbTokens.ETH();
+    ethToken = await JBTokens.GAS_TOKEN();
   });
 
   async function setup() {
@@ -40,7 +40,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     let mockJbTerminal = await deployMockContract(deployer, jbTerminal.abi);
     let mockToken = await smock.fake(ierc20.abi);
 
-    let jbProjectPayerFactory = await ethers.getContractFactory('JBETHERC20ProjectPayer');
+    let jbProjectPayerFactory = await ethers.getContractFactory('JBGasTokenERC20ProjectPayer');
     let jbProjectPayer = await jbProjectPayerFactory
       .connect(deployer)
       .deploy(mockJbDirectory.address);

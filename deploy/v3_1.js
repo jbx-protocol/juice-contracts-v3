@@ -14,7 +14,7 @@ module.exports = async ({ deployments, getChainId }) => {
   const [deployer] = await ethers.getSigners();
 
   let governanceAddress;
-  let chainlinkV2UsdEthPriceFeed;
+  let chainlinkV2UsdGasCurrencyPriceFeed;
   let chainId = await getChainId();
   let baseDeployArgs = {
     from: deployer.address,
@@ -29,15 +29,20 @@ module.exports = async ({ deployments, getChainId }) => {
     // mainnet
     case '1':
       governanceAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
-      chainlinkV2UsdEthPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
+      chainlinkV2UsdGasCurrencyPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
       protocolProjectStartsAtOrAfter = 1664047173;
       break;
     // Goerli
     case '5':
       governanceAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
-      chainlinkV2UsdEthPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
+      chainlinkV2UsdGasCurrencyPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
       protocolProjectStartsAtOrAfter = 0;
       break;
+    // Polygon
+    case '137':
+      governanceAddress = '0x34d7b8E14bB7Aae027bd59B6A4aF671A2b48F86B';
+      chainlinkV2UsdGasCurrencyPriceFeed = '0xab594600376ec9fd91f8e885dadf0ce036862de0';
+      protocolProjectStartsAtOrAfter = 0;
     // hardhat / localhost
     case '31337':
       governanceAddress = deployer.address;
@@ -158,16 +163,16 @@ module.exports = async ({ deployments, getChainId }) => {
   const jbProjectsContract = new ethers.Contract(JBProjects.address, JBProjects.abi);
   const jbCurrenciesLibrary = new ethers.Contract(JBCurrencies.address, JBCurrencies.abi);
 
-  // Get a reference to USD and ETH currency indexes.
+  // Get a reference to USD and GAS_TOKEN currency indexes.
   const USD = await jbCurrenciesLibrary.connect(deployer).USD();
-  const ETH = await jbCurrenciesLibrary.connect(deployer).ETH();
+  const GAS_CURRENCY = await jbCurrenciesLibrary.connect(deployer).GAS_CURRENCY();
 
-  // Deploy a JBETHPaymentTerminal contract.
-  const JBETHPaymentTerminal = await deploy('JBETHPaymentTerminal3_1', {
+  // Deploy a JBGasTokenPaymentTerminal contract.
+  const JBGasTokenPaymentTerminal = await deploy('JBGasTokenPaymentTerminal3_1', {
     ...baseDeployArgs,
-    contract: 'contracts/JBETHPaymentTerminal3_1.sol:JBETHPaymentTerminal3_1',
+    contract: 'contracts/JBGasTokenPaymentTerminal3_1.sol:JBGasTokenPaymentTerminal3_1',
     args: [
-      ETH,
+      GAS_CURRENCY,
       JBOperatorStore.address,
       JBProjects.address,
       JBDirectory.address,
@@ -178,34 +183,34 @@ module.exports = async ({ deployments, getChainId }) => {
     ],
   });
 
-  // Deploy a JBETHERC20ProjectPayerDeployer contract.
-  await deploy('JBETHERC20ProjectPayerDeployer', {
+  // Deploy a JBGasTokenERC20ProjectPayerDeployer contract.
+  await deploy('JBGasTokenERC20ProjectPayerDeployer', {
     ...baseDeployArgs,
     args: [JBDirectory.address],
   });
 
-  // Deploy a JBETHERC20SplitsPayerDeployer contract.
-  await deploy('JBETHERC20SplitsPayerDeployer', {
+  // Deploy a JBGasTokenERC20SplitsPayerDeployer contract.
+  await deploy('JBGasTokenERC20SplitsPayerDeployer', {
     ...baseDeployArgs,
-    contract: 'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+    contract: 'contracts/JBGasTokenERC20SplitsPayerDeployer.sol:JBGasTokenERC20SplitsPayerDeployer',
     args: [JBSplitStore.address],
   });
 
-  // Get a reference to an existing ETH/USD feed.
-  const usdEthFeed = await jbPricesContract.connect(deployer).feedFor(USD, ETH);
+  // Get a reference to an existing GasCurrency/USD feed.
+  const usdGasCurrencyFeed = await jbPricesContract.connect(deployer).feedFor(USD, GAS_CURRENCY);
 
-  // If needed, deploy an ETH/USD price feed and add it to the store.
-  if (chainlinkV2UsdEthPriceFeed && usdEthFeed == ethers.constants.AddressZero) {
-    // Deploy a JBChainlinkV3PriceFeed contract for ETH/USD.
-    const JBChainlinkV3UsdEthPriceFeed = await deploy('JBChainlinkV3PriceFeed', {
+  // If needed, deploy an GasCurrency/USD price feed and add it to the store.
+  if (chainlinkV2UsdGasCurrencyPriceFeed && usdGasCurrencyFeed == ethers.constants.AddressZero) {
+    // Deploy a JBChainlinkV3PriceFeed contract for GAS_TOKEN/USD.
+    const JBChainlinkV3UsdGasCurrencyPriceFeed = await deploy('JBChainlinkV3PriceFeed', {
       ...baseDeployArgs,
-      args: [chainlinkV2UsdEthPriceFeed],
+      args: [chainlinkV2UsdGasCurrencyPriceFeed],
     });
 
-    //The base currency is ETH since the feed returns the USD price of 1 ETH.
+    //The base currency is GAS_TOKEN since the feed returns the USD price of 1 GAS_TOKEN.
     await jbPricesContract
       .connect(deployer)
-      .addFeedFor(USD, ETH, JBChainlinkV3UsdEthPriceFeed.address);
+      .addFeedFor(USD, GAS_TOKEN, JBChainlinkV3UsdGasCurrencyPriceFeed.address);
   }
 
   // If needed, transfer the ownership of the JBPrices to to the multisig.
@@ -256,6 +261,95 @@ module.exports = async ({ deployments, getChainId }) => {
     contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
     args: [604800],
   });
+
+  // // If needed, deploy the protocol project
+  // if ((await jbProjects.connect(deployer).count()) == 0) {
+  //   console.log('Adding reserved token splits with current beneficiaries (as of deployment)');
+
+  //   const beneficiaries = [];
+
+  //   let splits = [];
+
+  //   beneficiaries.map((beneficiary) => {
+  //     splits.push({
+  //       preferClaimed: false,
+  //       preferAddToBalance: false,
+  //       percent: (1000000000 - 300600000) / beneficiaries.length, // 30.06% for JBDao
+  //       projectId: 0,
+  //       beneficiary: beneficiary,
+  //       lockedUntil: 0,
+  //       allocator: ethers.constants.AddressZero,
+  //     });
+  //   });
+
+  //   splits.push({
+  //     preferClaimed: false,
+  //     preferAddToBalance: false,
+  //     percent: 300600000, // 30.06% for JBDao
+  //     projectId: 0,
+  //     beneficiary: '0xaf28bcb48c40dbc86f52d459a6562f658fc94b1e',
+  //     lockedUntil: 0,
+  //     allocator: ethers.constants.AddressZero,
+  //   });
+
+  //   let groupedSplits = {
+  //     group: 2,
+  //     splits: splits,
+  //   };
+
+  //   console.log('Deploying protocol project...');
+
+  //   await jbControllerContract.connect(deployer).launchProjectFor(
+  //     /*owner*/ governanceAddress,
+
+  //     /* projectMetadata */
+  //     [
+  //       /*content*/ 'QmQHGuXv7nDh1rxj48HnzFtwvVxwF1KU9AfB6HbfG8fmJF',
+  //       /*domain*/ ethers.BigNumber.from(0),
+  //     ],
+
+  //     /*fundingCycleData*/
+  //     [
+  //       /*duration*/ ethers.BigNumber.from(1209600),
+  //       /*weight*/ ethers.BigNumber.from('62850518250000000000000'),
+  //       /*discountRate*/ ethers.BigNumber.from(5000000),
+  //       /*ballot*/ JB3DayReconfigurationBufferBallot.address,
+  //     ],
+
+  //     /*fundingCycleMetadata*/
+  //     [
+  //       /*global*/
+  //       [/*allowSetTerminals*/ false, /*allowSetController*/ true, /*pauseTransfer*/ true],
+  //       /*reservedRate*/ ethers.BigNumber.from(5000),
+  //       /*redemptionRate*/ ethers.BigNumber.from(0),
+  //       /*ballotRedemptionRate*/ ethers.BigNumber.from(0),
+  //       /*pausePay*/ false,
+  //       /*pauseDistributions*/ false,
+  //       /*pauseRedeem*/ false,
+  //       /*pauseBurn*/ false,
+  //       /*allowMinting*/ false,
+  //       /*allowTerminalMigration*/ false,
+  //       /*allowControllerMigration*/ false,
+  //       /*holdFees*/ false,
+  //       /*preferClaimedTokenOverride*/ false,
+  //       /*useTotalOverflowForRedemptions*/ false,
+  //       /*useDataSourceForPay*/ false,
+  //       /*useDataSourceForRedeem*/ false,
+  //       /*dataSource*/ ethers.constants.AddressZero,
+  //       /*metadata*/ 0,
+  //     ],
+
+  //     /*mustStartAtOrAfter*/ ethers.BigNumber.from(protocolProjectStartsAtOrAfter),
+
+  //     /*groupedSplits*/[groupedSplits],
+
+  //     /*fundAccessConstraints*/[],
+
+  //     /*terminals*/[JBGasTokenPaymentTerminal.address],
+
+  //     /*memo*/ '',
+  //   );
+  // }
 
   console.log('Done');
 };

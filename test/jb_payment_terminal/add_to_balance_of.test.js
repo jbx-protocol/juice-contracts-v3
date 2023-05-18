@@ -37,7 +37,7 @@ describe('JBPayoutRedemptionPaymentTerminal::addToBalanceOf(...)', function () {
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    CURRENCY_ETH = await jbCurrencies.ETH();
+    CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
 
     const jbConstantsFactory = await ethers.getContractFactory('JBConstants');
     const jbConstants = await jbConstantsFactory.deploy();

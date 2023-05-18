@@ -2,18 +2,18 @@
 pragma solidity ^0.8.16;
 
 import '@openzeppelin/contracts/utils/Address.sol';
-import './abstract/JBPayoutRedemptionPaymentTerminal.sol';
+import './abstract/JBPayoutRedemptionPaymentTerminal3_1.sol';
 import './libraries/JBSplitsGroups.sol';
 
 /**
   @notice
-  Manages all inflows and outflows of ETH funds into the protocol ecosystem.
+  Manages all inflows and outflows of GAS_TOKEN funds into the protocol ecosystem.
 
   @dev
   Inherits from -
-  JBPayoutRedemptionPaymentTerminal: Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
+  JBPayoutRedemptionPaymentTerminal3_1: Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 */
-contract JBETHPaymentTerminal is JBPayoutRedemptionPaymentTerminal {
+contract JBGasTokenPaymentTerminal3_1 is JBPayoutRedemptionPaymentTerminal3_1 {
   //*********************************************************************//
   // -------------------------- internal views ------------------------- //
   //*********************************************************************//
@@ -52,12 +52,12 @@ contract JBETHPaymentTerminal is JBPayoutRedemptionPaymentTerminal {
     IJBSingleTokenPaymentTerminalStore _store,
     address _owner
   )
-    JBPayoutRedemptionPaymentTerminal(
-      JBTokens.ETH,
+    JBPayoutRedemptionPaymentTerminal3_1(
+      JBTokens.GAS_TOKEN,
       18, // 18 decimals.
-      JBCurrencies.ETH,
+      JBCurrencies.GAS_CURRENCY,
       _baseWeightCurrency,
-      JBSplitsGroups.ETH_PAYOUT,
+      JBSplitsGroups.GAS_TOKEN_PAYOUT,
       _operatorStore,
       _projects,
       _directory,
@@ -83,11 +83,7 @@ contract JBETHPaymentTerminal is JBPayoutRedemptionPaymentTerminal {
     @param _to The address to which the transfer should go.
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal override {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
     _from; // Prevents unused var compiler and natspec complaints.
 
     Address.sendValue(_to, _amount);

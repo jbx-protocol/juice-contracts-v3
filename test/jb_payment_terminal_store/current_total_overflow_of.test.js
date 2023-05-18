@@ -37,7 +37,7 @@ describe('JBSingleTokenPaymentTerminalStore::currentTotalOverflowOf(...)', funct
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    const CURRENCY_ETH = await jbCurrencies.ETH();
+    const CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
     const CURRENCY_USD = await jbCurrencies.USD();
 
     const JBPaymentTerminalStoreFactory = await ethers.getContractFactory(

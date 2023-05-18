@@ -163,16 +163,16 @@ module.exports = async ({ deployments, getChainId }) => {
     ],
   });
 
-  // Deploy a JBETHERC20ProjectPayerDeployer contract.
-  await deploy('JBETHERC20ProjectPayerDeployer', {
+  // Deploy a JBGasTokenERC20ProjectPayerDeployer contract.
+  await deploy('JBGasTokenERC20ProjectPayerDeployer', {
     ...baseDeployArgs,
     args: [JBDirectory.address],
   });
 
-  // Deploy a JBETHERC20SplitsPayerDeployer contract.
-  await deploy('JBETHERC20SplitsPayerDeployer', {
+  // Deploy a JBGasTokenERC20SplitsPayerDeployer contract.
+  await deploy('JBGasTokenERC20SplitsPayerDeployer', {
     ...baseDeployArgs,
-    contract: 'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+    contract: 'contracts/JBGasTokenERC20SplitsPayerDeployer.sol:JBGasTokenERC20SplitsPayerDeployer',
     args: [JBSplitStore.address],
   });
 
@@ -344,11 +344,11 @@ module.exports = async ({ deployments, getChainId }) => {
 
       /*mustStartAtOrAfter*/ ethers.BigNumber.from(protocolProjectStartsAtOrAfter),
 
-      /*groupedSplits*/ [groupedSplits],
+      /*groupedSplits*/[groupedSplits],
 
-      /*fundAccessConstraints*/ [],
+      /*fundAccessConstraints*/[],
 
-      /*terminals*/ [JBETHPaymentTerminal.address],
+      /*terminals*/[JBETHPaymentTerminal.address],
 
       /*memo*/ '',
     );

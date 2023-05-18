@@ -8,7 +8,7 @@ import '@paulrberg/contracts/math/PRBMath.sol';
 import './interfaces/IJBSplitsPayer.sol';
 import './interfaces/IJBSplitsStore.sol';
 import './libraries/JBConstants.sol';
-import './JBETHERC20ProjectPayer.sol';
+import './JBGasTokenERC20ProjectPayer.sol';
 
 /** 
   @notice 
@@ -23,10 +23,14 @@ import './JBETHERC20ProjectPayer.sol';
 
   @dev
   Inherits from -
-  JBETHERC20ProjectPayer: Sends ETH or ERC20's to a project treasury as it receives direct payments or has it's functions called.
+  JBGasTokenERC20ProjectPayer: Sends ETH or ERC20's to a project treasury as it receives direct payments or has it's functions called.
   ReentrancyGuard: Contract module that helps prevent reentrant calls to a function.
 */
-contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSplitsPayer {
+contract JBGasTokenERC20SplitsPayer is
+  JBGasTokenERC20ProjectPayer,
+  ReentrancyGuard,
+  IJBSplitsPayer
+{
   using SafeERC20 for IERC20;
 
   //*********************************************************************//
@@ -76,13 +80,9 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
 
     @return A flag indicating if this contract adheres to the specified interface.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBETHERC20ProjectPayer, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBGasTokenERC20ProjectPayer, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBSplitsPayer).interfaceId || super.supportsInterface(_interfaceId);
   }
@@ -90,18 +90,13 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
-/**
+  /**
     @param _splitsStore A contract that stores splits for each project.
 */
-  constructor(
-    IJBSplitsStore _splitsStore
-  )
-    JBETHERC20ProjectPayer(
-      _splitsStore.directory()
-    )
-  {
+  constructor(IJBSplitsStore _splitsStore) JBGasTokenERC20ProjectPayer(_splitsStore.directory()) {
     splitsStore = _splitsStore;
   }
+
   /**
     @dev   The re-initialize check is done in the inherited paroject payer
     
@@ -128,7 +123,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     bool _preferAddToBalance,
     address _owner
   ) external override {
-
     super.initialize(
       _defaultProjectId,
       _defaultBeneficiary,
@@ -143,8 +137,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     defaultSplitsDomain = _defaultSplitsDomain;
     defaultSplitsGroup = _defaultSplitsGroup;
   }
-
-
 
   //*********************************************************************//
   // ------------------------- default receive ------------------------- //
@@ -163,7 +155,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
       defaultSplitsProjectId,
       defaultSplitsDomain,
       defaultSplitsGroup,
-      JBTokens.ETH,
+      JBTokens.GAS_TOKEN,
       address(this).balance,
       18, // decimals.
       defaultBeneficiary != address(0) ? defaultBeneficiary : tx.origin
@@ -178,7 +170,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
         // Pay the project by adding to its balance if prefered.
         _addToBalanceOf(
           defaultProjectId,
-          JBTokens.ETH,
+          JBTokens.GAS_TOKEN,
           _leftoverAmount,
           18, // decimals.
           defaultMemo,
@@ -188,7 +180,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
       else
         _pay(
           defaultProjectId,
-          JBTokens.ETH,
+          JBTokens.GAS_TOKEN,
           _leftoverAmount,
           18, // decimals.
           defaultBeneficiary != address(0) ? defaultBeneficiary : tx.origin,
@@ -286,7 +278,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     bytes calldata _metadata
   ) public payable virtual override nonReentrant {
     // ETH shouldn't be sent if the token isn't ETH.
-    if (address(_token) != JBTokens.ETH) {
+    if (address(_token) != JBTokens.GAS_TOKEN) {
       if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
 
       // Get a reference to the balance before receiving tokens.
@@ -335,7 +327,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
       // If no project was specified, send the funds directly to the beneficiary or the tx.origin.
       else {
         // Transfer the ETH.
-        if (_token == JBTokens.ETH)
+        if (_token == JBTokens.GAS_TOKEN)
           Address.sendValue(
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the tx.origin.
             _beneficiary != address(0) ? payable(_beneficiary) : defaultBeneficiary != address(0)
@@ -392,7 +384,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     bytes calldata _metadata
   ) public payable virtual override nonReentrant {
     // ETH shouldn't be sent if this terminal's token isn't ETH.
-    if (address(_token) != JBTokens.ETH) {
+    if (address(_token) != JBTokens.GAS_TOKEN) {
       if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
 
       // Get a reference to the balance before receiving tokens.
@@ -430,7 +422,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
         // Otherwise, send a payment to the beneficiary.
       else {
         // Transfer the ETH.
-        if (_token == JBTokens.ETH)
+        if (_token == JBTokens.GAS_TOKEN)
           Address.sendValue(
             // If there's a default beneficiary, send the funds directly to the beneficiary. Otherwise send to the tx.origin.
             defaultBeneficiary != address(0) ? defaultBeneficiary : payable(tx.origin),
@@ -546,11 +538,11 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
           );
 
           // Approve the `_amount` of tokens for the split allocator to transfer tokens from this contract.
-          if (_token != JBTokens.ETH)
+          if (_token != JBTokens.GAS_TOKEN)
             IERC20(_token).safeApprove(address(_split.allocator), _splitAmount);
 
           // If the token is ETH, send it in msg.value.
-          uint256 _payableValue = _token == JBTokens.ETH ? _splitAmount : 0;
+          uint256 _payableValue = _token == JBTokens.GAS_TOKEN ? _splitAmount : 0;
 
           // Trigger the allocator's `allocate` function.
           _split.allocator.allocate{value: _payableValue}(_data);
@@ -580,7 +572,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
             );
         } else {
           // Transfer the ETH.
-          if (_token == JBTokens.ETH)
+          if (_token == JBTokens.GAS_TOKEN)
             Address.sendValue(
               // Get a reference to the address receiving the tokens. If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to _defaultBeneficiary.
               _split.beneficiary != address(0) ? _split.beneficiary : payable(_defaultBeneficiary),

@@ -19,13 +19,13 @@ describe('JBProjectPayerDeployer::deployProjectPayer(...)', function () {
     const mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
 
     let jbProjectPayerDeployerFactory = await ethers.getContractFactory(
-      'JBETHERC20ProjectPayerDeployer',
+      'JBGasTokenERC20ProjectPayerDeployer',
     );
     let jbProjectPayerDeployer = await jbProjectPayerDeployerFactory.deploy(
       mockJbDirectory.address,
     );
 
-    let jbProjectPayerFactory = await ethers.getContractFactory('JBETHERC20ProjectPayer');
+    let jbProjectPayerFactory = await ethers.getContractFactory('JBGasTokenERC20ProjectPayer');
     let jbProjectPayer = jbProjectPayerFactory.attach(
       await jbProjectPayerDeployer.callStatic.deployProjectPayer(
         INITIAL_PROJECT_ID,

@@ -35,7 +35,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::setFee(...)', function () {
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    const CURRENCY_ETH = await jbCurrencies.ETH();
+    const CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
 
     let jbTerminalFactory = await ethers.getContractFactory(
       'contracts/JBETHPaymentTerminal3_1.sol:JBETHPaymentTerminal3_1',

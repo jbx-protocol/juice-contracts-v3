@@ -76,7 +76,7 @@ contract TestPlanetable_Fork is Test {
         jbSplitsStore = jbController3_1.splitsStore();
 
         uint256 _projectId = 471;
-        jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)));
+        jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.GAS_TOKEN)));
         address _projectOwner = jbProjects.ownerOf(_projectId);
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
@@ -95,11 +95,11 @@ contract TestPlanetable_Fork is Test {
 
         JBFundAccessConstraints memory fundAccessConstraint;
         fundAccessConstraint.terminal = jbEthTerminal3_1;
-        fundAccessConstraint.token = JBTokens.ETH;
+        fundAccessConstraint.token = JBTokens.GAS_TOKEN;
         fundAccessConstraint.distributionLimit = 2 ether;
-        fundAccessConstraint.distributionLimitCurrency = JBCurrencies.ETH;
+        fundAccessConstraint.distributionLimitCurrency = JBCurrencies.GAS_CURRENCY;
         fundAccessConstraint.overflowAllowance = 0;
-        fundAccessConstraint.overflowAllowanceCurrency = JBCurrencies.ETH;
+        fundAccessConstraint.overflowAllowanceCurrency = JBCurrencies.GAS_CURRENCY;
 
         fundAccessConstraints.push(fundAccessConstraint);
 
@@ -126,11 +126,11 @@ contract TestPlanetable_Fork is Test {
         jbEthTerminal.migrate(_projectId, jbEthTerminal3_1);
 
         // Check: New terminal is the primary?
-        assertEq(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)), address(jbEthTerminal3_1));
+        assertEq(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.GAS_TOKEN)), address(jbEthTerminal3_1));
 
         // Check: distribute?
         uint256 _balanceBefore = _groupedSplits[0].splits[0].beneficiary.balance;
-        jbEthTerminal3_1.distributePayoutsOf(_projectId, 2 ether, 1, JBTokens.ETH, 0, '');
+        jbEthTerminal3_1.distributePayoutsOf(_projectId, 2 ether, 1, JBTokens.GAS_TOKEN, 0, '');
         assertApproxEqRel(_balanceBefore + 2 ether, _groupedSplits[0].splits[0].beneficiary.balance, 0.025 ether);
     }
 
@@ -147,7 +147,7 @@ contract TestPlanetable_Fork is Test {
         jbSplitsStore = jbController3_1.splitsStore();
 
         uint256 _projectId = 471;
-        jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)));
+        jbEthTerminal = IJBPayoutRedemptionPaymentTerminal(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.GAS_TOKEN)));
         address _projectOwner = jbProjects.ownerOf(_projectId);
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore.currentOf(_projectId);
@@ -178,11 +178,11 @@ contract TestPlanetable_Fork is Test {
         jbEthTerminal.migrate(_projectId, jbEthTerminal3_1);
 
         // Check: New terminal is the primary?
-        assertEq(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)), address(jbEthTerminal3_1));
+        assertEq(address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.GAS_TOKEN)), address(jbEthTerminal3_1));
 
         // Check: distribute?
         uint256 _balanceBefore = _groupedSplits[0].splits[0].beneficiary.balance;
-        jbEthTerminal3_1.distributePayoutsOf(_projectId, 2 ether, 1, JBTokens.ETH, 0, '');
+        jbEthTerminal3_1.distributePayoutsOf(_projectId, 2 ether, 1, JBTokens.GAS_TOKEN, 0, '');
         assertApproxEqRel(_balanceBefore + 2 ether, _groupedSplits[0].splits[0].beneficiary.balance, 0.025 ether);
     }
 }

@@ -5,7 +5,7 @@ import { deployMockContract } from '@ethereum-waffle/mock-contract';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 
-describe('JBETHERC20ProjectPayer::setDefaultValues(...)', function () {
+describe('JBGasTokenERC20ProjectPayer::setDefaultValues(...)', function () {
   const INITIAL_PROJECT_ID = 1;
   const INITIAL_BENEFICIARY = ethers.Wallet.createRandom().address;
   const INITIAL_PREFER_CLAIMED_TOKENS = false;
@@ -24,7 +24,7 @@ describe('JBETHERC20ProjectPayer::setDefaultValues(...)', function () {
 
     let mockJbDirectory = await deployMockContract(deployer, jbDirectory.abi);
 
-    let jbProjectPayerFactory = await ethers.getContractFactory('JBETHERC20ProjectPayer');
+    let jbProjectPayerFactory = await ethers.getContractFactory('JBGasTokenERC20ProjectPayer');
     let jbProjectPayer = await jbProjectPayerFactory
       .connect(deployer)
       .deploy(mockJbDirectory.address);

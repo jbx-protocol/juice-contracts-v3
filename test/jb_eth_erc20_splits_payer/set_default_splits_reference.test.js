@@ -6,7 +6,7 @@ import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 
-describe('JBETHERC20SplitsPayer::setDefaultSplitsReference()', function () {
+describe('JBGasTokenERC20SplitsPayer::setDefaultSplitsReference()', function () {
   const DEFAULT_PROJECT_ID = 2;
   const DEFAULT_SPLITS_PROJECT_ID = 3;
   const DEFAULT_SPLITS_DOMAIN = 1;
@@ -30,7 +30,7 @@ describe('JBETHERC20SplitsPayer::setDefaultSplitsReference()', function () {
     await mockJbSplitsStore.mock.directory.returns(mockJbDirectory.address);
 
     let jbSplitsPayerFactory = await ethers.getContractFactory(
-      'contracts/JBETHERC20SplitsPayer.sol:JBETHERC20SplitsPayer',
+      'contracts/JBGasTokenERC20SplitsPayer.sol:JBGasTokenERC20SplitsPayer',
     );
     let jbSplitsPayer = await jbSplitsPayerFactory
       .connect(deployer)
@@ -38,18 +38,18 @@ describe('JBETHERC20SplitsPayer::setDefaultSplitsReference()', function () {
 
     await jbSplitsPayer
       .connect(deployer)
-      ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
-        DEFAULT_SPLITS_PROJECT_ID,
-        DEFAULT_SPLITS_DOMAIN,
-        DEFAULT_SPLITS_GROUP,
-        DEFAULT_PROJECT_ID,
-        DEFAULT_BENEFICIARY,
-        DEFAULT_PREFER_CLAIMED_TOKENS,
-        DEFAULT_MEMO,
-        DEFAULT_METADATA,
-        PREFER_ADD_TO_BALANCE,
-        owner.address,
-      );
+    ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
+      DEFAULT_SPLITS_PROJECT_ID,
+      DEFAULT_SPLITS_DOMAIN,
+      DEFAULT_SPLITS_GROUP,
+      DEFAULT_PROJECT_ID,
+      DEFAULT_BENEFICIARY,
+      DEFAULT_PREFER_CLAIMED_TOKENS,
+      DEFAULT_MEMO,
+      DEFAULT_METADATA,
+      PREFER_ADD_TO_BALANCE,
+      owner.address,
+    );
 
     return {
       deployer,

@@ -26,7 +26,7 @@ describe('JBSplitsPayerDeployer::deploySplitsPayerWithSplits(...)', function () 
     await mockJbSplitsStore.mock.directory.returns(mockJbDirectory.address);
 
     let jbSplitsPayerDeployerFactory = await ethers.getContractFactory(
-      'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+      'contracts/JBGasTokenERC20SplitsPayerDeployer.sol:JBGasTokenERC20SplitsPayerDeployer',
     );
 
     let jbSplitsPayerDeployer = await jbSplitsPayerDeployerFactory.deploy(
