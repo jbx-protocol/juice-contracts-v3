@@ -114,13 +114,13 @@ contract TestDelegates_Local is TestBaseWorkflow {
                 _projectId,
                 fundingCycle.configuration,
                 JBTokenAmount(
-                    JBTokens.ETH,
+                    JBTokens.GAS_TOKEN,
                     _paySum,
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
                 ),
                 JBTokenAmount(
-                    JBTokens.ETH,
+                    JBTokens.GAS_TOKEN,
                     payDelegateAmounts[i],
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()

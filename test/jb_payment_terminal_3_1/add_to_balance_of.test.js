@@ -37,7 +37,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    CURRENCY_ETH = await jbCurrencies.ETH();
+    CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
 
     const jbConstantsFactory = await ethers.getContractFactory('JBConstants');
     const jbConstants = await jbConstantsFactory.deploy();
@@ -243,15 +243,15 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     expect(
       await jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
-          PROJECT_ID,
-          AMOUNT,
-          ETH_ADDRESS,
-          true,
-          MEMO,
-          METADATA,
-          { value: AMOUNT },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
+        PROJECT_ID,
+        AMOUNT,
+        ETH_ADDRESS,
+        true,
+        MEMO,
+        METADATA,
+        { value: AMOUNT },
+      ),
     )
       .to.emit(jbEthPaymentTerminal, 'AddToBalance')
       .withArgs(PROJECT_ID, AMOUNT, feeNetAmount, MEMO, METADATA, caller.address)
@@ -313,15 +313,15 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     expect(
       await jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
-          PROJECT_ID,
-          AMOUNT,
-          ETH_ADDRESS,
-          false,
-          MEMO,
-          METADATA,
-          { value: AMOUNT },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
+        PROJECT_ID,
+        AMOUNT,
+        ETH_ADDRESS,
+        false,
+        MEMO,
+        METADATA,
+        { value: AMOUNT },
+      ),
     )
       .to.emit(jbEthPaymentTerminal, 'AddToBalance')
       .withArgs(PROJECT_ID, AMOUNT, 0 /*refunded fee*/, MEMO, METADATA, caller.address)
@@ -341,14 +341,14 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
 
     await jbEthPaymentTerminal
       .connect(caller)
-      ['addToBalanceOf(uint256,uint256,address,string,bytes)'](
-        PROJECT_ID,
-        AMOUNT + 1,
-        ETH_ADDRESS,
-        MEMO,
-        METADATA,
-        { value: AMOUNT },
-      );
+    ['addToBalanceOf(uint256,uint256,address,string,bytes)'](
+      PROJECT_ID,
+      AMOUNT + 1,
+      ETH_ADDRESS,
+      MEMO,
+      METADATA,
+      { value: AMOUNT },
+    );
   });
 
   it('Should work with non-eth terminal if no value is sent', async function () {
@@ -448,15 +448,15 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     await expect(
       await jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
-          PROJECT_ID,
-          1,
-          ETH_ADDRESS,
-          true,
-          MEMO,
-          METADATA,
-          { value: 1 },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
+        PROJECT_ID,
+        1,
+        ETH_ADDRESS,
+        true,
+        MEMO,
+        METADATA,
+        { value: 1 },
+      ),
     )
       .to.emit(jbEthPaymentTerminal, 'AddToBalance')
       .withArgs(PROJECT_ID, 1, 1, MEMO, METADATA, caller.address)
@@ -548,17 +548,17 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     expect(
       await jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
-          PROJECT_ID,
-          AMOUNT.sub('10'),
-          ETH_ADDRESS,
-          true,
-          MEMO,
-          METADATA,
-          {
-            value: AMOUNT.sub('10'),
-          },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
+        PROJECT_ID,
+        AMOUNT.sub('10'),
+        ETH_ADDRESS,
+        true,
+        MEMO,
+        METADATA,
+        {
+          value: AMOUNT.sub('10'),
+        },
+      ),
     )
       .to.emit(jbEthPaymentTerminal, 'AddToBalance')
       .withArgs(
@@ -670,17 +670,17 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     expect(
       await jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
-          PROJECT_ID,
-          amountToAdd,
-          ETH_ADDRESS,
-          true,
-          MEMO,
-          METADATA,
-          {
-            value: amountToAdd,
-          },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
+        PROJECT_ID,
+        amountToAdd,
+        ETH_ADDRESS,
+        true,
+        MEMO,
+        METADATA,
+        {
+          value: amountToAdd,
+        },
+      ),
     )
       .to.emit(jbEthPaymentTerminal, 'AddToBalance')
       .withArgs(PROJECT_ID, amountToAdd, feeNetAmount, MEMO, METADATA, caller.address)
@@ -752,17 +752,17 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     expect(
       await jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
-          PROJECT_ID,
-          AMOUNT.mul(2),
-          ETH_ADDRESS,
-          true,
-          MEMO,
-          METADATA,
-          {
-            value: AMOUNT.mul(2),
-          },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
+        PROJECT_ID,
+        AMOUNT.mul(2),
+        ETH_ADDRESS,
+        true,
+        MEMO,
+        METADATA,
+        {
+          value: AMOUNT.mul(2),
+        },
+      ),
     )
       .to.emit(jbEthPaymentTerminal, 'AddToBalance')
       .withArgs(PROJECT_ID, AMOUNT.mul(2), netHeldFee, MEMO, METADATA, caller.address)
@@ -803,14 +803,14 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::addToBalanceOf(...)', function (
     await expect(
       jbEthPaymentTerminal
         .connect(caller)
-        ['addToBalanceOf(uint256,uint256,address,string,bytes)'](
-          otherProjectId,
-          AMOUNT,
-          ETH_ADDRESS,
-          MEMO,
-          METADATA,
-          { value: 0 },
-        ),
+      ['addToBalanceOf(uint256,uint256,address,string,bytes)'](
+        otherProjectId,
+        AMOUNT,
+        ETH_ADDRESS,
+        MEMO,
+        METADATA,
+        { value: 0 },
+      ),
     ).to.be.revertedWith(errors.PROJECT_TERMINAL_MISMATCH);
   });
 });

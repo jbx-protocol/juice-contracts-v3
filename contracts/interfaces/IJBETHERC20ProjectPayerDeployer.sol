@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import './IJBDirectory.sol';
 import './IJBProjectPayer.sol';
 
-interface IJBETHERC20ProjectPayerDeployer {
+interface IJBGasTokenERC20ProjectPayerDeployer {
   event DeployProjectPayer(
     IJBProjectPayer indexed projectPayer,
     uint256 defaultProjectId,

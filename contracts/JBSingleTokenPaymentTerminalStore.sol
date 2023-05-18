@@ -144,12 +144,10 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
 
     @return The current amount of overflow that project has in the specified terminal.
   */
-  function currentOverflowOf(IJBSingleTokenPaymentTerminal _terminal, uint256 _projectId)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function currentOverflowOf(
+    IJBSingleTokenPaymentTerminal _terminal,
+    uint256 _projectId
+  ) external view override returns (uint256) {
     // Return the overflow during the project's current funding cycle.
     return
       _overflowDuring(
@@ -277,11 +275,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     @param _fundingCycleStore A contract storing all funding cycle configurations.
     @param _prices A contract that exposes price feeds.
   */
-  constructor(
-    IJBDirectory _directory,
-    IJBFundingCycleStore _fundingCycleStore,
-    IJBPrices _prices
-  ) {
+  constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore, IJBPrices _prices) {
     directory = _directory;
     fundingCycleStore = _fundingCycleStore;
     prices = _prices;
@@ -414,7 +408,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     // If the terminal should base its weight on a different currency from the terminal's currency, determine the factor.
     // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
     uint256 _weightRatio = _amount.currency == _baseWeightCurrency
-      ? 10**_decimals
+      ? 10 ** _decimals
       : prices.priceFor(_amount.currency, _baseWeightCurrency, _decimals);
 
     // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
@@ -643,7 +637,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
       ? _amount
       : PRBMath.mulDiv(
         _amount,
-        10**_MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+        10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
         prices.priceFor(_currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
@@ -721,7 +715,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
       ? _amount
       : PRBMath.mulDiv(
         _amount,
-        10**_MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+        10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
         prices.priceFor(_currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
@@ -775,12 +769,9 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
 
     @return balance The project's migrated balance, as a fixed point number with the same amount of decimals as its relative terminal.
   */
-  function recordMigration(uint256 _projectId)
-    external
-    override
-    nonReentrant
-    returns (uint256 balance)
-  {
+  function recordMigration(
+    uint256 _projectId
+  ) external override nonReentrant returns (uint256 balance) {
     // Get a reference to the project's current funding cycle.
     JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
@@ -890,7 +881,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     if (_distributionLimitRemaining != 0 && _distributionLimitCurrency != _balanceCurrency)
       _distributionLimitRemaining = PRBMath.mulDiv(
         _distributionLimitRemaining,
-        10**_MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+        10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
         prices.priceFor(_distributionLimitCurrency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
@@ -934,9 +925,13 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     }
 
     // Convert the ETH overflow to the specified currency if needed, maintaining a fixed point number with 18 decimals.
-    uint256 _totalOverflow18Decimal = _currency == JBCurrencies.ETH
+    uint256 _totalOverflow18Decimal = _currency == JBCurrencies.GAS_CURRENCY
       ? _ethOverflow
-      : PRBMath.mulDiv(_ethOverflow, 10**18, prices.priceFor(JBCurrencies.ETH, _currency, 18));
+      : PRBMath.mulDiv(
+        _ethOverflow,
+        10 ** 18,
+        prices.priceFor(JBCurrencies.GAS_CURRENCY, _currency, 18)
+      );
 
     // Adjust the decimals of the fixed point number if needed to match the target decimals.
     return

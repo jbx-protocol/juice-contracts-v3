@@ -107,7 +107,7 @@ describe('JBPayoutRedemptionPaymentTerminal::distributePayoutsOf(...)', function
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    const CURRENCY_ETH = await jbCurrencies.ETH();
+    const CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
     const CURRENCY_USD = await jbCurrencies.USD();
 
     let jbEthTerminalFactory = await ethers.getContractFactory(

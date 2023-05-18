@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import { Clones } from '@openzeppelin/contracts/proxy/Clones.sol';
+import {Clones} from '@openzeppelin/contracts/proxy/Clones.sol';
 
-import './interfaces/IJBETHERC20SplitsPayerDeployer.sol';
+import './interfaces/IJBGasTokenERC20SplitsPayerDeployer.sol';
 import './structs/JBSplit.sol';
 import './structs/JBGroupedSplits.sol';
-import './JBETHERC20SplitsPayer.sol';
+import './JBGasTokenERC20SplitsPayer.sol';
 
 /** 
   @notice 
@@ -14,16 +14,15 @@ import './JBETHERC20SplitsPayer.sol';
 
   @dev
   Adheres to -
-  IJBETHERC20SplitsPayerDeployer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
+  IJBGasTokenERC20SplitsPayerDeployer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
 */
-contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
-
+contract JBGasTokenERC20SplitsPayerDeployer is IJBGasTokenERC20SplitsPayerDeployer {
   address immutable implementation;
 
   IJBSplitsStore immutable splitsStore;
 
   constructor(IJBSplitsStore _splitsStore) {
-    implementation = address(new JBETHERC20SplitsPayer(_splitsStore));
+    implementation = address(new JBGasTokenERC20SplitsPayer(_splitsStore));
     splitsStore = _splitsStore;
   }
 
@@ -123,7 +122,6 @@ contract JBETHERC20SplitsPayerDeployer is IJBETHERC20SplitsPayerDeployer {
     bool _defaultPreferAddToBalance,
     address _owner
   ) public override returns (IJBSplitsPayer splitsPayer) {
-
     // Deploy the splits payer.
     splitsPayer = IJBSplitsPayer(payable(Clones.clone(implementation)));
 

@@ -24,7 +24,7 @@ import './libraries/JBTokens.sol';
   Ownable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
   ERC165: Introspection on interface adherance. 
 */
-contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
+contract JBGasTokenERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   using SafeERC20 for IERC20;
 
   //*********************************************************************//
@@ -104,13 +104,9 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
 
     @param _interfaceId The ID of the interface to check for adherance to.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(ERC165, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBProjectPayer).interfaceId || super.supportsInterface(_interfaceId);
   }
@@ -147,7 +143,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     bool _defaultPreferAddToBalance,
     address _owner
   ) public {
-    if(msg.sender != projectPayerDeployer) revert ALREADY_INITIALIZED();
+    if (msg.sender != projectPayerDeployer) revert ALREADY_INITIALIZED();
 
     defaultProjectId = _defaultProjectId;
     defaultBeneficiary = _defaultBeneficiary;
@@ -176,7 +172,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     if (defaultPreferAddToBalance)
       _addToBalanceOf(
         defaultProjectId,
-        JBTokens.ETH,
+        JBTokens.GAS_TOKEN,
         address(this).balance,
         18, // balance is a fixed point number with 18 decimals.
         defaultMemo,
@@ -185,7 +181,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     else
       _pay(
         defaultProjectId,
-        JBTokens.ETH,
+        JBTokens.GAS_TOKEN,
         address(this).balance,
         18, // balance is a fixed point number with 18 decimals.
         defaultBeneficiary == address(0) ? tx.origin : defaultBeneficiary,
@@ -282,7 +278,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     bytes calldata _metadata
   ) public payable virtual override {
     // ETH shouldn't be sent if the token isn't ETH.
-    if (address(_token) != JBTokens.ETH) {
+    if (address(_token) != JBTokens.GAS_TOKEN) {
       if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
 
       // Get a reference to the balance before receiving tokens.
@@ -332,7 +328,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     bytes calldata _metadata
   ) public payable virtual override {
     // ETH shouldn't be sent if the token isn't ETH.
-    if (address(_token) != JBTokens.ETH) {
+    if (address(_token) != JBTokens.GAS_TOKEN) {
       if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
 
       // Get a reference to the balance before receiving tokens.
@@ -391,16 +387,16 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     if (_terminal.decimalsForToken(_token) != _decimals) revert INCORRECT_DECIMAL_AMOUNT();
 
     // Approve the `_amount` of tokens from the destination terminal to transfer tokens from this contract.
-    if (_token != JBTokens.ETH) IERC20(_token).safeApprove(address(_terminal), _amount);
+    if (_token != JBTokens.GAS_TOKEN) IERC20(_token).safeApprove(address(_terminal), _amount);
 
     // If the token is ETH, send it in msg.value.
-    uint256 _payableValue = _token == JBTokens.ETH ? _amount : 0;
+    uint256 _payableValue = _token == JBTokens.GAS_TOKEN ? _amount : 0;
 
     // Send funds to the terminal.
     // If the token is ETH, send it in msg.value.
     _terminal.pay{value: _payableValue}(
       _projectId,
-      _amount, // ignored if the token is JBTokens.ETH.
+      _amount, // ignored if the token is JBTokens.GAS_TOKEN.
       _token,
       _beneficiary != address(0) ? _beneficiary : defaultBeneficiary != address(0)
         ? defaultBeneficiary
@@ -441,10 +437,10 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     if (_terminal.decimalsForToken(_token) != _decimals) revert INCORRECT_DECIMAL_AMOUNT();
 
     // Approve the `_amount` of tokens from the destination terminal to transfer tokens from this contract.
-    if (_token != JBTokens.ETH) IERC20(_token).safeApprove(address(_terminal), _amount);
+    if (_token != JBTokens.GAS_TOKEN) IERC20(_token).safeApprove(address(_terminal), _amount);
 
     // If the token is ETH, send it in msg.value.
-    uint256 _payableValue = _token == JBTokens.ETH ? _amount : 0;
+    uint256 _payableValue = _token == JBTokens.GAS_TOKEN ? _amount : 0;
 
     // Add to balance so tokens don't get issued.
     _terminal.addToBalanceOf{value: _payableValue}(_projectId, _amount, _token, _memo, _metadata);

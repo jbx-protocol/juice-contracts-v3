@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import { Clones } from '@openzeppelin/contracts/proxy/Clones.sol';
+import {Clones} from '@openzeppelin/contracts/proxy/Clones.sol';
 
-import './interfaces/IJBETHERC20ProjectPayerDeployer.sol';
-import './JBETHERC20ProjectPayer.sol';
+import './interfaces/IJBGasTokenERC20ProjectPayerDeployer.sol';
+import './JBGasTokenERC20ProjectPayer.sol';
 
 /** 
   @notice 
@@ -12,10 +12,9 @@ import './JBETHERC20ProjectPayer.sol';
 
   @dev
   Adheres to -
-  IJBETHERC20ProjectPayerDeployer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
+  IJBGasTokenERC20ProjectPayerDeployer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
 */
-contract JBETHERC20ProjectPayerDeployer is IJBETHERC20ProjectPayerDeployer {
-
+contract JBGasTokenERC20ProjectPayerDeployer is IJBGasTokenERC20ProjectPayerDeployer {
   address immutable implementation;
 
   IJBDirectory immutable directory;
@@ -24,7 +23,7 @@ contract JBETHERC20ProjectPayerDeployer is IJBETHERC20ProjectPayerDeployer {
     @param _directory A contract storing directories of terminals and controllers for each project.
   */
   constructor(IJBDirectory _directory) {
-    implementation = address(new JBETHERC20ProjectPayer(_directory));
+    implementation = address(new JBGasTokenERC20ProjectPayer(_directory));
     directory = _directory;
   }
 

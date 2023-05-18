@@ -21,7 +21,7 @@ describe('JBPayoutRedemptionPaymentTerminal::getters', function () {
   before(async function () {
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    CURRENCY_ETH = await jbCurrencies.ETH();
+    CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
   });
 
   async function setup() {

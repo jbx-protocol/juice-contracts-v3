@@ -195,13 +195,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
   */
-  function currentEthOverflowOf(uint256 _projectId)
-    external
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function currentEthOverflowOf(
+    uint256 _projectId
+  ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
     uint256 _overflow = store.currentOverflowOf(this, _projectId);
 
@@ -212,12 +208,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     // Return the amount converted to ETH.
     return
-      (currency == JBCurrencies.ETH)
+      (currency == JBCurrencies.GAS_CURRENCY)
         ? _adjustedOverflow
         : PRBMath.mulDiv(
           _adjustedOverflow,
-          10**decimals,
-          prices.priceFor(currency, JBCurrencies.ETH, decimals)
+          10 ** decimals,
+          prices.priceFor(currency, JBCurrencies.GAS_CURRENCY, decimals)
         );
   }
 
@@ -246,13 +242,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @param _interfaceId The ID of the interface to check for adherance to.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBSingleTokenPaymentTerminal, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
@@ -354,7 +346,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     _token; // Prevents unused var compiler and natspec complaints.
 
     // ETH shouldn't be sent if this terminal's token isn't ETH.
-    if (token != JBTokens.ETH) {
+    if (token != JBTokens.GAS_TOKEN) {
       if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
 
       // Get a reference to the balance before receiving tokens.
@@ -528,7 +520,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
   */
-  function migrate(uint256 _projectId, IJBPaymentTerminal _to)
+  function migrate(
+    uint256 _projectId,
+    IJBPaymentTerminal _to
+  )
     external
     virtual
     override
@@ -547,7 +542,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       _beforeTransferTo(address(_to), balance);
 
       // If this terminal's token is ETH, send it in msg.value.
-      uint256 _payableValue = token == JBTokens.ETH ? balance : 0;
+      uint256 _payableValue = token == JBTokens.GAS_TOKEN ? balance : 0;
 
       // Withdraw the balance to transfer to the new terminal;
       _to.addToBalanceOf{value: _payableValue}(_projectId, balance, token, '', bytes(''));
@@ -586,7 +581,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @param _projectId The ID of the project whos held fees should be processed.
   */
-  function processFees(uint256 _projectId)
+  function processFees(
+    uint256 _projectId
+  )
     external
     virtual
     override
@@ -704,7 +701,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     _token; // Prevents unused var compiler and natspec complaints.
 
     // If this terminal's token isn't ETH, make sure no msg.value was sent, then transfer the tokens in from msg.sender.
-    if (token != JBTokens.ETH) {
+    if (token != JBTokens.GAS_TOKEN) {
       // Amount must be greater than 0.
       if (msg.value > 0) revert NO_MSG_VALUE_ALLOWED();
 
@@ -736,11 +733,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @param _to The address to which the transfer should go.
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal virtual {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal virtual {
     _from; // Prevents unused var compiler and natspec complaints.
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
@@ -859,7 +852,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           uint256 _payableValue;
 
           // If this terminal's token is ETH, send it in msg.value.
-          if (token == JBTokens.ETH) _payableValue = _delegateAllocation.amount;
+          if (token == JBTokens.GAS_TOKEN) _payableValue = _delegateAllocation.amount;
 
           // Pass the correct token forwardedAmount to the delegate
           _data.forwardedAmount.value = _delegateAllocation.amount;
@@ -1224,14 +1217,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         )
       )
         // If this terminal's token is ETH, send it in msg.value.
-        try _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data) {
-
-        } catch (bytes memory reason) {
+        try
+          _split.allocator.allocate{value: token == JBTokens.GAS_TOKEN ? netPayoutAmount : 0}(_data)
+        {} catch (bytes memory reason) {
           _reason = reason;
           _error = 1;
         }
       else _error = 2;
-
 
       if (_error != 0) {
         // Trigger any inhereted post-transfer cancelation logic.
@@ -1243,7 +1235,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         // Add undistributed amount back to project's balance.
         store.recordAddedBalanceFor(_projectId, _amount);
 
-        emit PayoutReverted(_projectId, _split, _amount, _error == 1 ? _reason : abi.encode("IERC165 fail"), msg.sender);
+        emit PayoutReverted(
+          _projectId,
+          _split,
+          _amount,
+          _error == 1 ? _reason : abi.encode('IERC165 fail'),
+          msg.sender
+        );
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1278,7 +1276,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       // Add to balance if prefered.
       if (_split.preferAddToBalance)
         try
-          _terminal.addToBalanceOf{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
+          _terminal.addToBalanceOf{value: token == JBTokens.GAS_TOKEN ? netPayoutAmount : 0}(
             _split.projectId,
             netPayoutAmount,
             token,
@@ -1299,7 +1297,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         }
       else
         try
-          _terminal.pay{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
+          _terminal.pay{value: token == JBTokens.GAS_TOKEN ? netPayoutAmount : 0}(
             _split.projectId,
             netPayoutAmount,
             token,
@@ -1385,16 +1383,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @param _beneficiary The address to mint the platform's tokens for.
     @param _from The project ID the fee is being paid from.
   */
-  function _processFee(
-    uint256 _amount,
-    address _beneficiary,
-    uint256 _from
-  ) internal {
+  function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
     // If this terminal's token is ETH, send it in msg.value.
-    uint256 _payableValue = token == JBTokens.ETH ? _amount : 0;
+    uint256 _payableValue = token == JBTokens.GAS_TOKEN ? _amount : 0;
 
     // Send the projectId in the metadata.
     bytes memory _projectMetadata = new bytes(32);
@@ -1422,7 +1416,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       // Add fee amount back to project's balance.
       store.recordAddedBalanceFor(_from, _amount);
 
-      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, reason,  msg.sender);
+      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, reason, msg.sender);
     }
   }
 
@@ -1524,7 +1518,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           uint256 _payableValue;
 
           // If this terminal's token is ETH, send it in msg.value.
-          if (token == JBTokens.ETH) _payableValue = _delegateAllocation.amount;
+          if (token == JBTokens.GAS_TOKEN) _payableValue = _delegateAllocation.amount;
 
           // Pass the correct token forwardedAmount to the delegate
           _data.forwardedAmount.value = _delegateAllocation.amount;
@@ -1594,10 +1588,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
 
     @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
   */
-  function _refundHeldFees(uint256 _projectId, uint256 _amount)
-    internal
-    returns (uint256 refundedFees)
-  {
+  function _refundHeldFees(
+    uint256 _projectId,
+    uint256 _amount
+  ) internal returns (uint256 refundedFees) {
     // Get a reference to the project's held fees.
     JBFee[] memory _heldFees = _heldFeesOf[_projectId];
 

@@ -32,7 +32,7 @@ describe('JBSingleTokenPaymentTerminalStore::currentReclaimableOverflowOf(...)',
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    const CURRENCY_ETH = await jbCurrencies.ETH();
+    const CURRENCY_ETH = await JBCurrencies.GAS_CURRENCY();
 
     const JBPaymentTerminalStoreFactory = await ethers.getContractFactory(
       'contracts/JBSingleTokenPaymentTerminalStore.sol:JBSingleTokenPaymentTerminalStore',

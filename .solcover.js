@@ -39,7 +39,7 @@ module.exports = {
     'interfaces/IJBController.sol',
     'interfaces/IJBControllerUtility.sol',
     'interfaces/IJBDirectory.sol',
-    'interfaces/IJBETHERC20ProjectPayerDeployer.sol',
+    'interfaces/IJBGasTokenERC20ProjectPayerDeployer.sol',
     'interfaces/IJBFeeGauge.sol',
     'interfaces/IJBFundingCycleBallot.sol',
     'interfaces/IJBFundingCycleDataSource.sol',

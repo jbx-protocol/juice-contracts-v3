@@ -150,7 +150,7 @@ contract TestTerminal31_Fork is Test {
         assertEq(address(jbEthTerminal).balance, _ETHBalanceJbOldTerminal - _balanceJbOldTerminal);
 
         // Check: New terminal is the primary?
-        assertEq(address(jbDirectory.primaryTerminalOf(1, JBTokens.ETH)), address(jbEthTerminal3_1));
+        assertEq(address(jbDirectory.primaryTerminalOf(1, JBTokens.GAS_TOKEN)), address(jbEthTerminal3_1));
     }
 
     /**
@@ -190,7 +190,7 @@ contract TestTerminal31_Fork is Test {
 
         // Check: New terminal is the primary?
         assertEq(
-            address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.ETH)),
+            address(jbDirectory.primaryTerminalOf(_projectId, JBTokens.GAS_TOKEN)),
             address(jbEthTerminal3_1)
         );
     }
@@ -265,7 +265,7 @@ contract TestTerminal31_Fork is Test {
         // Reconfigure with new distribution limit, in the new controller
         fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: jbEthTerminal3_1,
-            token: JBTokens.ETH,
+            token: JBTokens.GAS_TOKEN,
             distributionLimit: 0, // Only overflow
             overflowAllowance: 0,
             distributionLimitCurrency: 2, // Currency = ETH
@@ -452,7 +452,7 @@ contract TestTerminal31_Fork is Test {
         // Reconfigure with new distribution limit, in the new controller
         fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: jbEthTerminal3_1,
-            token: JBTokens.ETH,
+            token: JBTokens.GAS_TOKEN,
             distributionLimit: targetInUSD,
             overflowAllowance: 0,
             distributionLimitCurrency: 2, // Currency = ETH
@@ -475,7 +475,7 @@ contract TestTerminal31_Fork is Test {
 
         // Distribute all the target available
         (uint256 _distributionLimit, uint256 _distributionCurrency) = jbFundsAccessConstraintsStore
-            .distributionLimitOf(1, fundingCycle.configuration, jbEthTerminal3_1, JBTokens.ETH);
+            .distributionLimitOf(1, fundingCycle.configuration, jbEthTerminal3_1, JBTokens.GAS_TOKEN);
 
         vm.prank(_caller);
         jbEthTerminal3_1.distributePayoutsOf(
@@ -500,7 +500,7 @@ contract TestTerminal31_Fork is Test {
             uint256 _shareInTerminalToken = PRBMath.mulDiv(
                 _shareInDistributionCurrency,
                 10 ** 18,
-                jbPrices.priceFor(_distributionCurrency, JBCurrencies.ETH, 18)
+                jbPrices.priceFor(_distributionCurrency, JBCurrencies.GAS_CURRENCY, 18)
             );
 
             if (_split[i].projectId != 0) {
@@ -537,7 +537,7 @@ contract TestTerminal31_Fork is Test {
         uint256 _totalDistributed = PRBMath.mulDiv(
             _distributionLimit,
             10 ** 18,
-            jbPrices.priceFor(_distributionCurrency, JBCurrencies.ETH, 18)
+            jbPrices.priceFor(_distributionCurrency, JBCurrencies.GAS_CURRENCY, 18)
         );
 
         assertApproxEqRel(
@@ -578,7 +578,7 @@ contract TestTerminal31_Fork is Test {
                 "tap(uint256,uint256,uint256,uint256)",
                 1,
                 _amount,
-                JBCurrencies.ETH,
+                JBCurrencies.GAS_CURRENCY,
                 _minAmountReturned
             )
         );
@@ -725,7 +725,7 @@ contract TestTerminal31_Fork is Test {
         fundAccessConstraints.push(
             JBFundAccessConstraints({
                 terminal: jbEthTerminal,
-                token: JBTokens.ETH,
+                token: JBTokens.GAS_TOKEN,
                 distributionLimit: targetInUSD,
                 overflowAllowance: 5 ether,
                 distributionLimitCurrency: 1, // Currency = ETH

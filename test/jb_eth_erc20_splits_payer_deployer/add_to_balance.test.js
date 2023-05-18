@@ -12,7 +12,7 @@ import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.j
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
 
-describe('JBETHERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
+describe('JBGasTokenERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
   const DEFAULT_PROJECT_ID = 2;
   const DEFAULT_SPLITS_PROJECT_ID = 3;
   const DEFAULT_SPLITS_DOMAIN = 1;
@@ -39,7 +39,7 @@ describe('JBETHERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
     let jbTokensFactory = await ethers.getContractFactory('JBTokens');
     let jbTokens = await jbTokensFactory.deploy();
 
-    ethToken = await jbTokens.ETH();
+    ethToken = await JBTokens.GAS_TOKEN();
 
     let jbConstantsFactory = await ethers.getContractFactory('JBConstants');
     let jbConstants = await jbConstantsFactory.deploy();
@@ -69,14 +69,14 @@ describe('JBETHERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
     await mockJbSplitsStore.mock.directory.returns(mockJbDirectory.address);
 
     let jbSplitsPayerDeployerFactory = await ethers.getContractFactory(
-      'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+      'contracts/JBGasTokenERC20SplitsPayerDeployer.sol:JBGasTokenERC20SplitsPayerDeployer',
     );
 
     let jbSplitsPayerDeployer = await jbSplitsPayerDeployerFactory.deploy(
       mockJbSplitsStore.address,
     );
 
-    let jbSplitsPayerFactory = await ethers.getContractFactory('JBETHERC20SplitsPayer');
+    let jbSplitsPayerFactory = await ethers.getContractFactory('JBGasTokenERC20SplitsPayer');
 
     let jbSplitsPayer = jbSplitsPayerFactory.attach(
       await jbSplitsPayerDeployer.callStatic.deploySplitsPayer(

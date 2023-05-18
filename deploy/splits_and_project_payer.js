@@ -46,21 +46,21 @@ module.exports = async ({ deployments, getChainId }) => {
 
   console.log({ multisigAddress, jbDirectory });
 
-  // Deploy a JBETHERC20ProjectPayerDeployer contract.
-  let jbProjectPayer = await deploy('JBETHERC20ProjectPayerDeployer', {
+  // Deploy a JBGasTokenERC20ProjectPayerDeployer contract.
+  let jbProjectPayer = await deploy('JBGasTokenERC20ProjectPayerDeployer', {
     ...baseDeployArgs,
     args: [jbDirectory],
   });
 
-  // Deploy a JBETHERC20SplitsPayerDeployer contract.
-  let jbSplitsPayer = await deploy('JBETHERC20SplitsPayerDeployer', {
+  // Deploy a JBGasTokenERC20SplitsPayerDeployer contract.
+  let jbSplitsPayer = await deploy('JBGasTokenERC20SplitsPayerDeployer', {
     ...baseDeployArgs,
-    contract: 'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+    contract: 'contracts/JBGasTokenERC20SplitsPayerDeployer.sol:JBGasTokenERC20SplitsPayerDeployer',
     args: [jbSplitsStore],
   });
 
-  console.log('JBETHERC20ProjectPayerDeployer address: ' + jbProjectPayer.address);
-  console.log('JBETHERC20SplitsPayerDeployer address: ' + jbSplitsPayer.address);
+  console.log('JBGasTokenERC20ProjectPayerDeployer address: ' + jbProjectPayer.address);
+  console.log('JBGasTokenERC20SplitsPayerDeployer address: ' + jbSplitsPayer.address);
 
   console.log('Done');
 };
