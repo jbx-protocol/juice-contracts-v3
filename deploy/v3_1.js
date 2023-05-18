@@ -155,7 +155,7 @@ module.exports = async ({ deployments, getChainId }) => {
   const jbDirectoryContract = new ethers.Contract(JBDirectory.address, JBDirectory.abi);
   const jbPricesContract = new ethers.Contract(JBPrices.address, JBPrices.abi);
   const jbControllerContract = new ethers.Contract(JBController.address, JBController.abi);
-  const jbProjects = new ethers.Contract(JBProjects.address, JBProjects.abi);
+  const jbProjectsContract = new ethers.Contract(JBProjects.address, JBProjects.abi);
   const jbCurrenciesLibrary = new ethers.Contract(JBCurrencies.address, JBCurrencies.abi);
 
   // Get a reference to USD and ETH currency indexes.
@@ -211,6 +211,10 @@ module.exports = async ({ deployments, getChainId }) => {
   // If needed, transfer the ownership of the JBPrices to to the multisig.
   if ((await jbPricesContract.connect(deployer).owner()) != multisigAddress)
     await jbPricesContract.connect(deployer).transferOwnership(multisigAddress);
+
+  // If needed, transfer the ownership of the JBProjects to to the multisig.
+  if ((await jbProjectsContract.connect(deployer).owner()) != multisigAddress)
+    await jbProjectsContract.connect(deployer).transferOwnership(multisigAddress);
 
   let isAllowedToSetFirstController = await jbDirectoryContract
     .connect(deployer)
