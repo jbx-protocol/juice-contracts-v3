@@ -13,7 +13,7 @@ module.exports = async ({ deployments, getChainId }) => {
   const { deploy } = deployments;
   const [deployer] = await ethers.getSigners();
 
-  let multisigAddress;
+  let governanceAddress;
   let chainlinkV2UsdEthPriceFeed;
   let chainId = await getChainId();
   let baseDeployArgs = {
@@ -28,24 +28,24 @@ module.exports = async ({ deployments, getChainId }) => {
   switch (chainId) {
     // mainnet
     case '1':
-      multisigAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
+      governanceAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
       chainlinkV2UsdEthPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
       protocolProjectStartsAtOrAfter = 1664047173;
       break;
     // Goerli
     case '5':
-      multisigAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
+      governanceAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
       chainlinkV2UsdEthPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
       protocolProjectStartsAtOrAfter = 0;
       break;
     // hardhat / localhost
     case '31337':
-      multisigAddress = deployer.address;
+      governanceAddress = deployer.address;
       protocolProjectStartsAtOrAfter = 0;
       break;
   }
 
-  console.log({ multisigAddress, protocolProjectStartsAtOrAfter });
+  console.log({ governanceAddress, protocolProjectStartsAtOrAfter });
 
   // Deploy a JBOperatorStore contract.
   const JBOperatorStore = await deploy('JBOperatorStore', {
@@ -174,7 +174,7 @@ module.exports = async ({ deployments, getChainId }) => {
       JBSplitStore.address,
       JBPrices.address,
       JBSingleTokenPaymentTerminalStore.address,
-      multisigAddress,
+      governanceAddress,
     ],
   });
 
@@ -209,12 +209,12 @@ module.exports = async ({ deployments, getChainId }) => {
   }
 
   // If needed, transfer the ownership of the JBPrices to to the multisig.
-  if ((await jbPricesContract.connect(deployer).owner()) != multisigAddress)
-    await jbPricesContract.connect(deployer).transferOwnership(multisigAddress);
+  if ((await jbPricesContract.connect(deployer).owner()) != governanceAddress)
+    await jbPricesContract.connect(deployer).transferOwnership(governanceAddress);
 
   // If needed, transfer the ownership of the JBProjects to to the multisig.
-  if ((await jbProjectsContract.connect(deployer).owner()) != multisigAddress)
-    await jbProjectsContract.connect(deployer).transferOwnership(multisigAddress);
+  if ((await jbProjectsContract.connect(deployer).owner()) != governanceAddress)
+    await jbProjectsContract.connect(deployer).transferOwnership(governanceAddress);
 
   let isAllowedToSetFirstController = await jbDirectoryContract
     .connect(deployer)
@@ -231,8 +231,8 @@ module.exports = async ({ deployments, getChainId }) => {
   }
 
   // If needed, transfer the ownership of the JBDirectory contract to the multisig.
-  if ((await jbDirectoryContract.connect(deployer).owner()) != multisigAddress) {
-    let tx = await jbDirectoryContract.connect(deployer).transferOwnership(multisigAddress);
+  if ((await jbDirectoryContract.connect(deployer).owner()) != governanceAddress) {
+    let tx = await jbDirectoryContract.connect(deployer).transferOwnership(governanceAddress);
     await tx.wait();
   }
 
