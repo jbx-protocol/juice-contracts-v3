@@ -13,7 +13,6 @@ import './IJBPrices.sol';
 import './IJBProjects.sol';
 import './IJBRedemptionDelegate.sol';
 import './IJBRedemptionTerminal.sol';
-import './IJBSingleTokenPaymentTerminalStore.sol';
 import './IJBSplitsStore.sol';
 
 interface IJBPayoutRedemptionPaymentTerminal3_1 is
@@ -146,7 +145,13 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
-  event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
+  event PayoutReverted(
+    uint256 indexed projectId,
+    JBSplit split,
+    uint256 amount,
+    bytes reason,
+    address caller
+  );
 
   event FeeReverted(
     uint256 indexed projectId,
@@ -164,7 +169,7 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   function prices() external view returns (IJBPrices);
 
-  function store() external view returns (IJBSingleTokenPaymentTerminalStore);
+  function store() external view returns (address);
 
   function baseWeightCurrency() external view returns (uint256);
 
