@@ -248,6 +248,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes4 _interfaceId
   ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
     return
+      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1_1).interfaceId ||
       _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
       _interfaceId == type(IJBAllowanceTerminal3_1).interfaceId ||
