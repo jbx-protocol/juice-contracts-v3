@@ -848,9 +848,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           // Get a reference to the delegate being iterated on.
           JBRedemptionDelegateAllocation memory _delegateAllocation = _delegateAllocations[_i];
 
-          // Subtract the delegated amount from the reclaim amount that will be sent any leftover funds.
-          reclaimAmount = reclaimAmount - _delegateAllocation.amount;
-
           // Trigger any inherited pre-transfer logic.
           _beforeTransferTo(address(_delegateAllocation.delegate), _delegateAllocation.amount);
 
