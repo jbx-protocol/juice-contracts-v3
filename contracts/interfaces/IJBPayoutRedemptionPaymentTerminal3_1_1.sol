@@ -30,4 +30,12 @@ interface IJBPayoutRedemptionPaymentTerminal3_1_1 {
     bytes metadata,
     address caller
   );
+
+  event DelegateDidRedeem(
+    IJBRedemptionDelegate indexed delegate,
+    JBDidRedeemData data,
+    uint256 delegatedAmount,
+    uint256 fee,
+    address caller
+  );
 }

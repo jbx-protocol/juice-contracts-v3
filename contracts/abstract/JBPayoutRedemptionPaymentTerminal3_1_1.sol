@@ -799,6 +799,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     // Keep a reference to the funding cycle during which the redemption is being made.
     JBFundingCycle memory _fundingCycle;
 
+    // Keep a reference to the amount being reclaimed that should have fees withheld from.
+    uint256 _feeEligibleDistributionAmount;
+
+    // A flag indicating if fees should be withheld.
+    bool _takesFee = _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
+
     // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
     {
       JBRedemptionDelegateAllocation[] memory _delegateAllocations;
@@ -848,24 +854,35 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           // Get a reference to the delegate being iterated on.
           JBRedemptionDelegateAllocation memory _delegateAllocation = _delegateAllocations[_i];
 
+          // Track the net amount to forward.
+          uint256 _netAmount = _delegateAllocation.amount;
+
+          // Add the delegated amount to the amount eligible for having a fee taken.
+          if (_takesFee) {
+            _feeEligibleDistributionAmount += _delegateAllocation.amount;
+            // Keep a reference to the amount after the fee.
+            _netAmount = _netAmount - _feeAmount(_delegateAllocation.amount, fee, 0);
+          }
+
           // Trigger any inherited pre-transfer logic.
-          _beforeTransferTo(address(_delegateAllocation.delegate), _delegateAllocation.amount);
+          _beforeTransferTo(address(_delegateAllocation.delegate), _netAmount);
 
           // Keep track of the msg.value to use in the delegate call
           uint256 _payableValue;
 
           // If this terminal's token is ETH, send it in msg.value.
-          if (token == JBTokens.ETH) _payableValue = _delegateAllocation.amount;
+          if (token == JBTokens.ETH) _payableValue = _netAmount;
 
           // Pass the correct token forwardedAmount to the delegate
-          _data.forwardedAmount.value = _delegateAllocation.amount;
+          _data.forwardedAmount.value = _netAmount;
 
           _delegateAllocation.delegate.didRedeem{value: _payableValue}(_data);
 
           emit DelegateDidRedeem(
             _delegateAllocation.delegate,
             _data,
-            _delegateAllocation.amount,
+            _netAmount,
+            _delegateAllocation.amount - _netAmount,
             msg.sender
           );
 
@@ -876,20 +893,25 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       }
     }
 
+    // Keep a reference to the fee taken from the reclaim amount.
     uint256 _fee;
 
     // Send the reclaimed funds to the beneficiary.
     if (reclaimAmount != 0) {
-      // Take the fee.
-      _fee = _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE
-        ? _takeFeeFrom(_projectId, false, reclaimAmount, _beneficiary, 0)
-        : 0;
+      if (_takesFee) {
+        _feeEligibleDistributionAmount += reclaimAmount;
+        _fee = _feeAmount(reclaimAmount, fee, 0);
+        reclaimAmount -= _fee;
+      }
 
       // Subtract the fee from the reclaim amount.
-      if (_fee != 0) reclaimAmount = reclaimAmount - _fee;
-
       if (reclaimAmount != 0) _transferFrom(address(this), _beneficiary, reclaimAmount);
     }
+
+    // Take the fee from all outbound reclaimations.
+    _feeEligibleDistributionAmount != 0
+      ? _takeFeeFrom(_projectId, false, _feeEligibleDistributionAmount, _beneficiary, 0)
+      : 0;
 
     emit RedeemTokens(
       _fundingCycle.configuration,
