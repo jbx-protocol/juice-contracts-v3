@@ -803,7 +803,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     uint256 _feeEligibleDistributionAmount;
 
     // A flag indicating if fees should be withheld.
-    bool _takesFee = _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
+    bool _takesFee = !isFeelessAddress[_beneficiary] &&
+      _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
 
     // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
     {
