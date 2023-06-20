@@ -7,6 +7,7 @@ import '@paulrberg/contracts/math/PRBMath.sol';
 import './../interfaces/IJBController.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol';
+import './../interfaces/IJBFeeGauge3_1.sol';
 import './../libraries/JBConstants.sol';
 import './../libraries/JBCurrencies.sol';
 import './../libraries/JBFixedPointNumber.sol';
@@ -15,6 +16,7 @@ import './../libraries/JBOperations.sol';
 import './../libraries/JBTokens.sol';
 import './../structs/JBPayDelegateAllocation.sol';
 import './../structs/JBTokenAmount.sol';
+import './../enums/JBFeeType.sol';
 import './JBOperatable.sol';
 import './JBSingleTokenPaymentTerminal.sol';
 
@@ -169,7 +171,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     @notice
     The data source that returns a discount to apply to a project's fee.
   */
-  IJBFeeGauge public override feeGauge;
+  address public override feeGauge;
 
   /**
     @notice
@@ -654,7 +656,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
     @param _feeGauge The new fee gauge.
   */
-  function setFeeGauge(IJBFeeGauge _feeGauge) external virtual override onlyOwner {
+  function setFeeGauge(address _feeGauge) external virtual override onlyOwner {
     // Store the new fee gauge.
     feeGauge = _feeGauge;
 
@@ -818,15 +820,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         _metadata
       );
 
+      // Set the reference to the fee discount to apply.
+      _feeDiscount = isFeelessAddress[_beneficiary] ||
+        _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
+        fee == 0
+        ? JBConstants.MAX_FEE_DISCOUNT
+        : _currentFeeDiscount(_projectId, JBFeeType.REDEMPTION);
+
       // The amount being reclaimed must be at least as much as was expected.
       if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
-
-      // Set the flag indicating if fees should be taken.
-      _feeDiscount = isFeelessAddress[_beneficiary] ||
-        fee == 0 ||
-        _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
-        ? JBConstants.MAX_FEE_DISCOUNT
-        : _currentFeeDiscount(_projectId);
 
       // Burn the project tokens.
       if (_tokenCount > 0)
@@ -855,9 +857,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           _metadata
         );
 
-        uint256 _numDelegates = _delegateAllocations.length;
-
-        for (uint256 _i; _i < _numDelegates; ) {
+        for (uint256 _i; _i < _delegateAllocations.length; ) {
           // Get a reference to the delegate being iterated on.
           JBRedemptionDelegateAllocation memory _delegateAllocation = _delegateAllocations[_i];
 
@@ -918,7 +918,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
     // Take the fee from all outbound reclaimations.
     _feeEligibleDistributionAmount != 0
-      ? _takeFeeFrom(_projectId, false, _feeEligibleDistributionAmount, _beneficiary, 0)
+      ? _takeFeeFrom(_projectId, false, _feeEligibleDistributionAmount, _beneficiary, _feeDiscount)
       : 0;
 
     emit RedeemTokens(
@@ -988,7 +988,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       // If the fee is zero, set the discount to 100% for convenience.
       uint256 _feeDiscount = fee == 0
         ? JBConstants.MAX_FEE_DISCOUNT
-        : _currentFeeDiscount(_projectId);
+        : _currentFeeDiscount(_projectId, JBFeeType.PAYOUT);
 
       // The amount distributed that is eligible for incurring fees.
       uint256 _feeEligibleDistributionAmount;
@@ -1101,7 +1101,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       // If the fee is zero or if the fee is being used by an address that doesn't incur fees, set the discount to 100% for convenience.
       uint256 _feeDiscount = fee == 0 || isFeelessAddress[msg.sender]
         ? JBConstants.MAX_FEE_DISCOUNT
-        : _currentFeeDiscount(_projectId);
+        : _currentFeeDiscount(_projectId, JBFeeType.ALLOWANCE);
 
       // Take a fee from the `_distributedAmount`, if needed.
       _fee = _feeDiscount == JBConstants.MAX_FEE_DISCOUNT
@@ -1721,10 +1721,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     Get the fee discount from the fee gauge for the specified project.
 
     @param _projectId The ID of the project to get a fee discount for.
+    @param _feeType The type of fee the discount is being applied to.
     
     @return feeDiscount The fee discount, which should be interpreted as a percentage out MAX_FEE_DISCOUNT.
   */
-  function _currentFeeDiscount(uint256 _projectId) internal view returns (uint256) {
+  function _currentFeeDiscount(
+    uint256 _projectId,
+    JBFeeType _feeType
+  ) internal view returns (uint256) {
     // Can't take a fee if the protocol project doesn't have a terminal that accepts the token.
     if (
       directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
@@ -1732,9 +1736,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     ) return JBConstants.MAX_FEE_DISCOUNT;
 
     // Get the fee discount.
-    if (feeGauge != IJBFeeGauge(address(0)))
+    if (feeGauge != address(0))
       // If the guage reverts, keep the discount at 0.
-      try feeGauge.currentDiscountFor(_projectId) returns (uint256 discount) {
+      try IJBFeeGauge3_1(feeGauge).currentDiscountFor(_projectId, _feeType) returns (
+        uint256 discount
+      ) {
         // If the fee discount is greater than the max, we ignore the return value
         if (discount <= JBConstants.MAX_FEE_DISCOUNT) return discount;
       } catch {

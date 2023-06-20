@@ -142,11 +142,17 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   event SetFee(uint256 fee, address caller);
 
-  event SetFeeGauge(IJBFeeGauge indexed feeGauge, address caller);
+  event SetFeeGauge(address indexed feeGauge, address caller);
 
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
-  event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
+  event PayoutReverted(
+    uint256 indexed projectId,
+    JBSplit split,
+    uint256 amount,
+    bytes reason,
+    address caller
+  );
 
   event FeeReverted(
     uint256 indexed projectId,
@@ -174,7 +180,7 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   function fee() external view returns (uint256);
 
-  function feeGauge() external view returns (IJBFeeGauge);
+  function feeGauge() external view returns (address);
 
   function isFeelessAddress(address _contract) external view returns (bool);
 
@@ -184,7 +190,7 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   function setFee(uint256 _fee) external;
 
-  function setFeeGauge(IJBFeeGauge _feeGauge) external;
+  function setFeeGauge(address _feeGauge) external;
 
   function setFeelessAddress(address _contract, bool _flag) external;
 }
