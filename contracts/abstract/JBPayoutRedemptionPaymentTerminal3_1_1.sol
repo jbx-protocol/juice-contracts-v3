@@ -822,7 +822,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
       // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
       _feeDiscount = isFeelessAddress[_beneficiary] ||
-        _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
+        (_fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE &&
+          _fundingCycle.ballotRedemptionRate() == JBConstants.MAX_REDEMPTION_RATE) ||
         fee == 0
         ? JBConstants.MAX_FEE_DISCOUNT
         : _currentFeeDiscount(_projectId, JBFeeType.REDEMPTION);
