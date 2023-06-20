@@ -121,6 +121,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     return {
       beneficiary,
       holder,
+      terminalOwner,
       jbEthPaymentTerminal,
       fundingCycle,
       mockJBPaymentTerminalStore,
@@ -564,7 +565,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     );
   });
 
-  it.only('Should redeem tokens, call multiple delegate and send the appropriate amount to them, with a sub-100% redemption rate that incurrs fees', async function () {
+  it('Should redeem tokens, call multiple delegate and send the appropriate amount to them, with a sub-100% redemption rate that incurrs fees', async function () {
     const {
       beneficiary,
       fundingCycle,
@@ -746,6 +747,370 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // Delegate2 should have a larger balance
     expect(await ethers.provider.getBalance(mockJbRedemptionDelegate2.address)).to.equal(
       initialDelegate2Balance.add(delegate2Amount - DELEGATE_2_FEE),
+    );
+  });
+
+  it('Should redeem tokens, call multiple delegate and send the appropriate amount to them, with a sub-100% redemption rate that would incurrs fees if the beneficiary wasnt feeless', async function () {
+    const {
+      beneficiary,
+      fundingCycle,
+      terminalOwner,
+      holder,
+      jbEthPaymentTerminal,
+      mockJBPaymentTerminalStore,
+      mockJbRedemptionDelegate,
+      mockJbRedemptionDelegate2,
+      mockJbDirectory,
+      mockJbController,
+      timestamp,
+    } = await setup();
+
+    fundingCycle.metadata = packFundingCycleMetadata({
+      redemptionRate: 9000, // 90% redemption rate
+    });
+
+    const delegate1Amount = RECLAIM_AMOUNT / 2;
+    const delegate2Amount = RECLAIM_AMOUNT / 4;
+    const redeemedAmount = RECLAIM_AMOUNT - delegate1Amount - delegate2Amount;
+
+    await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
+    await mockJbController.mock.burnTokensOf
+      .withArgs(holder.address, PROJECT_ID, AMOUNT, /* memo */ '', /* preferClaimedTokens */ false)
+      .returns();
+
+    // Keep it simple and let 1 token exchange for 1 wei
+    await mockJBPaymentTerminalStore.mock.recordRedemptionFor
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .returns(
+        fundingCycle,
+        /* reclaimAmount */ redeemedAmount,
+        /* delegate */[
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+        ],
+        ADJUSTED_MEMO,
+      );
+
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(jbEthPaymentTerminal.address);
+
+    await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
+
+    let tokenAddress = await jbEthPaymentTerminal.token();
+    await mockJbRedemptionDelegate.mock.didRedeem
+      .withArgs({
+        // JBDidRedeemData obj
+        holder: holder.address,
+        projectId: PROJECT_ID,
+        currentFundingCycleConfiguration: timestamp,
+        projectTokenCount: AMOUNT,
+        reclaimedAmount: {
+          token: tokenAddress,
+          value: redeemedAmount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        forwardedAmount: {
+          token: tokenAddress,
+          value: delegate1Amount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        beneficiary: beneficiary.address,
+        memo: ADJUSTED_MEMO,
+        metadata: METADATA,
+      })
+      .returns();
+
+    await mockJbRedemptionDelegate2.mock.didRedeem
+      .withArgs({
+        // JBDidRedeemData obj
+        holder: holder.address,
+        projectId: PROJECT_ID,
+        currentFundingCycleConfiguration: timestamp,
+        projectTokenCount: AMOUNT,
+        reclaimedAmount: {
+          token: tokenAddress,
+          value: redeemedAmount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        forwardedAmount: {
+          token: tokenAddress,
+          value: delegate2Amount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        beneficiary: beneficiary.address,
+        memo: ADJUSTED_MEMO,
+        metadata: METADATA,
+      })
+      .returns();
+
+    await setBalance(jbEthPaymentTerminal.address, RECLAIM_AMOUNT);
+
+    const initialBeneficiaryBalance = await ethers.provider.getBalance(beneficiary.address);
+    const initialDelegate1Balance = await ethers.provider.getBalance(
+      mockJbRedemptionDelegate.address,
+    );
+    const initialDelegate2Balance = await ethers.provider.getBalance(
+      mockJbRedemptionDelegate2.address,
+    );
+
+    await jbEthPaymentTerminal
+      .connect(terminalOwner)
+      .setFeelessAddress(beneficiary.address, true);
+
+    const tx = await jbEthPaymentTerminal
+      .connect(holder)
+      .redeemTokensOf(
+        holder.address,
+        PROJECT_ID,
+        /* tokenCount */ AMOUNT,
+        /* token */ ethers.constants.AddressZero,
+        /* minReturnedTokens */ redeemedAmount,
+        beneficiary.address,
+        MEMO,
+        METADATA,
+      );
+
+    // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    // .withArgs(
+    //   mockJbRedemptionDelegate.address,
+    //   [
+    //     // JBDidRedeemData obj
+    //     holder.address,
+    //     PROJECT_ID,
+    //     AMOUNT,
+    //     [
+    //       tokenAddress,
+    //       ethers.BigNumber.from(RECLAIM_AMOUNT),
+    //       ethers.BigNumber.from(DECIMALS_ETH),
+    //       CURRENCY_ETH,
+    //     ],
+    //     beneficiary.address,
+    //     ADJUSTED_MEMO,
+    //     METADATA,
+    //   ],
+    //   /* msg.sender */ holder.address,
+    // );
+
+    await expect(tx)
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .withArgs(
+        /* _fundingCycle.configuration */ timestamp,
+        /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
+        /* _projectId */ PROJECT_ID,
+        /* _holder */ holder.address,
+        /* _beneficiary */ beneficiary.address,
+        /* _tokenCount */ AMOUNT,
+        /* reclaimAmount */ redeemedAmount,
+        /* fee */ 0,
+        /* memo */ ADJUSTED_MEMO,
+        /* metadata */ METADATA,
+        /* msg.sender */ holder.address,
+      );
+
+    // Terminal should be out of ETH
+    expect(await ethers.provider.getBalance(jbEthPaymentTerminal.address)).to.equal(0);
+
+    // Beneficiary should have a larger balance
+    expect(await ethers.provider.getBalance(beneficiary.address)).to.equal(
+      initialBeneficiaryBalance.add(redeemedAmount),
+    );
+
+    // Delegate1 should have a larger balance
+    expect(await ethers.provider.getBalance(mockJbRedemptionDelegate.address)).to.equal(
+      initialDelegate1Balance.add(delegate1Amount),
+    );
+
+    // Delegate2 should have a larger balance
+    expect(await ethers.provider.getBalance(mockJbRedemptionDelegate2.address)).to.equal(
+      initialDelegate2Balance.add(delegate2Amount),
+    );
+  });
+
+  it('Should redeem tokens, call multiple delegate and send the appropriate amount to them, with a sub-100% redemption rate that would incurrs fees if the fee was non-zero', async function () {
+    const {
+      beneficiary,
+      fundingCycle,
+      terminalOwner,
+      holder,
+      jbEthPaymentTerminal,
+      mockJBPaymentTerminalStore,
+      mockJbRedemptionDelegate,
+      mockJbRedemptionDelegate2,
+      mockJbDirectory,
+      mockJbController,
+      timestamp,
+    } = await setup();
+
+    fundingCycle.metadata = packFundingCycleMetadata({
+      redemptionRate: 9000, // 90% redemption rate
+    });
+
+    const delegate1Amount = RECLAIM_AMOUNT / 2;
+    const delegate2Amount = RECLAIM_AMOUNT / 4;
+    const redeemedAmount = RECLAIM_AMOUNT - delegate1Amount - delegate2Amount;
+
+    await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
+    await mockJbController.mock.burnTokensOf
+      .withArgs(holder.address, PROJECT_ID, AMOUNT, /* memo */ '', /* preferClaimedTokens */ false)
+      .returns();
+
+    // Keep it simple and let 1 token exchange for 1 wei
+    await mockJBPaymentTerminalStore.mock.recordRedemptionFor
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .returns(
+        fundingCycle,
+        /* reclaimAmount */ redeemedAmount,
+        /* delegate */[
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+        ],
+        ADJUSTED_MEMO,
+      );
+
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(jbEthPaymentTerminal.address);
+
+    await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
+
+    let tokenAddress = await jbEthPaymentTerminal.token();
+    await mockJbRedemptionDelegate.mock.didRedeem
+      .withArgs({
+        // JBDidRedeemData obj
+        holder: holder.address,
+        projectId: PROJECT_ID,
+        currentFundingCycleConfiguration: timestamp,
+        projectTokenCount: AMOUNT,
+        reclaimedAmount: {
+          token: tokenAddress,
+          value: redeemedAmount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        forwardedAmount: {
+          token: tokenAddress,
+          value: delegate1Amount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        beneficiary: beneficiary.address,
+        memo: ADJUSTED_MEMO,
+        metadata: METADATA,
+      })
+      .returns();
+
+    await mockJbRedemptionDelegate2.mock.didRedeem
+      .withArgs({
+        // JBDidRedeemData obj
+        holder: holder.address,
+        projectId: PROJECT_ID,
+        currentFundingCycleConfiguration: timestamp,
+        projectTokenCount: AMOUNT,
+        reclaimedAmount: {
+          token: tokenAddress,
+          value: redeemedAmount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        forwardedAmount: {
+          token: tokenAddress,
+          value: delegate2Amount,
+          decimals: DECIMALS_ETH,
+          currency: CURRENCY_ETH,
+        },
+        beneficiary: beneficiary.address,
+        memo: ADJUSTED_MEMO,
+        metadata: METADATA,
+      })
+      .returns();
+
+    await setBalance(jbEthPaymentTerminal.address, RECLAIM_AMOUNT);
+
+    const initialBeneficiaryBalance = await ethers.provider.getBalance(beneficiary.address);
+    const initialDelegate1Balance = await ethers.provider.getBalance(
+      mockJbRedemptionDelegate.address,
+    );
+    const initialDelegate2Balance = await ethers.provider.getBalance(
+      mockJbRedemptionDelegate2.address,
+    );
+
+    await jbEthPaymentTerminal.connect(terminalOwner).setFee(0);
+
+    const tx = await jbEthPaymentTerminal
+      .connect(holder)
+      .redeemTokensOf(
+        holder.address,
+        PROJECT_ID,
+        /* tokenCount */ AMOUNT,
+        /* token */ ethers.constants.AddressZero,
+        /* minReturnedTokens */ redeemedAmount,
+        beneficiary.address,
+        MEMO,
+        METADATA,
+      );
+
+    // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    // .withArgs(
+    //   mockJbRedemptionDelegate.address,
+    //   [
+    //     // JBDidRedeemData obj
+    //     holder.address,
+    //     PROJECT_ID,
+    //     AMOUNT,
+    //     [
+    //       tokenAddress,
+    //       ethers.BigNumber.from(RECLAIM_AMOUNT),
+    //       ethers.BigNumber.from(DECIMALS_ETH),
+    //       CURRENCY_ETH,
+    //     ],
+    //     beneficiary.address,
+    //     ADJUSTED_MEMO,
+    //     METADATA,
+    //   ],
+    //   /* msg.sender */ holder.address,
+    // );
+
+    await expect(tx)
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .withArgs(
+        /* _fundingCycle.configuration */ timestamp,
+        /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
+        /* _projectId */ PROJECT_ID,
+        /* _holder */ holder.address,
+        /* _beneficiary */ beneficiary.address,
+        /* _tokenCount */ AMOUNT,
+        /* reclaimAmount */ redeemedAmount,
+        /* fee */ 0,
+        /* memo */ ADJUSTED_MEMO,
+        /* metadata */ METADATA,
+        /* msg.sender */ holder.address,
+      );
+
+    // Terminal should be out of ETH
+    expect(await ethers.provider.getBalance(jbEthPaymentTerminal.address)).to.equal(0);
+
+    // Beneficiary should have a larger balance
+    expect(await ethers.provider.getBalance(beneficiary.address)).to.equal(
+      initialBeneficiaryBalance.add(redeemedAmount),
+    );
+
+    // Delegate1 should have a larger balance
+    expect(await ethers.provider.getBalance(mockJbRedemptionDelegate.address)).to.equal(
+      initialDelegate1Balance.add(delegate1Amount),
+    );
+
+    // Delegate2 should have a larger balance
+    expect(await ethers.provider.getBalance(mockJbRedemptionDelegate2.address)).to.equal(
+      initialDelegate2Balance.add(delegate2Amount),
     );
   });
 
