@@ -51,7 +51,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 5000,
-            ballotRedemptionRate: 0,
+            ballotRedemptionRate: 5000,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
