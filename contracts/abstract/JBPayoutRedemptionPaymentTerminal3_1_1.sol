@@ -802,8 +802,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     // Keep a reference to the amount being reclaimed that should have fees withheld from.
     uint256 _feeEligibleDistributionAmount;
 
-    // Keep a reference to a flag indicating if fees should be withheld.
-    bool _takesFee;
+    // Keep a reference to the amount of discount to apply to the fee.
+    uint256 _feeDiscount;
 
     // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
     {
@@ -818,13 +818,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         _metadata
       );
 
-      // Set the flag indicating if fees should be taken.
-      _takesFee =
-        !isFeelessAddress[_beneficiary] &&
-        _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
-
       // The amount being reclaimed must be at least as much as was expected.
       if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
+
+      // Set the flag indicating if fees should be taken.
+      _feeDiscount = isFeelessAddress[_beneficiary] ||
+        fee == 0 ||
+        _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
+        ? JBConstants.MAX_FEE_DISCOUNT
+        : _currentFeeDiscount(_projectId);
 
       // Burn the project tokens.
       if (_tokenCount > 0)
@@ -859,35 +861,34 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           // Get a reference to the delegate being iterated on.
           JBRedemptionDelegateAllocation memory _delegateAllocation = _delegateAllocations[_i];
 
-          // Track the net amount to forward.
-          uint256 _netAmount = _delegateAllocation.amount;
+          // Get the fee for the delegated amount.
+          uint256 _delegatedAmountFee = _feeAmount(_delegateAllocation.amount, fee, _feeDiscount);
 
           // Add the delegated amount to the amount eligible for having a fee taken.
-          if (_takesFee) {
+          if (_delegatedAmountFee != 0) {
             _feeEligibleDistributionAmount += _delegateAllocation.amount;
-            // Keep a reference to the amount after the fee.
-            _netAmount = _netAmount - _feeAmount(_delegateAllocation.amount, fee, 0);
+            _delegateAllocation.amount -= _delegatedAmountFee;
           }
 
           // Trigger any inherited pre-transfer logic.
-          _beforeTransferTo(address(_delegateAllocation.delegate), _netAmount);
+          _beforeTransferTo(address(_delegateAllocation.delegate), _delegateAllocation.amount);
 
           // Keep track of the msg.value to use in the delegate call
           uint256 _payableValue;
 
           // If this terminal's token is ETH, send it in msg.value.
-          if (token == JBTokens.ETH) _payableValue = _netAmount;
+          if (token == JBTokens.ETH) _payableValue = _delegateAllocation.amount;
 
           // Pass the correct token forwardedAmount to the delegate
-          _data.forwardedAmount.value = _netAmount;
+          _data.forwardedAmount.value = _delegateAllocation.amount;
 
           _delegateAllocation.delegate.didRedeem{value: _payableValue}(_data);
 
           emit DelegateDidRedeem(
             _delegateAllocation.delegate,
             _data,
-            _netAmount,
-            _delegateAllocation.amount - _netAmount,
+            _delegateAllocation.amount,
+            _delegatedAmountFee,
             msg.sender
           );
 
@@ -899,14 +900,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     }
 
     // Keep a reference to the fee taken from the reclaim amount.
-    uint256 _fee;
+    uint256 _reclaimAmountFee;
 
     // Send the reclaimed funds to the beneficiary.
     if (reclaimAmount != 0) {
-      if (_takesFee) {
+      // Get the fee for the reclaimed amount.
+      _reclaimAmountFee = _feeAmount(reclaimAmount, fee, _feeDiscount);
+
+      if (_reclaimAmountFee != 0) {
         _feeEligibleDistributionAmount += reclaimAmount;
-        _fee = _feeAmount(reclaimAmount, fee, 0);
-        reclaimAmount -= _fee;
+        reclaimAmount -= _reclaimAmountFee;
       }
 
       // Subtract the fee from the reclaim amount.
@@ -926,7 +929,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       _beneficiary,
       _tokenCount,
       reclaimAmount,
-      _fee,
+      _reclaimAmountFee,
       _memo,
       _metadata,
       msg.sender

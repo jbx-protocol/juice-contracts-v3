@@ -7,6 +7,7 @@ import errors from '../helpers/errors.json';
 
 import jbController from '../../artifacts/contracts/interfaces/IJBController.sol/IJBController.json';
 import jbDirectory from '../../artifacts/contracts/interfaces/IJBDirectory.sol/IJBDirectory.json';
+import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
 import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/interfaces/IJBProjects.sol/IJBProjects.json';
@@ -14,7 +15,7 @@ import jbSplitsStore from '../../artifacts/contracts/interfaces/IJBSplitsStore.s
 import jbPrices from '../../artifacts/contracts/interfaces/IJBPrices.sol/IJBPrices.json';
 import jbRedemptionDelegate from '../../artifacts/contracts/interfaces/IJBRedemptionDelegate.sol/IJBRedemptionDelegate.json';
 
-describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function () {
+describe.only('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function () {
   const AMOUNT = 50000;
   const RECLAIM_AMOUNT = 40000;
   const MIN_RETURNED_AMOUNT = 30000;
@@ -51,6 +52,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     const [
       mockJbDirectory,
       mockJBPaymentTerminalStore,
+      mockJbEthPaymentTerminal,
       mockJbOperatorStore,
       mockJbProjects,
       mockJbSplitsStore,
@@ -61,6 +63,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     ] = await Promise.all([
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, jbPaymentTerminalStore.abi),
+      deployMockContract(deployer, JBETHPaymentTerminal.abi),
       deployMockContract(deployer, jbOperatoreStore.abi),
       deployMockContract(deployer, jbProjects.abi),
       deployMockContract(deployer, jbSplitsStore.abi),
@@ -127,6 +130,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       mockJBPaymentTerminalStore,
       mockJbOperatorStore,
       mockJbRedemptionDelegate,
+      mockJbEthPaymentTerminal,
       mockJbRedemptionDelegate2,
       mockJbController,
       mockJbDirectory,
@@ -571,6 +575,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       fundingCycle,
       holder,
       jbEthPaymentTerminal,
+      mockJbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
       mockJbRedemptionDelegate,
       mockJbRedemptionDelegate2,
@@ -611,11 +616,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         ],
         ADJUSTED_MEMO,
       );
-
-    // Used with hardcoded one to get JBDao terminal
-    await mockJbDirectory.mock.primaryTerminalOf
-      .withArgs(1, ETH_ADDRESS)
-      .returns(jbEthPaymentTerminal.address);
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor.returns();
 
@@ -680,6 +680,24 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       mockJbRedemptionDelegate2.address,
     );
 
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
+
+    await mockJbEthPaymentTerminal.mock.pay
+      .withArgs(
+        1, //JBX Dao
+        REDEEM_FEE + DELEGATE_1_FEE + DELEGATE_2_FEE,
+        ETH_ADDRESS,
+        beneficiary.address,
+        0,
+        false,
+        '',
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
+      )
+      .returns(0);
+
     const tx = await jbEthPaymentTerminal
       .connect(holder)
       .redeemTokensOf(
@@ -732,7 +750,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       );
 
     // Terminal should be out of ETH
-    expect(await ethers.provider.getBalance(jbEthPaymentTerminal.address)).to.equal(REDEEM_FEE + DELEGATE_1_FEE + DELEGATE_2_FEE);
+    expect(await ethers.provider.getBalance(jbEthPaymentTerminal.address)).to.equal(0);
 
     // Beneficiary should have a larger balance
     expect(await ethers.provider.getBalance(beneficiary.address)).to.equal(
