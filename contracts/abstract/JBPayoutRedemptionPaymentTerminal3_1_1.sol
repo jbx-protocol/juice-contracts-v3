@@ -820,7 +820,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         _metadata
       );
 
-      // Set the reference to the fee discount to apply.
+      // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
       _feeDiscount = isFeelessAddress[_beneficiary] ||
         _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
         fee == 0
