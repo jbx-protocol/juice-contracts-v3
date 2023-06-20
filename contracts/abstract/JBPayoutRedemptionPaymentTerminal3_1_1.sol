@@ -802,9 +802,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     // Keep a reference to the amount being reclaimed that should have fees withheld from.
     uint256 _feeEligibleDistributionAmount;
 
-    // A flag indicating if fees should be withheld.
-    bool _takesFee = !isFeelessAddress[_beneficiary] &&
-      _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
+    // Keep a reference to a flag indicating if fees should be withheld.
+    bool _takesFee;
 
     // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
     {
@@ -818,6 +817,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         _memo,
         _metadata
       );
+
+      // Set the flag indicating if fees should be taken.
+      _takesFee =
+        !isFeelessAddress[_beneficiary] &&
+        _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
 
       // The amount being reclaimed must be at least as much as was expected.
       if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
