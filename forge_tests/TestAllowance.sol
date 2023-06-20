@@ -13,7 +13,6 @@ contract TestAllowance_Local is TestBaseWorkflow {
     IJBPaymentTerminal[] _terminals;
     JBTokenStore _tokenStore;
     address _projectOwner;
-    address _beneficiary;
 
     uint256 WEIGHT = 1000 * 10 ** 18;
 
@@ -21,8 +20,6 @@ contract TestAllowance_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-
-        _beneficiary = beneficiary();
 
         _tokenStore = jbTokenStore();
 

@@ -47,50 +47,50 @@ import "@paulrberg/contracts/math/PRBMath.sol";
 // Provides common functionality, such as deploying contracts on test setup.
 contract TestBaseWorkflow is Test {
     //*********************************************************************//
-    // --------------------- private stored properties ------------------- //
+    // --------------------- internal stored properties ------------------- //
     //*********************************************************************//
 
     // Multisig address used for testing.
-    address private _multisig = address(123);
+    address internal _multisig = address(123);
 
-    address private _beneficiary = address(69420);
+    address internal _beneficiary = address(69420);
 
     // JBOperatorStore
-    JBOperatorStore private _jbOperatorStore;
+    JBOperatorStore internal _jbOperatorStore;
     // JBProjects
-    JBProjects private _jbProjects;
+    JBProjects internal _jbProjects;
     // JBPrices
-    JBPrices private _jbPrices;
+    JBPrices internal _jbPrices;
     // JBDirectory
-    JBDirectory private _jbDirectory;
+    JBDirectory internal _jbDirectory;
     // JBFundingCycleStore
-    JBFundingCycleStore private _jbFundingCycleStore;
+    JBFundingCycleStore internal _jbFundingCycleStore;
     // JBToken
-    JBToken private _jbToken;
+    JBToken internal _jbToken;
     // JBTokenStore
-    JBTokenStore private _jbTokenStore;
+    JBTokenStore internal _jbTokenStore;
     // JBSplitsStore
-    JBSplitsStore private _jbSplitsStore;
+    JBSplitsStore internal _jbSplitsStore;
 
     // JBController(s)
-    JBController private _jbController;
-    JBController3_1 private _jbController3_1;
+    JBController internal _jbController;
+    JBController3_1 internal _jbController3_1;
 
-    JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
+    JBFundAccessConstraintsStore internal _jbFundAccessConstraintsStore;
 
     // JBETHPaymentTerminalStore
-    JBSingleTokenPaymentTerminalStore private _jbPaymentTerminalStore;
-    JBSingleTokenPaymentTerminalStore3_1 private _jbPaymentTerminalStore3_1;
+    JBSingleTokenPaymentTerminalStore internal _jbPaymentTerminalStore;
+    JBSingleTokenPaymentTerminalStore3_1 internal _jbPaymentTerminalStore3_1;
 
     // JBETHPaymentTerminal
-    JBETHPaymentTerminal private _jbETHPaymentTerminal;
-    JBETHPaymentTerminal3_1 private _jbETHPaymentTerminal3_1;
+    JBETHPaymentTerminal internal _jbETHPaymentTerminal;
+    JBETHPaymentTerminal3_1 internal _jbETHPaymentTerminal3_1;
 
     // JBERC20PaymentTerminal
-    JBERC20PaymentTerminal private _jbERC20PaymentTerminal;
-    JBERC20PaymentTerminal3_1 private _jbERC20PaymentTerminal3_1;
+    JBERC20PaymentTerminal internal _jbERC20PaymentTerminal;
+    JBERC20PaymentTerminal3_1 internal _jbERC20PaymentTerminal3_1;
     // AccessJBLib
-    AccessJBLib private _accessJBLib;
+    AccessJBLib internal _accessJBLib;
 
     //*********************************************************************//
     // ------------------------- internal views -------------------------- //
@@ -98,10 +98,6 @@ contract TestBaseWorkflow is Test {
 
     function multisig() internal view returns (address) {
         return _multisig;
-    }
-
-    function beneficiary() internal view returns (address) {
-        return _beneficiary;
     }
 
     function jbOperatorStore() internal view returns (JBOperatorStore) {

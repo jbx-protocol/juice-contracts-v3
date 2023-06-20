@@ -6,6 +6,8 @@ import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
 
 import "./helpers/TestBaseWorkflow.sol";
 
+import "../contracts/JBETHPaymentTerminal3_1_1.sol";
+
 /**
  * This system test file verifies the following flow:
  * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
@@ -13,6 +15,7 @@ import "./helpers/TestBaseWorkflow.sol";
 contract TestRedeem_Local is TestBaseWorkflow {
     JBController private _controller;
     JBETHPaymentTerminal private _terminal;
+    JBETHPaymentTerminal3_1_1 private _terminal3_1_1;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -32,6 +35,18 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
+
+        _terminal3_1_1 = new JBETHPaymentTerminal3_1_1(
+            _accessJBLib.ETH(),
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbPrices,
+            _jbPaymentTerminalStore3_1,
+            _multisig
+        );
+
         _tokenStore = jbTokenStore();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
@@ -69,10 +84,22 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         _terminals.push(_terminal);
+        _terminals.push(_terminal3_1_1);
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
                 terminal: _terminal,
+                token: jbLibraries().ETHToken(),
+                distributionLimit: 1 ether, // 10 ETH target
+                overflowAllowance: 5 ether,
+                distributionLimitCurrency: 1, // Currency = ETH
+                overflowAllowanceCurrency: 1
+            })
+        );
+
+        _fundAccessConstraints.push(
+            JBFundAccessConstraints({
+                terminal: _terminal3_1_1,
                 token: jbLibraries().ETHToken(),
                 distributionLimit: 1 ether, // 10 ETH target
                 overflowAllowance: 5 ether,
@@ -108,6 +135,68 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // pay terminal
         _terminal.pay{value: payAmountInWei}(
+            _projectId,
+            payAmountInWei,
+            address(0),
+            _userWallet,
+            /* _minReturnedTokens */
+            0,
+            /* _preferClaimedTokens */
+            payPreferClaimed,
+            /* _memo */
+            "Take my money!",
+            /* _delegateMetadata */
+            new bytes(0)
+        );
+
+        // verify: beneficiary should have a balance of JBTokens
+        uint256 _userTokenBalance = PRBMathUD60x18.mul(payAmountInWei, _weight);
+        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance);
+
+        // verify: ETH balance in terminal should be up to date
+        uint256 _terminalBalanceInWei = payAmountInWei;
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
+
+        vm.prank(_userWallet);
+        uint256 _reclaimAmtInWei = _terminal.redeemTokensOf(
+            /* _holder */
+            _userWallet,
+            /* _projectId */
+            _projectId,
+            /* _tokenCount */
+            _userTokenBalance / 2,
+            /* token (unused) */
+            address(0),
+            /* _minReturnedWei */
+            1,
+            /* _beneficiary */
+            payable(_userWallet),
+            /* _memo */
+            "Refund me now!",
+            /* _delegateMetadata */
+            new bytes(0)
+        );
+
+        // verify: beneficiary has correct amount ok token
+        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance / 2);
+
+        // verify: ETH balance in terminal should be up to date
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
+    }
+
+    function testRedeemTerminal3_1_1() external {
+
+        bool payPreferClaimed = true; //false
+        uint96 payAmountInWei = 2 ether;
+
+        // issue an ERC-20 token for project
+        vm.prank(_projectOwner);
+        _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+
+        address _userWallet = address(1234);
+
+        // pay terminal
+        _terminal3_1_1.pay{value: payAmountInWei}(
             _projectId,
             payAmountInWei,
             address(0),

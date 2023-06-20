@@ -14,7 +14,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
     JBTokenStore _tokenStore;
 
     address _projectOwner;
-    address _beneficiary;
     address _datasource = address(bytes20(keccak256("datasource")));
 
     uint256 _projectId;
@@ -25,8 +24,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-
-        _beneficiary = beneficiary();
 
         _tokenStore = jbTokenStore();
 
