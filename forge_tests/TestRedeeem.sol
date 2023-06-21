@@ -217,10 +217,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // verify: ETH balance in terminal should be up to date
         uint256 _terminalBalanceInWei = payAmountInWei;
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei);
 
         vm.prank(_userWallet);
-        uint256 _reclaimAmtInWei = _terminal.redeemTokensOf(
+        uint256 _reclaimAmtInWei = _terminal3_1_1.redeemTokensOf(
             /* _holder */
             _userWallet,
             /* _projectId */
@@ -239,10 +239,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
-        // verify: beneficiary has correct amount ok token
-        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance / 2);
+        // verify: beneficiary has correct amount of token
+        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance / 2 , "incorrect beneficiary balance");
 
         // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei, "incorrect terminal balance");
     }
 }
