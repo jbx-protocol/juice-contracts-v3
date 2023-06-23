@@ -1279,22 +1279,18 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       else _error = 2;
 
       if (_error != 0) {
-        // Trigger any inhereted post-transfer cancelation logic.
-        _cancelTransferTo(address(_split.allocator), netPayoutAmount);
+        // Revert the payout.
+        _revertPayoutFrom(
+          _projectId,
+          address(_split.allocator),
+          netPayoutAmount,
+          _amount,
+          _split,
+          _error == 1 ? _reason : abi.encode('IERC165 fail')
+        );
 
         // Set the net payout amount to 0 to signal the reversion.
         netPayoutAmount = 0;
-
-        // Add undistributed amount back to project's balance.
-        store.recordAddedBalanceFor(_projectId, _amount);
-
-        emit PayoutReverted(
-          _projectId,
-          _split,
-          _amount,
-          _error == 1 ? _reason : abi.encode('IERC165 fail'),
-          msg.sender
-        );
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1307,10 +1303,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         // Set the net payout amount to 0 to signal the reversion.
         netPayoutAmount = 0;
 
-        // Add undistributed amount back to project's balance.
-        store.recordAddedBalanceFor(_projectId, _amount);
-
-        emit PayoutReverted(_projectId, _split, _amount, 'Terminal not found', msg.sender);
+        // Revert the payout.
+        _revertPayoutFrom(_projectId, address(0), 0, _amount, _split, 'Terminal not found');
       } else {
         // If the terminal is set as feeless, this distribution is not eligible for a fee.
         if (
@@ -1343,17 +1337,19 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
               '',
               _projectMetadata
             )
-          {} catch (bytes memory reason) {
-            // Trigger any inhereted post-transfer cancelation logic.
-            _cancelTransferTo(address(_terminal), netPayoutAmount);
+          {} catch (bytes memory _reason) {
+            // Revert the payout.
+            _revertPayoutFrom(
+              _projectId,
+              address(_terminal),
+              netPayoutAmount,
+              _amount,
+              _split,
+              _reason
+            );
 
             // Set the net payout amount to 0 to signal the reversion.
             netPayoutAmount = 0;
-
-            // Add undistributed amount back to project's balance.
-            store.recordAddedBalanceFor(_projectId, _amount);
-
-            emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
           }
         else
           try
@@ -1367,17 +1363,19 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
               '',
               _projectMetadata
             )
-          {} catch (bytes memory reason) {
-            // Trigger any inhereted post-transfer cancelation logic.
-            _cancelTransferTo(address(_terminal), netPayoutAmount);
+          {} catch (bytes memory _reason) {
+            // Revert the payout.
+            _revertPayoutFrom(
+              _projectId,
+              address(_terminal),
+              netPayoutAmount,
+              _amount,
+              _split,
+              _reason
+            );
 
             // Set the net payout amount to 0 to signal the reversion.
             netPayoutAmount = 0;
-
-            // Add undistributed amount back to project's balance.
-            store.recordAddedBalanceFor(_projectId, _amount);
-
-            emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
           }
       }
     } else {
@@ -1400,6 +1398,34 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
       _transferFrom(address(this), _beneficiary, netPayoutAmount);
     }
+  }
+
+  /**
+    @notice
+    Reverts an expected payout.
+
+    @param _projectId The ID of the project having paying out.
+    @param _expectedDestination The address the payout was expected to go to.
+    @param _allowanceAmount The amount that the destination has been allowed to use.
+    @param _depositAmount The amount of the payout as debited from the project's balance.
+    @param _split The split that signalled the payout.
+    @param _reason The reason for the revert.
+  */
+  function _revertPayoutFrom(
+    uint256 _projectId,
+    address _expectedDestination,
+    uint256 _allowanceAmount,
+    uint256 _depositAmount,
+    JBSplit memory _split,
+    bytes memory _reason
+  ) internal {
+    // Cancel allowance if needed.
+    if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
+
+    // Add undistributed amount back to project's balance.
+    store.recordAddedBalanceFor(_projectId, _depositAmount);
+
+    emit PayoutReverted(_projectId, _split, _depositAmount, _reason, msg.sender);
   }
 
   /**
