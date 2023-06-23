@@ -58,7 +58,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   error PAY_TO_ZERO_ADDRESS();
   error PROJECT_TERMINAL_MISMATCH();
   error REDEEM_TO_ZERO_ADDRESS();
-  error TERMINAL_IN_SPLIT_ZERO_ADDRESS();
   error TERMINAL_TOKENS_INCOMPATIBLE();
 
   //*********************************************************************//
@@ -1304,75 +1303,83 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_split.projectId, token);
 
       // The project must have a terminal to send funds to.
-      if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_IN_SPLIT_ZERO_ADDRESS();
+      if (_terminal == IJBPaymentTerminal(address(0))) {
+        // Set the net payout amount to 0 to signal the reversion.
+        netPayoutAmount = 0;
 
-      // If the terminal is set as feeless, this distribution is not eligible for a fee.
-      if (
-        _terminal == this ||
-        _feeDiscount == JBConstants.MAX_FEE_DISCOUNT ||
-        isFeelessAddress[address(_terminal)]
-      )
-        netPayoutAmount = _amount;
-        // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
-      else {
-        unchecked {
-          netPayoutAmount = _amount - _feeAmount(_amount, fee, _feeDiscount);
+        // Add undistributed amount back to project's balance.
+        store.recordAddedBalanceFor(_projectId, _amount);
+
+        emit PayoutReverted(_projectId, _split, _amount, 'Terminal not found', msg.sender);
+      } else {
+        // If the terminal is set as feeless, this distribution is not eligible for a fee.
+        if (
+          _terminal == this ||
+          _feeDiscount == JBConstants.MAX_FEE_DISCOUNT ||
+          isFeelessAddress[address(_terminal)]
+        )
+          netPayoutAmount = _amount;
+          // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
+        else {
+          unchecked {
+            netPayoutAmount = _amount - _feeAmount(_amount, fee, _feeDiscount);
+          }
         }
+
+        // Trigger any inherited pre-transfer logic.
+        _beforeTransferTo(address(_terminal), netPayoutAmount);
+
+        // Send the projectId in the metadata.
+        bytes memory _projectMetadata = new bytes(32);
+        _projectMetadata = bytes(abi.encodePacked(_projectId));
+
+        // Add to balance if prefered.
+        if (_split.preferAddToBalance)
+          try
+            _terminal.addToBalanceOf{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
+              _split.projectId,
+              netPayoutAmount,
+              token,
+              '',
+              _projectMetadata
+            )
+          {} catch (bytes memory reason) {
+            // Trigger any inhereted post-transfer cancelation logic.
+            _cancelTransferTo(address(_terminal), netPayoutAmount);
+
+            // Set the net payout amount to 0 to signal the reversion.
+            netPayoutAmount = 0;
+
+            // Add undistributed amount back to project's balance.
+            store.recordAddedBalanceFor(_projectId, _amount);
+
+            emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
+          }
+        else
+          try
+            _terminal.pay{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
+              _split.projectId,
+              netPayoutAmount,
+              token,
+              _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
+              0,
+              _split.preferClaimed,
+              '',
+              _projectMetadata
+            )
+          {} catch (bytes memory reason) {
+            // Trigger any inhereted post-transfer cancelation logic.
+            _cancelTransferTo(address(_terminal), netPayoutAmount);
+
+            // Set the net payout amount to 0 to signal the reversion.
+            netPayoutAmount = 0;
+
+            // Add undistributed amount back to project's balance.
+            store.recordAddedBalanceFor(_projectId, _amount);
+
+            emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
+          }
       }
-
-      // Trigger any inherited pre-transfer logic.
-      _beforeTransferTo(address(_terminal), netPayoutAmount);
-
-      // Send the projectId in the metadata.
-      bytes memory _projectMetadata = new bytes(32);
-      _projectMetadata = bytes(abi.encodePacked(_projectId));
-
-      // Add to balance if prefered.
-      if (_split.preferAddToBalance)
-        try
-          _terminal.addToBalanceOf{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
-            _split.projectId,
-            netPayoutAmount,
-            token,
-            '',
-            _projectMetadata
-          )
-        {} catch (bytes memory reason) {
-          // Trigger any inhereted post-transfer cancelation logic.
-          _cancelTransferTo(address(_terminal), netPayoutAmount);
-
-          // Set the net payout amount to 0 to signal the reversion.
-          netPayoutAmount = 0;
-
-          // Add undistributed amount back to project's balance.
-          store.recordAddedBalanceFor(_projectId, _amount);
-
-          emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
-        }
-      else
-        try
-          _terminal.pay{value: token == JBTokens.ETH ? netPayoutAmount : 0}(
-            _split.projectId,
-            netPayoutAmount,
-            token,
-            _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
-            0,
-            _split.preferClaimed,
-            '',
-            _projectMetadata
-          )
-        {} catch (bytes memory reason) {
-          // Trigger any inhereted post-transfer cancelation logic.
-          _cancelTransferTo(address(_terminal), netPayoutAmount);
-
-          // Set the net payout amount to 0 to signal the reversion.
-          netPayoutAmount = 0;
-
-          // Add undistributed amount back to project's balance.
-          store.recordAddedBalanceFor(_projectId, _amount);
-
-          emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
-        }
     } else {
       // Keep a reference to the beneficiary.
       address payable _beneficiary = _split.beneficiary != address(0)
