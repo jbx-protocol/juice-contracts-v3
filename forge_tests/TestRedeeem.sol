@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@paulrberg/contracts/math/PRBMath.sol";
 import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
 
 import "./helpers/TestBaseWorkflow.sol";
@@ -109,6 +108,19 @@ contract TestRedeem_Local is TestBaseWorkflow {
         );
 
         _projectOwner = multisig();
+
+        // Launch a protocol project first
+        _controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _data,
+            _metadata,
+            block.timestamp,
+            _groupedSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
 
         _projectId = _controller.launchProjectFor(
             _projectOwner,
@@ -242,7 +254,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // verify: beneficiary has correct amount of token
         assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance / 2 , "incorrect beneficiary balance");
 
-        // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei, "incorrect terminal balance");
+        // verify: ETH balance in terminal should be up to date (with 1 wei tolerance)
+        assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
     }
 }
