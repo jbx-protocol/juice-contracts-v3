@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import './../structs/JBPayDelegateAllocation.sol';
+import './../structs/JBPayDelegateAllocation3_1_1.sol';
 import './../structs/JBPayParamsData.sol';
 import './../structs/JBRedeemParamsData.sol';
-import './../structs/JBRedemptionDelegateAllocation.sol';
+import './../structs/JBRedemptionDelegateAllocation3_1_1.sol';
 
 /**
   @title
@@ -19,7 +19,7 @@ import './../structs/JBRedemptionDelegateAllocation.sol';
   Adheres to:
   IERC165 for adequate interface integration
 */
-interface IJBFundingCycleDataSource is IERC165 {
+interface IJBFundingCycleDataSource3_1_1 is IERC165 {
   /**
     @notice
     The datasource implementation for JBPaymentTerminal.pay(..)
@@ -47,7 +47,7 @@ interface IJBFundingCycleDataSource is IERC165 {
     returns (
       uint256 weight,
       string memory memo,
-      JBPayDelegateAllocation[] memory delegateAllocations
+      JBPayDelegateAllocation3_1_1[] memory delegateAllocations
     );
 
   /**
@@ -80,6 +80,6 @@ interface IJBFundingCycleDataSource is IERC165 {
     returns (
       uint256 reclaimAmount,
       string memory memo,
-      JBRedemptionDelegateAllocation[] memory delegateAllocations
+      JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
     );
 }

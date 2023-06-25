@@ -57,7 +57,7 @@ contract JBERC20PaymentTerminal3_1_1 is JBPayoutRedemptionPaymentTerminal3_1_1 {
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    address _store,
     address _owner
   )
     JBPayoutRedemptionPaymentTerminal3_1_1(

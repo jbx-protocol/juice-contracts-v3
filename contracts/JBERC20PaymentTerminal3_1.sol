@@ -57,7 +57,7 @@ contract JBERC20PaymentTerminal3_1 is JBPayoutRedemptionPaymentTerminal3_1 {
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    address _store,
     address _owner
   )
     JBPayoutRedemptionPaymentTerminal3_1(
@@ -91,11 +91,7 @@ contract JBERC20PaymentTerminal3_1 is JBPayoutRedemptionPaymentTerminal3_1 {
     @param _to The address to which the transfer should go.
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal override {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
     _from == address(this)
       ? IERC20(token).safeTransfer(_to, _amount)
       : IERC20(token).safeTransferFrom(_from, _to, _amount);

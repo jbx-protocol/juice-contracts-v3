@@ -13,7 +13,6 @@ import './IJBPrices.sol';
 import './IJBProjects.sol';
 import './IJBRedemptionDelegate.sol';
 import './IJBRedemptionTerminal.sol';
-import './IJBSingleTokenPaymentTerminalStore.sol';
 import './IJBSplitsStore.sol';
 
 interface IJBPayoutRedemptionPaymentTerminal3_1 is
@@ -170,7 +169,7 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   function prices() external view returns (IJBPrices);
 
-  function store() external view returns (IJBSingleTokenPaymentTerminalStore);
+  function store() external view returns (address);
 
   function baseWeightCurrency() external view returns (uint256);
 

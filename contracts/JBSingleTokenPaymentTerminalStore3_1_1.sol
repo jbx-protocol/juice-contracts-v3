@@ -3,9 +3,10 @@ pragma solidity ^0.8.16;
 
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@paulrberg/contracts/math/PRBMath.sol';
-import './interfaces/IJBController.sol';
+import './interfaces/IJBController3_1.sol';
 import './interfaces/IJBFundingCycleDataSource.sol';
-import './interfaces/IJBSingleTokenPaymentTerminalStore.sol';
+import './interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
+import './interfaces/IJBFundingCycleDataSource3_1_1.sol';
 import './libraries/JBConstants.sol';
 import './libraries/JBCurrencies.sol';
 import './libraries/JBFixedPointNumber.sol';
@@ -24,8 +25,14 @@ import './structs/JBPayParamsData.sol';
   @dev
   Inherits from -
   ReentrancyGuard: Contract module that helps prevent reentrant calls to a function.
+
+  @dev
+  This Store expects a project's controller to be an IJBController3_1. This is the only difference between this version and the original.
 */
-contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPaymentTerminalStore {
+contract JBSingleTokenPaymentTerminalStore3_1_1 is
+  ReentrancyGuard,
+  IJBSingleTokenPaymentTerminalStore3_1_1
+{
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
 
@@ -215,8 +222,8 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     if (_currentOverflow == 0) return 0;
 
     // Get the number of outstanding tokens the project has.
-    uint256 _totalSupply = IJBController(directory.controllerOf(_projectId))
-      .totalOutstandingTokensOf(_projectId, _fundingCycle.reservedRate());
+    uint256 _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
+      .totalOutstandingTokensOf(_projectId);
 
     // Can't redeem more tokens that is in the supply.
     if (_tokenCount > _totalSupply) return 0;
@@ -323,7 +330,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 tokenCount,
-      JBPayDelegateAllocation[] memory delegateAllocations,
+      JBPayDelegateAllocation3_1_1[] memory delegateAllocations,
       string memory memo
     )
   {
@@ -354,8 +361,9 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
         _memo,
         _metadata
       );
-      (_weight, memo, delegateAllocations) = IJBFundingCycleDataSource(fundingCycle.dataSource())
-        .payParams(_data);
+      (_weight, memo, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
+        fundingCycle.dataSource()
+      ).payParams(_data);
     }
     // Otherwise use the funding cycle's weight
     else {
@@ -449,7 +457,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 reclaimAmount,
-      JBRedemptionDelegateAllocation[] memory delegateAllocations,
+      JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations,
       string memory memo
     )
   {
@@ -489,10 +497,8 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
           );
 
         // Get the number of outstanding tokens the project has.
-        _totalSupply = IJBController(directory.controllerOf(_projectId)).totalOutstandingTokensOf(
-          _projectId,
-          fundingCycle.reservedRate()
-        );
+        _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
+          .totalOutstandingTokensOf(_projectId);
 
         // Can't redeem more tokens that is in the supply.
         if (_tokenCount > _totalSupply) revert INSUFFICIENT_TOKENS();
@@ -534,7 +540,7 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
             _memo,
             _metadata
           );
-          (reclaimAmount, memo, delegateAllocations) = IJBFundingCycleDataSource(
+          (reclaimAmount, memo, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
             fundingCycle.dataSource()
           ).redeemParams(_data);
         }
@@ -613,9 +619,9 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     ][_projectId][fundingCycle.number] + _amount;
 
     // Amount must be within what is still distributable.
-    (uint256 _distributionLimitOf, uint256 _distributionLimitCurrencyOf) = IJBController(
+    (uint256 _distributionLimitOf, uint256 _distributionLimitCurrencyOf) = IJBController3_1(
       directory.controllerOf(_projectId)
-    ).distributionLimitOf(
+    ).fundAccessConstraintsStore().distributionLimitOf(
         _projectId,
         fundingCycle.configuration,
         IJBSingleTokenPaymentTerminal(msg.sender),
@@ -691,9 +697,9 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     ][_projectId][fundingCycle.configuration] + _amount;
 
     // There must be sufficient allowance available.
-    (uint256 _overflowAllowanceOf, uint256 _overflowAllowanceCurrency) = IJBController(
+    (uint256 _overflowAllowanceOf, uint256 _overflowAllowanceCurrency) = IJBController3_1(
       directory.controllerOf(_projectId)
-    ).overflowAllowanceOf(
+    ).fundAccessConstraintsStore().overflowAllowanceOf(
         _projectId,
         fundingCycle.configuration,
         IJBSingleTokenPaymentTerminal(msg.sender),
@@ -869,9 +875,14 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     if (_balanceOf == 0) return 0;
 
     // Get a reference to the distribution limit during the funding cycle.
-    (uint256 _distributionLimit, uint256 _distributionLimitCurrency) = IJBController(
+    (uint256 _distributionLimit, uint256 _distributionLimitCurrency) = IJBController3_1(
       directory.controllerOf(_projectId)
-    ).distributionLimitOf(_projectId, _fundingCycle.configuration, _terminal, _terminal.token());
+    ).fundAccessConstraintsStore().distributionLimitOf(
+        _projectId,
+        _fundingCycle.configuration,
+        _terminal,
+        _terminal.token()
+      );
 
     // Get a reference to the amount still distributable during the funding cycle.
     uint256 _distributionLimitRemaining = _distributionLimit -
