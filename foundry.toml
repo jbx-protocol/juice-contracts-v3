@@ -20,7 +20,7 @@ block_difficulty = 0
 sizes=true
 match_contract = "_Local" # Do not run fork tests
 
-[profile.CI] # run via FOUNDRY_PROFILE=CI foundry test
+[profile.fork] # run via FOUNDRY_PROFILE=fork foundry test
 fs_permissions = [{ access = "read", path = "./deployments/mainnet"}] # Get the deployment addresses for forking
 match_contract = "_Fork"
 
