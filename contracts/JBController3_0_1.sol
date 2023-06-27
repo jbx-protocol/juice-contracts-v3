@@ -1,41 +1,41 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
-import '@openzeppelin/contracts/utils/math/SafeCast.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './abstract/JBOperatable.sol';
-import './interfaces/IJBController3_0_1.sol';
-import './interfaces/IJBController.sol';
-import './interfaces/IJBMigratable.sol';
-import './interfaces/IJBOperatorStore.sol';
-import './interfaces/IJBPaymentTerminal.sol';
-import './interfaces/IJBProjects.sol';
+import {ERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {SafeCast} from '@openzeppelin/contracts/utils/math/SafeCast.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {JBOperatable} from './abstract/JBOperatable.sol';
+import {JBBallotState} from './enums/JBBallotState.sol';
+import {IJBController3_0_1} from './interfaces/IJBController3_0_1.sol';
+import {IJBController} from './interfaces/IJBController.sol';
+import {IJBDirectory} from './interfaces/IJBDirectory.sol';
+import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {IJBMigratable} from './interfaces/IJBMigratable.sol';
+import {IJBOperatable} from './interfaces/IJBOperatable.sol';
+import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
+import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
+import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
-import './libraries/JBConstants.sol';
-import './libraries/JBFundingCycleMetadataResolver.sol';
-import './libraries/JBOperations.sol';
-import './libraries/JBSplitsGroups.sol';
+import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
+import {IJBTokenStore} from './interfaces/IJBTokenStore.sol';
+import {JBConstants} from './libraries/JBConstants.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBOperations} from './libraries/JBOperations.sol';
+import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
+import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
+import {JBFundAccessConstraints} from './structs/JBFundAccessConstraints.sol';
+import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBFundingCycleData} from './structs/JBFundingCycleData.sol';
+import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
+import {JBGroupedSplits} from './structs/JBGroupedSplits.sol';
+import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
+import {JBSplit} from './structs/JBSplit.sol';
 
-/**
-  @notice
-  Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-
-  @dev
-  Adheres to -
-  IJBController3_1: General interface for the generic controller methods in this contract that interacts with funding cycles and tokens according to the protocol's rules.
-  IJBMigratable: Allows migrating to this contract, with a hook called to prepare for the migration.
-
-  @dev
-  Inherits from -
-  JBOperatable: Several functions in this contract can only be accessed by a project owner, or an address that has been preconfifigured to be an operator of the project.
-  ERC165: Introspection on interface adherance. 
-
-  @dev
-  This Controller manages a project's reserved tokens explicitly instead of through a passive tracker property. 
-  It is backwards compatible with the original IJBController, and exposes convenience view methods as part of IJBController3_1 for clearer queries.
-*/
+/// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
+/// @dev This Controller manages a project's reserved tokens explicitly instead of through a passive tracker property.
+/// @dev It is backwards compatible with the original IJBController, and exposes convenience view methods as part of IJBController3_1 for clearer queries.
 contract JBController3_0_1 is
   JBOperatable,
   ERC165,
@@ -50,7 +50,6 @@ contract JBController3_0_1 is
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
   error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_DELEGATE();
-  error CANT_MIGRATE_TO_CURRENT_CONTROLLER();
   error FUNDING_CYCLE_ALREADY_LAUNCHED();
   error INVALID_BALLOT_REDEMPTION_RATE();
   error INVALID_DISTRIBUTION_LIMIT();
@@ -63,110 +62,67 @@ contract JBController3_0_1 is
   error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
   error NO_BURNABLE_TOKENS();
   error NOT_CURRENT_CONTROLLER();
-  error OVERFLOW_ALERT();
   error ZERO_TOKENS_TO_MINT();
 
   //*********************************************************************//
   // --------------------- internal stored properties ------------------ //
   //*********************************************************************//
 
-  /**
-    @notice
-    Data regarding the distribution limit of a project during a configuration.
-
-    @dev
-    bits 0-231: The amount of token that a project can distribute per funding cycle.
-
-    @dev
-    bits 232-255: The currency of amount that a project can distribute.
-
-    _projectId The ID of the project to get the packed distribution limit data of.
-    _configuration The configuration during which the packed distribution limit data applies.
-    _terminal The terminal from which distributions are being limited.
-    _token The token for which distributions are being limited.
-  */
+  /// @notice Data regarding the distribution limit of a project during a configuration.
+  /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
+  /// @dev bits 232-255: The currency of amount that a project can distribute.
+  /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
+  /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
+  /// @custom:param _terminal The terminal from which distributions are being limited.
+  /// @custom:param _token The token for which distributions are being limited.
   mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
     internal _packedDistributionLimitDataOf;
 
-  /**
-    @notice
-    Data regarding the overflow allowance of a project during a configuration.
-
-    @dev
-    bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
-
-    @dev
-    bits 232-255: The currency of the amount of overflow that a project is allowed to tap.
-
-    _projectId The ID of the project to get the packed overflow allowance data of.
-    _configuration The configuration during which the packed overflow allowance data applies.
-    _terminal The terminal managing the overflow.
-    _token The token for which overflow is being allowed.
-  */
+  /// @notice Data regarding the overflow allowance of a project during a configuration.
+  /// @dev bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
+  /// @dev bits 232-255: The currency of the amount of overflow that a project is allowed to tap.
+  /// @custom:param _projectId The ID of the project to get the packed overflow allowance data of.
+  /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
+  /// @custom:param _terminal The terminal managing the overflow.
+  /// @custom:param _token The token for which overflow is being allowed.
   mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
     internal _packedOverflowAllowanceDataOf;
 
-  /**
-    @notice
-    The current undistributed reserved token balance of.
-
-    _projectId The ID of the project to get a reserved token balance of.
-  */
+  /// @notice The current undistributed reserved token balance of.
+  /// @custom:param _projectId The ID of the project to get a reserved token balance of.
   mapping(uint256 => uint256) internal _reservedTokenBalanceOf;
 
   //*********************************************************************//
   // --------------- public immutable stored properties ---------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Mints ERC-721's that represent project ownership.
-  */
+  /// @notice Mints ERC-721's that represent project ownership.
   IJBProjects public immutable override projects;
 
-  /**
-    @notice
-    The contract storing all funding cycle configurations.
-  */
+  /// @notice The contract storing all funding cycle configurations.
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
-  /**
-    @notice
-    The contract that manages token minting and burning.
-  */
+  /// @notice The contract that manages token minting and burning.
   IJBTokenStore public immutable override tokenStore;
 
-  /**
-    @notice
-    The contract that stores splits for each project.
-  */
+  /// @notice The contract that stores splits for each project.
   IJBSplitsStore public immutable override splitsStore;
 
-  /**
-    @notice
-    The directory of terminals and controllers for projects.
-  */
+  /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The amount of token that a project can distribute per funding cycle, and the currency it's in terms of.
-
-    @dev
-    The number of decimals in the returned fixed point amount is the same as that of the specified terminal. 
-
-    @param _projectId The ID of the project to get the distribution limit of.
-    @param _configuration The configuration during which the distribution limit applies.
-    @param _terminal The terminal from which distributions are being limited.
-    @param _token The token for which the distribution limit applies.
-
-    @return The distribution limit, as a fixed point number with the same number of decimals as the provided terminal.
-    @return The currency of the distribution limit.
-  */
+  /// @notice The amount of token that a project can distribute per funding cycle, and the currency it's in terms of.
+  /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
+  /// @param _projectId The ID of the project to get the distribution limit of.
+  /// @param _configuration The configuration during which the distribution limit applies.
+  /// @param _terminal The terminal from which distributions are being limited.
+  /// @param _token The token for which the distribution limit applies.
+  /// @return The distribution limit, as a fixed point number with the same number of decimals as the provided terminal.
+  /// @return The currency of the distribution limit.
   function distributionLimitOf(
     uint256 _projectId,
     uint256 _configuration,
@@ -180,21 +136,14 @@ contract JBController3_0_1 is
     return (uint256(uint232(_data)), _data >> 232);
   }
 
-  /**
-    @notice
-    The amount of overflow that a project is allowed to tap into on-demand throughout a configuration, and the currency it's in terms of.
-
-    @dev
-    The number of decimals in the returned fixed point amount is the same as that of the specified terminal. 
-
-    @param _projectId The ID of the project to get the overflow allowance of.
-    @param _configuration The configuration of the during which the allowance applies.
-    @param _terminal The terminal managing the overflow.
-    @param _token The token for which the overflow allowance applies.
-
-    @return The overflow allowance, as a fixed point number with the same number of decimals as the provided terminal.
-    @return The currency of the overflow allowance.
-  */
+  /// @notice The amount of overflow that a project is allowed to tap into on-demand throughout a configuration, and the currency it's in terms of.
+  /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
+  /// @param _projectId The ID of the project to get the overflow allowance of.
+  /// @param _configuration The configuration of the during which the allowance applies.
+  /// @param _terminal The terminal managing the overflow.
+  /// @param _token The token for which the overflow allowance applies.
+  /// @return The overflow allowance, as a fixed point number with the same number of decimals as the provided terminal.
+  /// @return The currency of the overflow allowance.
   function overflowAllowanceOf(
     uint256 _projectId,
     uint256 _configuration,
@@ -208,15 +157,10 @@ contract JBController3_0_1 is
     return (uint256(uint232(_data)), _data >> 232);
   }
 
-  /** 
-    @notice
-    A project's funding cycle for the specified configuration along with its metadata.
-
-    @param _projectId The ID of the project to which the funding cycle belongs.
-  
-    @return fundingCycle The funding cycle.
-    @return metadata The funding cycle's metadata.
-  */
+  /// @notice A project's funding cycle for the specified configuration along with its metadata.
+  /// @param _projectId The ID of the project to which the funding cycle belongs.
+  /// @return fundingCycle The funding cycle.
+  /// @return metadata The funding cycle's metadata.
   function getFundingCycleOf(
     uint256 _projectId,
     uint256 _configuration
@@ -230,16 +174,11 @@ contract JBController3_0_1 is
     metadata = fundingCycle.expandMetadata();
   }
 
-  /** 
-    @notice
-    A project's latest configured funding cycle along with its metadata and the ballot state of the configuration.
-
-    @param _projectId The ID of the project to which the funding cycle belongs.
-  
-    @return fundingCycle The latest configured funding cycle.
-    @return metadata The latest configured funding cycle's metadata.
-    @return ballotState The state of the configuration.
-  */
+  /// @notice A project's latest configured funding cycle along with its metadata and the ballot state of the configuration.
+  /// @param _projectId The ID of the project to which the funding cycle belongs.
+  /// @return fundingCycle The latest configured funding cycle.
+  /// @return metadata The latest configured funding cycle's metadata.
+  /// @return ballotState The state of the configuration.
   function latestConfiguredFundingCycleOf(
     uint256 _projectId
   )
@@ -256,15 +195,10 @@ contract JBController3_0_1 is
     metadata = fundingCycle.expandMetadata();
   }
 
-  /** 
-    @notice
-    A project's current funding cycle along with its metadata.
-
-    @param _projectId The ID of the project to which the funding cycle belongs.
-  
-    @return fundingCycle The current funding cycle.
-    @return metadata The current funding cycle's metadata.
-  */
+  /// @notice A project's current funding cycle along with its metadata.
+  /// @param _projectId The ID of the project to which the funding cycle belongs.
+  /// @return fundingCycle The current funding cycle.
+  /// @return metadata The current funding cycle's metadata.
   function currentFundingCycleOf(
     uint256 _projectId
   )
@@ -277,15 +211,10 @@ contract JBController3_0_1 is
     metadata = fundingCycle.expandMetadata();
   }
 
-  /** 
-    @notice
-    A project's queued funding cycle along with its metadata.
-
-    @param _projectId The ID of the project to which the funding cycle belongs.
-  
-    @return fundingCycle The queued funding cycle.
-    @return metadata The queued funding cycle's metadata.
-  */
+  /// @notice A project's queued funding cycle along with its metadata.
+  /// @param _projectId The ID of the project to which the funding cycle belongs.
+  /// @return fundingCycle The queued funding cycle.
+  /// @return metadata The queued funding cycle's metadata.
   function queuedFundingCycleOf(
     uint256 _projectId
   )
@@ -298,30 +227,18 @@ contract JBController3_0_1 is
     metadata = fundingCycle.expandMetadata();
   }
 
-  /**	
-    @notice	
-    Gets the amount of reserved tokens that a project has available to distribute.	
-
-    @param _projectId The ID of the project to get a reserved token balance of.	
-
-    @return The current amount of reserved tokens.	
-  */
+  /// @notice	Gets the amount of reserved tokens that a project has available to distribute.
+  /// @param _projectId The ID of the project to get a reserved token balance of.
+  /// @return The current amount of reserved tokens.
   function reservedTokenBalanceOf(uint256 _projectId) external view override returns (uint256) {
     return _reservedTokenBalanceOf[_projectId];
   }
 
-  /**	
-    @notice	
-    Gets the amount of reserved tokens that a project has available to distribute.	
-
-    @dev
-    This is just for IJBController backwards compatibility.
-
-    @param _projectId The ID of the project to get a reserved token balance of.	
-    @param _reservedRate The reserved rate to use when making the calculation.	
-
-    @return The current amount of reserved tokens.	
-  */
+  /// @notice	Gets the amount of reserved tokens that a project has available to distribute.
+  /// @dev This is just for IJBController backwards compatibility.
+  /// @param _projectId The ID of the project to get a reserved token balance of.
+  /// @param _reservedRate The reserved rate to use when making the calculation.
+  /// @return The current amount of reserved tokens.
   function reservedTokenBalanceOf(
     uint256 _projectId,
     uint256 _reservedRate
@@ -330,18 +247,11 @@ contract JBController3_0_1 is
     return _reservedTokenBalanceOf[_projectId];
   }
 
-  /**	
-    @notice	
-    Gets the current total amount of outstanding tokens for a project, given a reserved rate.	
-
-    @dev
-    This is just for IJBController backwards compatibility.
-
-    @param _projectId The ID of the project to get total outstanding tokens of.	
-    @param _reservedRate The reserved rate to use when making the calculation.	
-
-    @return The current total amount of outstanding tokens for the project.	
-  */
+  /// @notice	Gets the current total amount of outstanding tokens for a project, given a reserved rate.
+  /// @dev This is just for IJBController backwards compatibility.
+  /// @param _projectId The ID of the project to get total outstanding tokens of.
+  /// @param _reservedRate The reserved rate to use when making the calculation.
+  /// @return The current total amount of outstanding tokens for the project.
   function totalOutstandingTokensOf(
     uint256 _projectId,
     uint256 _reservedRate
@@ -355,28 +265,17 @@ contract JBController3_0_1 is
   // -------------------------- public views --------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Gets the current total amount of outstanding tokens for a project.
-
-    @param _projectId The ID of the project to get total outstanding tokens of.
-
-    @return The current total amount of outstanding tokens for the project.
-  */
+  /// @notice Gets the current total amount of outstanding tokens for a project.
+  /// @param _projectId The ID of the project to get total outstanding tokens of.
+  /// @return The current total amount of outstanding tokens for the project.
   function totalOutstandingTokensOf(uint256 _projectId) public view override returns (uint256) {
     // Add the reserved tokens to the total supply.
     return tokenStore.totalSupplyOf(_projectId) + _reservedTokenBalanceOf[_projectId];
   }
 
-  /**
-    @notice
-    Indicates if this contract adheres to the specified interface.
-
-    @dev 
-    See {IERC165-supportsInterface}.
-
-    @param _interfaceId The ID of the interface to check for adherance to.
-  */
+  /// @notice Indicates if this contract adheres to the specified interface.
+  /// @dev See {IERC165-supportsInterface}.
+  /// @param _interfaceId The ID of the interface to check for adherance to.
   function supportsInterface(
     bytes4 _interfaceId
   ) public view virtual override(ERC165, IERC165) returns (bool) {
@@ -391,14 +290,12 @@ contract JBController3_0_1 is
   // ---------------------------- constructor -------------------------- //
   //*********************************************************************//
 
-  /**
-    @param _operatorStore A contract storing operator assignments.
-    @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-    @param _directory A contract storing directories of terminals and controllers for each project.
-    @param _fundingCycleStore A contract storing all funding cycle configurations.
-    @param _tokenStore A contract that manages token minting and burning.
-    @param _splitsStore A contract that stores splits for each project.
-  */
+  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+  /// @param _directory A contract storing directories of terminals and controllers for each project.
+  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
+  /// @param _tokenStore A contract that manages token minting and burning.
+  /// @param _splitsStore A contract that stores splits for each project.
   constructor(
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
@@ -418,28 +315,19 @@ contract JBController3_0_1 is
   // --------------------- external transactions ----------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first funding cycle, and set up any splits.
-
-    @dev
-    Each operation within this transaction can be done in sequence separately.
-
-    @dev
-    Anyone can deploy a project on an owner's behalf.
-
-    @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
-    @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
-    @param _data Data that defines the project's first funding cycle. These properties will remain fixed for the duration of the funding cycle.
-    @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
-    @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
-    @param _groupedSplits An array of splits to set for any number of groups. 
-    @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
-    @param _terminals Payment terminals to add for the project.
-    @param _memo A memo to pass along to the emitted event.
-
-    @return projectId The ID of the project.
-  */
+  /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first funding cycle, and set up any splits.
+  /// @dev Each operation within this transaction can be done in sequence separately.
+  /// @dev Anyone can deploy a project on an owner's behalf.
+  /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
+  /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
+  /// @param _data Data that defines the project's first funding cycle. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
+  /// @param _groupedSplits An array of splits to set for any number of groups.
+  /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
+  /// @param _terminals Payment terminals to add for the project.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @return projectId The ID of the project.
   function launchProjectFor(
     address _owner,
     JBProjectMetadata calldata _projectMetadata,
@@ -476,27 +364,18 @@ contract JBController3_0_1 is
     emit LaunchProject(_configuration, projectId, _memo, msg.sender);
   }
 
-  /**
-    @notice
-    Creates a funding cycle for an already existing project ERC-721.
-
-    @dev
-    Each operation within this transaction can be done in sequence separately.
-
-    @dev
-    Only a project owner or operator can launch its funding cycles.
-
-    @param _projectId The ID of the project to launch funding cycles for.
-    @param _data Data that defines the project's first funding cycle. These properties will remain fixed for the duration of the funding cycle.
-    @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
-    @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
-    @param _groupedSplits An array of splits to set for any number of groups. 
-    @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
-    @param _terminals Payment terminals to add for the project.
-    @param _memo A memo to pass along to the emitted event.
-
-    @return configuration The configuration of the funding cycle that was successfully created.
-  */
+  /// @notice Creates a funding cycle for an already existing project ERC-721.
+  /// @dev Each operation within this transaction can be done in sequence separately.
+  /// @dev Only a project owner or operator can launch its funding cycles.
+  /// @param _projectId The ID of the project to launch funding cycles for.
+  /// @param _data Data that defines the project's first funding cycle. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
+  /// @param _groupedSplits An array of splits to set for any number of groups.
+  /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
+  /// @param _terminals Payment terminals to add for the project.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @return configuration The configuration of the funding cycle that was successfully created.
   function launchFundingCyclesFor(
     uint256 _projectId,
     JBFundingCycleData calldata _data,
@@ -536,23 +415,16 @@ contract JBController3_0_1 is
     emit LaunchFundingCycles(configuration, _projectId, _memo, msg.sender);
   }
 
-  /**
-    @notice
-    Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's ballot.
-
-    @dev
-    Only a project's owner or a designated operator can configure its funding cycles.
-
-    @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    @param _data Data that defines the funding cycle. These properties will remain fixed for the duration of the funding cycle.
-    @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
-    @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
-    @param _groupedSplits An array of splits to set for any number of groups. 
-    @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
-    @param _memo A memo to pass along to the emitted event.
-
-    @return configuration The configuration of the funding cycle that was successfully reconfigured.
-  */
+  /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's ballot.
+  /// @dev Only a project's owner or a designated operator can configure its funding cycles.
+  /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
+  /// @param _data Data that defines the funding cycle. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
+  /// @param _groupedSplits An array of splits to set for any number of groups.
+  /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @return configuration The configuration of the funding cycle that was successfully reconfigured.
   function reconfigureFundingCyclesOf(
     uint256 _projectId,
     JBFundingCycleData calldata _data,
@@ -581,22 +453,15 @@ contract JBController3_0_1 is
     emit ReconfigureFundingCycles(configuration, _projectId, _memo, msg.sender);
   }
 
-  /**
-    @notice
-    Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current funding cycle configuration.
-
-    @dev
-    Only a project's owner, a designated operator, one of its terminals, or the current data source can mint its tokens.
-
-    @param _projectId The ID of the project to which the tokens being minted belong.
-    @param _tokenCount The amount of tokens to mint in total, counting however many should be reserved.
-    @param _beneficiary The account that the tokens are being minted for.
-    @param _memo A memo to pass along to the emitted event.
-    @param _preferClaimedTokens A flag indicating whether a project's attached token contract should be minted if they have been issued.
-    @param _useReservedRate Whether to use the current funding cycle's reserved rate in the mint calculation.
-
-    @return beneficiaryTokenCount The amount of tokens minted for the beneficiary.
-  */
+  /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current funding cycle configuration.
+  /// @dev Only a project's owner, a designated operator, one of its terminals, or the current data source can mint its tokens.
+  /// @param _projectId The ID of the project to which the tokens being minted belong.
+  /// @param _tokenCount The amount of tokens to mint in total, counting however many should be reserved.
+  /// @param _beneficiary The account that the tokens are being minted for.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _preferClaimedTokens A flag indicating whether a project's attached token contract should be minted if they have been issued.
+  /// @param _useReservedRate Whether to use the current funding cycle's reserved rate in the mint calculation.
+  /// @return beneficiaryTokenCount The amount of tokens minted for the beneficiary.
   function mintTokensOf(
     uint256 _projectId,
     uint256 _tokenCount,
@@ -669,19 +534,13 @@ contract JBController3_0_1 is
     );
   }
 
-  /**
-    @notice
-    Burns a token holder's supply.
-
-    @dev
-    Only a token's holder, a designated operator, or a project's terminal can burn it.
-
-    @param _holder The account that is having its tokens burned.
-    @param _projectId The ID of the project to which the tokens being burned belong.
-    @param _tokenCount The number of tokens to burn.
-    @param _memo A memo to pass along to the emitted event.
-    @param _preferClaimedTokens A flag indicating whether a project's attached token contract should be burned first if they have been issued.
-  */
+  /// @notice Burns a token holder's supply.
+  /// @dev Only a token's holder, a designated operator, or a project's terminal can burn it.
+  /// @param _holder The account that is having its tokens burned.
+  /// @param _projectId The ID of the project to which the tokens being burned belong.
+  /// @param _tokenCount The number of tokens to burn.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _preferClaimedTokens A flag indicating whether a project's attached token contract should be burned first if they have been issued.
   function burnTokensOf(
     address _holder,
     uint256 _projectId,
@@ -717,15 +576,10 @@ contract JBController3_0_1 is
     emit BurnTokens(_holder, _projectId, _tokenCount, _memo, msg.sender);
   }
 
-  /**
-    @notice
-    Distributes all outstanding reserved tokens for a project.
-
-    @param _projectId The ID of the project to which the reserved tokens belong.
-    @param _memo A memo to pass along to the emitted event.
-
-    @return The amount of minted reserved tokens.
-  */
+  /// @notice Distributes all outstanding reserved tokens for a project.
+  /// @param _projectId The ID of the project to which the reserved tokens belong.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @return The amount of minted reserved tokens.
   function distributeReservedTokensOf(
     uint256 _projectId,
     string calldata _memo
@@ -733,31 +587,19 @@ contract JBController3_0_1 is
     return _distributeReservedTokensOf(_projectId, _memo);
   }
 
-  /**
-    @notice
-    Allows other controllers to signal to this one that a migration is expected for the specified project.
-
-    @dev
-    This controller should not yet be the project's controller.
-
-    @param _projectId The ID of the project that will be migrated to this controller.
-    @param _from The controller being migrated from.
-  */
+  /// @notice Allows other controllers to signal to this one that a migration is expected for the specified project.
+  /// @dev This controller should not yet be the project's controller.
+  /// @param _projectId The ID of the project that will be migrated to this controller.
+  /// @param _from The controller being migrated from.
   function prepForMigrationOf(uint256 _projectId, address _from) external virtual override {
     _projectId; // Prevents unused var compiler and natspec complaints.
     _from; // Prevents unused var compiler and natspec complaints.
   }
 
-  /**
-    @notice
-    Allows a project to migrate from this controller to another.
-
-    @dev
-    Only a project's owner or a designated operator can migrate it.
-
-    @param _projectId The ID of the project that will be migrated from this controller.
-    @param _to The controller to which the project is migrating.
-  */
+  /// @notice Allows a project to migrate from this controller to another.
+  /// @dev Only a project's owner or a designated operator can migrate it.
+  /// @param _projectId The ID of the project that will be migrated from this controller.
+  /// @param _to The controller to which the project is migrating.
   function migrate(
     uint256 _projectId,
     IJBMigratable _to
@@ -795,15 +637,10 @@ contract JBController3_0_1 is
   // ------------------------ internal functions ----------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Distributes all outstanding reserved tokens for a project.
-
-    @param _projectId The ID of the project to which the reserved tokens belong.
-    @param _memo A memo to pass along to the emitted event.
-
-    @return tokenCount The amount of minted reserved tokens.
-  */
+  /// @notice Distributes all outstanding reserved tokens for a project.
+  /// @param _projectId The ID of the project to which the reserved tokens belong.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @return tokenCount The amount of minted reserved tokens.
   function _distributeReservedTokensOf(
     uint256 _projectId,
     string memory _memo
@@ -849,17 +686,12 @@ contract JBController3_0_1 is
     );
   }
 
-  /**
-    @notice
-    Distribute tokens to the splits according to the specified funding cycle configuration.
-
-    @param _projectId The ID of the project for which reserved token splits are being distributed.
-    @param _domain The domain of the splits to distribute the reserved tokens between.
-    @param _group The group of the splits to distribute the reserved tokens between.
-    @param _amount The total amount of tokens to mint.
-
-    @return leftoverAmount If the splits percents dont add up to 100%, the leftover amount is returned.
-  */
+  /// @notice Distribute tokens to the splits according to the specified funding cycle configuration.
+  /// @param _projectId The ID of the project for which reserved token splits are being distributed.
+  /// @param _domain The domain of the splits to distribute the reserved tokens between.
+  /// @param _group The group of the splits to distribute the reserved tokens between.
+  /// @param _amount The total amount of tokens to mint.
+  /// @return leftoverAmount If the splits percents dont add up to 100%, the leftover amount is returned.
   function _distributeToReservedTokenSplitsOf(
     uint256 _projectId,
     uint256 _domain,
@@ -937,19 +769,14 @@ contract JBController3_0_1 is
     }
   }
 
-  /**
-    @notice
-    Configures a funding cycle and stores information pertinent to the configuration.
-
-    @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    @param _data Data that defines the funding cycle. These properties will remain fixed for the duration of the funding cycle.
-    @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
-    @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
-    @param _groupedSplits An array of splits to set for any number of groups. 
-    @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal.
-
-    @return configuration The configuration of the funding cycle that was successfully reconfigured.
-  */
+  /// @notice Configures a funding cycle and stores information pertinent to the configuration.
+  /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
+  /// @param _data Data that defines the funding cycle. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
+  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
+  /// @param _groupedSplits An array of splits to set for any number of groups.
+  /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal.
+  /// @return configuration The configuration of the funding cycle that was successfully reconfigured.
   function _configure(
     uint256 _projectId,
     JBFundingCycleData calldata _data,

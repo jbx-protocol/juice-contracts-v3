@@ -1,36 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import './abstract/JBControllerUtility.sol';
-import './abstract/JBOperatable.sol';
-import './interfaces/IJBTokenStore.sol';
-import './libraries/JBFundingCycleMetadataResolver.sol';
-import './libraries/JBOperations.sol';
-import './JBToken.sol';
+import {JBControllerUtility} from './abstract/JBControllerUtility.sol';
+import {JBOperatable} from './abstract/JBOperatable.sol';
+import {IJBDirectory} from './interfaces/IJBDirectory.sol';
+import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
+import {IJBProjects} from './interfaces/IJBProjects.sol';
+import {IJBToken} from './interfaces/IJBToken.sol';
+import {IJBTokenStore} from './interfaces/IJBTokenStore.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBOperations} from './libraries/JBOperations.sol';
+import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBToken} from './JBToken.sol';
 
-/**
-  @notice
-  Manage token minting, burning, and account balances.
-
-  @dev
-  Token balances can be either represented internally or claimed as ERC-20s into wallets.
-  This contract manages these two representations and allows claiming.
-
-  @dev
-  The total supply of a project's tokens and the balance of each account are calculated in this contract.
-
-  @dev
-  Each project can bring their own token if they prefer, and swap between tokens at any time.
-  
-  @dev
-  Adheres to -
-  IJBTokenStore: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  JBControllerUtility: Includes convenience functionality for checking if the message sender is the current controller of the project whose data is being manipulated.
-  JBOperatable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-*/
+/// @notice Manage token minting, burning, and account balances.
+/// @dev Token balances can be either represented internally or claimed as ERC-20s into wallets. This contract manages these two representations and allows claiming.
+/// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
+/// @dev Each project can bring their own token if they prefer, and swap between tokens at any time.
 contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
@@ -55,60 +42,36 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Mints ERC-721's that represent project ownership and transfers.
-  */
+  /// @notice Mints ERC-721's that represent project ownership and transfers.  
   IJBProjects public immutable override projects;
 
-  /**
-    @notice
-    The contract storing all funding cycle configurations.
-  */
+  /// @notice The contract storing all funding cycle configurations.  
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Each project's attached token contract.
-
-    _projectId The ID of the project to which the token belongs.
-  */
+  /// @notice Each project's attached token contract.
+  /// @custom:param _projectId The ID of the project to which the token belongs.  
   mapping(uint256 => IJBToken) public override tokenOf;
 
-  /**
-    @notice
-    The total supply of unclaimed tokens for each project.
-
-    _projectId The ID of the project to which the token belongs.
-  */
+  /// @notice The total supply of unclaimed tokens for each project.
+  /// @custom:param _projectId The ID of the project to which the token belongs.  
   mapping(uint256 => uint256) public override unclaimedTotalSupplyOf;
 
-  /**
-    @notice
-    Each holder's balance of unclaimed tokens for each project.
-
-    _holder The holder of balance.
-    _projectId The ID of the project to which the token belongs.
-  */
+  /// @notice Each holder's balance of unclaimed tokens for each project.
+  /// @custom:param _holder The holder of balance.
+  /// @custom:param _projectId The ID of the project to which the token belongs.
   mapping(address => mapping(uint256 => uint256)) public override unclaimedBalanceOf;
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The total balance of tokens a holder has for a specified project, including claimed and unclaimed tokens.
-
-    @param _holder The token holder to get a balance for.
-    @param _projectId The project to get the `_holder`s balance of.
-
-    @return balance The project token balance of the `_holder
-  */
+  /// @notice The total balance of tokens a holder has for a specified project, including claimed and unclaimed tokens.
+  /// @param _holder The token holder to get a balance for.
+  /// @return balance The project token balance of the `_holder  
   function balanceOf(address _holder, uint256 _projectId)
     external
     view
@@ -129,14 +92,8 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   // --------------------------- public views -------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The total supply of tokens for each project, including claimed and unclaimed tokens.
-
-    @param _projectId The ID of the project to get the total token supply of.
-
-    @return totalSupply The total supply of the project's tokens.
-  */
+  /// @notice The total supply of tokens for each project, including claimed and unclaimed tokens.
+  /// @param _projectId The ID of the project to get the total token supply of.
   function totalSupplyOf(uint256 _projectId) public view override returns (uint256 totalSupply) {
     // Get a reference to the total supply of the project's unclaimed tokens.
     totalSupply = unclaimedTotalSupplyOf[_projectId];
@@ -152,12 +109,10 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /**
-    @param _operatorStore A contract storing operator assignments.
-    @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-    @param _directory A contract storing directories of terminals and controllers for each project.
-    @param _fundingCycleStore A contract storing all funding cycle configurations.
-  */
+  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+  /// @param _directory A contract storing directories of terminals and controllers for each project.
+  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
   constructor(
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
@@ -172,22 +127,13 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Issues a project's ERC-20 tokens that'll be used when claiming tokens.
-
-    @dev
-    Deploys a project's ERC-20 token contract.
-
-    @dev
-    Only a project's owner or operator can issue its token.
-
-    @param _projectId The ID of the project being issued tokens.
-    @param _name The ERC-20's name.
-    @param _symbol The ERC-20's symbol.
-
-    @return token The token that was issued.
-  */
+  /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
+  /// @dev Deploys a project's ERC-20 token contract.
+  /// @dev Only a project's owner or operator can issue its token.
+  /// @param _projectId The ID of the project being issued tokens.
+  /// @param _name The ERC-20's name.
+  /// @param _symbol The ERC-20's symbol.
+  /// @return token The token that was issued.
   function issueFor(
     uint256 _projectId,
     string calldata _name,
@@ -203,7 +149,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
     // There must be a symbol.
     if (bytes(_symbol).length == 0) revert EMPTY_SYMBOL();
-
+  
     // The project shouldn't already have a token.
     if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
@@ -216,16 +162,10 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     emit Issue(_projectId, token, _name, _symbol, msg.sender);
   }
 
-  /**
-    @notice
-    Set a project's token if not already set.
-
-    @dev
-    Only a project's owner or operator can set its token.
-
-    @param _projectId The ID of the project to which the set token belongs.
-    @param _token The new token. 
-  */
+  /// @notice Set a project's token if not already set.
+  /// @dev Only a project's owner or operator can set its token.
+  /// @param _projectId The ID of the project to which the set token belongs.
+  /// @param _token The new token. 
   function setFor(uint256 _projectId, IJBToken _token)
     external
     override
@@ -246,18 +186,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     emit Set(_projectId, _token, msg.sender);
   }
 
-  /**
-    @notice
-    Mint new project tokens.
-
-    @dev
-    Only a project's current controller can mint its tokens.
-
-    @param _holder The address receiving the new tokens.
-    @param _projectId The ID of the project to which the tokens belong.
-    @param _amount The amount of tokens to mint.
-    @param _preferClaimedTokens A flag indicating whether there's a preference for minted tokens to be claimed automatically into the `_holder`s wallet if the project currently has a token contract attached.
-  */
+  /// @notice Mint new project tokens.
+  /// @dev Only a project's current controller can mint its tokens.
+  /// @param _holder The address receiving the new tokens.
+  /// @param _projectId The ID of the project to which the tokens belong.
+  /// @param _amount The amount of tokens to mint.
+  /// @param _preferClaimedTokens A flag indicating whether there's a preference for minted tokens to be claimed automatically into the `_holder`s wallet if the project currently has a token contract attached.
   function mintFor(
     address _holder,
     uint256 _projectId,
@@ -285,18 +219,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, _preferClaimedTokens, msg.sender);
   }
 
-  /**
-    @notice
-    Burns a project's tokens.
-
-    @dev
-    Only a project's current controller can burn its tokens.
-
-    @param _holder The address that owns the tokens being burned.
-    @param _projectId The ID of the project to which the burned tokens belong.
-    @param _amount The amount of tokens to burn.
-    @param _preferClaimedTokens A flag indicating whether there's a preference for tokens to burned from the `_holder`s wallet if the project currently has a token contract attached.
-  */
+  /// @notice Burns a project's tokens.
+  /// @dev Only a project's current controller can burn its tokens.
+  /// @param _holder The address that owns the tokens being burned.
+  /// @param _projectId The ID of the project to which the burned tokens belong.
+  /// @param _amount The amount of tokens to burn.
+  /// @param _preferClaimedTokens A flag indicating whether there's a preference for tokens to burned from the `_holder`s wallet if the project currently has a token contract attached.
   function burnFrom(
     address _holder,
     uint256 _projectId,
@@ -363,17 +291,11 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     );
   }
 
-  /**
-    @notice
-    Claims internally accounted for tokens into a holder's wallet.
-
-    @dev
-    Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
-
-    @param _holder The owner of the tokens being claimed.
-    @param _projectId The ID of the project whose tokens are being claimed.
-    @param _amount The amount of tokens to claim.
-  */
+  /// @notice Claims internally accounted for tokens into a holder's wallet.
+  /// @dev Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
+  /// @param _holder The owner of the tokens being claimed.
+  /// @param _projectId The ID of the project whose tokens are being claimed.
+  /// @param _amount The amount of tokens to claim.
   function claimFor(
     address _holder,
     uint256 _projectId,
@@ -405,18 +327,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     emit Claim(_holder, _projectId, _unclaimedBalance, _amount, msg.sender);
   }
 
-  /**
-    @notice
-    Allows a holder to transfer unclaimed tokens to another account.
-
-    @dev
-    Only a token holder or an operator can transfer its unclaimed tokens.
-
-    @param _holder The address to transfer tokens from.
-    @param _projectId The ID of the project whose tokens are being transferred.
-    @param _recipient The recipient of the tokens.
-    @param _amount The amount of tokens to transfer.
-  */
+  /// @notice Allows a holder to transfer unclaimed tokens to another account.
+  /// @dev Only a token holder or an operator can transfer its unclaimed tokens.
+  /// @param _holder The address to transfer tokens from.
+  /// @param _projectId The ID of the project whose tokens are being transferred.
+  /// @param _recipient The recipient of the tokens.
+  /// @param _amount The amount of tokens to transfer.
   function transferFrom(
     address _holder,
     uint256 _projectId,
