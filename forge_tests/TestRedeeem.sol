@@ -196,7 +196,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
     }
 
-    function testRedeemTerminal3_1_1() external {
+    function testRedeemTerminal3_1_1(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false
         uint96 payAmountInWei = 2 ether;
 
@@ -230,9 +230,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         uint256 _terminalBalanceInWei = payAmountInWei;
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei);
 
-
-
-        uint256 _tokenAmountToRedeem = 1 ether; //bound(_tokenAmountToRedeem, 100, _userTokenBalance);
+        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 100, _userTokenBalance);
 
         vm.prank(_userWallet);
         uint256 _reclaimAmtInWei = _terminal3_1_1.redeemTokensOf(
@@ -255,26 +253,37 @@ contract TestRedeem_Local is TestBaseWorkflow {
         );
 
         // Check: correct amount returned
-        uint256 _grossRedeemed = PRBMath.mulDiv(_tokenAmountToRedeem, 10**18, _weight) / 2; // 50% redemption rate
-        uint256 _fee =  _grossRedeemed - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25000000 + 1_000_000_000); // 2.5% fee
-        uint256 _netReceived = _grossRedeemed - _fee;
+
+        uint256 _grossRedeemed = PRBMath.mulDiv(_tokenAmountToRedeem, 10**18, _weight); // 50% redemption rate
+        uint256 _minusRedemptionRate =       PRBMath.mulDiv(
+                _tokenAmountToRedeem,
+                5000 +
+                PRBMath.mulDiv(
+                    _tokenAmountToRedeem,
+                    JBConstants.MAX_REDEMPTION_RATE - 5000,
+                    _userTokenBalance
+                ),
+                JBConstants.MAX_REDEMPTION_RATE
+            );
+
+        uint256 _fee =  _minusRedemptionRate - PRBMath.mulDiv(_minusRedemptionRate, 1_000_000_000, 25000000 + 1_000_000_000); // 2.5% fee
+        uint256 _netReceived = _minusRedemptionRate - _fee;
 
 // received 488000000000000 but calculated 487804878048780
 // fee      12200000000000  but calculated 12195121951220
 // total    500200000000000 but calculated 500000000000000 (pay 2ETH, redeem half of the tokens, redemption rate is 50%)
 
-        console.log("_grossRedeemed", _grossRedeemed);
-        console.log("_fee", _fee);
-        console.log("_netReceived", _netReceived);
+        // console.log("_grossRedeemed", _grossRedeemed);
+        // console.log("_minusRedemptionRate", _minusRedemptionRate);
+        // console.log("_fee", _fee);
+        // console.log("_netReceived", _netReceived);
 
-        // assertApproxEqAbs(_reclaimAmtInWei, _netReceived, 1);
+        assertEq(_reclaimAmtInWei, _netReceived);
 
-
-
-        // // verify: beneficiary has correct amount of token
-        // assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance - _tokenAmountToRedeem, "incorrect beneficiary balance");
+        // verify: beneficiary has correct amount of token
+        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance - _tokenAmountToRedeem, "incorrect beneficiary balance");
 
         // verify: ETH balance in terminal should be up to date (with 1 wei tolerance)
-        //assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
+        assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
     }
 }
