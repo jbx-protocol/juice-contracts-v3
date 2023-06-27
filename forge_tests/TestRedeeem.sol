@@ -261,13 +261,13 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
 // received 488000000000000 but calculated 487804878048780
 // fee      12200000000000  but calculated 12195121951220
+// total    500200000000000 but calculated 500000000000000 (pay 2ETH, redeem half of the tokens, redemption rate is 50%)
 
         console.log("_grossRedeemed", _grossRedeemed);
         console.log("_fee", _fee);
         console.log("_netReceived", _netReceived);
 
         // assertApproxEqAbs(_reclaimAmtInWei, _netReceived, 1);
-
 
 
 
