@@ -230,8 +230,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
         uint256 _terminalBalanceInWei = payAmountInWei;
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei);
 
-        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1e18, _userTokenBalance);
+        // Fuzz 1 to full balance redemption
+        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1, _userTokenBalance);
 
+        // Test: redeem
         vm.prank(_userWallet);
         uint256 _reclaimAmtInWei = _terminal3_1_1.redeemTokensOf(
             /* _holder */
@@ -252,7 +254,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
-        // Check: correct amount returned
+        // Check: correct amount returned, 50% redemption rate
         uint256 _grossRedeemed = PRBMath.mulDiv(
                 _tokenAmountToRedeem,
                 5000 +
@@ -264,12 +266,16 @@ contract TestRedeem_Local is TestBaseWorkflow {
                 JBConstants.MAX_REDEMPTION_RATE
             );
 
+        // Compute the fee taken
         uint256 _fee =  _grossRedeemed - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25000000 + 1_000_000_000); // 2.5% fee
+        
+        // Compute the net amount received, still in $project
         uint256 _netReceived = _grossRedeemed - _fee;
 
+        // Convert in actual ETH, based on the weight
         uint256 _convertedInEth = PRBMath.mulDiv(_netReceived, 1e18, _weight);
 
-        // Verify: correct amount returned
+        // Verify: correct amount returned (2 wei precision)
         assertApproxEqAbs(_reclaimAmtInWei, _convertedInEth, 2, "incorrect amount returned");
 
         // Verify: beneficiary received correct amount of ETH
@@ -278,7 +284,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // verify: beneficiary has correct amount of token
         assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance - _tokenAmountToRedeem, "incorrect beneficiary balance");
 
-        // verify: ETH balance in terminal should be up to date (with 1 wei tolerance)
+        // verify: ETH balance in terminal should be up to date (with 1 wei precision)
         assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
     }
 }
