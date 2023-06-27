@@ -11,7 +11,7 @@ require('solidity-coverage');
 
 dotenv.config();
 
-const defaultNetwork = 'localhost';
+const defaultNetwork = 'hardhat';
 
 function mnemonic() {
   try {

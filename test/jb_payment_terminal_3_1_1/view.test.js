@@ -6,8 +6,8 @@ import { makeSplits, packFundingCycleMetadata, setBalance } from '../helpers/uti
 import errors from '../helpers/errors.json';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import JBEthPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal.sol/JBETHPaymentTerminal.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import JBEthPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_1.sol/JBETHPaymentTerminal3_1_1.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';

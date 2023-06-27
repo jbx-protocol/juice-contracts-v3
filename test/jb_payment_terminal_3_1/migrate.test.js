@@ -5,9 +5,9 @@ import { setBalance } from '../helpers/utils';
 import errors from '../helpers/errors.json';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import JBEthPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal.sol/JBETHPaymentTerminal.json';
-import jbErc20PaymentTerminal from '../../artifacts/contracts/JBERC20PaymentTerminal.sol/JBERC20PaymentTerminal.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import JBEthPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
+import jbErc20PaymentTerminal from '../../artifacts/contracts/JBERC20PaymentTerminal3_1.sol/JBERC20PaymentTerminal3_1.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1.sol/JBSingleTokenPaymentTerminalStore3_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
@@ -125,10 +125,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::migrate(...)', function () {
       .returns(true);
 
     // addToBalanceOf _amount is 0 if ETH terminal
-    await mockJbEthPaymentTerminal.mock.addToBalanceOf
+    await mockJbEthPaymentTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, CURRENT_TERMINAL_BALANCE, TOKEN_ETH, '', '0x')
       .returns();
-    await mockJBERC20PaymentTerminal.mock.addToBalanceOf
+    await mockJBERC20PaymentTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, CURRENT_TERMINAL_BALANCE, NON_ETH_TOKEN, '', '0x')
       .returns();
 

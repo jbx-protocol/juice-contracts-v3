@@ -6,7 +6,7 @@ import errors from '../helpers/errors.json';
 import { packFundingCycleMetadata, setBalance } from '../helpers/utils.js';
 
 import jbDirectory from '../../artifacts/contracts/interfaces/IJBDirectory.sol/IJBDirectory.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge3_1.sol/IJBFeeGauge3_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/interfaces/IJBProjects.sol/IJBProjects.json';

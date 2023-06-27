@@ -5,16 +5,16 @@ import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { setBalance, packFundingCycleMetadata } from '../helpers/utils';
 import errors from '../helpers/errors.json';
 
-import jbController from '../../artifacts/contracts/interfaces/IJBController.sol/IJBController.json';
+import jbController from '../../artifacts/contracts/interfaces/IJBController3_1.sol/IJBController3_1.json';
 import jbDirectory from '../../artifacts/contracts/interfaces/IJBDirectory.sol/IJBDirectory.json';
 import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge3_1.sol/IJBFeeGauge3_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/interfaces/IJBProjects.sol/IJBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/interfaces/IJBSplitsStore.sol/IJBSplitsStore.json';
 import jbPrices from '../../artifacts/contracts/interfaces/IJBPrices.sol/IJBPrices.json';
-import jbRedemptionDelegate from '../../artifacts/contracts/interfaces/IJBRedemptionDelegate.sol/IJBRedemptionDelegate.json';
+import jbRedemptionDelegate from '../../artifacts/contracts/interfaces/IJBRedemptionDelegate3_1_1.sol/IJBRedemptionDelegate3_1_1.json';
 
 describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function () {
   const AMOUNT = 50000;
@@ -25,7 +25,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
   const ADJUSTED_MEMO = 'test test memo';
   const PROJECT_ID = 13;
   const WEIGHT = 1000;
-  const METADATA = '0x69';
+  const METADATA1 = '0x69';
+  const METADATA2 = '0x70';
+  const METADATA3 = '0x71';
   const DECIMALS = 10;
   const DECIMALS_ETH = 18;
   const DEFAULT_FEE = 25000000; // 2.5%
@@ -165,7 +167,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ RECLAIM_AMOUNT,
@@ -187,7 +189,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ MIN_RETURNED_AMOUNT,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     await expect(tx)
@@ -202,7 +204,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ RECLAIM_AMOUNT,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -227,7 +229,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ 0, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ 0, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ RECLAIM_AMOUNT,
@@ -249,7 +251,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ MIN_RETURNED_AMOUNT,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     await expect(tx)
@@ -264,7 +266,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ RECLAIM_AMOUNT,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -299,12 +301,12 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       .returns();
 
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ redeemedAmount,
         /* delegateAllocations */[
-          { delegate: mockJbRedemptionDelegate.address, amount: delegateAmount },
+          { delegate: mockJbRedemptionDelegate.address, amount: delegateAmount, metadata: METADATA2 },
         ],
         ADJUSTED_MEMO,
       );
@@ -331,7 +333,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -353,10 +356,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ redeemedAmount,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string, bytes, bytes),uint256,uint256,address)');
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
 
     // .withArgs(
@@ -374,7 +377,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     //       ],
     //     beneficiary.address,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   /* msg.sender */ holder.address,
     // );
@@ -391,7 +394,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ redeemedAmount,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -434,13 +437,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ redeemedAmount,
         /* delegate */[
-          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
-          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount, metadata: METADATA2 },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount, metadata: METADATA3 },
         ],
         ADJUSTED_MEMO,
       );
@@ -467,7 +470,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -492,7 +496,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA3,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -516,11 +521,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ redeemedAmount,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -536,7 +541,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     //     ],
     //     beneficiary.address,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   /* msg.sender */ holder.address,
     // );
@@ -553,7 +558,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ redeemedAmount,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -613,13 +618,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ redeemedAmount,
         /* delegate */[
-          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
-          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount, metadata: METADATA2 },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount, metadata: METADATA3 },
         ],
         ADJUSTED_MEMO,
       );
@@ -648,7 +653,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -673,7 +679,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA3,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -715,11 +722,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ redeemedAmount,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -735,7 +742,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     //     ],
     //     beneficiary.address,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   /* msg.sender */ holder.address,
     // );
@@ -752,7 +759,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ redeemedAmount - REDEEM_FEE,
         /* fee */ REDEEM_FEE,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -820,13 +827,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ redeemedAmount,
         /* delegate */[
-          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
-          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount, metadata: METADATA2 },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount, metadata: METADATA3 },
         ],
         ADJUSTED_MEMO,
       );
@@ -855,7 +862,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -880,7 +888,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA3,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -909,11 +918,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ redeemedAmount,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -929,7 +938,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     //     ],
     //     beneficiary.address,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   /* msg.sender */ holder.address,
     // );
@@ -946,7 +955,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ redeemedAmount - REDEEM_FEE,
         /* fee */ REDEEM_FEE,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -999,13 +1008,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ redeemedAmount,
         /* delegate */[
-          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
-          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount, metadata: METADATA2 },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount, metadata: METADATA3 },
         ],
         ADJUSTED_MEMO,
       );
@@ -1039,7 +1048,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -1064,7 +1074,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA3,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -1092,11 +1103,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ redeemedAmount,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -1112,7 +1123,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     //     ],
     //     beneficiary.address,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   /* msg.sender */ holder.address,
     // );
@@ -1129,7 +1140,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ redeemedAmount,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -1182,13 +1193,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(
         fundingCycle,
         /* reclaimAmount */ redeemedAmount,
         /* delegate */[
-          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount },
-          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount },
+          { delegate: mockJbRedemptionDelegate.address, amount: delegate1Amount, metadata: METADATA2 },
+          { delegate: mockJbRedemptionDelegate2.address, amount: delegate2Amount, metadata: METADATA3 },
         ],
         ADJUSTED_MEMO,
       );
@@ -1222,7 +1233,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -1247,7 +1259,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         },
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA3,
+        redeemerMetadata: METADATA1,
       })
       .returns();
 
@@ -1273,11 +1286,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ redeemedAmount,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -1293,7 +1306,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     //     ],
     //     beneficiary.address,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   /* msg.sender */ holder.address,
     // );
@@ -1310,7 +1323,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ redeemedAmount,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -1352,7 +1365,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(fundingCycle, /* reclaimAmount */ 0, /* delegateAllocation */[], ADJUSTED_MEMO); // Set reclaimAmount to 0
 
     await setBalance(jbEthPaymentTerminal.address, AMOUNT);
@@ -1369,7 +1382,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* minReturnedTokens */ 0,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       );
 
     await expect(tx)
@@ -1384,7 +1397,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* reclaimAmount */ 0,
         /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
-        /* metadata */ METADATA,
+        /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
       );
 
@@ -1456,7 +1469,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
 
     // Keep it simple and let 1 token exchange for 1 wei
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
-      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA)
+      .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(fundingCycle, /* reclaimAmount */ 0, /* delegateAllocation */[], ADJUSTED_MEMO); // Set reclaimAmount to 0
 
     await expect(
@@ -1470,7 +1483,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
           /* minReturnedTokens */ MIN_RETURNED_AMOUNT,
           beneficiary.address,
           MEMO,
-          METADATA,
+          METADATA1,
         ),
     ).to.be.revertedWith(errors.INADEQUATE_RECLAIM_AMOUNT);
   });
