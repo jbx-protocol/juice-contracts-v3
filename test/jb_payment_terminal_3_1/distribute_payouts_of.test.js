@@ -489,6 +489,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
             /*payoutAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
+            /*netAmount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
             caller.address,
           )
           .and.to.emit(jbEthPaymentTerminal, 'Pay');
@@ -1306,7 +1309,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
               split.lockedUntil,
               split.allocator,
             ],
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*payoutAmount*/ Math.floor((AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT),
+            /*netAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
             caller.address,
           )
           .and.to.emit(jbEthPaymentTerminal, 'Pay')
@@ -2737,6 +2741,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::distributePayoutsOf(...)', funct
               split.allocator,
             ],
             /*payoutAmount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*netAmount*/ Math.floor(
               (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
             ),
             caller.address,

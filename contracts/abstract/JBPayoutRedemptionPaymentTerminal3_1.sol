@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
 import '@paulrberg/contracts/math/PRBMath.sol';
 import './../interfaces/IJBController.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
+import './../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
 import './../libraries/JBConstants.sol';
 import './../libraries/JBCurrencies.sol';
 import './../libraries/JBFixedPointNumber.sol';
@@ -133,7 +134,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     @notice
     The contract that stores and manages the terminal's data.
   */
-  IJBSingleTokenPaymentTerminalStore public immutable override store;
+  address public immutable override store;
 
   /**
     @notice
@@ -199,7 +200,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     uint256 _projectId
   ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
-    uint256 _overflow = store.currentOverflowOf(this, _projectId);
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore(store).currentOverflowOf(
+      this,
+      _projectId
+    );
 
     // Adjust the decimals of the fixed point number if needed to have 18 decimals.
     uint256 _adjustedOverflow = (decimals == 18)
@@ -296,7 +300,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    address _store,
     address _owner
   )
     payable
@@ -534,7 +538,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = store.recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance > 0) {
@@ -801,7 +805,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       JBRedemptionDelegateAllocation[] memory _delegateAllocations;
 
       // Record the redemption.
-      (_fundingCycle, reclaimAmount, _delegateAllocations, _memo) = store.recordRedemptionFor(
+      (
+        _fundingCycle,
+        reclaimAmount,
+        _delegateAllocations,
+        _memo
+      ) = IJBSingleTokenPaymentTerminalStore(store).recordRedemptionFor(
         _holder,
         _projectId,
         _tokenCount,
@@ -918,11 +927,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     bytes calldata _metadata
   ) internal returns (uint256 netLeftoverDistributionAmount) {
     // Record the distribution.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordDistributionFor(
-      _projectId,
-      _amount,
-      _currency
-    );
+    (
+      JBFundingCycle memory _fundingCycle,
+      uint256 _distributedAmount
+    ) = IJBSingleTokenPaymentTerminalStore(store).recordDistributionFor(
+        _projectId,
+        _amount,
+        _currency
+      );
 
     // The amount being distributed must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -1033,11 +1045,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     bytes calldata _metadata
   ) internal returns (uint256 netDistributedAmount) {
     // Record the use of the allowance.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordUsedAllowanceOf(
-      _projectId,
-      _amount,
-      _currency
-    );
+    (
+      JBFundingCycle memory _fundingCycle,
+      uint256 _distributedAmount
+    ) = IJBSingleTokenPaymentTerminalStore(store).recordUsedAllowanceOf(
+        _projectId,
+        _amount,
+        _currency
+      );
 
     // The amount being withdrawn must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -1233,7 +1248,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
         netPayoutAmount = 0;
 
         // Add undistributed amount back to project's balance.
-        store.recordAddedBalanceFor(_projectId, _amount);
+        IJBSingleTokenPaymentTerminalStore(store).recordAddedBalanceFor(_projectId, _amount);
 
         emit PayoutReverted(
           _projectId,
@@ -1291,7 +1306,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           netPayoutAmount = 0;
 
           // Add undistributed amount back to project's balance.
-          store.recordAddedBalanceFor(_projectId, _amount);
+          IJBSingleTokenPaymentTerminalStore(store).recordAddedBalanceFor(_projectId, _amount);
 
           emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
         }
@@ -1315,7 +1330,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
           netPayoutAmount = 0;
 
           // Add undistributed amount back to project's balance.
-          store.recordAddedBalanceFor(_projectId, _amount);
+          IJBSingleTokenPaymentTerminalStore(store).recordAddedBalanceFor(_projectId, _amount);
 
           emit PayoutReverted(_projectId, _split, _amount, reason, msg.sender);
         }
@@ -1414,7 +1429,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       if (address(_terminal) != address(this)) _cancelTransferTo(address(_terminal), _amount);
 
       // Add fee amount back to project's balance.
-      store.recordAddedBalanceFor(_from, _amount);
+      IJBSingleTokenPaymentTerminalStore(store).recordAddedBalanceFor(_from, _amount);
 
       emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, reason, msg.sender);
     }
@@ -1461,7 +1476,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
       JBTokenAmount memory _bundledAmount = JBTokenAmount(token, _amount, decimals, currency);
 
       // Record the payment.
-      (_fundingCycle, _tokenCount, _delegateAllocations, _memo) = store.recordPaymentFrom(
+      (
+        _fundingCycle,
+        _tokenCount,
+        _delegateAllocations,
+        _memo
+      ) = IJBSingleTokenPaymentTerminalStore(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1574,7 +1594,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    store.recordAddedBalanceFor(_projectId, _amount + _refundedFees);
+    IJBSingleTokenPaymentTerminalStore(store).recordAddedBalanceFor(
+      _projectId,
+      _amount + _refundedFees
+    );
 
     emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
   }

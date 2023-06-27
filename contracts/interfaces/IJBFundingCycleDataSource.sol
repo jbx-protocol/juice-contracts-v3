@@ -40,7 +40,9 @@ interface IJBFundingCycleDataSource is IERC165 {
     @return memo the memo to override the pay(..) memo
     @return delegateAllocations The amount to send to delegates instead of adding to the local balance.
   */
-  function payParams(JBPayParamsData calldata _data)
+  function payParams(
+    JBPayParamsData calldata _data
+  )
     external
     returns (
       uint256 weight,
@@ -71,7 +73,9 @@ interface IJBFundingCycleDataSource is IERC165 {
     @return memo The memo to override the redeemTokensOf(..) memo.
     @return delegateAllocations The amount to send to delegates instead of adding to the beneficiary.
   */
-  function redeemParams(JBRedeemParamsData calldata _data)
+  function redeemParams(
+    JBRedeemParamsData calldata _data
+  )
     external
     returns (
       uint256 reclaimAmount,

@@ -8,13 +8,15 @@ import './../interfaces/IJBController.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol';
 import './../interfaces/IJBFeeGauge3_1.sol';
+import './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
 import './../libraries/JBConstants.sol';
 import './../libraries/JBCurrencies.sol';
 import './../libraries/JBFixedPointNumber.sol';
 import './../libraries/JBFundingCycleMetadataResolver.sol';
 import './../libraries/JBOperations.sol';
 import './../libraries/JBTokens.sol';
-import './../structs/JBPayDelegateAllocation.sol';
+import './../structs/JBPayDelegateAllocation3_1_1.sol';
+import './../structs/JBRedemptionDelegateAllocation.sol';
 import './../structs/JBTokenAmount.sol';
 import './../enums/JBFeeType.sol';
 import './JBOperatable.sol';
@@ -136,7 +138,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     @notice
     The contract that stores and manages the terminal's data.
   */
-  IJBSingleTokenPaymentTerminalStore public immutable override store;
+  address public immutable override store;
 
   /**
     @notice
@@ -202,7 +204,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     uint256 _projectId
   ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
-    uint256 _overflow = store.currentOverflowOf(this, _projectId);
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
+      this,
+      _projectId
+    );
 
     // Adjust the decimals of the fixed point number if needed to have 18 decimals.
     uint256 _adjustedOverflow = (decimals == 18)
@@ -300,7 +305,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    address _store,
     address _owner
   )
     payable
@@ -538,7 +543,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = store.recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance > 0) {
@@ -808,10 +813,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
     // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
     {
-      JBRedemptionDelegateAllocation[] memory _delegateAllocations;
+      JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
 
       // Record the redemption.
-      (_fundingCycle, reclaimAmount, _delegateAllocations, _memo) = store.recordRedemptionFor(
+      (
+        _fundingCycle,
+        reclaimAmount,
+        _delegateAllocations,
+        _memo
+      ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
         _holder,
         _projectId,
         _tokenCount,
@@ -845,7 +855,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         // Keep a reference to the token amount being forwarded to the delegate.
         JBTokenAmount memory _forwardedAmount = JBTokenAmount(token, 0, decimals, currency);
 
-        JBDidRedeemData memory _data = JBDidRedeemData(
+        JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
           _holder,
           _projectId,
           _fundingCycle.configuration,
@@ -854,12 +864,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           _forwardedAmount,
           _beneficiary,
           _memo,
+          bytes(''),
           _metadata
         );
 
         for (uint256 _i; _i < _delegateAllocations.length; ) {
           // Get a reference to the delegate being iterated on.
-          JBRedemptionDelegateAllocation memory _delegateAllocation = _delegateAllocations[_i];
+          JBRedemptionDelegateAllocation3_1_1 memory _delegateAllocation = _delegateAllocations[_i];
 
           // Get the fee for the delegated amount.
           uint256 _delegatedAmountFee = _feeAmount(_delegateAllocation.amount, fee, _feeDiscount);
@@ -881,6 +892,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
           // Pass the correct token forwardedAmount to the delegate
           _data.forwardedAmount.value = _delegateAllocation.amount;
+
+          // Pass the correct metadata from the data source.
+          _data.dataSourceMetadata = _delegateAllocation.metadata;
 
           _delegateAllocation.delegate.didRedeem{value: _payableValue}(_data);
 
@@ -965,11 +979,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes calldata _metadata
   ) internal returns (uint256 netLeftoverDistributionAmount) {
     // Record the distribution.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordDistributionFor(
-      _projectId,
-      _amount,
-      _currency
-    );
+    (
+      JBFundingCycle memory _fundingCycle,
+      uint256 _distributedAmount
+    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordDistributionFor(
+        _projectId,
+        _amount,
+        _currency
+      );
 
     // The amount being distributed must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -1080,11 +1097,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes calldata _metadata
   ) internal returns (uint256 netDistributedAmount) {
     // Record the use of the allowance.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordUsedAllowanceOf(
-      _projectId,
-      _amount,
-      _currency
-    );
+    (
+      JBFundingCycle memory _fundingCycle,
+      uint256 _distributedAmount
+    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
+        _projectId,
+        _amount,
+        _currency
+      );
 
     // The amount being withdrawn must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -1272,25 +1292,26 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         // If this terminal's token is ETH, send it in msg.value.
         try
           _split.allocator.allocate{value: token == JBTokens.ETH ? netPayoutAmount : 0}(_data)
-        {} catch (bytes memory reason) {
-          _reason = reason;
+        {} catch (bytes memory __reason) {
+          _reason = __reason;
           _error = 1;
         }
       else _error = 2;
 
       if (_error != 0) {
         // Revert the payout.
-        _revertPayoutFrom(
-          _projectId,
-          address(_split.allocator),
-          netPayoutAmount,
-          _amount,
-          _split,
-          _error == 1 ? _reason : abi.encode('IERC165 fail')
-        );
+        _revertTransferFrom(_projectId, address(_split.allocator), netPayoutAmount, _amount);
 
         // Set the net payout amount to 0 to signal the reversion.
         netPayoutAmount = 0;
+
+        emit PayoutReverted(
+          _projectId,
+          _split,
+          _amount,
+          _error == 1 ? _reason : abi.encode('IERC165 fail'),
+          msg.sender
+        );
       }
 
       // Otherwise, if a project is specified, make a payment to it.
@@ -1304,7 +1325,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         netPayoutAmount = 0;
 
         // Revert the payout.
-        _revertPayoutFrom(_projectId, address(0), 0, _amount, _split, 'Terminal not found');
+        _revertTransferFrom(_projectId, address(0), 0, _amount);
+
+        emit PayoutReverted(_projectId, _split, _amount, 'Terminal not found', msg.sender);
       } else {
         // If the terminal is set as feeless, this distribution is not eligible for a fee.
         if (
@@ -1339,17 +1362,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
             )
           {} catch (bytes memory _reason) {
             // Revert the payout.
-            _revertPayoutFrom(
-              _projectId,
-              address(_terminal),
-              netPayoutAmount,
-              _amount,
-              _split,
-              _reason
-            );
+            _revertTransferFrom(_projectId, address(_terminal), netPayoutAmount, _amount);
 
             // Set the net payout amount to 0 to signal the reversion.
             netPayoutAmount = 0;
+
+            emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
           }
         else
           try
@@ -1365,17 +1383,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
             )
           {} catch (bytes memory _reason) {
             // Revert the payout.
-            _revertPayoutFrom(
-              _projectId,
-              address(_terminal),
-              netPayoutAmount,
-              _amount,
-              _split,
-              _reason
-            );
+            _revertTransferFrom(_projectId, address(_terminal), netPayoutAmount, _amount);
 
             // Set the net payout amount to 0 to signal the reversion.
             netPayoutAmount = 0;
+
+            emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
           }
       }
     } else {
@@ -1398,34 +1411,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
       _transferFrom(address(this), _beneficiary, netPayoutAmount);
     }
-  }
-
-  /**
-    @notice
-    Reverts an expected payout.
-
-    @param _projectId The ID of the project having paying out.
-    @param _expectedDestination The address the payout was expected to go to.
-    @param _allowanceAmount The amount that the destination has been allowed to use.
-    @param _depositAmount The amount of the payout as debited from the project's balance.
-    @param _split The split that signalled the payout.
-    @param _reason The reason for the revert.
-  */
-  function _revertPayoutFrom(
-    uint256 _projectId,
-    address _expectedDestination,
-    uint256 _allowanceAmount,
-    uint256 _depositAmount,
-    JBSplit memory _split,
-    bytes memory _reason
-  ) internal {
-    // Cancel allowance if needed.
-    if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
-
-    // Add undistributed amount back to project's balance.
-    store.recordAddedBalanceFor(_projectId, _depositAmount);
-
-    emit PayoutReverted(_projectId, _split, _depositAmount, _reason, msg.sender);
   }
 
   /**
@@ -1496,15 +1481,35 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         '',
         _projectMetadata
       )
-    {} catch (bytes memory reason) {
-      // Trigger any inhereted post-transfer cancelation logic if the pre-transfer logic was triggered.
-      if (address(_terminal) != address(this)) _cancelTransferTo(address(_terminal), _amount);
-
-      // Add fee amount back to project's balance.
-      store.recordAddedBalanceFor(_from, _amount);
-
-      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, reason, msg.sender);
+    {} catch (bytes memory _reason) {
+      _revertTransferFrom(_from, address(_terminal), _amount, _amount);
+      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
     }
+  }
+
+  /**
+    @notice
+    Reverts an expected payout.
+
+    @param _projectId The ID of the project having paying out.
+    @param _expectedDestination The address the payout was expected to go to.
+    @param _allowanceAmount The amount that the destination has been allowed to use.
+    @param _depositAmount The amount of the payout as debited from the project's balance.
+  */
+  function _revertTransferFrom(
+    uint256 _projectId,
+    address _expectedDestination,
+    uint256 _allowanceAmount,
+    uint256 _depositAmount
+  ) internal {
+    // Cancel allowance if needed.
+    if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
+
+    // Add undistributed amount back to project's balance.
+    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
+      _projectId,
+      _depositAmount
+    );
   }
 
   /**
@@ -1541,14 +1546,19 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
     // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
     {
-      JBPayDelegateAllocation[] memory _delegateAllocations;
+      JBPayDelegateAllocation3_1_1[] memory _delegateAllocations;
       uint256 _tokenCount;
 
       // Bundle the amount info into a JBTokenAmount struct.
       JBTokenAmount memory _bundledAmount = JBTokenAmount(token, _amount, decimals, currency);
 
       // Record the payment.
-      (_fundingCycle, _tokenCount, _delegateAllocations, _memo) = store.recordPaymentFrom(
+      (
+        _fundingCycle,
+        _tokenCount,
+        _delegateAllocations,
+        _memo
+      ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1576,9 +1586,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       // If delegate allocations were specified by the data source, fulfill them.
       if (_delegateAllocations.length != 0) {
         // Keep a reference to the token amount being forwarded to the delegate.
-        JBTokenAmount memory _forwardedAmount = JBTokenAmount(token, _amount, decimals, currency);
+        JBTokenAmount memory _forwardedAmount = JBTokenAmount(token, 0, decimals, currency);
 
-        JBDidPayData memory _data = JBDidPayData(
+        JBDidPayData3_1_1 memory _data = JBDidPayData3_1_1(
           _payer,
           _projectId,
           _fundingCycle.configuration,
@@ -1588,6 +1598,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           _beneficiary,
           _preferClaimedTokens,
           _memo,
+          bytes(''),
           _metadata
         );
 
@@ -1596,7 +1607,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
         for (uint256 _i; _i < _numDelegates; ) {
           // Get a reference to the delegate being iterated on.
-          JBPayDelegateAllocation memory _delegateAllocation = _delegateAllocations[_i];
+          JBPayDelegateAllocation3_1_1 memory _delegateAllocation = _delegateAllocations[_i];
 
           // Trigger any inherited pre-transfer logic.
           _beforeTransferTo(address(_delegateAllocation.delegate), _delegateAllocation.amount);
@@ -1609,6 +1620,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
           // Pass the correct token forwardedAmount to the delegate
           _data.forwardedAmount.value = _delegateAllocation.amount;
+
+          // Pass the correct metadata from the data source.
+          _data.dataSourceMetadata = _delegateAllocation.metadata;
 
           _delegateAllocation.delegate.didPay{value: _payableValue}(_data);
 
@@ -1661,7 +1675,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    store.recordAddedBalanceFor(_projectId, _amount + _refundedFees);
+    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
+      _projectId,
+      _amount + _refundedFees
+    );
 
     emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
   }

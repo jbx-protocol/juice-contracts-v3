@@ -8,19 +8,21 @@ import errors from '../helpers/errors.json';
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import jbController from '../../artifacts/contracts/interfaces/IJBController.sol/IJBController.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import jbController from '../../artifacts/contracts/interfaces/IJBController3_1.sol/IJBController3_1.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbPrices from '../../artifacts/contracts/JBPrices.sol/JBPrices.json';
-import jbPayDelegate from '../../artifacts/contracts/interfaces/IJBPayDelegate.sol/IJBPayDelegate.json';
+import jbPayDelegate from '../../artifacts/contracts/interfaces/IJBPayDelegate3_1_1.sol/IJBPayDelegate3_1_1.json';
 
 describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
   const PROJECT_ID = 1;
   const MEMO = 'Memo Test';
   const ADJUSTED_MEMO = 'test test memo';
-  const METADATA = '0x69';
+  const METADATA1 = '0x69';
+  const METADATA2 = '0x70';
+  const METADATA3 = '0x71';
   const FUNDING_CYCLE_NUMBER = 1;
   const ADJUSTED_WEIGHT = 10;
   const MIN_TOKEN_REQUESTED = 90;
@@ -130,7 +132,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -201,7 +203,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
           MIN_TOKEN_REQUESTED,
           PREFER_CLAIMED_TOKENS,
           MEMO,
-          METADATA,
+          METADATA1,
           { value: ETH_TO_PAY },
         ),
     )
@@ -215,7 +217,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         ETH_TO_PAY,
         TOKEN_RECEIVED,
         ADJUSTED_MEMO,
-        METADATA,
+        METADATA1,
         caller.address,
       );
   });
@@ -260,7 +262,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -276,7 +278,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
           metadata: packFundingCycleMetadata(),
         },
         TOKEN_TO_MINT,
-        [{ delegate: mockJbPayDelegate.address, amount: 0 }],
+        [{ delegate: mockJbPayDelegate.address, amount: 0, metadata: METADATA2 }],
         ADJUSTED_MEMO,
       );
 
@@ -302,7 +304,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         beneficiary: beneficiary.address,
         preferClaimedTokens: PREFER_CLAIMED_TOKENS,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        payerMetadata: METADATA1
       })
       .returns();
 
@@ -316,12 +319,12 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         MIN_TOKEN_REQUESTED,
         PREFER_CLAIMED_TOKENS,
         MEMO,
-        METADATA,
+        METADATA1,
         { value: ETH_TO_PAY },
       );
 
     // AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,bool,string,bytes,bytes),uint256,address)');
     // .withArgs(
     //   mockJbPayDelegate.address,
     //   [
@@ -339,7 +342,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
     //     beneficiary.address,
     //     PREFER_CLAIMED_TOKENS,
     //     ADJUSTED_MEMO,
-    //     METADATA,
+    //     METADATA1,
     //   ],
     //   ETH_TO_PAY,
     //   caller.address,
@@ -356,7 +359,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         ETH_TO_PAY,
         TOKEN_RECEIVED,
         ADJUSTED_MEMO,
-        METADATA,
+        METADATA1,
         caller.address,
       );
   });
@@ -400,7 +403,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -417,8 +420,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         },
         TOKEN_TO_MINT,
         [
-          { delegate: mockJbPayDelegate.address, amount: ETH_TO_PAY.div(4) },
-          { delegate: mockJbPayDelegate2.address, amount: ETH_TO_PAY.div(2) },
+          { delegate: mockJbPayDelegate.address, amount: ETH_TO_PAY.div(4), metadata: METADATA2 },
+          { delegate: mockJbPayDelegate2.address, amount: ETH_TO_PAY.div(2), metadata: METADATA3 },
         ],
         ADJUSTED_MEMO,
       );
@@ -445,7 +448,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         beneficiary: beneficiary.address,
         preferClaimedTokens: PREFER_CLAIMED_TOKENS,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA2,
+        payerMetadata: METADATA1,
       })
       .returns();
 
@@ -471,7 +475,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         beneficiary: beneficiary.address,
         preferClaimedTokens: PREFER_CLAIMED_TOKENS,
         memo: ADJUSTED_MEMO,
-        metadata: METADATA,
+        dataSourceMetadata: METADATA3,
+        payerMetadata: METADATA1,
       })
       .returns();
 
@@ -485,12 +490,12 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         MIN_TOKEN_REQUESTED,
         PREFER_CLAIMED_TOKENS,
         MEMO,
-        METADATA,
+        METADATA1,
         { value: ETH_TO_PAY },
       );
 
     // AssertionError: expected [ …(9), …(9) ] to equal { …(9) }
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,bool,string,bytes,bytes),uint256,address)');
     // .withArgs(
     //   mockJbPayDelegate.address,
     //   {
@@ -508,14 +513,14 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
     //     beneficiary: beneficiary.address,
     //     preferClaimedTokens: PREFER_CLAIMED_TOKENS,
     //     memo: ADJUSTED_MEMO,
-    //     metadata: METADATA,
+    //     metadata: METADATA1,
     //   },
     //   ETH_TO_PAY,
     //   caller.address,
     // );
 
     // await expect(tx)
-    //   .to.emit(jbEthPaymentTerminal, 'DelegateDidPay')
+    //   .to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,bool,string,bytes,bytes),uint256,address)')
     //   .withArgs(
     //     mockJbPayDelegate2.address,
     //     [
@@ -533,7 +538,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
     //       beneficiary.address,
     //       PREFER_CLAIMED_TOKENS,
     //       ADJUSTED_MEMO,
-    //       METADATA,
+    //       METADATA1,
     //     ],
     //     ETH_TO_PAY.div(2),
     //     caller.address,
@@ -550,7 +555,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         ETH_TO_PAY,
         TOKEN_RECEIVED,
         ADJUSTED_MEMO,
-        METADATA,
+        METADATA1,
         caller.address,
       );
 
@@ -587,7 +592,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         MIN_TOKEN_REQUESTED,
         /*preferClaimedToken=*/ true,
         MEMO,
-        METADATA,
+        METADATA1,
         { value: ETH_TO_PAY },
       );
   });
@@ -609,7 +614,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -639,7 +644,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         0,
         PREFER_CLAIMED_TOKENS,
         MEMO,
-        METADATA,
+        METADATA1,
         { value: ETH_TO_PAY },
       );
   });
@@ -686,7 +691,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -714,7 +719,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
       MIN_TOKEN_REQUESTED,
       PREFER_CLAIMED_TOKENS,
       MEMO,
-      METADATA,
+      METADATA1,
       { value: 0 },
     );
   });
@@ -763,7 +768,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -792,7 +797,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         MIN_TOKEN_REQUESTED,
         PREFER_CLAIMED_TOKENS,
         MEMO,
-        METADATA,
+        METADATA1,
         { value: 0 },
       ),
     )
@@ -806,7 +811,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         NET_AMOUNT,
         TOKEN_RECEIVED,
         ADJUSTED_MEMO,
-        METADATA,
+        METADATA1,
         caller.address,
       );
   });
@@ -823,7 +828,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         MIN_TOKEN_REQUESTED,
         PREFER_CLAIMED_TOKENS,
         MEMO,
-        METADATA,
+        METADATA1,
         { value: ETH_TO_PAY },
       ),
     ).to.be.revertedWith(errors.NO_MSG_VALUE_ALLOWED);
@@ -843,7 +848,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
           MIN_TOKEN_REQUESTED,
           PREFER_CLAIMED_TOKENS,
           MEMO,
-          METADATA,
+          METADATA1,
           { value: ETH_TO_PAY },
         ),
     ).to.be.revertedWith(errors.PAY_TO_ZERO_ADDRESS);
@@ -868,7 +873,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
           MIN_TOKEN_REQUESTED,
           PREFER_CLAIMED_TOKENS,
           MEMO,
-          METADATA,
+          METADATA1,
           { value: ETH_TO_PAY },
         ),
     ).to.be.revertedWith(errors.PROJECT_TERMINAL_MISMATCH);
@@ -891,7 +896,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
         CURRENCY_ETH,
         beneficiary.address,
         MEMO,
-        METADATA,
+        METADATA1,
       )
       .returns(
         {
@@ -922,7 +927,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::pay(...)', function () {
           MIN_TOKEN_REQUESTED,
           PREFER_CLAIMED_TOKENS,
           MEMO,
-          METADATA,
+          METADATA1,
           { value: ETH_TO_PAY },
         ),
     ).to.be.revertedWith(errors.INADEQUATE_TOKEN_COUNT);
