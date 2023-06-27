@@ -292,7 +292,7 @@ contract TestBaseWorkflow is Test {
       _jbDirectory,
       _jbSplitsStore,
       _jbPrices,
-      _jbPaymentTerminalStore3_1,
+      address(_jbPaymentTerminalStore3_1),
       _multisig
     );
         vm.label(address(_jbETHPaymentTerminal3_1), "JBETHPaymentTerminal3_1");
@@ -330,7 +330,7 @@ contract TestBaseWorkflow is Test {
       _jbDirectory,
       _jbSplitsStore,
       _jbPrices,
-      _jbPaymentTerminalStore3_1,
+      address(_jbPaymentTerminalStore3_1),
       _multisig
     );
 

@@ -99,7 +99,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
           jbDirectory(),
           jbSplitsStore(),
           jbPrices(),
-          jbTerminalStore3_1,
+          address(jbTerminalStore3_1),
           Ownable(address(jbETHPaymentTerminal())).owner()
         );
 
@@ -185,7 +185,7 @@ contract TestMigrationOperator_Local is TestBaseWorkflow {
           jbDirectory(),
           jbSplitsStore(),
           jbPrices(),
-          jbTerminalStore3_1,
+          address(jbTerminalStore3_1),
           Ownable(address(jbETHPaymentTerminal())).owner()
         );
 

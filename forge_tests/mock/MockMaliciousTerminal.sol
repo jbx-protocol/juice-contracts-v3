@@ -50,7 +50,7 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
       _directory,
       _splitsStore,
       _prices,
-      _store,
+      address(_store),
       _owner
     )
   // solhint-disable-next-line no-empty-blocks

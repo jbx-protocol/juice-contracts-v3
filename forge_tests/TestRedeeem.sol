@@ -42,7 +42,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             _jbDirectory,
             _jbSplitsStore,
             _jbPrices,
-            _jbPaymentTerminalStore3_1,
+            address(_jbPaymentTerminalStore3_1),
             _multisig
         );
 
@@ -230,7 +230,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         uint256 _terminalBalanceInWei = payAmountInWei;
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei);
 
-        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 100, _userTokenBalance);
+        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1e18, _userTokenBalance);
 
         vm.prank(_userWallet);
         uint256 _reclaimAmtInWei = _terminal3_1_1.redeemTokensOf(

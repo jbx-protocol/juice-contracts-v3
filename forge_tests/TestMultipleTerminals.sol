@@ -110,7 +110,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 jbDirectory(),
                 jbSplitsStore(),
                 jbPrices(),
-                jbPaymentTerminalStore(),
+                address(jbPaymentTerminalStore()),
                 multisig()
             )));
         }

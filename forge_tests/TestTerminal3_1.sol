@@ -110,7 +110,7 @@ contract TestTerminal31_Fork is Test {
             jbDirectory,
             jbSplitsStore,
             jbPrices,
-            jbTerminalStore3_1,
+            address(jbTerminalStore3_1),
             Ownable(address(jbEthTerminal)).owner()
         );
 
