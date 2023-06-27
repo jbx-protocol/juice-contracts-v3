@@ -21,26 +21,22 @@ module.exports = async ({ deployments, getChainId }) => {
     log: true,
     skipIfAlreadyDeployed: true,
   };
-  let protocolProjectStartsAtOrAfter;
-
-  console.log({ deployer: deployer.address, chain: chainId });
 
   switch (chainId) {
     // mainnet
     case '1':
       governanceAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
       chainlinkV2UsdEthPriceFeed = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
-      protocolProjectStartsAtOrAfter = 1664047173;
       break;
     // Goerli
     case '5':
       governanceAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
       chainlinkV2UsdEthPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
-      protocolProjectStartsAtOrAfter = 0;
       break;
     // hardhat / localhost
     case '31337':
       governanceAddress = deployer.address;
+
       protocolProjectStartsAtOrAfter = 0;
       break;
   }
@@ -131,12 +127,6 @@ module.exports = async ({ deployments, getChainId }) => {
     ],
   });
 
-  // Deploy a JBMigrationOperator contract.
-  const JBMigrationOperator = await deploy('JBMigrationOperator', {
-    ...baseDeployArgs,
-    args: [JBDirectory.address],
-  });
-
   // Deploy a JBSingleTokenPaymentTerminalStore contract.
   const JBSingleTokenPaymentTerminalStore = await deploy('JBSingleTokenPaymentTerminalStore3_1', {
     ...baseDeployArgs,
@@ -163,7 +153,7 @@ module.exports = async ({ deployments, getChainId }) => {
   const ETH = await jbCurrenciesLibrary.connect(deployer).ETH();
 
   // Deploy a JBETHPaymentTerminal contract.
-  const JBETHPaymentTerminal = await deploy('JBETHPaymentTerminal3_1', {
+  await deploy('JBETHPaymentTerminal3_1', {
     ...baseDeployArgs,
     contract: 'contracts/JBETHPaymentTerminal3_1.sol:JBETHPaymentTerminal3_1',
     args: [
@@ -220,8 +210,6 @@ module.exports = async ({ deployments, getChainId }) => {
     .connect(deployer)
     .isAllowedToSetFirstController(JBController.address);
 
-  console.log({ isAllowedToSetFirstController });
-
   // If needed, allow the controller to set projects' first controller, then transfer the ownership of the JBDirectory to the multisig.
   if (!isAllowedToSetFirstController) {
     let tx = await jbDirectoryContract
@@ -235,27 +223,37 @@ module.exports = async ({ deployments, getChainId }) => {
     let tx = await jbDirectoryContract.connect(deployer).transferOwnership(governanceAddress);
     await tx.wait();
   }
+  // If needed, transfer the ownership of the JBProjects contract to the multisig.
+  if ((await jbProjectsContract.connect(deployer).owner()) != governanceAddress) {
+    let tx = await jbProjectsContract.connect(deployer).transferOwnership(governanceAddress);
 
-  // Deploy a JB1DayReconfigurationBufferBallot.
-  await deploy('JB1DayReconfigurationBufferBallot', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
-    args: [86400],
-  });
+    await tx.wait();
+  }
 
-  // Deploy a JB3DayReconfigurationBufferBallot.
-  const JB3DayReconfigurationBufferBallot = await deploy('JB3DayReconfigurationBufferBallot', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
-    args: [259200],
-  });
+  //
+  // If you want, deploy funding cycle ballot contracts for projects to use.
+  //
 
-  // Deploy a JB7DayReconfigurationBufferBallot.
-  await deploy('JB7DayReconfigurationBufferBallot', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
-    args: [604800],
-  });
+  // // Deploy a JB1DayReconfigurationBufferBallot.
+  // await deploy('JB1DayReconfigurationBufferBallot', {
+  //   ...baseDeployArgs,
+  //   contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
+  //   args: [86400],
+  // });
+
+  // // Deploy a JB3DayReconfigurationBufferBallot.
+  // await deploy('JB3DayReconfigurationBufferBallot', {
+  //   ...baseDeployArgs,
+  //   contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
+  //   args: [259200],
+  // });
+
+  // // Deploy a JB7DayReconfigurationBufferBallot.
+  // await deploy('JB7DayReconfigurationBufferBallot', {
+  //   ...baseDeployArgs,
+  //   contract: 'contracts/JBReconfigurationBufferBallot.sol:JBReconfigurationBufferBallot',
+  //   args: [604800],
+  // });
 
   console.log('Done');
 };
