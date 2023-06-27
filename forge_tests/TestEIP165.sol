@@ -4,6 +4,7 @@ pragma solidity ^0.8.6;
 import "./helpers/TestBaseWorkflow.sol";
 import "@juicebox/JBReconfigurationBufferBallot.sol";
 import "@juicebox/JBETHERC20SplitsPayer.sol";
+import "@juicebox/JBETHERC20SplitsPayerDeployer.sol";
 
 contract TestEIP165_Local is TestBaseWorkflow {
     bytes4 constant notSupportedInterface = 0xffffffff;
@@ -112,19 +113,24 @@ contract TestEIP165_Local is TestBaseWorkflow {
     }
 
     function testJBETHERC20SplitsPayer() public {
-        JBETHERC20SplitsPayer splitsPayer = new JBETHERC20SplitsPayer(
-      splitsProjectID,
-      splitsDomain,
-      splitsGroup,
-      jbSplitsStore(),
-      projectId,
-      splitsBeneficiary,
-      splitsPreferClaimedTokens,
-      splitsMemo,
-      splitsMetadata,
-      splitsPreferAddToBalance,
-      splitsOwner
-    );
+      
+        JBETHERC20SplitsPayerDeployer deployer = new JBETHERC20SplitsPayerDeployer(jbSplitsStore());
+
+        JBETHERC20SplitsPayer splitsPayer = JBETHERC20SplitsPayer(
+            payable(
+                address(
+                deployer.deploySplitsPayer(
+                    splitsProjectID,
+                    splitsDomain,
+                    splitsGroup,
+                    projectId,
+                    splitsBeneficiary,
+                    splitsPreferClaimedTokens,
+                    splitsMemo,
+                    splitsMetadata,
+                    splitsPreferAddToBalance,
+                    splitsOwner
+        ))));
 
         // Should support these interfaces
         assertTrue(splitsPayer.supportsInterface(type(IERC165).interfaceId));

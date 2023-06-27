@@ -31,11 +31,12 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   // -------------------------- custom errors -------------------------- //
   //*********************************************************************//
   error INCORRECT_DECIMAL_AMOUNT();
+  error ALREADY_INITIALIZED();
   error NO_MSG_VALUE_ALLOWED();
   error TERMINAL_NOT_FOUND();
 
   //*********************************************************************//
-  // ---------------- public immutable stored properties --------------- //
+  // ------------------- public immutable properties ------------------- //
   //*********************************************************************//
 
   /**
@@ -43,6 +44,12 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     A contract storing directories of terminals and controllers for each project.
   */
   IJBDirectory public immutable override directory;
+
+  /**
+    @notice 
+    The deployer associated with this implementation. Used to rule out double initialization.
+  */
+  address public immutable override projectPayerDeployer;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -85,7 +92,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   bool public override defaultPreferAddToBalance;
 
   //*********************************************************************//
-  // ------------------------- public views -------------------------- //
+  // ------------------------- public views ---------------------------- //
   //*********************************************************************//
 
   /**
@@ -109,8 +116,18 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   }
 
   //*********************************************************************//
-  // -------------------------- constructor ---------------------------- //
+  // -------------------------- constructors --------------------------- //
   //*********************************************************************//
+
+  /**
+    @dev   This is the constructor of the implementation. The directory is shared between project payers and is
+           immutable. If a new JBDirectory is needed, a new JBProjectPayerDeployer should be deployed.
+    @param _directory A contract storing directories of terminals and controllers for each project.
+  */
+  constructor(IJBDirectory _directory) {
+    directory = _directory;
+    projectPayerDeployer = msg.sender;
+  }
 
   /** 
     @param _defaultProjectId The ID of the project whose treasury should be forwarded this contract's received payments.
@@ -119,27 +136,25 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     @param _defaultMemo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
     @param _defaultMetadata Bytes to send along to the project's data source and delegate, if provided.
     @param _defaultPreferAddToBalance A flag indicating if received payments should call the `pay` function or the `addToBalance` function of a project.
-    @param _directory A contract storing directories of terminals and controllers for each project.
     @param _owner The address that will own the contract.
   */
-  constructor(
+  function initialize(
     uint256 _defaultProjectId,
     address payable _defaultBeneficiary,
     bool _defaultPreferClaimedTokens,
     string memory _defaultMemo,
     bytes memory _defaultMetadata,
     bool _defaultPreferAddToBalance,
-    IJBDirectory _directory,
     address _owner
-  ) {
+  ) public {
+    if(msg.sender != projectPayerDeployer) revert ALREADY_INITIALIZED();
+
     defaultProjectId = _defaultProjectId;
     defaultBeneficiary = _defaultBeneficiary;
     defaultPreferClaimedTokens = _defaultPreferClaimedTokens;
     defaultMemo = _defaultMemo;
     defaultMetadata = _defaultMetadata;
     defaultPreferAddToBalance = _defaultPreferAddToBalance;
-    directory = _directory;
-
     _transferOwnership(_owner);
   }
 

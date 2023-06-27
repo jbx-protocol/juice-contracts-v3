@@ -61,6 +61,19 @@ interface IJBSplitsPayer is IERC165 {
 
   function splitsStore() external view returns (IJBSplitsStore);
 
+  function initialize(
+    uint256 _defaultSplitsProjectId,
+    uint256 _defaultSplitsDomain,
+    uint256 _defaultSplitsGroup,
+    uint256 _defaultProjectId,
+    address payable _defaultBeneficiary,
+    bool _defaultPreferClaimedTokens,
+    string memory _defaultMemo,
+    bytes memory _defaultMetadata,
+    bool _preferAddToBalance,
+    address _owner
+  ) external;
+
   function setDefaultSplitsReference(
     uint256 _projectId,
     uint256 _domain,

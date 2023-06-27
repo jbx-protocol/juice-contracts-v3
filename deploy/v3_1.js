@@ -36,23 +36,12 @@ module.exports = async ({ deployments, getChainId }) => {
     // hardhat / localhost
     case '31337':
       governanceAddress = deployer.address;
+
+      protocolProjectStartsAtOrAfter = 0;
       break;
   }
 
-  console.log({ multisigovernanceAddress });
-
-  // Deploy a JBETHERC20ProjectPayerDeployer contract.
-  await deploy('JBETHERC20ProjectPayerDeployer', {
-    ...baseDeployArgs,
-    args: [],
-  });
-
-  // Deploy a JBETHERC20SplitsPayerDeployer contract.
-  await deploy('JBETHERC20SplitsPayerDeployer', {
-    ...baseDeployArgs,
-    contract: 'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
-    args: [],
-  });
+  console.log({ governanceAddress, protocolProjectStartsAtOrAfter });
 
   // Deploy a JBOperatorStore contract.
   const JBOperatorStore = await deploy('JBOperatorStore', {
@@ -155,6 +144,7 @@ module.exports = async ({ deployments, getChainId }) => {
   // Get references to contract that will have transactions triggered.
   const jbDirectoryContract = new ethers.Contract(JBDirectory.address, JBDirectory.abi);
   const jbPricesContract = new ethers.Contract(JBPrices.address, JBPrices.abi);
+  const jbControllerContract = new ethers.Contract(JBController.address, JBController.abi);
   const jbProjectsContract = new ethers.Contract(JBProjects.address, JBProjects.abi);
   const jbCurrenciesLibrary = new ethers.Contract(JBCurrencies.address, JBCurrencies.abi);
 
@@ -178,6 +168,19 @@ module.exports = async ({ deployments, getChainId }) => {
     ],
   });
 
+  // Deploy a JBETHERC20ProjectPayerDeployer contract.
+  await deploy('JBETHERC20ProjectPayerDeployer', {
+    ...baseDeployArgs,
+    args: [JBDirectory.address],
+  });
+
+  // Deploy a JBETHERC20SplitsPayerDeployer contract.
+  await deploy('JBETHERC20SplitsPayerDeployer', {
+    ...baseDeployArgs,
+    contract: 'contracts/JBETHERC20SplitsPayerDeployer.sol:JBETHERC20SplitsPayerDeployer',
+    args: [JBSplitStore.address],
+  });
+
   // Get a reference to an existing ETH/USD feed.
   const usdEthFeed = await jbPricesContract.connect(deployer).feedFor(USD, ETH);
 
@@ -199,6 +202,10 @@ module.exports = async ({ deployments, getChainId }) => {
   if ((await jbPricesContract.connect(deployer).owner()) != governanceAddress)
     await jbPricesContract.connect(deployer).transferOwnership(governanceAddress);
 
+  // If needed, transfer the ownership of the JBProjects to to the multisig.
+  if ((await jbProjectsContract.connect(deployer).owner()) != governanceAddress)
+    await jbProjectsContract.connect(deployer).transferOwnership(governanceAddress);
+
   let isAllowedToSetFirstController = await jbDirectoryContract
     .connect(deployer)
     .isAllowedToSetFirstController(JBController.address);
@@ -219,6 +226,7 @@ module.exports = async ({ deployments, getChainId }) => {
   // If needed, transfer the ownership of the JBProjects contract to the multisig.
   if ((await jbProjectsContract.connect(deployer).owner()) != governanceAddress) {
     let tx = await jbProjectsContract.connect(deployer).transferOwnership(governanceAddress);
+
     await tx.wait();
   }
 

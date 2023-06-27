@@ -90,12 +90,24 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
-
-  /** 
+/**
+    @param _splitsStore A contract that stores splits for each project.
+*/
+  constructor(
+    IJBSplitsStore _splitsStore
+  )
+    JBETHERC20ProjectPayer(
+      _splitsStore.directory()
+    )
+  {
+    splitsStore = _splitsStore;
+  }
+  /**
+    @dev   The re-initialize check is done in the inherited paroject payer
+    
     @param _defaultSplitsProjectId The ID of project for which the default splits are stored.
     @param _defaultSplitsDomain The splits domain to payout when this contract receives direct payments.
     @param _defaultSplitsGroup The splits group to payout when this contract receives direct payments.
-    @param _splitsStore A contract that stores splits for each project.
     @param _defaultProjectId The ID of the project whose treasury should be forwarded the splits payer contract's received payment leftovers after distributing to the default splits group.
     @param _defaultBeneficiary The address that'll receive the project's tokens. 
     @param _defaultPreferClaimedTokens A flag indicating whether issued tokens should be automatically claimed into the beneficiary's wallet. 
@@ -104,11 +116,10 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     @param _preferAddToBalance  A flag indicating if received payments should call the `pay` function or the `addToBalance` function of a project.
     @param _owner The address that will own the contract.
   */
-  constructor(
+  function initialize(
     uint256 _defaultSplitsProjectId,
     uint256 _defaultSplitsDomain,
     uint256 _defaultSplitsGroup,
-    IJBSplitsStore _splitsStore,
     uint256 _defaultProjectId,
     address payable _defaultBeneficiary,
     bool _defaultPreferClaimedTokens,
@@ -116,23 +127,24 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     bytes memory _defaultMetadata,
     bool _preferAddToBalance,
     address _owner
-  )
-    JBETHERC20ProjectPayer(
+  ) external override {
+
+    super.initialize(
       _defaultProjectId,
       _defaultBeneficiary,
       _defaultPreferClaimedTokens,
       _defaultMemo,
       _defaultMetadata,
       _preferAddToBalance,
-      _splitsStore.directory(),
       _owner
-    )
-  {
+    );
+
     defaultSplitsProjectId = _defaultSplitsProjectId;
     defaultSplitsDomain = _defaultSplitsDomain;
     defaultSplitsGroup = _defaultSplitsGroup;
-    splitsStore = _splitsStore;
   }
+
+
 
   //*********************************************************************//
   // ------------------------- default receive ------------------------- //
