@@ -1,25 +1,42 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './../interfaces/IJBController.sol';
-import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
-import './../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
-import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {IJBAllowanceTerminal3_1} from './../interfaces/IJBAllowanceTerminal3_1.sol';
+import {IJBController} from './../interfaces/IJBController.sol';
+import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
 import {IJBFeeGauge} from './../interfaces/IJBFeeGauge.sol';
-import './../libraries/JBConstants.sol';
-import './../libraries/JBCurrencies.sol';
-import './../libraries/JBFixedPointNumber.sol';
-import './../libraries/JBFundingCycleMetadataResolver.sol';
-import './../libraries/JBOperations.sol';
-import './../libraries/JBTokens.sol';
-import './../structs/JBPayDelegateAllocation.sol';
-import './../structs/JBTokenAmount.sol';
+import {IJBPayoutRedemptionPaymentTerminal3_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
+import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
+import {IJBOperatorStore} from './../interfaces/IJBOperatorStore.sol';
+import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
+import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
+import {IJBPrices} from './../interfaces/IJBPrices.sol';
+import {IJBProjects} from './../interfaces/IJBProjects.sol';
+import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
+import {IJBSingleTokenPaymentTerminalStore} from './../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
+import {IJBSplitsStore} from './../interfaces/IJBSplitsStore.sol';
+import {JBConstants} from './../libraries/JBConstants.sol';
+import {JBCurrencies} from './../libraries/JBCurrencies.sol';
+import {JBFixedPointNumber} from './../libraries/JBFixedPointNumber.sol';
+import {JBFundingCycleMetadataResolver} from './../libraries/JBFundingCycleMetadataResolver.sol';
+import {JBOperations} from './../libraries/JBOperations.sol';
+import {JBTokens} from './../libraries/JBTokens.sol';
+import {JBDidPayData} from './../structs/JBDidPayData.sol';
+import {JBDidRedeemData} from './../structs/JBDidRedeemData.sol';
+import {JBFee} from './../structs/JBFee.sol';
+import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
+import {JBPayDelegateAllocation} from './../structs/JBPayDelegateAllocation.sol';
+import {JBTokenAmount} from './../structs/JBTokenAmount.sol';
+import {JBRedemptionDelegateAllocation} from './../structs/JBRedemptionDelegateAllocation.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
 import {JBSplitAllocationData} from './../structs/JBSplitAllocationData.sol';
-import './JBOperatable.sol';
-import './JBSingleTokenPaymentTerminal.sol';
+import {JBOperatable} from './JBOperatable.sol';
+import {JBSingleTokenPaymentTerminal} from './JBSingleTokenPaymentTerminal.sol';
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 abstract contract JBPayoutRedemptionPaymentTerminal3_1 is

@@ -1,25 +1,41 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './../interfaces/IJBController.sol';
-import './../interfaces/IJBPayoutRedemptionPaymentTerminal.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {IJBAllowanceTerminal} from './../interfaces/IJBAllowanceTerminal.sol';
+import {IJBController} from './../interfaces/IJBController.sol';
+import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
+import {IJBPayoutRedemptionPaymentTerminal} from './../interfaces/IJBPayoutRedemptionPaymentTerminal.sol';
 import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 import {IJBFeeGauge} from './../interfaces/IJBFeeGauge.sol';
+import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
+import {IJBOperatorStore} from './../interfaces/IJBOperatorStore.sol';
+import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
+import {IJBPayoutTerminal} from './../interfaces/IJBPayoutTerminal.sol';
+import {IJBPrices} from './../interfaces/IJBPrices.sol';
+import {IJBProjects} from './../interfaces/IJBProjects.sol';
+import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
 import {IJBSingleTokenPaymentTerminalStore} from './../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
-import './../libraries/JBConstants.sol';
-import './../libraries/JBCurrencies.sol';
-import './../libraries/JBFixedPointNumber.sol';
-import './../libraries/JBFundingCycleMetadataResolver.sol';
-import './../libraries/JBOperations.sol';
-import './../libraries/JBTokens.sol';
-import './../structs/JBPayDelegateAllocation.sol';
-import './../structs/JBTokenAmount.sol';
+import {IJBSplitsStore} from './../interfaces/IJBSplitsStore.sol';
+import {JBConstants} from './../libraries/JBConstants.sol';
+import {JBCurrencies} from './../libraries/JBCurrencies.sol';
+import {JBFixedPointNumber} from './../libraries/JBFixedPointNumber.sol';
+import {JBFundingCycleMetadataResolver} from './../libraries/JBFundingCycleMetadataResolver.sol';
+import {JBOperations} from './../libraries/JBOperations.sol';
+import {JBTokens} from './../libraries/JBTokens.sol';
+import {JBDidPayData} from './../structs/JBDidPayData.sol';
+import {JBDidRedeemData} from './../structs/JBDidRedeemData.sol';
+import {JBFee} from './../structs/JBFee.sol';
+import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
+import {JBPayDelegateAllocation} from './../structs/JBPayDelegateAllocation.sol';
+import {JBTokenAmount} from './../structs/JBTokenAmount.sol';
 import {JBRedemptionDelegateAllocation} from './../structs/JBRedemptionDelegateAllocation.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
 import {JBSplitAllocationData} from './../structs/JBSplitAllocationData.sol';
-import './JBOperatable.sol';
-import './JBSingleTokenPaymentTerminal.sol';
+import {JBOperatable} from './JBOperatable.sol';
+import {JBSingleTokenPaymentTerminal} from './JBSingleTokenPaymentTerminal.sol';
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 /// A project can transfer its funds, along with the power to reconfigure and mint/burn their tokens, from this contract to another allowed terminal of the same token type contract at any time.

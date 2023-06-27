@@ -111,9 +111,7 @@ library JBFundingCycleMetadataResolver {
   }
 
   /// @notice Pack the funding cycle metadata.
-
   /// @param _metadata The metadata to validate and pack.
-
   /// @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.  
   function packFundingCycleMetadata(JBFundingCycleMetadata memory _metadata)
     internal
@@ -165,9 +163,7 @@ library JBFundingCycleMetadataResolver {
   }
 
   /// @notice Expand the funding cycle metadata.
-
   /// @param _fundingCycle The funding cycle having its metadata expanded.
-
   /// @return metadata The metadata object.  
   function expandMetadata(JBFundingCycle memory _fundingCycle)
     internal
