@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import './interfaces/IJBProjectPayer.sol';
+import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import './libraries/JBTokens.sol';
 
 /** 
@@ -104,13 +105,9 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
 
     @param _interfaceId The ID of the interface to check for adherance to.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(ERC165, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBProjectPayer).interfaceId || super.supportsInterface(_interfaceId);
   }
@@ -147,7 +144,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     bool _defaultPreferAddToBalance,
     address _owner
   ) public {
-    if(msg.sender != projectPayerDeployer) revert ALREADY_INITIALIZED();
+    if (msg.sender != projectPayerDeployer) revert ALREADY_INITIALIZED();
 
     defaultProjectId = _defaultProjectId;
     defaultBeneficiary = _defaultBeneficiary;

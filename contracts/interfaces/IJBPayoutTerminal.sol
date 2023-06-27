@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 interface IJBPayoutTerminal {
   function distributePayoutsOf(
-    uint256 _projectId,
-    uint256 _amount,
-    uint256 _currency,
-    address _token,
-    uint256 _minReturnedTokens,
-    string calldata _memo
+    uint256 projectId,
+    uint256 amount,
+    uint256 currency,
+    address token,
+    uint256 minReturnedTokens,
+    string calldata memo
   ) external returns (uint256 netLeftoverDistributionAmount);
 }

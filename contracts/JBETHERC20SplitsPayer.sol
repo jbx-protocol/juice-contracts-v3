@@ -9,6 +9,8 @@ import './interfaces/IJBSplitsPayer.sol';
 import './interfaces/IJBSplitsStore.sol';
 import './libraries/JBConstants.sol';
 import './JBETHERC20ProjectPayer.sol';
+import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
+import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /** 
   @notice 
@@ -76,13 +78,9 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
 
     @return A flag indicating if this contract adheres to the specified interface.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBETHERC20ProjectPayer, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBETHERC20ProjectPayer, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBSplitsPayer).interfaceId || super.supportsInterface(_interfaceId);
   }
@@ -90,18 +88,13 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
-/**
+  /**
     @param _splitsStore A contract that stores splits for each project.
 */
-  constructor(
-    IJBSplitsStore _splitsStore
-  )
-    JBETHERC20ProjectPayer(
-      _splitsStore.directory()
-    )
-  {
+  constructor(IJBSplitsStore _splitsStore) JBETHERC20ProjectPayer(_splitsStore.directory()) {
     splitsStore = _splitsStore;
   }
+
   /**
     @dev   The re-initialize check is done in the inherited paroject payer
     
@@ -128,7 +121,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     bool _preferAddToBalance,
     address _owner
   ) external override {
-
     super.initialize(
       _defaultProjectId,
       _defaultBeneficiary,
@@ -143,8 +135,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     defaultSplitsDomain = _defaultSplitsDomain;
     defaultSplitsGroup = _defaultSplitsGroup;
   }
-
-
 
   //*********************************************************************//
   // ------------------------- default receive ------------------------- //

@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/**
-  @notice
-  Global constants used across Juicebox contracts.
-*/
+/// @notice Global constants used across Juicebox contracts.
 library JBConstants {
   uint256 public constant MAX_RESERVED_RATE = 10_000;
   uint256 public constant MAX_REDEMPTION_RATE = 10_000;

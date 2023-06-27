@@ -10,10 +10,12 @@ import './interfaces/IJBMigratable.sol';
 import './interfaces/IJBOperatorStore.sol';
 import './interfaces/IJBPaymentTerminal.sol';
 import './interfaces/IJBProjects.sol';
+import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import './libraries/JBConstants.sol';
 import './libraries/JBFundingCycleMetadataResolver.sol';
 import './libraries/JBOperations.sol';
 import './libraries/JBSplitsGroups.sol';
+import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /**
   @notice

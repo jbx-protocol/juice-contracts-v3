@@ -4,6 +4,11 @@ pragma solidity ^0.8.16;
 import '@paulrberg/contracts/math/PRBMath.sol';
 import './abstract/JBControllerUtility.sol';
 import './libraries/JBConstants.sol';
+import {JBBallotState} from './enums/JBBallotState.sol';
+import {IJBFundingCycleBallot} from './interfaces/IJBFundingCycleBallot.sol';
+import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBFundingCycleData} from './structs/JBFundingCycleData.sol';
 
 /** 
   @notice 
@@ -84,12 +89,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return fundingCycle The funding cycle.
   */
-  function get(uint256 _projectId, uint256 _configuration)
-    external
-    view
-    override
-    returns (JBFundingCycle memory fundingCycle)
-  {
+  function get(
+    uint256 _projectId,
+    uint256 _configuration
+  ) external view override returns (JBFundingCycle memory fundingCycle) {
     return _getStructFor(_projectId, _configuration);
   }
 
@@ -102,12 +105,9 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     @return fundingCycle The project's queued funding cycle.
     @return ballotState The state of the ballot for the reconfiguration.
   */
-  function latestConfiguredOf(uint256 _projectId)
-    external
-    view
-    override
-    returns (JBFundingCycle memory fundingCycle, JBBallotState ballotState)
-  {
+  function latestConfiguredOf(
+    uint256 _projectId
+  ) external view override returns (JBFundingCycle memory fundingCycle, JBBallotState ballotState) {
     // Get a reference to the latest funding cycle configuration.
     uint256 _fundingCycleConfiguration = latestConfigurationOf[_projectId];
 
@@ -134,12 +134,9 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return fundingCycle The project's queued funding cycle.
   */
-  function queuedOf(uint256 _projectId)
-    external
-    view
-    override
-    returns (JBFundingCycle memory fundingCycle)
-  {
+  function queuedOf(
+    uint256 _projectId
+  ) external view override returns (JBFundingCycle memory fundingCycle) {
     // If the project does not have a funding cycle, return an empty struct.
     if (latestConfigurationOf[_projectId] == 0) return _getStructFor(0, 0);
 
@@ -192,12 +189,9 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return fundingCycle The project's current funding cycle.
   */
-  function currentOf(uint256 _projectId)
-    external
-    view
-    override
-    returns (JBFundingCycle memory fundingCycle)
-  {
+  function currentOf(
+    uint256 _projectId
+  ) external view override returns (JBFundingCycle memory fundingCycle) {
     // If the project does not have a funding cycle, return an empty struct.
     if (latestConfigurationOf[_projectId] == 0) return _getStructFor(0, 0);
 
@@ -622,11 +616,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return A mock of what the next funding cycle will be.
   */
-  function _mockFundingCycleBasedOn(JBFundingCycle memory _baseFundingCycle, bool _allowMidCycle)
-    private
-    view
-    returns (JBFundingCycle memory)
-  {
+  function _mockFundingCycleBasedOn(
+    JBFundingCycle memory _baseFundingCycle,
+    bool _allowMidCycle
+  ) private view returns (JBFundingCycle memory) {
     // Get the distance of the current time to the start of the next possible funding cycle.
     // If the returned mock cycle must not yet have started, the start time of the mock must be in the future.
     uint256 _mustStartAtOrAfter = !_allowMidCycle
@@ -662,11 +655,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return start The next start time.
   */
-  function _deriveStartFrom(JBFundingCycle memory _baseFundingCycle, uint256 _mustStartAtOrAfter)
-    private
-    pure
-    returns (uint256 start)
-  {
+  function _deriveStartFrom(
+    JBFundingCycle memory _baseFundingCycle,
+    uint256 _mustStartAtOrAfter
+  ) private pure returns (uint256 start) {
     // A subsequent cycle to one with a duration of 0 should start as soon as possible.
     if (_baseFundingCycle.duration == 0) return _mustStartAtOrAfter;
 
@@ -696,11 +688,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return weight The derived weight, as a fixed point number with 18 decimals.
   */
-  function _deriveWeightFrom(JBFundingCycle memory _baseFundingCycle, uint256 _start)
-    private
-    pure
-    returns (uint256 weight)
-  {
+  function _deriveWeightFrom(
+    JBFundingCycle memory _baseFundingCycle,
+    uint256 _start
+  ) private pure returns (uint256 weight) {
     // A subsequent cycle to one with a duration of 0 should have the next possible weight.
     if (_baseFundingCycle.duration == 0)
       return
@@ -752,11 +743,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return The funding cycle number.
   */
-  function _deriveNumberFrom(JBFundingCycle memory _baseFundingCycle, uint256 _start)
-    private
-    pure
-    returns (uint256)
-  {
+  function _deriveNumberFrom(
+    JBFundingCycle memory _baseFundingCycle,
+    uint256 _start
+  ) private pure returns (uint256) {
     // A subsequent cycle to one with a duration of 0 should be the next number.
     if (_baseFundingCycle.duration == 0) return _baseFundingCycle.number + 1;
 
@@ -776,11 +766,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return The approval flag.
   */
-  function _isApproved(uint256 _projectId, JBFundingCycle memory _fundingCycle)
-    private
-    view
-    returns (bool)
-  {
+  function _isApproved(
+    uint256 _projectId,
+    JBFundingCycle memory _fundingCycle
+  ) private view returns (bool) {
     return
       _ballotStateOf(
         _projectId,
@@ -833,11 +822,10 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     @return fundingCycle A funding cycle struct.
   */
-  function _getStructFor(uint256 _projectId, uint256 _configuration)
-    private
-    view
-    returns (JBFundingCycle memory fundingCycle)
-  {
+  function _getStructFor(
+    uint256 _projectId,
+    uint256 _configuration
+  ) private view returns (JBFundingCycle memory fundingCycle) {
     // Return an empty funding cycle if the configuration specified is 0.
     if (_configuration == 0) return fundingCycle;
 

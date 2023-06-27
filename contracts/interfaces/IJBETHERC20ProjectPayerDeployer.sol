@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './IJBDirectory.sol';
-import './IJBProjectPayer.sol';
+import {IJBDirectory} from './IJBDirectory.sol';
+import {IJBProjectPayer} from './IJBProjectPayer.sol';
 
 interface IJBETHERC20ProjectPayerDeployer {
   event DeployProjectPayer(
@@ -19,12 +19,12 @@ interface IJBETHERC20ProjectPayerDeployer {
   );
 
   function deployProjectPayer(
-    uint256 _defaultProjectId,
-    address payable _defaultBeneficiary,
-    bool _defaultPreferClaimedTokens,
-    string memory _defaultMemo,
-    bytes memory _defaultMetadata,
-    bool _preferAddToBalance,
-    address _owner
+    uint256 defaultProjectId,
+    address payable defaultBeneficiary,
+    bool defaultPreferClaimedTokens,
+    string memory defaultMemo,
+    bytes memory defaultMetadata,
+    bool preferAddToBalance,
+    address owner
   ) external returns (IJBProjectPayer projectPayer);
 }

@@ -49,7 +49,7 @@ contract JBETHPaymentTerminal is JBPayoutRedemptionPaymentTerminal {
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    address _store,
     address _owner
   )
     JBPayoutRedemptionPaymentTerminal(
@@ -83,11 +83,7 @@ contract JBETHPaymentTerminal is JBPayoutRedemptionPaymentTerminal {
     @param _to The address to which the transfer should go.
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal override {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
     _from; // Prevents unused var compiler and natspec complaints.
 
     Address.sendValue(_to, _amount);

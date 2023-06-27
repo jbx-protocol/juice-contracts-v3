@@ -4,6 +4,7 @@ pragma solidity ^0.8.16;
 import './abstract/JBOperatable.sol';
 import './interfaces/IJBDirectory.sol';
 import './interfaces/IJBSplitsStore.sol';
+import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import './libraries/JBConstants.sol';
 import './libraries/JBOperations.sol';
 
@@ -288,11 +289,10 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
 
     @return A flag indicating if the `_lockedSplit` is contained in the `_splits`.
   */
-  function _includesLocked(JBSplit[] memory _splits, JBSplit memory _lockedSplit)
-    private
-    pure
-    returns (bool)
-  {
+  function _includesLocked(
+    JBSplit[] memory _splits,
+    JBSplit memory _lockedSplit
+  ) private pure returns (bool) {
     // Keep a reference to the number of splits.
     uint256 _numberOfSplits = _splits.length;
 

@@ -7,6 +7,8 @@ import '@paulrberg/contracts/math/PRBMath.sol';
 import './../interfaces/IJBController.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import './../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
+import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {IJBFeeGauge} from './../interfaces/IJBFeeGauge.sol';
 import './../libraries/JBConstants.sol';
 import './../libraries/JBCurrencies.sol';
 import './../libraries/JBFixedPointNumber.sol';
@@ -15,6 +17,7 @@ import './../libraries/JBOperations.sol';
 import './../libraries/JBTokens.sol';
 import './../structs/JBPayDelegateAllocation.sol';
 import './../structs/JBTokenAmount.sol';
+import {JBSplitAllocationData} from './../structs/JBSplitAllocationData.sol';
 import './JBOperatable.sol';
 import './JBSingleTokenPaymentTerminal.sol';
 

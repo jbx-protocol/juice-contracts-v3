@@ -5,6 +5,9 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@paulrberg/contracts/math/PRBMath.sol';
 import './../interfaces/IJBController.sol';
 import './../interfaces/IJBPayoutRedemptionPaymentTerminal.sol';
+import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {IJBFeeGauge} from './../interfaces/IJBFeeGauge.sol';
+import {IJBSingleTokenPaymentTerminalStore} from './../interfaces/IJBSingleTokenPaymentTerminalStore.sol';
 import './../libraries/JBConstants.sol';
 import './../libraries/JBCurrencies.sol';
 import './../libraries/JBFixedPointNumber.sol';
@@ -13,6 +16,8 @@ import './../libraries/JBOperations.sol';
 import './../libraries/JBTokens.sol';
 import './../structs/JBPayDelegateAllocation.sol';
 import './../structs/JBTokenAmount.sol';
+import {JBRedemptionDelegateAllocation} from './../structs/JBRedemptionDelegateAllocation.sol';
+import {JBSplitAllocationData} from './../structs/JBSplitAllocationData.sol';
 import './JBOperatable.sol';
 import './JBSingleTokenPaymentTerminal.sol';
 
@@ -132,7 +137,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     @notice
     The contract that stores and manages the terminal's data.
   */
-  IJBSingleTokenPaymentTerminalStore public immutable override store;
+  address public immutable override store;
 
   /**
     @notice
@@ -166,7 +171,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     @notice
     The data source that returns a discount to apply to a project's fee.
   */
-  IJBFeeGauge public override feeGauge;
+  address public override feeGauge;
 
   /**
     @notice
@@ -194,15 +199,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
   */
-  function currentEthOverflowOf(uint256 _projectId)
-    external
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function currentEthOverflowOf(
+    uint256 _projectId
+  ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
-    uint256 _overflow = store.currentOverflowOf(this, _projectId);
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore(store).currentOverflowOf(
+      this,
+      _projectId
+    );
 
     // Adjust the decimals of the fixed point number if needed to have 18 decimals.
     uint256 _adjustedOverflow = (decimals == 18)
@@ -215,7 +219,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
         ? _adjustedOverflow
         : PRBMath.mulDiv(
           _adjustedOverflow,
-          10**decimals,
+          10 ** decimals,
           prices.priceFor(currency, JBCurrencies.ETH, decimals)
         );
   }
@@ -245,13 +249,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @param _interfaceId The ID of the interface to check for adherance to.
   */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBSingleTokenPaymentTerminal, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBPayoutRedemptionPaymentTerminal).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal).interfaceId ||
@@ -303,7 +303,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    address _store,
     address _owner
   )
     payable
@@ -516,7 +516,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
   */
-  function migrate(uint256 _projectId, IJBPaymentTerminal _to)
+  function migrate(
+    uint256 _projectId,
+    IJBPaymentTerminal _to
+  )
     external
     virtual
     override
@@ -527,7 +530,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = store.recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance > 0) {
@@ -593,7 +596,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @param _projectId The ID of the project whos held fees should be processed.
   */
-  function processFees(uint256 _projectId)
+  function processFees(
+    uint256 _projectId
+  )
     external
     virtual
     override
@@ -661,7 +666,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @param _feeGauge The new fee gauge.
   */
-  function setFeeGauge(IJBFeeGauge _feeGauge) external virtual override onlyOwner {
+  function setFeeGauge(address _feeGauge) external virtual override onlyOwner {
     // Store the new fee gauge.
     feeGauge = _feeGauge;
 
@@ -697,11 +702,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     @param _to The address to which the transfer should go.
     @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   */
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal virtual {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal virtual {
     _from; // Prevents unused var compiler and natspec complaints.
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
@@ -757,7 +758,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
       JBRedemptionDelegateAllocation[] memory _delegateAllocations;
 
       // Record the redemption.
-      (_fundingCycle, reclaimAmount, _delegateAllocations, _memo) = store.recordRedemptionFor(
+      (
+        _fundingCycle,
+        reclaimAmount,
+        _delegateAllocations,
+        _memo
+      ) = IJBSingleTokenPaymentTerminalStore(store).recordRedemptionFor(
         _holder,
         _projectId,
         _tokenCount,
@@ -874,11 +880,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     string calldata _memo
   ) internal returns (uint256 netLeftoverDistributionAmount) {
     // Record the distribution.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordDistributionFor(
-      _projectId,
-      _amount,
-      _currency
-    );
+    (
+      JBFundingCycle memory _fundingCycle,
+      uint256 _distributedAmount
+    ) = IJBSingleTokenPaymentTerminalStore(store).recordDistributionFor(
+        _projectId,
+        _amount,
+        _currency
+      );
 
     // The amount being distributed must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -987,11 +996,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     string memory _memo
   ) internal returns (uint256 netDistributedAmount) {
     // Record the use of the allowance.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = store.recordUsedAllowanceOf(
-      _projectId,
-      _amount,
-      _currency
-    );
+    (
+      JBFundingCycle memory _fundingCycle,
+      uint256 _distributedAmount
+    ) = IJBSingleTokenPaymentTerminalStore(store).recordUsedAllowanceOf(
+        _projectId,
+        _amount,
+        _currency
+      );
 
     // The amount being withdrawn must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -1359,7 +1371,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
       JBTokenAmount memory _bundledAmount = JBTokenAmount(token, _amount, decimals, currency);
 
       // Record the payment.
-      (_fundingCycle, _tokenCount, _delegateAllocations, _memo) = store.recordPaymentFrom(
+      (
+        _fundingCycle,
+        _tokenCount,
+        _delegateAllocations,
+        _memo
+      ) = IJBSingleTokenPaymentTerminalStore(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1472,7 +1489,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    store.recordAddedBalanceFor(_projectId, _amount + _refundedFees);
+    IJBSingleTokenPaymentTerminalStore(store).recordAddedBalanceFor(
+      _projectId,
+      _amount + _refundedFees
+    );
 
     emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
   }
@@ -1486,10 +1506,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
     @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
   */
-  function _refundHeldFees(uint256 _projectId, uint256 _amount)
-    internal
-    returns (uint256 refundedFees)
-  {
+  function _refundHeldFees(
+    uint256 _projectId,
+    uint256 _amount
+  ) internal returns (uint256 refundedFees) {
     // Get a reference to the project's held fees.
     JBFee[] memory _heldFees = _heldFeesOf[_projectId];
 
@@ -1577,9 +1597,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     ) return JBConstants.MAX_FEE_DISCOUNT;
 
     // Get the fee discount.
-    if (feeGauge != IJBFeeGauge(address(0)))
+    if (feeGauge != address(0))
       // If the guage reverts, keep the discount at 0.
-      try feeGauge.currentDiscountFor(_projectId) returns (uint256 discount) {
+      try IJBFeeGauge(feeGauge).currentDiscountFor(_projectId) returns (uint256 discount) {
         // If the fee discount is greater than the max, we ignore the return value
         if (discount <= JBConstants.MAX_FEE_DISCOUNT) return discount;
       } catch {
