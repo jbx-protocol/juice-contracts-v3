@@ -253,9 +253,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         );
 
         // Check: correct amount returned
-
-        uint256 _grossRedeemed = PRBMath.mulDiv(_tokenAmountToRedeem, 10**18, _weight); // 50% redemption rate
-        uint256 _minusRedemptionRate =       PRBMath.mulDiv(
+        uint256 _grossRedeemed = PRBMath.mulDiv(
                 _tokenAmountToRedeem,
                 5000 +
                 PRBMath.mulDiv(
@@ -266,19 +264,16 @@ contract TestRedeem_Local is TestBaseWorkflow {
                 JBConstants.MAX_REDEMPTION_RATE
             );
 
-        uint256 _fee =  _minusRedemptionRate - PRBMath.mulDiv(_minusRedemptionRate, 1_000_000_000, 25000000 + 1_000_000_000); // 2.5% fee
-        uint256 _netReceived = _minusRedemptionRate - _fee;
+        uint256 _fee =  _grossRedeemed - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25000000 + 1_000_000_000); // 2.5% fee
+        uint256 _netReceived = _grossRedeemed - _fee;
 
-// received 488000000000000 but calculated 487804878048780
-// fee      12200000000000  but calculated 12195121951220
-// total    500200000000000 but calculated 500000000000000 (pay 2ETH, redeem half of the tokens, redemption rate is 50%)
+        uint256 _convertedInEth = PRBMath.mulDiv(_netReceived, 1e18, _weight);
 
-        // console.log("_grossRedeemed", _grossRedeemed);
-        // console.log("_minusRedemptionRate", _minusRedemptionRate);
-        // console.log("_fee", _fee);
-        // console.log("_netReceived", _netReceived);
+        // Verify: correct amount returned
+        assertApproxEqAbs(_reclaimAmtInWei, _convertedInEth, 2, "incorrect amount returned");
 
-        assertEq(_reclaimAmtInWei, _netReceived);
+        // Verify: beneficiary received correct amount of ETH
+        assertEq(payable(_userWallet).balance, _reclaimAmtInWei);
 
         // verify: beneficiary has correct amount of token
         assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance - _tokenAmountToRedeem, "incorrect beneficiary balance");
