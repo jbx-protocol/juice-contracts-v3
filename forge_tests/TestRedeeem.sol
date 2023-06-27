@@ -198,7 +198,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
     function testRedeemTerminal3_1_1(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false
-        uint96 payAmountInWei = 2 ether;
+        uint96 payAmountInWei = 10 ether;
 
         // issue an ERC-20 token for project
         vm.prank(_projectOwner);
