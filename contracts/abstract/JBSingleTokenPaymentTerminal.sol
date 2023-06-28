@@ -60,6 +60,7 @@ abstract contract JBSingleTokenPaymentTerminal is ERC165, IJBSingleTokenPaymentT
   /// @notice Indicates if this contract adheres to the specified interface.
   /// @dev See {IERC165-supportsInterface}.
   /// @param _interfaceId The ID of the interface to check for adherance to.
+  /// @return A flag indicating if the provided interface ID is supported.
   function supportsInterface(
     bytes4 _interfaceId
   ) public view virtual override(ERC165, IERC165) returns (bool) {

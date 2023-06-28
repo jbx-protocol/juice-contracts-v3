@@ -71,6 +71,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
   /// @notice The total balance of tokens a holder has for a specified project, including claimed and unclaimed tokens.
   /// @param _holder The token holder to get a balance for.
+  /// @param _projectId The project to get the `_holder`s balance of.
   /// @return balance The project token balance of the `_holder  
   function balanceOf(address _holder, uint256 _projectId)
     external
@@ -94,6 +95,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
   /// @notice The total supply of tokens for each project, including claimed and unclaimed tokens.
   /// @param _projectId The ID of the project to get the total token supply of.
+  /// @return totalSupply The total supply of the project's tokens.
   function totalSupplyOf(uint256 _projectId) public view override returns (uint256 totalSupply) {
     // Get a reference to the total supply of the project's unclaimed tokens.
     totalSupply = unclaimedTotalSupplyOf[_projectId];

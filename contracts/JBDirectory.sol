@@ -281,7 +281,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     emit SetPrimaryTerminal(_projectId, _token, _terminal, msg.sender);
   }
 
-  /// @notice	Set a contract to the list of trusted addresses that can set a first controller for any project.	
+  /// @notice Set a contract to the list of trusted addresses that can set a first controller for any project.	
   /// @dev The owner can add addresses which are allowed to change projects' first controllers. 
   /// @dev These addresses are known and vetted controllers as well as contracts designed to launch new projects. 
   /// @dev A project can set its own controller without it being on the allow list.

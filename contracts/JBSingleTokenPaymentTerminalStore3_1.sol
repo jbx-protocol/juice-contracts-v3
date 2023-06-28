@@ -61,6 +61,7 @@ contract JBSingleTokenPaymentTerminalStore3_1 is
   /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
 
+  /// @notice The contract storing all funding cycle configurations.
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
   /// @notice The contract that exposes price feeds.
@@ -178,6 +179,7 @@ contract JBSingleTokenPaymentTerminalStore3_1 is
   }
 
   /// @notice The current amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens, using the specified total token supply and overflow amounts.
+  /// @dev If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
   /// @param _projectId The ID of the project to get the reclaimable overflow amount for.
   /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
   /// @param _totalSupply The total number of tokens to make the calculation with, as a fixed point number with 18 decimals.

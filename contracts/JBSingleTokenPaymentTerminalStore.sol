@@ -98,8 +98,10 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
   //*********************************************************************//
 
   /// @notice Gets the current overflowed amount in a terminal for a specified project.
+  /// @dev The current overflow is represented as a fixed point number with the same amount of decimals as the specified terminal.
   /// @param _terminal The terminal for which the overflow is being calculated.
   /// @param _projectId The ID of the project to get overflow for.
+  /// @return The current amount of overflow that project has in the specified terminal.
   function currentOverflowOf(
     IJBSingleTokenPaymentTerminal _terminal,
     uint256 _projectId
@@ -764,7 +766,9 @@ contract JBSingleTokenPaymentTerminalStore is ReentrancyGuard, IJBSingleTokenPay
     }
   }
 
-  /// @dev @param _projectId The ID of the project to get the total overflow for.
+  /// @notice Gets the amount that is currently overflowing across all of a project's terminals.
+  /// @dev This amount changes as the value of the balances changes in relation to the currency being used to measure the project's distribution limits.
+  /// @param _projectId The ID of the project to get the total overflow for.
   /// @param _decimals The number of decimals that the fixed point overflow should include.
   /// @param _currency The currency that the overflow should be in terms of.
   /// @return overflow The total overflow of a project's funds.

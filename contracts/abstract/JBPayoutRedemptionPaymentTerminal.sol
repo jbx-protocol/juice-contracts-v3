@@ -540,7 +540,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
   /// @notice Sets whether projects operating on this terminal can pay towards the specified address without incurring a fee.
   /// @dev Only the owner of this contract can set addresses as feeless.
-  /// @dev @param _flag A flag indicating whether the terminal should be feeless or not.
+  /// @param _address The address that can be paid towards while still bypassing fees.
+  /// @param _flag A flag indicating whether the terminal should be feeless or not.
   function setFeelessAddress(address _address, bool _flag) external virtual override onlyOwner {
     // Set the flag value.
     isFeelessAddress[_address] = _flag;

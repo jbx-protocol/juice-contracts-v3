@@ -39,6 +39,7 @@ contract JBMigrationOperator {
   // --------------------- external transactions ----------------------- //
   //*********************************************************************//
 
+  /// @notice Allows project owners to migrate the controller & terminal linked to their project to the latest version.
   /// @param _projectId The project id whose controller & terminal are to be migrated
   /// @param _newController Controller 3.1 address to migrate to.
   /// @param _newJbTerminal Terminal 3.1 address to migrate to.

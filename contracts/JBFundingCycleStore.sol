@@ -190,9 +190,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   }
 
   /// @notice The current ballot state of the project.
-
   /// @param _projectId The ID of the project to check the ballot state of.
-
   /// @return The project's current ballot's state.
   function currentBallotStateOf(uint256 _projectId) external view override returns (JBBallotState) {
     // Get a reference to the latest funding cycle configuration.

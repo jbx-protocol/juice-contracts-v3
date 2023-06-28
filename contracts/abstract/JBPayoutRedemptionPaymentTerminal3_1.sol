@@ -609,6 +609,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
     _amount; // Prevents unused var compiler and natspec complaints.
   }
 
+  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
   /// @dev Only a token holder or a designated operator can redeem its tokens.
   /// @param _holder The account to redeem tokens for.
   /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -1463,9 +1464,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1 is
   }
 
   /// @notice Get the fee discount from the fee gauge for the specified project.
-
   /// @param _projectId The ID of the project to get a fee discount for.
-
   /// @return feeDiscount The fee discount, which should be interpreted as a percentage out MAX_FEE_DISCOUNT.
   function _currentFeeDiscount(uint256 _projectId) internal view returns (uint256) {
     // Can't take a fee if the protocol project doesn't have a terminal that accepts the token.
