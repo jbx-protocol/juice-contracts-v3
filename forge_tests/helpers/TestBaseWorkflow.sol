@@ -3,44 +3,103 @@ pragma solidity ^0.8.6;
 
 import "forge-std/Test.sol";
 
-import "@juicebox/JBController.sol";
-import "@juicebox/JBController3_1.sol";
-import "@juicebox/JBDirectory.sol";
-import "@juicebox/JBETHPaymentTerminal.sol";
-import "@juicebox/JBETHPaymentTerminal3_1.sol";
-import "@juicebox/JBERC20PaymentTerminal.sol";
-import "@juicebox/JBERC20PaymentTerminal3_1.sol";
-import "@juicebox/JBSingleTokenPaymentTerminalStore.sol";
-import "@juicebox/JBSingleTokenPaymentTerminalStore3_1.sol";
-import "@juicebox/JBFundAccessConstraintsStore.sol";
-import "@juicebox/JBFundingCycleStore.sol";
-import "@juicebox/JBOperatorStore.sol";
-import "@juicebox/JBPrices.sol";
-import "@juicebox/JBProjects.sol";
-import "@juicebox/JBSplitsStore.sol";
-import "@juicebox/JBToken.sol";
-import "@juicebox/JBTokenStore.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC165, IERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-import "@juicebox/structs/JBDidPayData.sol";
-import "@juicebox/structs/JBDidRedeemData.sol";
-import "@juicebox/structs/JBFee.sol";
-import "@juicebox/structs/JBFundAccessConstraints.sol";
-import "@juicebox/structs/JBFundingCycle.sol";
-import "@juicebox/structs/JBFundingCycleData.sol";
-import "@juicebox/structs/JBFundingCycleMetadata.sol";
-import "@juicebox/structs/JBGroupedSplits.sol";
-import "@juicebox/structs/JBOperatorData.sol";
-import "@juicebox/structs/JBPayParamsData.sol";
-import "@juicebox/structs/JBProjectMetadata.sol";
-import "@juicebox/structs/JBRedeemParamsData.sol";
-import "@juicebox/structs/JBSplit.sol";
+import {JBController} from "@juicebox/JBController.sol";
+import {JBController3_1} from "@juicebox/JBController3_1.sol";
+import {JBDirectory} from "@juicebox/JBDirectory.sol";
+import {JBETHPaymentTerminal} from "@juicebox/JBETHPaymentTerminal.sol";
+import {JBETHPaymentTerminal3_1} from "@juicebox/JBETHPaymentTerminal3_1.sol";
+import {JBERC20PaymentTerminal} from "@juicebox/JBERC20PaymentTerminal.sol";
+import {JBERC20PaymentTerminal3_1} from "@juicebox/JBERC20PaymentTerminal3_1.sol";
+import {JBSingleTokenPaymentTerminalStore} from "@juicebox/JBSingleTokenPaymentTerminalStore.sol";
+import {JBSingleTokenPaymentTerminalStore3_1} from "@juicebox/JBSingleTokenPaymentTerminalStore3_1.sol";
+import {JBFundAccessConstraintsStore} from "@juicebox/JBFundAccessConstraintsStore.sol";
+import {JBFundingCycleStore} from "@juicebox/JBFundingCycleStore.sol";
+import {JBOperatorStore} from "@juicebox/JBOperatorStore.sol";
+import {JBPrices} from "@juicebox/JBPrices.sol";
+import {JBProjects} from "@juicebox/JBProjects.sol";
+import {JBSplitsStore} from "@juicebox/JBSplitsStore.sol";
+import {JBToken} from "@juicebox/JBToken.sol";
+import {JBTokenStore} from "@juicebox/JBTokenStore.sol";
+import {JBMigrationOperator} from "@juicebox/JBMigrationOperator.sol";
+import {JBReconfigurationBufferBallot} from "@juicebox/JBReconfigurationBufferBallot.sol";
+import {JBETHERC20SplitsPayerDeployer} from "@juicebox/JBETHERC20SplitsPayerDeployer.sol";
+import {JBETHERC20SplitsPayer} from "@juicebox/JBETHERC20SplitsPayer.sol";
+import {JBETHPaymentTerminal3_1_1} from "@juicebox/JBETHPaymentTerminal3_1_1.sol";
 
-import "@juicebox/interfaces/IJBPaymentTerminal.sol";
-import "@juicebox/interfaces/IJBToken.sol";
+import {JBPayoutRedemptionPaymentTerminal3_1} from "@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_1.sol";
+import {JBSingleTokenPaymentTerminal} from "@juicebox/abstract/JBSingleTokenPaymentTerminal.sol";
+
+
+import {JBDidPayData} from "@juicebox/structs/JBDidPayData.sol";
+import {JBDidRedeemData} from "@juicebox/structs/JBDidRedeemData.sol";
+import {JBFee} from "@juicebox/structs/JBFee.sol";
+import {JBFundAccessConstraints} from "@juicebox/structs/JBFundAccessConstraints.sol";
+import {JBFundingCycle} from "@juicebox/structs/JBFundingCycle.sol";
+import {JBFundingCycleData} from "@juicebox/structs/JBFundingCycleData.sol";
+import {JBFundingCycleMetadata} from "@juicebox/structs/JBFundingCycleMetadata.sol";
+import {JBGroupedSplits} from "@juicebox/structs/JBGroupedSplits.sol";
+import {JBOperatorData} from "@juicebox/structs/JBOperatorData.sol";
+import {JBPayParamsData} from "@juicebox/structs/JBPayParamsData.sol";
+import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
+import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
+import {JBSplit} from "@juicebox/structs/JBSplit.sol";
+import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
+import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
+import {JBPayDelegateAllocation} from "@juicebox/structs/JBPayDelegateAllocation.sol";
+import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
+import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
+
+import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
+import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
+import {JBController3_0_1} from "@juicebox/JBController3_0_1.sol";
+import {IJBController} from "@juicebox/interfaces/IJBController.sol";
+import {IJBMigratable} from "@juicebox/interfaces/IJBMigratable.sol";
+import {IJBOperatorStore} from "@juicebox/interfaces/IJBOperatorStore.sol";
+import {IJBSingleTokenPaymentTerminalStore} from "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore.sol";
+import {IJBProjects} from "@juicebox/interfaces/IJBProjects.sol";
+import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
+import {IJBPayoutRedemptionPaymentTerminal} from "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal.sol";
+import {IJBDirectory} from "@juicebox/interfaces/IJBDirectory.sol";
+import {IJBFundingCycleStore} from "@juicebox/interfaces/IJBFundingCycleStore.sol";
+import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
+import {IJBTokenStore} from "@juicebox/interfaces/IJBTokenStore.sol";
+import {IJBSplitAllocator} from "@juicebox/interfaces/IJBSplitAllocator.sol";
+import {IJBPayDelegate} from "@juicebox/interfaces/IJBPayDelegate.sol";
+import {IJBFundingCycleDataSource} from "@juicebox/interfaces/IJBFundingCycleDataSource.sol";
+import {IJBFeeGauge} from "@juicebox/interfaces/IJBFeeGauge.sol";
+import {IJBPayoutRedemptionPaymentTerminal3_1} from "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
+import {IJBFeeHoldingTerminal} from "@juicebox/interfaces/IJBFeeHoldingTerminal.sol";
+import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
+import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
+import {IJBAllowanceTerminal} from "@juicebox/interfaces/IJBAllowanceTerminal.sol";
+import {IJBPayoutTerminal} from "@juicebox/interfaces/IJBPayoutTerminal.sol";
+import {IJBRedemptionTerminal} from "@juicebox/interfaces/IJBRedemptionTerminal.sol";
+import {IJBPayoutTerminal3_1} from "@juicebox/interfaces/IJBPayoutTerminal3_1.sol";
+import {IJBAllowanceTerminal3_1} from "@juicebox/interfaces/IJBAllowanceTerminal3_1.sol";
+import {IJBSingleTokenPaymentTerminal} from "@juicebox/interfaces/IJBSingleTokenPaymentTerminal.sol";
+import {IJBController3_1} from "@juicebox/interfaces/IJBController3_1.sol";
+import {IJBSingleTokenPaymentTerminalStore} from "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore.sol";
+import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
+import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
+import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
+import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
+
+import {JBTokens} from "@juicebox/libraries/JBTokens.sol";
+import {JBFundingCycleMetadataResolver} from "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
+import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
+import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
+import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
 
 import "./AccessJBLib.sol";
 
 import "@paulrberg/contracts/math/PRBMath.sol";
+import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
 
 // Base contract for Juicebox system tests.
 //
@@ -279,7 +338,7 @@ contract TestBaseWorkflow is Test {
       _jbDirectory,
       _jbSplitsStore,
       _jbPrices,
-      _jbPaymentTerminalStore,
+      address(_jbPaymentTerminalStore),
       _multisig
     );
         vm.label(address(_jbETHPaymentTerminal), "JBETHPaymentTerminal");
@@ -314,7 +373,7 @@ contract TestBaseWorkflow is Test {
       _jbDirectory,
       _jbSplitsStore,
       _jbPrices,
-      _jbPaymentTerminalStore,
+      address(_jbPaymentTerminalStore),
       _multisig
     );
         vm.label(address(_jbERC20PaymentTerminal), "JBERC20PaymentTerminal");

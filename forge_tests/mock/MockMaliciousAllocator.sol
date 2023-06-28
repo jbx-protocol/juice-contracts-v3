@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '../../contracts/structs/JBSplitAllocationData.sol';
-import '../../contracts/interfaces/IJBPayDelegate.sol';
-import '../../contracts/interfaces/IJBSplitAllocator.sol';
-import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
+import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
+
+import {ERC165, IERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 
 contract MockMaliciousAllocator is ERC165, IJBSplitAllocator {
   error NopeNotGonnaDoIt();

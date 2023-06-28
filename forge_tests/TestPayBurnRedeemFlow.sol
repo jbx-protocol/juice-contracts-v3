@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
-
-import "./helpers/TestBaseWorkflow.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /**
  * This system test file verifies the following flow:

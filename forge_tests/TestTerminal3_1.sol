@@ -1,26 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@juicebox/JBController3_1.sol";
-import "@juicebox/JBFundAccessConstraintsStore.sol";
-
-import "@juicebox/interfaces/IJBController.sol";
-import "@juicebox/interfaces/IJBMigratable.sol";
-import "@juicebox/interfaces/IJBOperatorStore.sol";
-import "@juicebox/interfaces/IJBPaymentTerminal.sol";
-import "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore.sol";
-import "@juicebox/interfaces/IJBPrices.sol";
-import "@juicebox/interfaces/IJBProjects.sol";
-import "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal.sol";
-
-import "@juicebox/libraries/JBTokens.sol";
-import "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
-
-import "@juicebox/JBETHPaymentTerminal3_1.sol";
-import "@juicebox/JBSingleTokenPaymentTerminalStore3_1.sol";
-
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 import "forge-std/Test.sol";
 
@@ -94,7 +75,7 @@ contract TestTerminal31_Fork is Test {
         jbFundingCycleStore = oldJbController.fundingCycleStore();
         jbTokenStore = oldJbController.tokenStore();
         jbSplitsStore = oldJbController.splitsStore();
-        jbTerminalStore = jbEthTerminal.store();
+        jbTerminalStore = IJBSingleTokenPaymentTerminalStore(jbEthTerminal.store());
         jbPrices = jbEthTerminal.prices();
 
         jbTerminalStore3_1 = new JBSingleTokenPaymentTerminalStore3_1(

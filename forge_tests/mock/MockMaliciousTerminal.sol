@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '../../contracts/JBERC20PaymentTerminal3_1.sol';
-
-
+import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
 contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
   error NopeNotGonnaDoIt();

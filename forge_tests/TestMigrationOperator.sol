@@ -1,27 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@juicebox/JBController3_0_1.sol";
-import "@juicebox/JBMigrationOperator.sol";
-import "@juicebox/JBReconfigurationBufferBallot.sol";
-
-import "@juicebox/interfaces/IJBController.sol";
-import "@juicebox/interfaces/IJBMigratable.sol";
-import "@juicebox/interfaces/IJBOperatorStore.sol";
-import "@juicebox/interfaces/IJBPaymentTerminal.sol";
-import "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore.sol";
-import "@juicebox/interfaces/IJBProjects.sol";
-import "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal.sol";
-
-import "@juicebox/libraries/JBTokens.sol";
-import "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
-
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
-
 import "forge-std/Test.sol";
 
-import "./helpers/TestBaseWorkflow.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /**
  *  @title  Migration operator test
@@ -352,7 +334,7 @@ contract TestMigrationOperator_Fork is Test {
         jbFundingCycleStore = oldJbController.fundingCycleStore();
         jbTokenStore = oldJbController.tokenStore();
         jbSplitsStore = oldJbController.splitsStore();
-        jbTerminalStore = jbEthTerminal.store();
+        jbTerminalStore = IJBSingleTokenPaymentTerminalStore(jbEthTerminal.store());
 
         // Set some mock fc data
         _initMetadata();

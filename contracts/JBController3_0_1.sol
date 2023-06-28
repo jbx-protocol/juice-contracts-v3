@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {ERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
+import {ERC165, IERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {SafeCast} from '@openzeppelin/contracts/utils/math/SafeCast.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
