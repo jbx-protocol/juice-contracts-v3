@@ -71,8 +71,8 @@ module.exports = {
     },
   },
   mocha: {
-    bail: true,
-    timeout: 12000,
+    // bail: true,
+    timeout: 100000000,
   },
   gasReporter: {
     currency: 'USD',

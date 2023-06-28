@@ -43,10 +43,10 @@ module.exports = async ({ deployments, getChainId }) => {
 
   // // Deploy the JBMigrationOperator contract.
   const JBMigrationOperator = await deploy('JBMigrationOperator', {
-      ...baseDeployArgs,
-      args: [
-        jbDirectory,
-      ],
+    ...baseDeployArgs,
+    args: [
+      jbDirectory,
+    ],
   });
 
   console.log('Done');
