@@ -267,7 +267,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     _token; // Prevents unused var compiler and natspec complaints.
 
     // valid terminal check
-    isTerminalOf(_projectId);
+    _isTerminalOf(_projectId);
 
     // ETH shouldn't be sent if this terminal's token isn't ETH.
     if (token != JBTokens.ETH) {
@@ -455,7 +455,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes calldata _metadata
   ) external payable virtual override {
     // valid terminal check
-    isTerminalOf(_projectId);
+    _isTerminalOf(_projectId);
 
     // Do not refund held fees by default.
     addToBalanceOf(_projectId, _amount, _token, false, _memo, _metadata);
@@ -563,7 +563,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes calldata _metadata
   ) public payable virtual override {
     // valid terminal check
-    isTerminalOf(_projectId);
+    _isTerminalOf(_projectId);
 
     _token; // Prevents unused var compiler and natspec complaints.
 
