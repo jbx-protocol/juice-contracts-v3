@@ -8,20 +8,6 @@ import './IJBPayDelegate3_1_1.sol';
 import './IJBRedemptionDelegate3_1_1.sol';
 
 interface IJBPayoutRedemptionPaymentTerminal3_1_1 {
-  event RedeemTokens(
-    uint256 indexed fundingCycleConfiguration,
-    uint256 indexed fundingCycleNumber,
-    uint256 indexed projectId,
-    address holder,
-    address beneficiary,
-    uint256 tokenCount,
-    uint256 reclaimedAmount,
-    uint256 fee,
-    string memo,
-    bytes metadata,
-    address caller
-  );
-
   event DelegateDidRedeem(
     IJBRedemptionDelegate3_1_1 indexed delegate,
     JBDidRedeemData3_1_1 data,
