@@ -884,7 +884,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
           // Keep a reference to the fee.
           uint256 _delegatedAmountFee;
 
-          for (uint256 _i; _i < _delegateAllocations.length; ) {
+          // Keep a reference to the number of allocations.
+          uint256 _numDelegates = _delegateAllocations.length;
+
+          for (uint256 _i; _i < _numDelegates; ) {
             // Get a reference to the delegate being iterated on.
             _delegateAllocation = _delegateAllocations[_i];
 
