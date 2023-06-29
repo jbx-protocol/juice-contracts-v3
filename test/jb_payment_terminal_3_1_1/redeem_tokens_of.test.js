@@ -193,7 +193,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -202,7 +202,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ RECLAIM_AMOUNT,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -255,7 +254,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -264,7 +263,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ 0,
         /* reclaimAmount */ RECLAIM_AMOUNT,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -383,7 +381,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -392,7 +390,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ redeemedAmount,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -547,7 +544,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -556,7 +553,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ redeemedAmount,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -748,7 +744,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -757,7 +753,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ redeemedAmount - REDEEM_FEE,
-        /* fee */ REDEEM_FEE,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -944,7 +939,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -953,7 +948,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ redeemedAmount - REDEEM_FEE,
-        /* fee */ REDEEM_FEE,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -1129,7 +1123,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -1138,7 +1132,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ redeemedAmount,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -1312,7 +1305,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     // );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -1321,7 +1314,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ redeemedAmount,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
@@ -1386,7 +1378,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
       );
 
     await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'RedeemTokens(uint256,uint256,uint256,address,address,uint256,uint256,uint256,string,bytes,address)')
+      .to.emit(jbEthPaymentTerminal, 'RedeemTokens')
       .withArgs(
         /* _fundingCycle.configuration */ timestamp,
         /* _fundingCycle.number */ FUNDING_CYCLE_NUM,
@@ -1395,7 +1387,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
         /* _beneficiary */ beneficiary.address,
         /* _tokenCount */ AMOUNT,
         /* reclaimAmount */ 0,
-        /* fee */ 0,
         /* memo */ ADJUSTED_MEMO,
         /* metadata */ METADATA1,
         /* msg.sender */ holder.address,
