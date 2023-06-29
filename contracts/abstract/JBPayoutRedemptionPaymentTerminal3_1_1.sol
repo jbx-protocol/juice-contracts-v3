@@ -1205,7 +1205,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     @param _feePercent The percent of fees to take, out of MAX_FEE.
     @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
 
-    @return leftoverAmount If the leftover amount if the splits don't add up to 100%.
+    @return If the leftover amount if the splits don't add up to 100%.
     @return feeEligibleDistributionAmount The total amount of distributions that are eligible to have fees taken from.
   */
   function _distributeToPayoutSplitsOf(
@@ -1215,11 +1215,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     uint256 _amount,
     uint256 _feePercent,
     uint256 _feeDiscount
-  ) internal returns (uint256 leftoverAmount, uint256 feeEligibleDistributionAmount) {
-    // Set the leftover amount to the initial amount.
-    leftoverAmount = _amount;
+  ) internal returns (uint256, uint256 feeEligibleDistributionAmount) {
     // The total percentage available to split
-    uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
+    uint256 _leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
 
     // Get a reference to the project's payout splits.
     JBSplit[] memory _splits = splitsStore.splitsOf(_projectId, _domain, _group);
@@ -1233,12 +1231,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       _split = _splits[_i];
 
       // The amount to send towards the split.
-      uint256 _payoutAmount = _split.percent == leftoverPercentage
-        ? leftoverAmount
-        : PRBMath.mulDiv(_amount, _split.percent, JBConstants.SPLITS_TOTAL_PERCENT);
-
-      // Decrement the leftover percentage.
-      leftoverPercentage -= _split.percent;
+      uint256 _payoutAmount = PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
 
       // The payout amount substracting any applicable incurred fees.
       uint256 _netPayoutAmount = _distributeToPayoutSplit(
@@ -1257,8 +1250,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       if (_payoutAmount != 0) {
         // Subtract from the amount to be sent to the beneficiary.
         unchecked {
-          leftoverAmount = leftoverAmount - _payoutAmount;
+          _amount -= _payoutAmount;
         }
+      }
+
+      unchecked {
+        // Decrement the leftover percentage.
+        _leftoverPercentage -= _split.percent;
       }
 
       emit DistributeToPayoutSplit(
@@ -1275,6 +1273,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         ++_i;
       }
     }
+
+    return (_amount, feeEligibleDistributionAmount);
   }
 
   /**
