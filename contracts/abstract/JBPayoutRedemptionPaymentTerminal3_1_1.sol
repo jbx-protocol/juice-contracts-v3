@@ -62,18 +62,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   error REDEEM_TO_ZERO_ADDRESS();
   error TERMINAL_TOKENS_INCOMPATIBLE();
 
-  //*********************************************************************//
-  // ---------------------------- modifiers ---------------------------- //
-  //*********************************************************************//
-
-  /** 
-    @notice 
-    A modifier that verifies this terminal is a terminal of provided project ID.
-  */
-  modifier isTerminalOf(uint256 _projectId) {
-    if (!directory.isTerminalOf(_projectId, this)) revert PROJECT_TERMINAL_MISMATCH();
-    _;
-  }
 
   //*********************************************************************//
   // --------------------- internal stored constants ------------------- //
@@ -351,8 +339,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bool _preferClaimedTokens,
     string calldata _memo,
     bytes calldata _metadata
-  ) external payable virtual override isTerminalOf(_projectId) returns (uint256) {
+  ) external payable virtual override  returns (uint256) {
     _token; // Prevents unused var compiler and natspec complaints.
+
+    // valid terminal check
+    isTerminalOf(_projectId);
 
     // ETH shouldn't be sent if this terminal's token isn't ETH.
     if (token != JBTokens.ETH) {
@@ -576,7 +567,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     address _token,
     string calldata _memo,
     bytes calldata _metadata
-  ) external payable virtual override isTerminalOf(_projectId) {
+  ) external payable virtual override {
+    // valid terminal check
+    isTerminalOf(_projectId);
+
     // Do not refund held fees by default.
     addToBalanceOf(_projectId, _amount, _token, false, _memo, _metadata);
   }
@@ -709,7 +703,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bool _shouldRefundHeldFees,
     string calldata _memo,
     bytes calldata _metadata
-  ) public payable virtual override isTerminalOf(_projectId) {
+  ) public payable virtual override {
+    // valid terminal check
+    isTerminalOf(_projectId);
+
     _token; // Prevents unused var compiler and natspec complaints.
 
     // If this terminal's token isn't ETH, make sure no msg.value was sent, then transfer the tokens in from msg.sender.
@@ -773,6 +770,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   function _cancelTransferTo(address _to, uint256 _amount) internal virtual {
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
+  }
+
+  /** 
+    @notice 
+    Verifies this terminal is a terminal of provided project ID.
+  */
+  function isTerminalOf(uint256 _projectId) internal view {
+    if (!directory.isTerminalOf(_projectId, this)) revert PROJECT_TERMINAL_MISMATCH();
   }
 
   /**
