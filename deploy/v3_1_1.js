@@ -189,8 +189,6 @@ module.exports = async ({ deployments, getChainId }) => {
   // Get a reference to an existing ETH/USD feed.
   const usdEthFeed = await jbPricesContract.connect(deployer).feedFor(USD, ETH);
 
-  console.log({ usdEthFeed, chainlinkV2UsdEthPriceFeed });
-
   // If needed, deploy an ETH/USD price feed and add it to the store.
   if (chainlinkV2UsdEthPriceFeed && usdEthFeed == ethers.constants.AddressZero) {
     // Deploy a JBChainlinkV3PriceFeed contract for ETH/USD.
