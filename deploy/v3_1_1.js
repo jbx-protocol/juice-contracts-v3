@@ -33,6 +33,11 @@ module.exports = async ({ deployments, getChainId }) => {
       ownerAddress = '0x46D623731E179FAF971CdA04fF8c499C95461b3c';
       chainlinkV2UsdEthPriceFeed = '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
       break;
+    // Sepolia
+    case '11155111':
+      ownerAddress = '0xAF28bcB48C40dBC86f52D459A6562F658fc94B1e';
+      chainlinkV2UsdEthPriceFeed = '0x694AA1769357215DE4FAC081bf1f309aDC325306';
+      break;
     // hardhat / localhost
     case '31337':
       ownerAddress = deployer.address;
@@ -183,6 +188,8 @@ module.exports = async ({ deployments, getChainId }) => {
 
   // Get a reference to an existing ETH/USD feed.
   const usdEthFeed = await jbPricesContract.connect(deployer).feedFor(USD, ETH);
+
+  console.log({ usdEthFeed, chainlinkV2UsdEthPriceFeed });
 
   // If needed, deploy an ETH/USD price feed and add it to the store.
   if (chainlinkV2UsdEthPriceFeed && usdEthFeed == ethers.constants.AddressZero) {

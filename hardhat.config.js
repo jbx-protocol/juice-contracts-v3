@@ -42,6 +42,12 @@ module.exports = {
         mnemonic: mnemonic(),
       },
     },
+    sepolia: {
+      url: 'https://sepolia.infura.io/v3/' + infuraId,
+      accounts: {
+        mnemonic: mnemonic(),
+      },
+    },
     mainnet: {
       url: 'https://mainnet.infura.io/v3/' + infuraId,
       accounts: {
