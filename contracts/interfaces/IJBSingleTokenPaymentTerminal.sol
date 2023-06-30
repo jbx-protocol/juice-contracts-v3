@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './IJBPaymentTerminal.sol';
+import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 
 interface IJBSingleTokenPaymentTerminal is IJBPaymentTerminal {
   function token() external view returns (address);

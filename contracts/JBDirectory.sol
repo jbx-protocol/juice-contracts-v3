@@ -1,25 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './abstract/JBOperatable.sol';
-import './interfaces/IJBDirectory.sol';
-import './libraries/JBFundingCycleMetadataResolver.sol';
-import './libraries/JBOperations.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {JBOperatable} from './abstract/JBOperatable.sol';
+import {IJBDirectory} from './interfaces/IJBDirectory.sol';
+import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
+import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
+import {IJBProjects} from './interfaces/IJBProjects.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBOperations} from './libraries/JBOperations.sol';
+import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 
-/**
-  @notice
-  Keeps a reference of which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and funding cycles.
-
-  @dev
-  Adheres to -
-  IJBDirectory: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  JBOperatable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-  Ownable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-*/
+/// @notice Keeps a reference of which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and funding cycles.
 contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
@@ -37,71 +30,44 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // --------------------- private stored properties ------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    For each project ID, the terminals that are currently managing its funds.
-
-    _projectId The ID of the project to get terminals of.
-  */
+  /// @notice For each project ID, the terminals that are currently managing its funds.
+  /// @custom:member _projectId The ID of the project to get terminals of.
   mapping(uint256 => IJBPaymentTerminal[]) private _terminalsOf;
 
-  /**
-    @notice
-    The project's primary terminal for a token.
-
-    _projectId The ID of the project to get the primary terminal of.
-    _token The token to get the project's primary terminal of.
-  */
+  /// @notice The project's primary terminal for a token.
+  /// @custom:member _projectId The ID of the project to get the primary terminal of.
+  /// @custom:member _token The token to get the project's primary terminal of.
   mapping(uint256 => mapping(address => IJBPaymentTerminal)) private _primaryTerminalOf;
 
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Mints ERC-721's that represent project ownership and transfers.
-  */
+  /// @notice Mints ERC-721's that represent project ownership and transfers.
   IJBProjects public immutable override projects;
 
-  /**
-    @notice
-    The contract storing all funding cycle configurations.
-  */
+  /// @notice The contract storing all funding cycle configurations.
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    For each project ID, the controller that manages how terminals interact with tokens and funding cycles.
-
-    _projectId The ID of the project to get the controller of.
-  */
+  /// @notice For each project ID, the controller that manages how terminals interact with tokens and funding cycles.
+  /// @custom:member _projectId The ID of the project to get the controller of.
   mapping(uint256 => address) public override controllerOf;
 
-  /**
-    @notice
-    Addresses that can set a project's first controller on their behalf. These addresses/contracts have been vetted and verified by this contract's owner.
-
-    _address The address that is either allowed or not.
-  */
+  /// @notice Addresses that can set a project's first controller on their behalf. These addresses/contracts have been vetted and verified by this contract's owner.
+  /// @custom:param _address The address that is either allowed or not.
   mapping(address => bool) public override isAllowedToSetFirstController;
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    For each project ID, the terminals that are currently managing its funds.
-
-    @param _projectId The ID of the project to get terminals of.
-
-    @return An array of terminal addresses.
-  */
+  /// @notice For each project ID, the terminals that are currently managing its funds.
+  /// @param _projectId The ID of the project to get terminals of.
+  /// @return An array of terminal addresses.
   function terminalsOf(uint256 _projectId)
     external
     view
@@ -111,18 +77,11 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     return _terminalsOf[_projectId];
   }
 
-  /**
-    @notice
-    The primary terminal that is managing funds for a project for a specified token.
-
-    @dev
-    The zero address is returned if a terminal isn't found for the specified token.
-
-    @param _projectId The ID of the project to get a terminal for.
-    @param _token The token the terminal accepts.
-
-    @return The primary terminal for the project for the specified token.
-  */
+  /// @notice The primary terminal that is managing funds for a project for a specified token.
+  /// @dev The zero address is returned if a terminal isn't found for the specified token.
+  /// @param _projectId The ID of the project to get a terminal for.
+  /// @param _token The token the terminal accepts.
+  /// @return The primary terminal for the project for the specified token.
   function primaryTerminalOf(uint256 _projectId, address _token)
     external
     view
@@ -162,15 +121,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // -------------------------- public views --------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Whether or not a specified terminal is a terminal of the specified project.
-
-    @param _projectId The ID of the project to check within.
-    @param _terminal The address of the terminal to check for.
-
-    @return A flag indicating whether or not the specified terminal is a terminal of the specified project.
-  */
+  /// @notice Whether or not a specified terminal is a terminal of the specified project.
+  /// @param _projectId The ID of the project to check within.
+  /// @param _terminal The address of the terminal to check for.
+  /// @return A flag indicating whether or not the specified terminal is a terminal of the specified project.
   function isTerminalOf(uint256 _projectId, IJBPaymentTerminal _terminal)
     public
     view
@@ -198,12 +152,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /**
-    @param _operatorStore A contract storing operator assignments.
-    @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-    @param _fundingCycleStore A contract storing all funding cycle configurations.
-    @param _owner The address that will own the contract.
-  */
+  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
+  /// @param _owner The address that will own the contract.
   constructor(
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
@@ -220,19 +172,13 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Update the controller that manages how terminals interact with the ecosystem.
-
-    @dev
-    A controller can be set if:
-    - the message sender is the project owner or an operator having the correct authorization.
-    - the message sender is the project's current controller.
-    - or, an allowedlisted address is setting a controller for a project that doesn't already have a controller.
-
-    @param _projectId The ID of the project to set a new controller for.
-    @param _controller The new controller to set.
-  */
+  /// @notice Update the controller that manages how terminals interact with the ecosystem.
+  /// @dev A controller can be set if:
+  /// @dev - the message sender is the project owner or an operator having the correct authorization.
+  /// @dev - the message sender is the project's current controller.
+  /// @dev - or, an allowedlisted address is setting a controller for a project that doesn't already have a controller.
+  /// @param _projectId The ID of the project to set a new controller for.
+  /// @param _controller The new controller to set.
   function setControllerOf(uint256 _projectId, address _controller)
     external
     override
@@ -263,16 +209,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     emit SetController(_projectId, _controller, msg.sender);
   }
 
-  /** 
-    @notice 
-    Set a project's terminals.
-
-    @dev
-    Only a project owner, an operator, or its controller can set its terminals.
-
-    @param _projectId The ID of the project having terminals set.
-    @param _terminals The terminal to set.
-  */
+  /// @notice Set a project's terminals.
+  /// @dev Only a project owner, an operator, or its controller can set its terminals.
+  /// @param _projectId The ID of the project having terminals set.
+  /// @param _terminals The terminal to set.
   function setTerminalsOf(uint256 _projectId, IJBPaymentTerminal[] calldata _terminals)
     external
     override
@@ -313,21 +253,13 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     emit SetTerminals(_projectId, _terminals, msg.sender);
   }
 
-  /**
-    @notice
-    Project's can set which terminal should be their primary for a particular token.
-    This is useful in case a project has several terminals connected for a particular token.
-
-    @dev
-    The terminal will be set as the primary terminal where ecosystem contracts should route tokens.
-
-    @dev
-    If setting a newly added terminal and the funding cycle doesn't allow new terminals, the caller must be the current controller.
-
-    @param _projectId The ID of the project for which a primary token is being set.
-    @param _token The token to set the primary terminal of.
-    @param _terminal The terminal to make primary.
-  */
+  /// @notice Project's can set which terminal should be their primary for a particular token. 
+  /// @dev This is useful in case a project has several terminals connected for a particular token.
+  /// @dev The terminal will be set as the primary terminal where ecosystem contracts should route tokens.
+  /// @dev If setting a newly added terminal and the funding cycle doesn't allow new terminals, the caller must be the current controller.
+  /// @param _projectId The ID of the project for which a primary token is being set.
+  /// @param _token The token to set the primary terminal of.
+  /// @param _terminal The terminal to make primary.
   function setPrimaryTerminalOf(
     uint256 _projectId,
     address _token,
@@ -349,21 +281,13 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     emit SetPrimaryTerminal(_projectId, _token, _terminal, msg.sender);
   }
 
-  /** 
-    @notice	
-    Set a contract to the list of trusted addresses that can set a first controller for any project.	
-
-    @dev
-    The owner can add addresses which are allowed to change projects' first controllers. 
-    These addresses are known and vetted controllers as well as contracts designed to launch new projects. 
-    A project can set its own controller without it being on the allow list.
-
-    @dev
-    If you would like an address/contract allowlisted, please reach out to the contract owner.
-
-    @param _address The address to allow or revoke allowance from.
-    @param _flag Whether allowance is being added or revoked.
-  */
+  /// @notice Set a contract to the list of trusted addresses that can set a first controller for any project.	
+  /// @dev The owner can add addresses which are allowed to change projects' first controllers. 
+  /// @dev These addresses are known and vetted controllers as well as contracts designed to launch new projects. 
+  /// @dev A project can set its own controller without it being on the allow list.
+  /// @dev If you would like an address/contract allowlisted, please reach out to the contract owner.
+  /// @param _address The address to allow or revoke allowance from.
+  /// @param _flag Whether allowance is being added or revoked.
   function setIsAllowedToSetFirstController(address _address, bool _flag)
     external
     override
@@ -379,13 +303,9 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // --------------------- private helper functions -------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Add a terminal to a project's list of terminals if it hasn't been already.
-
-    @param _projectId The ID of the project having a terminal added.
-    @param _terminal The terminal to add.
-  */
+  /// @notice Add a terminal to a project's list of terminals if it hasn't been already.
+  /// @param _projectId The ID of the project having a terminal added.
+  /// @param _terminal The terminal to add.
   function _addTerminalIfNeeded(uint256 _projectId, IJBPaymentTerminal _terminal) private {
     // Check that the terminal has not already been added.
     if (isTerminalOf(_projectId, _terminal)) return;

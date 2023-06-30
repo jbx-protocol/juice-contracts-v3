@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "./helpers/TestBaseWorkflow.sol";
-import "@juicebox/JBReconfigurationBufferBallot.sol";
-import "@juicebox/JBETHERC20SplitsPayer.sol";
-import "@juicebox/JBETHERC20SplitsPayerDeployer.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestEIP165_Local is TestBaseWorkflow {
     bytes4 constant notSupportedInterface = 0xffffffff;

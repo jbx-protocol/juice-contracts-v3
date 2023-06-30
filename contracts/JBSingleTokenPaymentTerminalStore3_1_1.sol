@@ -1,34 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './interfaces/IJBController3_1.sol';
-import './interfaces/IJBFundingCycleDataSource.sol';
-import './interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
-import './interfaces/IJBFundingCycleDataSource3_1_1.sol';
-import './libraries/JBConstants.sol';
-import './libraries/JBCurrencies.sol';
-import './libraries/JBFixedPointNumber.sol';
-import './libraries/JBFundingCycleMetadataResolver.sol';
-import './structs/JBPayDelegateAllocation.sol';
-import './structs/JBPayParamsData.sol';
+import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {JBBallotState} from './enums/JBBallotState.sol';
+import {IJBController3_1} from './interfaces/IJBController3_1.sol';
+import {IJBDirectory} from './interfaces/IJBDirectory.sol';
+import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSource3_1_1.sol';
+import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
+import {IJBPrices} from './interfaces/IJBPrices.sol';
+import {IJBSingleTokenPaymentTerminal} from './interfaces/IJBSingleTokenPaymentTerminal.sol';
+import {IJBSingleTokenPaymentTerminalStore3_1_1} from './interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
+import {JBConstants} from './libraries/JBConstants.sol';
+import {JBCurrencies} from './libraries/JBCurrencies.sol';
+import {JBFixedPointNumber} from './libraries/JBFixedPointNumber.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1_1.sol';
+import {JBPayParamsData} from './structs/JBPayParamsData.sol';
+import {JBRedeemParamsData} from './structs/JBRedeemParamsData.sol';
+import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 
-/**
-  @notice
-  Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
-
-  @dev
-  Adheres to:
-  IJBSingleTokenPaymentTerminalStore: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  ReentrancyGuard: Contract module that helps prevent reentrant calls to a function.
-
-  @dev
-  This Store expects a project's controller to be an IJBController3_1. This is the only difference between this version and the original.
-*/
+/// @notice Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
+/// @dev This Store expects a project's controller to be an IJBController3_1.
 contract JBSingleTokenPaymentTerminalStore3_1_1 is
   ReentrancyGuard,
   IJBSingleTokenPaymentTerminalStore3_1_1
@@ -55,82 +51,48 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   // -------------------------- private constants ---------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Ensures a maximum number of decimal points of persisted fidelity on mulDiv operations of fixed point numbers. 
-  */
+  /// @notice Ensures a maximum number of decimal points of persisted fidelity on mulDiv operations of fixed point numbers.
   uint256 private constant _MAX_FIXED_POINT_FIDELITY = 18;
 
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The directory of terminals and controllers for projects.
-  */
+  /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
 
-  /**
-    @notice
-    The contract storing all funding cycle configurations.
-  */
+  /// @notice The contract storing all funding cycle configurations.
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
-  /**
-    @notice
-    The contract that exposes price feeds.
-  */
+  /// @notice The contract that exposes price feeds.
   IJBPrices public immutable override prices;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The amount of tokens that each project has for each terminal, in terms of the terminal's token.
-
-    @dev
-    The used distribution limit is represented as a fixed point number with the same amount of decimals as its relative terminal.
-
-    _terminal The terminal to which the balance applies.
-    _projectId The ID of the project to get the balance of.
-  */
+  /// @notice The amount of tokens that each project has for each terminal, in terms of the terminal's token.
+  /// @dev The balance is represented as a fixed point number with the same amount of decimals as its relative terminal.
+  /// @custom:param _terminal The terminal to which the balance applies.
+  /// @custom:param _projectId The ID of the project to get the balance of.
   mapping(IJBSingleTokenPaymentTerminal => mapping(uint256 => uint256)) public override balanceOf;
 
-  /**
-    @notice
-    The amount of funds that a project has distributed from its limit during the current funding cycle for each terminal, in terms of the distribution limit's currency.
-
-    @dev
-    Increases as projects use their preconfigured distribution limits.
-
-    @dev
-    The used distribution limit is represented as a fixed point number with the same amount of decimals as its relative terminal.
-
-    _terminal The terminal to which the used distribution limit applies.
-    _projectId The ID of the project to get the used distribution limit of.
-    _fundingCycleNumber The number of the funding cycle during which the distribution limit was used.
-  */
+  /// @notice The amount of funds that a project has distributed from its limit during the current funding cycle for each terminal, in terms of the distribution limit's currency.
+  /// @dev Increases as projects use their preconfigured distribution limits.
+  /// @dev The used distribution limit is represented as a fixed point number with the same amount of decimals as its relative terminal.
+  /// @custom:param _terminal The terminal to which the used distribution limit applies.
+  /// @custom:param _projectId The ID of the project to get the used distribution limit of.
+  /// @custom:param _fundingCycleNumber The number of the funding cycle during which the distribution limit was used.
   mapping(IJBSingleTokenPaymentTerminal => mapping(uint256 => mapping(uint256 => uint256)))
     public
     override usedDistributionLimitOf;
 
-  /**
-    @notice
-    The amount of funds that a project has used from its allowance during the current funding cycle configuration for each terminal, in terms of the overflow allowance's currency.
-
-    @dev
-    Increases as projects use their allowance.
-
-    @dev
-    The used allowance is represented as a fixed point number with the same amount of decimals as its relative terminal.
-
-    _terminal The terminal to which the overflow allowance applies.
-    _projectId The ID of the project to get the used overflow allowance of.
-    _configuration The configuration of the during which the allowance was used.
-  */
+  /// @notice The amount of funds that a project has used from its allowance during the current funding cycle configuration for each terminal, in terms of the overflow allowance's currency.
+  /// @dev Increases as projects use their allowance.
+  /// @dev The used allowance is represented as a fixed point number with the same amount of decimals as its relative terminal.
+  /// @custom:param _terminal The terminal to which the overflow allowance applies.
+  /// @custom:param _projectId The ID of the project to get the used overflow allowance of.
+  /// @custom:param _configuration The configuration of the during which the allowance was used.
   mapping(IJBSingleTokenPaymentTerminal => mapping(uint256 => mapping(uint256 => uint256)))
     public
     override usedOverflowAllowanceOf;
@@ -139,18 +101,11 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Gets the current overflowed amount in a terminal for a specified project.
-
-    @dev
-    The current overflow is represented as a fixed point number with the same amount of decimals as the specified terminal.
-
-    @param _terminal The terminal for which the overflow is being calculated.
-    @param _projectId The ID of the project to get overflow for.
-
-    @return The current amount of overflow that project has in the specified terminal.
-  */
+  /// @notice Gets the current overflowed amount in a terminal for a specified project.
+  /// @dev The current overflow is represented as a fixed point number with the same amount of decimals as the specified terminal.
+  /// @param _terminal The terminal for which the overflow is being calculated.
+  /// @param _projectId The ID of the project to get overflow for.
+  /// @return The current amount of overflow that project has in the specified terminal.
   function currentOverflowOf(
     IJBSingleTokenPaymentTerminal _terminal,
     uint256 _projectId
@@ -165,16 +120,11 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       );
   }
 
-  /**
-    @notice
-    Gets the current overflowed amount for a specified project across all terminals.
-
-    @param _projectId The ID of the project to get total overflow for.
-    @param _decimals The number of decimals that the fixed point overflow should include.
-    @param _currency The currency that the total overflow should be in terms of.
-
-    @return The current total amount of overflow that project has across all terminals.
-  */
+  /// @notice Gets the current overflowed amount for a specified project across all terminals.
+  /// @param _projectId The ID of the project to get total overflow for.
+  /// @param _decimals The number of decimals that the fixed point overflow should include.
+  /// @param _currency The currency that the total overflow should be in terms of.
+  /// @return The current total amount of overflow that project has across all terminals.
   function currentTotalOverflowOf(
     uint256 _projectId,
     uint256 _decimals,
@@ -183,26 +133,15 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     return _currentTotalOverflowOf(_projectId, _decimals, _currency);
   }
 
-  /**
-    @notice
-    The current amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens, using the total token supply and overflow in the ecosystem.
-
-    @dev 
-    If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
-
-    @dev
-    The current reclaimable overflow is returned in terms of the specified terminal's currency.
-
-    @dev
-    The reclaimable overflow is represented as a fixed point number with the same amount of decimals as the specified terminal.
-
-    @param _terminal The terminal from which the reclaimable amount would come.
-    @param _projectId The ID of the project to get the reclaimable overflow amount for.
-    @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
-    @param _useTotalOverflow A flag indicating whether the overflow used in the calculation should be summed from all of the project's terminals. If false, overflow should be limited to the amount in the specified `_terminal`.
-
-    @return The amount of overflowed tokens that can be reclaimed, as a fixed point number with the same number of decimals as the provided `_terminal`.
-  */
+  /// @notice The current amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens, using the total token supply and overflow in the ecosystem.
+  /// @dev  If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
+  /// @dev The current reclaimable overflow is returned in terms of the specified terminal's currency.
+  /// @dev The reclaimable overflow is represented as a fixed point number with the same amount of decimals as the specified terminal.
+  /// @param _terminal The terminal from which the reclaimable amount would come.
+  /// @param _projectId The ID of the project to get the reclaimable overflow amount for.
+  /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
+  /// @param _useTotalOverflow A flag indicating whether the overflow used in the calculation should be summed from all of the project's terminals. If false, overflow should be limited to the amount in the specified `_terminal`.
+  /// @return The amount of overflowed tokens that can be reclaimed, as a fixed point number with the same number of decimals as the provided `_terminal`.
   function currentReclaimableOverflowOf(
     IJBSingleTokenPaymentTerminal _terminal,
     uint256 _projectId,
@@ -239,20 +178,13 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       );
   }
 
-  /**
-    @notice
-    The current amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens, using the specified total token supply and overflow amounts.
-
-    @dev 
-    If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
-
-    @param _projectId The ID of the project to get the reclaimable overflow amount for.
-    @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
-    @param _totalSupply The total number of tokens to make the calculation with, as a fixed point number with 18 decimals.
-    @param _overflow The amount of overflow to make the calculation with, as a fixed point number.
-
-    @return The amount of overflowed tokens that can be reclaimed, as a fixed point number with the same number of decimals as the provided `_overflow`.
-  */
+  /// @notice The current amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens, using the specified total token supply and overflow amounts.
+  /// @dev If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
+  /// @param _projectId The ID of the project to get the reclaimable overflow amount for.
+  /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
+  /// @param _totalSupply The total number of tokens to make the calculation with, as a fixed point number with 18 decimals.
+  /// @param _overflow The amount of overflow to make the calculation with, as a fixed point number.
+  /// @return The amount of overflowed tokens that can be reclaimed, as a fixed point number with the same number of decimals as the provided `_overflow`.
   function currentReclaimableOverflowOf(
     uint256 _projectId,
     uint256 _tokenCount,
@@ -277,11 +209,9 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /**
-    @param _directory A contract storing directories of terminals and controllers for each project.
-    @param _fundingCycleStore A contract storing all funding cycle configurations.
-    @param _prices A contract that exposes price feeds.
-  */
+  /// @param _directory A contract storing directories of terminals and controllers for each project.
+  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
+  /// @param _prices A contract that exposes price feeds.
   constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore, IJBPrices _prices) {
     directory = _directory;
     fundingCycleStore = _fundingCycleStore;
@@ -292,29 +222,20 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Records newly contributed tokens to a project.
-
-    @dev
-    Mints the project's tokens according to values provided by a configured data source. If no data source is configured, mints tokens proportional to the amount of the contribution.
-
-    @dev
-    The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount specified in the params is in terms of the msg.sender's tokens.
-
-    @param _payer The original address that sent the payment to the terminal.
-    @param _amount The amount of tokens being paid. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
-    @param _projectId The ID of the project being paid.
-    @param _baseWeightCurrency The currency to base token issuance on.
-    @param _beneficiary The specified address that should be the beneficiary of anything that results from the payment.
-    @param _memo A memo to pass along to the emitted event, and passed along to the funding cycle's data source.
-    @param _metadata Bytes to send along to the data source, if one is provided.
-
-    @return fundingCycle The project's funding cycle during which payment was made.
-    @return tokenCount The number of project tokens that were minted, as a fixed point number with 18 decimals.
-    @return delegateAllocations The amount to send to delegates instead of adding to the local balance.
-    @return memo A memo that should be passed along to the emitted event.
-  */
+  /// @notice Records newly contributed tokens to a project.
+  /// @dev Mints the project's tokens according to values provided by a configured data source. If no data source is configured, mints tokens proportional to the amount of the contribution.
+  /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount specified in the params is in terms of the msg.sender's tokens.
+  /// @param _payer The original address that sent the payment to the terminal.
+  /// @param _amount The amount of tokens being paid. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
+  /// @param _projectId The ID of the project being paid.
+  /// @param _baseWeightCurrency The currency to base token issuance on.
+  /// @param _beneficiary The specified address that should be the beneficiary of anything that results from the payment.
+  /// @param _memo A memo to pass along to the emitted event, and passed along to the funding cycle's data source.
+  /// @param _metadata Bytes to send along to the data source, if one is provided.
+  /// @return fundingCycle The project's funding cycle during which payment was made.
+  /// @return tokenCount The number of project tokens that were minted, as a fixed point number with 18 decimals.
+  /// @return delegateAllocations The amount to send to delegates instead of adding to the local balance.
+  /// @return memo A memo that should be passed along to the emitted event.
   function recordPaymentFrom(
     address _payer,
     JBTokenAmount calldata _amount,
@@ -423,27 +344,18 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     tokenCount = PRBMath.mulDiv(_amount.value, _weight, _weightRatio);
   }
 
-  /**
-    @notice
-    Records newly redeemed tokens of a project.
-
-    @dev
-    Redeems the project's tokens according to values provided by a configured data source. If no data source is configured, redeems tokens along a redemption bonding curve that is a function of the number of tokens being burned.
-
-    @dev
-    The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount specified in the params is in terms of the msg.senders tokens.
-
-    @param _holder The account that is having its tokens redeemed.
-    @param _projectId The ID of the project to which the tokens being redeemed belong.
-    @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Bytes to send along to the data source, if one is provided.
-
-    @return fundingCycle The funding cycle during which the redemption was made.
-    @return reclaimAmount The amount of terminal tokens reclaimed, as a fixed point number with 18 decimals.
-    @return delegateAllocations The amount to send to delegates instead of sending to the beneficiary.
-    @return memo A memo that should be passed along to the emitted event.
-  */
+  /// @notice Records newly redeemed tokens of a project.
+  /// @dev Redeems the project's tokens according to values provided by a configured data source. If no data source is configured, redeems tokens along a redemption bonding curve that is a function of the number of tokens being burned.
+  /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount specified in the params is in terms of the msg.senders tokens.
+  /// @param _holder The account that is having its tokens redeemed.
+  /// @param _projectId The ID of the project to which the tokens being redeemed belong.
+  /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Bytes to send along to the data source, if one is provided.
+  /// @return fundingCycle The funding cycle during which the redemption was made.
+  /// @return reclaimAmount The amount of terminal tokens reclaimed, as a fixed point number with 18 decimals.
+  /// @return delegateAllocations The amount to send to delegates instead of sending to the beneficiary.
+  /// @return memo A memo that should be passed along to the emitted event.
   function recordRedemptionFor(
     address _holder,
     uint256 _projectId,
@@ -583,20 +495,13 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Records newly distributed funds for a project.
-
-    @dev
-    The msg.sender must be an IJBSingleTokenPaymentTerminal. 
-
-    @param _projectId The ID of the project that is having funds distributed.
-    @param _amount The amount to use from the distribution limit, as a fixed point number.
-    @param _currency The currency of the `_amount`. This must match the project's current funding cycle's currency.
-
-    @return fundingCycle The funding cycle during which the distribution was made.
-    @return distributedAmount The amount of terminal tokens distributed, as a fixed point number with the same amount of decimals as its relative terminal.
-  */
+  /// @notice Records newly distributed funds for a project.
+  /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal.
+  /// @param _projectId The ID of the project that is having funds distributed.
+  /// @param _amount The amount to use from the distribution limit, as a fixed point number.
+  /// @param _currency The currency of the `_amount`. This must match the project's current funding cycle's currency.
+  /// @return fundingCycle The funding cycle during which the distribution was made.
+  /// @return distributedAmount The amount of terminal tokens distributed, as a fixed point number with the same amount of decimals as its relative terminal.
   function recordDistributionFor(
     uint256 _projectId,
     uint256 _amount,
@@ -664,20 +569,13 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Records newly used allowance funds of a project.
-
-    @dev
-    The msg.sender must be an IJBSingleTokenPaymentTerminal. 
-
-    @param _projectId The ID of the project to use the allowance of.
-    @param _amount The amount to use from the allowance, as a fixed point number. 
-    @param _currency The currency of the `_amount`. Must match the currency of the overflow allowance.
-
-    @return fundingCycle The funding cycle during which the overflow allowance is being used.
-    @return usedAmount The amount of terminal tokens used, as a fixed point number with the same amount of decimals as its relative terminal.
-  */
+  /// @notice Records newly used allowance funds of a project.
+  /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal.
+  /// @param _projectId The ID of the project to use the allowance of.
+  /// @param _amount The amount to use from the allowance, as a fixed point number.
+  /// @param _currency The currency of the `_amount`. Must match the currency of the overflow allowance.
+  /// @return fundingCycle The funding cycle during which the overflow allowance is being used.
+  /// @return usedAmount The amount of terminal tokens used, as a fixed point number with the same amount of decimals as its relative terminal.
   function recordUsedAllowanceOf(
     uint256 _projectId,
     uint256 _amount,
@@ -747,16 +645,10 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       usedAmount;
   }
 
-  /**
-    @notice
-    Records newly added funds for the project.
-
-    @dev
-    The msg.sender must be an IJBSingleTokenPaymentTerminal. 
-
-    @param _projectId The ID of the project to which the funds being added belong.
-    @param _amount The amount of terminal tokens added, as a fixed point number with the same amount of decimals as its relative terminal.
-  */
+  /// @notice Records newly added funds for the project.
+  /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal.
+  /// @param _projectId The ID of the project to which the funds being added belong.
+  /// @param _amount The amount of terminal tokens added, as a fixed point number with the same amount of decimals as its relative terminal.
   function recordAddedBalanceFor(uint256 _projectId, uint256 _amount) external override {
     // Increment the balance.
     balanceOf[IJBSingleTokenPaymentTerminal(msg.sender)][_projectId] =
@@ -764,17 +656,10 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       _amount;
   }
 
-  /**
-    @notice
-    Records the migration of funds from this store.
-
-    @dev
-    The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount returned is in terms of the msg.senders tokens.
-
-    @param _projectId The ID of the project being migrated.
-
-    @return balance The project's migrated balance, as a fixed point number with the same amount of decimals as its relative terminal.
-  */
+  /// @notice Records the migration of funds from this store.
+  /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount returned is in terms of the msg.senders tokens.
+  /// @param _projectId The ID of the project being migrated.
+  /// @return balance The project's migrated balance, as a fixed point number with the same amount of decimals as its relative terminal.
   function recordMigration(
     uint256 _projectId
   ) external override nonReentrant returns (uint256 balance) {
@@ -795,21 +680,14 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   // --------------------- private helper functions -------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens when measured from the specified.
-
-    @dev 
-    If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
-
-    @param _projectId The ID of the project to get the reclaimable overflow amount for.
-    @param _fundingCycle The funding cycle during which reclaimable overflow is being calculated.
-    @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
-    @param _totalSupply The total supply of tokens to make the calculation with, as a fixed point number with 18 decimals.
-    @param _overflow The amount of overflow to make the calculation with.
-
-    @return The amount of overflowed tokens that can be reclaimed.
-  */
+  /// @notice The amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens when measured from the specified.
+  /// @dev If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
+  /// @param _projectId The ID of the project to get the reclaimable overflow amount for.
+  /// @param _fundingCycle The funding cycle during which reclaimable overflow is being calculated.
+  /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
+  /// @param _totalSupply The total supply of tokens to make the calculation with, as a fixed point number with 18 decimals.
+  /// @param _overflow The amount of overflow to make the calculation with.
+  /// @return The amount of overflowed tokens that can be reclaimed.
   function _reclaimableOverflowDuring(
     uint256 _projectId,
     JBFundingCycle memory _fundingCycle,
@@ -848,20 +726,13 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       );
   }
 
-  /**
-    @notice
-    Gets the amount that is overflowing when measured from the specified funding cycle.
-
-    @dev
-    This amount changes as the value of the balance changes in relation to the currency being used to measure the distribution limit.
-
-    @param _terminal The terminal for which the overflow is being calculated.
-    @param _projectId The ID of the project to get overflow for.
-    @param _fundingCycle The ID of the funding cycle to base the overflow on.
-    @param _balanceCurrency The currency that the stored balance is expected to be in terms of.
-
-    @return overflow The overflow of funds, as a fixed point number with 18 decimals.
-  */
+  /// @notice Gets the amount that is overflowing when measured from the specified funding cycle.
+  /// @dev This amount changes as the value of the balance changes in relation to the currency being used to measure the distribution limit.
+  /// @param _terminal The terminal for which the overflow is being calculated.
+  /// @param _projectId The ID of the project to get overflow for.
+  /// @param _fundingCycle The ID of the funding cycle to base the overflow on.
+  /// @param _balanceCurrency The currency that the stored balance is expected to be in terms of.
+  /// @return overflow The overflow of funds, as a fixed point number with 18 decimals.
   function _overflowDuring(
     IJBSingleTokenPaymentTerminal _terminal,
     uint256 _projectId,
@@ -903,19 +774,12 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Gets the amount that is currently overflowing across all of a project's terminals. 
-
-    @dev
-    This amount changes as the value of the balances changes in relation to the currency being used to measure the project's distribution limits.
-
-    @param _projectId The ID of the project to get the total overflow for.
-    @param _decimals The number of decimals that the fixed point overflow should include.
-    @param _currency The currency that the overflow should be in terms of.
-
-    @return overflow The total overflow of a project's funds.
-  */
+  /// @notice Gets the amount that is currently overflowing across all of a project's terminals.
+  /// @dev This amount changes as the value of the balances changes in relation to the currency being used to measure the project's distribution limits.
+  /// @param _projectId The ID of the project to get the total overflow for.
+  /// @param _decimals The number of decimals that the fixed point overflow should include.
+  /// @param _currency The currency that the overflow should be in terms of.
+  /// @return overflow The total overflow of a project's funds.
   function _currentTotalOverflowOf(
     uint256 _projectId,
     uint256 _decimals,

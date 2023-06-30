@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import './../structs/JBFundAccessConstraints.sol';
-import './IJBPaymentTerminal.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {JBFundAccessConstraints} from './../structs/JBFundAccessConstraints.sol';
+import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 
 interface IJBFundAccessConstraintsStore is IERC165 {
   event SetFundAccessConstraints(
@@ -14,22 +14,22 @@ interface IJBFundAccessConstraintsStore is IERC165 {
   );
 
   function distributionLimitOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
+    uint256 projectId,
+    uint256 configuration,
+    IJBPaymentTerminal terminal,
+    address token
   ) external view returns (uint256 distributionLimit, uint256 distributionLimitCurrency);
 
   function overflowAllowanceOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
+    uint256 projectId,
+    uint256 configuration,
+    IJBPaymentTerminal terminal,
+    address token
   ) external view returns (uint256 overflowAllowance, uint256 overflowAllowanceCurrency);
 
   function setFor(
-    uint256 _projectId,
-    uint256 _configuration,
-    JBFundAccessConstraints[] memory _fundAccessConstaints
+    uint256 projectId,
+    uint256 configuration,
+    JBFundAccessConstraints[] memory fundAccessConstaints
   ) external;
 }

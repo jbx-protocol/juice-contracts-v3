@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "./helpers/TestBaseWorkflow.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {MockMaliciousAllocator, GasGussler} from "./mock/MockMaliciousAllocator.sol";
-import "./mock/MockMaliciousTerminal.sol";
+import {MockMaliciousTerminal} from "./mock/MockMaliciousTerminal.sol";
 
 contract TestERC20Terminal_Local is TestBaseWorkflow {
     event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);

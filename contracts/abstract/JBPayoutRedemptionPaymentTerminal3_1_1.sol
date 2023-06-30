@@ -1,44 +1,46 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './../interfaces/IJBController.sol';
-import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
-import './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol';
-import './../interfaces/IJBFeeGauge3_1.sol';
-import './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
-import './../libraries/JBConstants.sol';
-import './../libraries/JBCurrencies.sol';
-import './../libraries/JBFixedPointNumber.sol';
-import './../libraries/JBFundingCycleMetadataResolver.sol';
-import './../libraries/JBOperations.sol';
-import './../libraries/JBTokens.sol';
-import './../structs/JBPayDelegateAllocation3_1_1.sol';
-import './../structs/JBRedemptionDelegateAllocation.sol';
-import './../structs/JBTokenAmount.sol';
-import './../enums/JBFeeType.sol';
-import './JBOperatable.sol';
-import './JBSingleTokenPaymentTerminal.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {JBFeeType} from './../enums/JBFeeType.sol';
+import {IJBAllowanceTerminal3_1} from './../interfaces/IJBAllowanceTerminal3_1.sol';
+import {IJBController} from './../interfaces/IJBController.sol';
+import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
+import {IJBPayoutRedemptionPaymentTerminal3_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
+import {IJBPayoutRedemptionPaymentTerminal3_1_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol';
+import {IJBSplitsStore} from './../interfaces/IJBSplitsStore.sol';
+import {IJBFeeGauge3_1} from './../interfaces/IJBFeeGauge3_1.sol';
+import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
+import {IJBOperatorStore} from './../interfaces/IJBOperatorStore.sol';
+import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
+import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
+import {IJBPrices} from './../interfaces/IJBPrices.sol';
+import {IJBProjects} from './../interfaces/IJBProjects.sol';
+import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
+import {IJBSingleTokenPaymentTerminalStore3_1_1} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
+import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {JBConstants} from './../libraries/JBConstants.sol';
+import {JBCurrencies} from './../libraries/JBCurrencies.sol';
+import {JBFixedPointNumber} from './../libraries/JBFixedPointNumber.sol';
+import {JBFundingCycleMetadataResolver} from './../libraries/JBFundingCycleMetadataResolver.sol';
+import {JBOperations} from './../libraries/JBOperations.sol';
+import {JBTokens} from './../libraries/JBTokens.sol';
+import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
+import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
+import {JBFee} from './../structs/JBFee.sol';
+import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
+import {JBPayDelegateAllocation3_1_1} from './../structs/JBPayDelegateAllocation3_1_1.sol';
+import {JBRedemptionDelegateAllocation3_1_1} from './../structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
+import {JBSplitAllocationData} from './../structs/JBSplitAllocationData.sol';
+import {JBTokenAmount} from './../structs/JBTokenAmount.sol';
+import {JBOperatable} from './JBOperatable.sol';
+import {JBSingleTokenPaymentTerminal} from './JBSingleTokenPaymentTerminal.sol';
 
-/**
-  @notice
-  Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
-
-  @dev
-  A project can transfer its funds, along with the power to reconfigure and mint/burn their tokens, from this contract to another allowed terminal of the same token type contract at any time.
-
-  @dev
-  Adheres to -
-  IJBPayoutRedemptionPaymentTerminal3_1: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  JBSingleTokenPaymentTerminal: Generic terminal managing all inflows of funds into the protocol ecosystem for one token.
-  JBOperatable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-  Ownable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-*/
+/// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   JBSingleTokenPaymentTerminal,
   JBOperatable,
@@ -62,132 +64,75 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   error REDEEM_TO_ZERO_ADDRESS();
   error TERMINAL_TOKENS_INCOMPATIBLE();
 
-
   //*********************************************************************//
   // --------------------- internal stored constants ------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Maximum fee that can be set for a funding cycle configuration.
-
-    @dev
-    Out of MAX_FEE (50_000_000 / 1_000_000_000).
-  */
+  /// @notice Maximum fee that can be set for a funding cycle configuration.
+  /// @dev Out of MAX_FEE (50_000_000 / 1_000_000_000).
   uint256 internal constant _FEE_CAP = 50_000_000;
 
-  /**
-    @notice
-    The fee beneficiary project ID is 1, as it should be the first project launched during the deployment process.
-  */
+  /// @notice The fee beneficiary project ID is 1, as it should be the first project launched during the deployment process.
   uint256 internal constant _FEE_BENEFICIARY_PROJECT_ID = 1;
 
   //*********************************************************************//
   // --------------------- internal stored properties ------------------ //
   //*********************************************************************//
 
-  /**
-    @notice
-    Fees that are being held to be processed later.
-
-    _projectId The ID of the project for which fees are being held.
-  */
+  /// @notice Fees that are being held to be processed later.
+  /// @custom:param _projectId The ID of the project for which fees are being held.
   mapping(uint256 => JBFee[]) internal _heldFeesOf;
 
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Mints ERC-721's that represent project ownership and transfers.
-  */
+  /// @notice Mints ERC-721's that represent project ownership and transfers.
   IJBProjects public immutable override projects;
 
-  /**
-    @notice
-    The directory of terminals and controllers for projects.
-  */
+  /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
 
-  /**
-    @notice
-    The contract that stores splits for each project.
-  */
+  /// @notice The contract that stores splits for each project.
   IJBSplitsStore public immutable override splitsStore;
 
-  /**
-    @notice
-    The contract that exposes price feeds.
-  */
+  /// @notice The contract that exposes price feeds.
   IJBPrices public immutable override prices;
 
-  /**
-    @notice
-    The contract that stores and manages the terminal's data.
-  */
+  /// @notice The contract that stores and manages the terminal's data.
   address public immutable override store;
 
-  /**
-    @notice
-    The currency to base token issuance on.
-
-    @dev
-    If this differs from `currency`, there must be a price feed available to convert `currency` to `baseWeightCurrency`.
-  */
+  /// @notice The currency to base token issuance on.
+  /// @dev If this differs from `currency`, there must be a price feed available to convert `currency` to `baseWeightCurrency`.
   uint256 public immutable override baseWeightCurrency;
 
-  /**
-    @notice
-    The group that payout splits coming from this terminal are identified by.
-  */
+  /// @notice The group that payout splits coming from this terminal are identified by.
   uint256 public immutable override payoutSplitsGroup;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The platform fee percent.
-
-    @dev
-    Out of MAX_FEE (25_000_000 / 1_000_000_000)
-  */
+  /// @notice The platform fee percent.
+  /// @dev Out of MAX_FEE (25_000_000 / 1_000_000_000)
   uint256 public override fee = 25_000_000; // 2.5%
 
-  /**
-    @notice
-    The data source that returns a discount to apply to a project's fee.
-  */
+  /// @notice The data source that returns a discount to apply to a project's fee.
   address public override feeGauge;
 
-  /**
-    @notice
-    Addresses that can be paid towards from this terminal without incurring a fee.
-
-    @dev
-    Only addresses that are considered to be contained within the ecosystem can be feeless. Funds sent outside the ecosystem may incur fees despite being stored as feeless.
-
-    _address The address that can be paid toward.
-  */
+  /// @notice Addresses that can be paid towards from this terminal without incurring a fee.
+  /// @dev Only addresses that are considered to be contained within the ecosystem can be feeless. Funds sent outside the ecosystem may incur fees despite being stored as feeless.
+  /// @custom:param _address The address that can be paid toward.
   mapping(address => bool) public override isFeelessAddress;
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Gets the current overflowed amount in this terminal for a specified project, in terms of ETH.
-
-    @dev
-    The current overflow is represented as a fixed point number with 18 decimals.
-
-    @param _projectId The ID of the project to get overflow for.
-
-    @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
-  */
+  /// @notice Gets the current overflowed amount in this terminal for a specified project, in terms of ETH.
+  /// @dev The current overflow is represented as a fixed point number with 18 decimals.
+  /// @param _projectId The ID of the project to get overflow for.
+  /// @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
   function currentEthOverflowOf(
     uint256 _projectId
   ) external view virtual override returns (uint256) {
@@ -213,14 +158,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
         );
   }
 
-  /**
-    @notice
-    The fees that are currently being held to be processed later for each project.
-
-    @param _projectId The ID of the project for which fees are being held.
-
-    @return An array of fees that are being held.
-  */
+  /// @notice The fees that are currently being held to be processed later for each project.
+  /// @param _projectId The ID of the project for which fees are being held.
+  /// @return An array of fees that are being held.
   function heldFeesOf(uint256 _projectId) external view override returns (JBFee[] memory) {
     return _heldFeesOf[_projectId];
   }
@@ -229,15 +169,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   // -------------------------- public views --------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Indicates if this contract adheres to the specified interface.
-
-    @dev 
-    See {IERC165-supportsInterface}.
-
-    @param _interfaceId The ID of the interface to check for adherance to.
-  */
+  /// @notice Indicates if this contract adheres to the specified interface.
+  /// @dev See {IERC165-supportsInterface}.
+  /// @param _interfaceId The ID of the interface to check for adherance to.
+  /// @return A flag indicating if the provided interface ID is supported.
   function supportsInterface(
     bytes4 _interfaceId
   ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
@@ -255,32 +190,26 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   // -------------------------- internal views ------------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Checks the balance of tokens in this contract.
-
-    @return The contract's balance.
-  */
+  /// @notice Checks the balance of tokens in this contract.
+  /// @return The contract's balance.
   function _balance() internal view virtual returns (uint256);
 
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /**
-    @param _token The token that this terminal manages.
-    @param _decimals The number of decimals the token fixed point amounts are expected to have.
-    @param _currency The currency that this terminal's token adheres to for price feeds.
-    @param _baseWeightCurrency The currency to base token issuance on.
-    @param _payoutSplitsGroup The group that denotes payout splits from this terminal in the splits store.
-    @param _operatorStore A contract storing operator assignments.
-    @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-    @param _directory A contract storing directories of terminals and controllers for each project.
-    @param _splitsStore A contract that stores splits for each project.
-    @param _prices A contract that exposes price feeds.
-    @param _store A contract that stores the terminal's data.
-    @param _owner The address that will own this contract.
-  */
+  /// @param _token The token that this terminal manages.
+  /// @param _decimals The number of decimals the token fixed point amounts are expected to have.
+  /// @param _currency The currency that this terminal's token adheres to for price feeds.
+  /// @param _baseWeightCurrency The currency to base token issuance on.
+  /// @param _payoutSplitsGroup The group that denotes payout splits from this terminal in the splits store.
+  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+  /// @param _directory A contract storing directories of terminals and controllers for each project.
+  /// @param _splitsStore A contract that stores splits for each project.
+  /// @param _prices A contract that exposes price feeds.
+  /// @param _store A contract that stores the terminal's data.
+  /// @param _owner The address that will own this contract.
   constructor(
     // payable constructor save the gas used to check msg.value==0
     address _token,
@@ -315,21 +244,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Contribute tokens to a project.
-
-    @param _projectId The ID of the project being paid.
-    @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
-    @param _token The token being paid. This terminal ignores this property since it only manages one token. 
-    @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
-    @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
-    @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-    @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
-    @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-
-    @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
-  */
+  /// @notice Contribute tokens to a project.
+  /// @param _projectId The ID of the project being paid.
+  /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
+  /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
+  /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
+  /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
+  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
+  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+  /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
   function pay(
     uint256 _projectId,
     uint256 _amount,
@@ -339,11 +263,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bool _preferClaimedTokens,
     string calldata _memo,
     bytes calldata _metadata
-  ) external payable virtual override  returns (uint256) {
+  ) external payable virtual override returns (uint256) {
     _token; // Prevents unused var compiler and natspec complaints.
 
     // valid terminal check
-    isTerminalOf(_projectId);
+    _isTerminalOf(_projectId);
 
     // ETH shouldn't be sent if this terminal's token isn't ETH.
     if (token != JBTokens.ETH) {
@@ -374,24 +298,17 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       );
   }
 
-  /**
-    @notice
-    Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
-
-    @dev
-    Only a token holder or a designated operator can redeem its tokens.
-
-    @param _holder The account to redeem tokens for.
-    @param _projectId The ID of the project to which the tokens being redeemed belong.
-    @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
-    @param _token The token being reclaimed. This terminal ignores this property since it only manages one token. 
-    @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
-    @param _beneficiary The address to send the terminal tokens to.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-
-    @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
-  */
+  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
+  /// @dev Only a token holder or a designated operator can redeem its tokens.
+  /// @param _holder The account to redeem tokens for.
+  /// @param _projectId The ID of the project to which the tokens being redeemed belong.
+  /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
+  /// @param _token The token being reclaimed. This terminal ignores this property since it only manages one token.
+  /// @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
+  /// @param _beneficiary The address to send the terminal tokens to.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+  /// @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
   function redeemTokensOf(
     address _holder,
     uint256 _projectId,
@@ -422,28 +339,17 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       );
   }
 
-  /**
-    @notice
-    Distributes payouts for a project with the distribution limit of its current funding cycle.
-
-    @dev
-    Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
-
-    @dev
-    Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
-
-    @dev
-    All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
-
-    @param _projectId The ID of the project having its payouts distributed.
-    @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-    @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
-    @param _token The token being distributed. This terminal ignores this property since it only manages one token. 
-    @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
-    @param _metadata Bytes to send along to the emitted event, if provided.
-
-    @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
-  */
+  /// @notice Distributes payouts for a project with the distribution limit of its current funding cycle.
+  /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
+  /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
+  /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
+  /// @param _projectId The ID of the project having its payouts distributed.
+  /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
+  /// @param _token The token being distributed. This terminal ignores this property since it only manages one token.
+  /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
+  /// @param _metadata Bytes to send along to the emitted event, if provided.
+  /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
   function distributePayoutsOf(
     uint256 _projectId,
     uint256 _amount,
@@ -457,27 +363,18 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     return _distributePayoutsOf(_projectId, _amount, _currency, _minReturnedTokens, _metadata);
   }
 
-  /**
-    @notice
-    Allows a project to send funds from its overflow up to the preconfigured allowance.
-
-    @dev
-    Only a project's owner or a designated operator can use its allowance.
-
-    @dev
-    Incurs the protocol fee.
-
-    @param _projectId The ID of the project to use the allowance of.
-    @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-    @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's overflow allowance currency.
-    @param _token The token being distributed. This terminal ignores this property since it only manages one token. 
-    @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
-    @param _beneficiary The address to send the funds to.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Bytes to send along to the emitted event, if provided.
-
-    @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
-  */
+  /// @notice Allows a project to send funds from its overflow up to the preconfigured allowance.
+  /// @dev Only a project's owner or a designated operator can use its allowance.
+  /// @dev Incurs the protocol fee.
+  /// @param _projectId The ID of the project to use the allowance of.
+  /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's overflow allowance currency.
+  /// @param _token The token being distributed. This terminal ignores this property since it only manages one token.
+  /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
+  /// @param _beneficiary The address to send the funds to.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Bytes to send along to the emitted event, if provided.
+  /// @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
   function useAllowanceOf(
     uint256 _projectId,
     uint256 _amount,
@@ -508,18 +405,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       );
   }
 
-  /**
-    @notice
-    Allows a project owner to migrate its funds and operations to a new terminal that accepts the same token type.
-
-    @dev
-    Only a project's owner or a designated operator can migrate it.
-
-    @param _projectId The ID of the project being migrated.
-    @param _to The terminal contract that will gain the project's funds.
-
-    @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
-  */
+  /// @notice Allows a project owner to migrate its funds and operations to a new terminal that accepts the same token type.
+  /// @dev Only a project's owner or a designated operator can migrate it.
+  /// @param _projectId The ID of the project being migrated.
+  /// @param _to The terminal contract that will gain the project's funds.
+  /// @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
   function migrate(
     uint256 _projectId,
     IJBPaymentTerminal _to
@@ -551,16 +441,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     emit Migrate(_projectId, _to, balance, msg.sender);
   }
 
-  /**
-    @notice
-    Receives funds belonging to the specified project.
-
-    @param _projectId The ID of the project to which the funds received belong.
-    @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
-    @param _token The token being paid. This terminal ignores this property since it only manages one currency. 
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Extra data to pass along to the emitted event.
-  */
+  /// @notice Receives funds belonging to the specified project.
+  /// @param _projectId The ID of the project to which the funds received belong.
+  /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
+  /// @param _token The token being paid. This terminal ignores this property since it only manages one currency.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Extra data to pass along to the emitted event.
   function addToBalanceOf(
     uint256 _projectId,
     uint256 _amount,
@@ -569,21 +455,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes calldata _metadata
   ) external payable virtual override {
     // valid terminal check
-    isTerminalOf(_projectId);
+    _isTerminalOf(_projectId);
 
     // Do not refund held fees by default.
     addToBalanceOf(_projectId, _amount, _token, false, _memo, _metadata);
   }
 
-  /**
-    @notice
-    Process any fees that are being held for the project.
-
-    @dev
-    Only a project owner, an operator, or the contract's owner can process held fees.
-
-    @param _projectId The ID of the project whos held fees should be processed.
-  */
+  /// @notice Process any fees that are being held for the project.
+  /// @dev Only a project owner, an operator, or the contract's owner can process held fees.
+  /// @param _projectId The ID of the project whos held fees should be processed.
   function processFees(
     uint256 _projectId
   )
@@ -629,15 +509,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Allows the fee to be updated.
-
-    @dev
-    Only the owner of this contract can change the fee.
-
-    @param _fee The new fee, out of MAX_FEE.
-  */
+  /// @notice Allows the fee to be updated.
+  /// @dev Only the owner of this contract can change the fee.
+  /// @param _fee The new fee, out of MAX_FEE.
   function setFee(uint256 _fee) external virtual override onlyOwner {
     // The provided fee must be within the max.
     if (_fee > _FEE_CAP) revert FEE_TOO_HIGH();
@@ -648,15 +522,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     emit SetFee(_fee, msg.sender);
   }
 
-  /**
-    @notice
-    Allows the fee gauge to be updated.
-
-    @dev
-    Only the owner of this contract can change the fee gauge.
-
-    @param _feeGauge The new fee gauge.
-  */
+  /// @notice Allows the fee gauge to be updated.
+  /// @dev Only the owner of this contract can change the fee gauge.
+  /// @param _feeGauge The new fee gauge.
   function setFeeGauge(address _feeGauge) external virtual override onlyOwner {
     // Store the new fee gauge.
     feeGauge = _feeGauge;
@@ -664,16 +532,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     emit SetFeeGauge(_feeGauge, msg.sender);
   }
 
-  /**
-    @notice
-    Sets whether projects operating on this terminal can pay towards the specified address without incurring a fee.
-
-    @dev
-    Only the owner of this contract can set addresses as feeless.
-
-    @param _address The address that can be paid towards while still bypassing fees.
-    @param _flag A flag indicating whether the terminal should be feeless or not.
-  */
+  /// @notice Sets whether projects operating on this terminal can pay towards the specified address without incurring a fee.
+  /// @dev Only the owner of this contract can set addresses as feeless.
+  /// @param _address The address that can be paid towards while still bypassing fees.
+  /// @param _flag A flag indicating whether the terminal should be feeless or not.
   function setFeelessAddress(address _address, bool _flag) external virtual override onlyOwner {
     // Set the flag value.
     isFeelessAddress[_address] = _flag;
@@ -685,17 +547,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   // ----------------------- public transactions ----------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Receives funds belonging to the specified project.
-
-    @param _projectId The ID of the project to which the funds received belong.
-    @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
-    @param _token The token being paid. This terminal ignores this property since it only manages one currency. 
-    @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Extra data to pass along to the emitted event.
-  */
+  /// @notice Receives funds belonging to the specified project.
+  /// @param _projectId The ID of the project to which the funds received belong.
+  /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
+  /// @param _token The token being paid. This terminal ignores this property since it only manages one currency.
+  /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Extra data to pass along to the emitted event.
   function addToBalanceOf(
     uint256 _projectId,
     uint256 _amount,
@@ -705,7 +563,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     bytes calldata _metadata
   ) public payable virtual override {
     // valid terminal check
-    isTerminalOf(_projectId);
+    _isTerminalOf(_projectId);
 
     _token; // Prevents unused var compiler and natspec complaints.
 
@@ -734,69 +592,48 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   // ---------------------- internal transactions ---------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Transfers tokens.
-
-    @param _from The address from which the transfer should originate.
-    @param _to The address to which the transfer should go.
-    @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  */
+  /// @notice Transfers tokens.
+  /// @param _from The address from which the transfer should originate.
+  /// @param _to The address to which the transfer should go.
+  /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   function _transferFrom(address _from, address payable _to, uint256 _amount) internal virtual {
     _from; // Prevents unused var compiler and natspec complaints.
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
   }
 
-  /** 
-    @notice
-    Logic to be triggered before transferring tokens from this terminal.
-
-    @param _to The address to which the transfer is going.
-    @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  */
+  /// @notice Logic to be triggered before transferring tokens from this terminal.
+  /// @param _to The address to which the transfer is going.
+  /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   function _beforeTransferTo(address _to, uint256 _amount) internal virtual {
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
   }
 
-  /** 
-    @notice
-    Logic to be triggered if a transfer should be undone
-
-    @param _to The address to which the transfer went.
-    @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  */
+  /// @notice Logic to be triggered if a transfer should be undone
+  /// @param _to The address to which the transfer went.
+  /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   function _cancelTransferTo(address _to, uint256 _amount) internal virtual {
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
   }
 
-  /** 
-    @notice 
-    Verifies this terminal is a terminal of provided project ID.
-  */
-  function isTerminalOf(uint256 _projectId) internal view {
+  /// @notice Verifies this terminal is a terminal of provided project ID.
+  /// @param _projectId The ID of the project to check if this contract is a terminal of.
+  function _isTerminalOf(uint256 _projectId) internal view {
     if (!directory.isTerminalOf(_projectId, this)) revert PROJECT_TERMINAL_MISMATCH();
   }
 
-  /**
-    @notice
-    Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
-
-    @dev
-    Only a token holder or a designated operator can redeem its tokens.
-
-    @param _holder The account to redeem tokens for.
-    @param _projectId The ID of the project to which the tokens being redeemed belong.
-    @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
-    @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
-    @param _beneficiary The address to send the terminal tokens to.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-
-    @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
-  */
+  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
+  /// @dev Only a token holder or a designated operator can redeem its tokens.
+  /// @param _holder The account to redeem tokens for.
+  /// @param _projectId The ID of the project to which the tokens being redeemed belong.
+  /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
+  /// @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
+  /// @param _beneficiary The address to send the terminal tokens to.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+  /// @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
   function _redeemTokensOf(
     address _holder,
     uint256 _projectId,
@@ -973,27 +810,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     );
   }
 
-  /**
-    @notice
-    Distributes payouts for a project with the distribution limit of its current funding cycle.
-
-    @dev
-    Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
-
-    @dev
-    Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
-
-    @dev
-    All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
-
-    @param _projectId The ID of the project having its payouts distributed.
-    @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-    @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
-    @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
-    @param _metadata Bytes to send along to the emitted event, if provided.
-
-    @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
-  */
+  /// @notice Distributes payouts for a project with the distribution limit of its current funding cycle.
+  /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
+  /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
+  /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
+  /// @param _projectId The ID of the project having its payouts distributed.
+  /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
+  /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
+  /// @param _metadata Bytes to send along to the emitted event, if provided.
+  /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
   function _distributePayoutsOf(
     uint256 _projectId,
     uint256 _amount,
@@ -1099,26 +925,17 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     );
   }
 
-  /**
-    @notice
-    Allows a project to send funds from its overflow up to the preconfigured allowance.
-
-    @dev
-    Only a project's owner or a designated operator can use its allowance.
-
-    @dev
-    Incurs the protocol fee.
-
-    @param _projectId The ID of the project to use the allowance of.
-    @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-    @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's overflow allowance currency.
-    @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
-    @param _beneficiary The address to send the funds to.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Bytes to send along to the emitted event, if provided.
-
-    @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
-  */
+  /// @notice Allows a project to send funds from its overflow up to the preconfigured allowance.
+  /// @dev Only a project's owner or a designated operator can use its allowance.
+  /// @dev Incurs the protocol fee.
+  /// @param _projectId The ID of the project to use the allowance of.
+  /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's overflow allowance currency.
+  /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
+  /// @param _beneficiary The address to send the funds to.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Bytes to send along to the emitted event, if provided.
+  /// @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
   function _useAllowanceOf(
     uint256 _projectId,
     uint256 _amount,
@@ -1194,20 +1011,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     );
   }
 
-  /**
-    @notice
-    Pays out splits for a project's funding cycle configuration.
-
-    @param _projectId The ID of the project for which payout splits are being distributed.
-    @param _domain The domain of the splits to distribute the payout between.
-    @param _group The group of the splits to distribute the payout between.
-    @param _amount The total amount being distributed, as a fixed point number with the same number of decimals as this terminal.
-    @param _feePercent The percent of fees to take, out of MAX_FEE.
-    @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
-
-    @return If the leftover amount if the splits don't add up to 100%.
-    @return feeEligibleDistributionAmount The total amount of distributions that are eligible to have fees taken from.
-  */
+  /// @notice Pays out splits for a project's funding cycle configuration.
+  /// @param _projectId The ID of the project for which payout splits are being distributed.
+  /// @param _domain The domain of the splits to distribute the payout between.
+  /// @param _group The group of the splits to distribute the payout between.
+  /// @param _amount The total amount being distributed, as a fixed point number with the same number of decimals as this terminal.
+  /// @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
+  /// @param _feePercent The percent of fees to take, out of MAX_FEE.
+  /// @return If the leftover amount if the splits don't add up to 100%.
+  /// @return feeEligibleDistributionAmount The total amount of distributions that are eligible to have fees taken from.
   function _distributeToPayoutSplitsOf(
     uint256 _projectId,
     uint256 _domain,
@@ -1277,19 +1089,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     return (_amount, feeEligibleDistributionAmount);
   }
 
-  /**
-    @notice
-    Pays out a split for a project's funding cycle configuration.
-  
-    @param _split The split to distribute payouts to.
-    @param _projectId The ID of the project to which the splits belong.
-    @param _split The group to which the splits belong.
-    @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
-    @param _feePercent The percent of fees to take, out of MAX_FEE.
-    @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
-
-    @return netPayoutAmount The amount sent to the split after subtracting fees.
-  */
+  /// @notice Pays out a split for a project's funding cycle configuration.
+  /// @param _split The split to distribute payouts to.
+  /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
+  /// @param _feePercent The percent of fees to take, out of MAX_FEE.
+  /// @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
+  /// @return netPayoutAmount The amount sent to the split after subtracting fees.
   function _distributeToPayoutSplit(
     JBSplit memory _split,
     uint256 _projectId,
@@ -1444,18 +1249,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Takes a fee into the platform's project, which has an id of _FEE_BENEFICIARY_PROJECT_ID.
-
-    @param _projectId The ID of the project having fees taken from.
-    @param _shouldHoldFees If fees should be tracked and held back.
-    @param _amount The amount of the fee to take, as a floating point number with 18 decimals.
-    @param _feePercent The percent of fees to take, out of MAX_FEE.
-    @param _beneficiary The address to mint the platforms tokens for.
-    @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
-    @return feeAmount The amount of the fee taken.
-  */
+  /// @notice Takes a fee into the platform's project, which has an id of _FEE_BENEFICIARY_PROJECT_ID.
+  /// @param _projectId The ID of the project having fees taken from.
+  /// @param _shouldHoldFees If fees should be tracked and held back.
+  /// @param _feePercent The percent of fees to take, out of MAX_FEE.
+  /// @param _amount The amount of the fee to take, as a floating point number with 18 decimals.
+  /// @param _beneficiary The address to mint the platforms tokens for.
+  /// @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
+  /// @return feeAmount The amount of the fee taken.
   function _takeFeeFrom(
     uint256 _projectId,
     bool _shouldHoldFees,
@@ -1479,14 +1280,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Process a fee of the specified amount.
-
-    @param _amount The fee amount, as a floating point number with 18 decimals.
-    @param _beneficiary The address to mint the platform's tokens for.
-    @param _from The project ID the fee is being paid from.
-  */
+  /// @notice Process a fee of the specified amount.
+  /// @param _amount The fee amount, as a floating point number with 18 decimals.
+  /// @param _beneficiary The address to mint the platform's tokens for.
+  /// @param _from The project ID the fee is being paid from.
   function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
@@ -1519,15 +1316,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     }
   }
 
-  /**
-    @notice
-    Reverts an expected payout.
-
-    @param _projectId The ID of the project having paying out.
-    @param _expectedDestination The address the payout was expected to go to.
-    @param _allowanceAmount The amount that the destination has been allowed to use.
-    @param _depositAmount The amount of the payout as debited from the project's balance.
-  */
+  /// @notice Reverts an expected payout.
+  /// @param _projectId The ID of the project having paying out.
+  /// @param _expectedDestination The address the payout was expected to go to.
+  /// @param _allowanceAmount The amount that the destination has been allowed to use.
+  /// @param _depositAmount The amount of the payout as debited from the project's balance.
   function _revertTransferFrom(
     uint256 _projectId,
     address _expectedDestination,
@@ -1544,21 +1337,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     );
   }
 
-  /**
-    @notice
-    Contribute tokens to a project.
-
-    @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
-    @param _payer The address making the payment.
-    @param _projectId The ID of the project being paid.
-    @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
-    @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
-    @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-    @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
-    @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-
-    @return beneficiaryTokenCount The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
-  */
+  /// @notice Contribute tokens to a project.
+  /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
+  /// @param _payer The address making the payment.
+  /// @param _projectId The ID of the project being paid.
+  /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
+  /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
+  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
+  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+  /// @return beneficiaryTokenCount The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
   function _pay(
     uint256 _amount,
     address _payer,
@@ -1682,16 +1470,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     );
   }
 
-  /**
-    @notice
-    Receives funds belonging to the specified project.
-
-    @param _projectId The ID of the project to which the funds received belong.
-    @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
-    @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
-    @param _memo A memo to pass along to the emitted event.
-    @param _metadata Extra data to pass along to the emitted event.
-  */
+  /// @notice Receives funds belonging to the specified project.
+  /// @param _projectId The ID of the project to which the funds received belong.
+  /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
+  /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Extra data to pass along to the emitted event.
   function _addToBalanceOf(
     uint256 _projectId,
     uint256 _amount,
@@ -1711,15 +1495,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
   }
 
-  /**
-    @notice
-    Refund fees based on the specified amount.
-
-    @param _projectId The project for which fees are being refunded.
-    @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
-
-    @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
-  */
+  /// @notice Refund fees based on the specified amount.
+  /// @param _projectId The project for which fees are being refunded.
+  /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
+  /// @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
   function _refundHeldFees(
     uint256 _projectId,
     uint256 _amount
@@ -1775,15 +1554,29 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
     emit RefundHeldFees(_projectId, _amount, refundedFees, leftoverAmount, msg.sender);
   }
 
-  /** 
-    @notice
-    Get the fee discount from the fee gauge for the specified project.
+  /// @notice Returns the fee amount based on the provided amount for the specified project.
+  /// @param _amount The amount that the fee is based on, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _fee The percentage of the fee, out of MAX_FEE.
+  /// @param _feeDiscount The percentage discount that should be applied out of the max amount, out of MAX_FEE_DISCOUNT.
+  /// @return The amount of the fee, as a fixed point number with the same amount of decimals as this terminal.
+  function _feeAmount(
+    uint256 _amount,
+    uint256 _fee,
+    uint256 _feeDiscount
+  ) internal pure returns (uint256) {
+    // Calculate the discounted fee.
+    uint256 _discountedFee = _fee -
+      PRBMath.mulDiv(_fee, _feeDiscount, JBConstants.MAX_FEE_DISCOUNT);
 
-    @param _projectId The ID of the project to get a fee discount for.
-    @param _feeType The type of fee the discount is being applied to.
-    
-    @return feeDiscount The fee discount, which should be interpreted as a percentage out MAX_FEE_DISCOUNT.
-  */
+    // The amount of tokens from the `_amount` to pay as a fee.
+    return
+      _amount - PRBMath.mulDiv(_amount, JBConstants.MAX_FEE, _discountedFee + JBConstants.MAX_FEE);
+  }
+
+  /// @notice Get the fee discount from the fee gauge for the specified project.
+  /// @param _projectId The ID of the project to get a fee discount for.
+  /// @param _feeType The type of fee the discount is being applied to.
+  /// @return feeDiscount The fee discount, which should be interpreted as a percentage out MAX_FEE_DISCOUNT.
   function _currentFeeDiscount(
     uint256 _projectId,
     JBFeeType _feeType
@@ -1807,29 +1600,5 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
       }
 
     return 0;
-  }
-
-  /** 
-    @notice 
-    Returns the fee amount based on the provided amount for the specified project.
-
-    @param _amount The amount that the fee is based on, as a fixed point number with the same amount of decimals as this terminal.
-    @param _fee The percentage of the fee, out of MAX_FEE. 
-    @param _feeDiscount The percentage discount that should be applied out of the max amount, out of MAX_FEE_DISCOUNT.
-
-    @return The amount of the fee, as a fixed point number with the same amount of decimals as this terminal.
-  */
-  function _feeAmount(
-    uint256 _amount,
-    uint256 _fee,
-    uint256 _feeDiscount
-  ) internal pure returns (uint256) {
-    // Calculate the discounted fee.
-    uint256 _discountedFee = _fee -
-      PRBMath.mulDiv(_fee, _feeDiscount, JBConstants.MAX_FEE_DISCOUNT);
-
-    // The amount of tokens from the `_amount` to pay as a fee.
-    return
-      _amount - PRBMath.mulDiv(_amount, JBConstants.MAX_FEE, _discountedFee + JBConstants.MAX_FEE);
   }
 }

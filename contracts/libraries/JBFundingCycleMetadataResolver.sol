@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import './../structs/JBFundingCycle.sol';
-import './../structs/JBFundingCycleMetadata.sol';
-import './../structs/JBGlobalFundingCycleMetadata.sol';
-import './JBConstants.sol';
-import './JBGlobalFundingCycleMetadataResolver.sol';
+import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
+import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
+import {JBGlobalFundingCycleMetadata} from './../structs/JBGlobalFundingCycleMetadata.sol';
+import {JBConstants} from './JBConstants.sol';
+import {JBGlobalFundingCycleMetadataResolver} from './JBGlobalFundingCycleMetadataResolver.sol';
 
 library JBFundingCycleMetadataResolver {
   function global(JBFundingCycle memory _fundingCycle)
@@ -110,14 +110,9 @@ library JBFundingCycleMetadataResolver {
     return uint256(uint8(_fundingCycle.metadata >> 244));
   }
 
-  /**
-    @notice
-    Pack the funding cycle metadata.
-
-    @param _metadata The metadata to validate and pack.
-
-    @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.
-  */
+  /// @notice Pack the funding cycle metadata.
+  /// @param _metadata The metadata to validate and pack.
+  /// @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.  
   function packFundingCycleMetadata(JBFundingCycleMetadata memory _metadata)
     internal
     pure
@@ -167,14 +162,9 @@ library JBFundingCycleMetadataResolver {
     packed |= _metadata.metadata << 244;
   }
 
-  /**
-    @notice
-    Expand the funding cycle metadata.
-
-    @param _fundingCycle The funding cycle having its metadata expanded.
-
-    @return metadata The metadata object.
-  */
+  /// @notice Expand the funding cycle metadata.
+  /// @param _fundingCycle The funding cycle having its metadata expanded.
+  /// @return metadata The metadata object.  
   function expandMetadata(JBFundingCycle memory _fundingCycle)
     internal
     pure

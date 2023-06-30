@@ -1,22 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './interfaces/IJBPrices.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {IJBPriceFeed} from './interfaces/IJBPriceFeed.sol';
+import {IJBPrices} from './interfaces/IJBPrices.sol';
 
-/** 
-  @notice 
-  Manages and normalizes price feeds.
-
-  @dev
-  Adheres to -
-  IJBPrices: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  Ownable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-*/
+/// @notice Manages and normalizes price feeds.
 contract JBPrices is Ownable, IJBPrices {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -28,39 +18,28 @@ contract JBPrices is Ownable, IJBPrices {
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    The available price feeds.
-
-    @dev
-    The feed returns the number of `_currency` units that can be converted to 1 `_base` unit.
-
-    _currency The currency units the feed's resulting price is in terms of.
-    _base The base currency unit being priced by the feed.
-  */
+  /// @notice The available price feeds.
+  /// @dev The feed returns the number of `_currency` units that can be converted to 1 `_base` unit.
+  /// @custom:param _currency The currency units the feed's resulting price is in terms of.
+  /// @custom:param _base The base currency unit being priced by the feed.
   mapping(uint256 => mapping(uint256 => IJBPriceFeed)) public override feedFor;
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Gets the number of `_currency` units that can be converted to 1 `_base` unit.
-
-    @param _currency The currency units the resulting price is in terms of.
-    @param _base The base currency unit being priced.
-    @param _decimals The number of decimals the returned fixed point price should include.
-    
-    @return The price of the currency in terms of the base, as a fixed point number with the specified number of decimals.
-  */
+  /// @notice Gets the number of `_currency` units that can be converted to 1 `_base` unit.
+  /// @param _currency The currency units the resulting price is in terms of.
+  /// @param _base The base currency unit being priced.
+  /// @param _decimals The number of decimals the returned fixed point price should include.
+  /// @return The price of the currency in terms of the base, as a fixed point number with the specified number of decimals.
   function priceFor(
     uint256 _currency,
     uint256 _base,
     uint256 _decimals
   ) external view override returns (uint256) {
     // If the currency is the base, return 1 since they are priced the same. Include the desired number of decimals.
-    if (_currency == _base) return 10**_decimals;
+    if (_currency == _base) return 10 ** _decimals;
 
     // Get a reference to the feed.
     IJBPriceFeed _feed = feedFor[_currency][_base];
@@ -73,7 +52,7 @@ contract JBPrices is Ownable, IJBPrices {
 
     // If it exists, return the inverse price.
     if (_feed != IJBPriceFeed(address(0)))
-      return PRBMath.mulDiv(10**_decimals, 10**_decimals, _feed.currentPrice(_decimals));
+      return PRBMath.mulDiv(10 ** _decimals, 10 ** _decimals, _feed.currentPrice(_decimals));
 
     // No price feed available, revert.
     revert PRICE_FEED_NOT_FOUND();
@@ -83,9 +62,7 @@ contract JBPrices is Ownable, IJBPrices {
   // ---------------------------- constructor -------------------------- //
   //*********************************************************************//
 
-  /** 
-    @param _owner The address that will own the contract.
-  */
+  /// @param _owner The address that will own the contract.
   constructor(address _owner) {
     // Transfer the ownership.
     transferOwnership(_owner);
@@ -95,17 +72,11 @@ contract JBPrices is Ownable, IJBPrices {
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    Add a price feed for a currency in terms of the provided base currency.
-
-    @dev
-    Current feeds can't be modified.
-
-    @param _currency The currency units the feed's resulting price is in terms of.
-    @param _base The base currency unit being priced by the feed.
-    @param _feed The price feed being added.
-  */
+  /// @notice Add a price feed for a currency in terms of the provided base currency.
+  /// @dev Current feeds can't be modified.
+  /// @param _currency The currency units the feed's resulting price is in terms of.
+  /// @param _base The base currency unit being priced by the feed.
+  /// @param _feed The price feed being added.
   function addFeedFor(
     uint256 _currency,
     uint256 _base,

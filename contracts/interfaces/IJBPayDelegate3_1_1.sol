@@ -1,40 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import './../structs/JBDidPayData3_1_1.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
 
-/**
-  @title
-  Pay delegate
-
-  @notice
-  Delegate called after JBTerminal.pay(..) logic completion (if passed by the funding cycle datasource)
-
-  @dev
-  Adheres to:
-  IERC165 for adequate interface integration
-*/
+/// @title Pay delegate
+/// @notice Delegate called after JBTerminal.pay(..) logic completion (if passed by the funding cycle datasource)
 interface IJBPayDelegate3_1_1 is IERC165 {
-  /**
-    @notice
-    This function is called by JBPaymentTerminal.pay(..), after the execution of its logic
-
-    @dev
-    Critical business logic should be protected by an appropriate access control
-    
-    @param _data the data passed by the terminal, as a JBDidPayData3_1_1 struct:
-                  address payer;
-                  uint256 projectId;
-                  uint256 currentFundingCycleConfiguration;
-                  JBTokenAmount amount;
-                  JBTokenAmount forwardedAmount;
-                  uint256 projectTokenCount;
-                  address beneficiary;
-                  bool preferClaimedTokens;
-                  string memo;
-                  bytes dataSourceMetadata;
-                  bytes payerMetadata;
-  */
-  function didPay(JBDidPayData3_1_1 calldata _data) external payable;
+  /// @notice This function is called by JBPaymentTerminal.pay(..), after the execution of its logic
+  /// @dev Critical business logic should be protected by an appropriate access control
+  /// @param data the data passed by the terminal, as a JBDidPayData3_1_1 struct:
+  function didPay(JBDidPayData3_1_1 calldata data) external payable;
 }

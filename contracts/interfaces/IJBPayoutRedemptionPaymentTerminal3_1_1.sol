@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './../structs/JBFee.sol';
-import './../structs/JBDidRedeemData3_1_1.sol';
-import './../structs/JBDidPayData3_1_1.sol';
-import './IJBPayDelegate3_1_1.sol';
-import './IJBRedemptionDelegate3_1_1.sol';
+import {JBFee} from './../structs/JBFee.sol';
+import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
+import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
+import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
+import {IJBRedemptionDelegate3_1_1} from './IJBRedemptionDelegate3_1_1.sol';
 
 interface IJBPayoutRedemptionPaymentTerminal3_1_1 {
   event DelegateDidRedeem(

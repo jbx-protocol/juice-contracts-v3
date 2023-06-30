@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "./helpers/TestBaseWorkflow.sol";
-
-import "@juicebox/JBReconfigurationBufferBallot.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 uint256 constant WEIGHT = 1000 * 10 ** 18;
 

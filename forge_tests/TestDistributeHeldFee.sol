@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
-
-import "./helpers/TestBaseWorkflow.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDistributeHeldFee_Local is TestBaseWorkflow {
     JBController private _controller;
@@ -111,7 +108,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
-        _terminal.setFeeGauge(feeGauge);
+        _terminal.setFeeGauge(address(feeGauge));
 
         uint256 discountedFee = fee - PRBMath.mulDiv(fee, feeDiscount, jbLibraries().MAX_FEE());
 
@@ -247,7 +244,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
-        _terminal.setFeeGauge(feeGauge);
+        _terminal.setFeeGauge(address(feeGauge));
 
         // -- pay --
         _terminal.pay{value: payAmountInWei}(

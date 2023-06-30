@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './JBSplit.sol';
+import {JBSplit} from './JBSplit.sol';
 
-/** 
-  @member token The token being sent to the split allocator.
-  @member amount The amount being sent to the split allocator, as a fixed point number.
-  @member decimals The number of decimals in the amount.
-  @member projectId The project to which the split belongs.
-  @member group The group to which the split belongs.
-  @member split The split that caused the allocation.
-*/
+/// @custom:member token The token being sent to the split allocator.
+/// @custom:member amount The amount being sent to the split allocator, as a fixed point number.
+/// @custom:member decimals The number of decimals in the amount.
+/// @custom:member projectId The project to which the split belongs.
+/// @custom:member group The group to which the split belongs.
+/// @custom:member split The split that caused the allocation.
 struct JBSplitAllocationData {
   address token;
   uint256 amount;

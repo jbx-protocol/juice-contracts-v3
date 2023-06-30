@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './../interfaces/IJBPaymentTerminal.sol';
-import './JBTokenAmount.sol';
+import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
+import {JBTokenAmount} from './JBTokenAmount.sol';
 
-/** 
-  @member terminal The terminal that is facilitating the payment.
-  @member payer The address from which the payment originated.
-  @member amount The amount of the payment. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
-  @member projectId The ID of the project being paid.
-  @member currentFundingCycleConfiguration The configuration of the funding cycle during which the payment is being made.
-  @member beneficiary The specified address that should be the beneficiary of anything that results from the payment.
-  @member weight The weight of the funding cycle during which the payment is being made.
-  @member reservedRate The reserved rate of the funding cycle during which the payment is being made.
-  @member memo The memo that was sent alongside the payment.
-  @member metadata Extra data provided by the payer.
-*/
+/// @custom:member terminal The terminal that is facilitating the payment.
+/// @custom:member payer The address from which the payment originated.
+/// @custom:member amount The amount of the payment. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
+/// @custom:member projectId The ID of the project being paid.
+/// @custom:member currentFundingCycleConfiguration The configuration of the funding cycle during which the payment is being made.
+/// @custom:member beneficiary The specified address that should be the beneficiary of anything that results from the payment.
+/// @custom:member weight The weight of the funding cycle during which the payment is being made.
+/// @custom:member reservedRate The reserved rate of the funding cycle during which the payment is being made.
+/// @custom:member memo The memo that was sent alongside the payment.
+/// @custom:member metadata Extra data provided by the payer.
 struct JBPayParamsData {
   IJBPaymentTerminal terminal;
   address payer;
