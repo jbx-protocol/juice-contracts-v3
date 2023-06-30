@@ -15,6 +15,7 @@ const defaultNetwork = 'hardhat';
 
 function mnemonic() {
   try {
+    // 0xc64533F8d8dEbC301cb4791e6ED941Cb38473DE6
     return fs.readFileSync('./mnemonic.txt').toString().trim();
   } catch (e) {
     if (defaultNetwork !== 'localhost') {

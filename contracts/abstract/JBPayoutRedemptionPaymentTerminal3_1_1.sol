@@ -1269,7 +1269,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
 
     if (_shouldHoldFees) {
       // Store the held fee.
-      _heldFeesOf[_projectId].push(JBFee(_amount, uint32(fee), uint32(_feeDiscount), _beneficiary));
+      _heldFeesOf[_projectId].push(
+        JBFee(_amount, uint32(_feePercent), uint32(_feeDiscount), _beneficiary)
+      );
 
       emit HoldFee(_projectId, _amount, _feePercent, _feeDiscount, _beneficiary, msg.sender);
     } else {
