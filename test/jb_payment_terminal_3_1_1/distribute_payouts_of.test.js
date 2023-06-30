@@ -473,24 +473,27 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::distributePayoutsOf(...)', fun
       splits.map(async (split) => {
         await expect(tx)
           .to.emit(jbEthPaymentTerminal, 'DistributeToPayoutSplit')
-          // .withArgs(
-          //   PROJECT_ID,
-          //   /*_fundingCycle.configuration*/ timestamp,
-          //   ETH_PAYOUT_INDEX,
-          //   [
-          //     split.preferClaimed,
-          //     split.preferAddToBalance,
-          //     split.percent,
-          //     split.projectId,
-          //     split.beneficiary,
-          //     split.lockedUntil,
-          //     split.allocator,
-          //   ],
-          //   /*payoutAmount*/ Math.floor(
-          //     (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-          //   ),
-          //   caller.address,
-          // )
+          .withArgs(
+            PROJECT_ID,
+            /*_fundingCycle.configuration*/ timestamp,
+            ETH_PAYOUT_INDEX,
+            [
+              split.preferClaimed,
+              split.preferAddToBalance,
+              split.percent,
+              split.projectId,
+              split.beneficiary,
+              split.lockedUntil,
+              split.allocator,
+            ],
+            /*payoutAmount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            /*netAmount*/ Math.floor(
+              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
+            ),
+            caller.address,
+          )
           .and.to.emit(jbEthPaymentTerminal, 'Pay');
         // .withArgs(
         //   timestamp,
