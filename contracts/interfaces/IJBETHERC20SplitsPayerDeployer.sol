@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './IJBSplitsPayer.sol';
-import './IJBSplitsStore.sol';
+import {IJBSplitsPayer} from './IJBSplitsPayer.sol';
+import {IJBSplitsStore} from './IJBSplitsStore.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
 
 interface IJBETHERC20SplitsPayerDeployer {
   event DeploySplitsPayer(
@@ -22,28 +23,28 @@ interface IJBETHERC20SplitsPayerDeployer {
   );
 
   function deploySplitsPayer(
-    uint256 _defaultSplitsProjectId,
-    uint256 _defaultSplitsDomain,
-    uint256 _defaultSplitsGroup,
-    uint256 _defaultProjectId,
-    address payable _defaultBeneficiary,
-    bool _defaultPreferClaimedTokens,
-    string calldata _defaultMemo,
-    bytes calldata _defaultMetadata,
-    bool _preferAddToBalance,
-    address _owner
+    uint256 defaultSplitsProjectId,
+    uint256 defaultSplitsDomain,
+    uint256 defaultSplitsGroup,
+    uint256 defaultProjectId,
+    address payable defaultBeneficiary,
+    bool defaultPreferClaimedTokens,
+    string calldata defaultMemo,
+    bytes calldata defaultMetadata,
+    bool preferAddToBalance,
+    address owner
   ) external returns (IJBSplitsPayer splitsPayer);
 
   function deploySplitsPayerWithSplits(
-    uint256 _defaultSplitsProjectId,
-    JBSplit[] memory _defaultSplits,
-    IJBSplitsStore _splitsStore,
-    uint256 _defaultProjectId,
-    address payable _defaultBeneficiary,
-    bool _defaultPreferClaimedTokens,
-    string memory _defaultMemo,
-    bytes memory _defaultMetadata,
-    bool _defaultPreferAddToBalance,
-    address _owner
+    uint256 defaultSplitsProjectId,
+    JBSplit[] memory defaultSplits,
+    IJBSplitsStore splitsStore,
+    uint256 defaultProjectId,
+    address payable defaultBeneficiary,
+    bool defaultPreferClaimedTokens,
+    string memory defaultMemo,
+    bytes memory defaultMetadata,
+    bool defaultPreferAddToBalance,
+    address owner
   ) external returns (IJBSplitsPayer splitsPayer);
 }

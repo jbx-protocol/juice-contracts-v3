@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "./helpers/TestBaseWorkflow.sol";
-import "./mock/MockPriceFeed.sol";
-import "@paulrberg/contracts/math/PRBMath.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
+
+import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBController controller;
@@ -96,7 +95,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 jbDirectory(),
                 jbSplitsStore(),
                 jbPrices(),
-                jbPaymentTerminalStore(),
+                address(jbPaymentTerminalStore()),
                 multisig()
             );
         }else{
@@ -110,7 +109,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 jbDirectory(),
                 jbSplitsStore(),
                 jbPrices(),
-                jbPaymentTerminalStore(),
+                address(jbPaymentTerminalStore()),
                 multisig()
             )));
         }

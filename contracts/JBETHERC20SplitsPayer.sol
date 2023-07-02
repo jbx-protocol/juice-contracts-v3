@@ -1,31 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@paulrberg/contracts/math/PRBMath.sol';
-import './interfaces/IJBSplitsPayer.sol';
-import './interfaces/IJBSplitsStore.sol';
-import './libraries/JBConstants.sol';
-import './JBETHERC20ProjectPayer.sol';
+import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {Address} from '@openzeppelin/contracts/utils/Address.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {IJBSplitsPayer} from './interfaces/IJBSplitsPayer.sol';
+import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
+import {JBConstants} from './libraries/JBConstants.sol';
+import {JBETHERC20ProjectPayer} from './JBETHERC20ProjectPayer.sol';
+import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
+import {JBTokens} from './libraries/JBTokens.sol';
+import {JBGroupedSplits} from './structs/JBGroupedSplits.sol';
+import {JBSplit} from './structs/JBSplit.sol';
+import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
-/** 
-  @notice 
-  Sends ETH or ERC20's to a group of splits as it receives direct payments or has its functions called.
-
-  @dev
-  Inherit from this contract or borrow from its logic to forward ETH or ERC20's to a group of splits from within other contracts.
-
-  @dev
-  Adheres to -
-  IJBSplitsPayer:  General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  JBETHERC20ProjectPayer: Sends ETH or ERC20's to a project treasury as it receives direct payments or has it's functions called.
-  ReentrancyGuard: Contract module that helps prevent reentrant calls to a function.
-*/
+/// @notice Sends ETH or ERC20's to a group of splits as it receives direct payments or has its functions called.
+/// @dev Inherit from this contract or borrow from its logic to forward ETH or ERC20's to a group of splits from within other contracts.
 contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSplitsPayer {
   using SafeERC20 for IERC20;
 
@@ -33,56 +26,33 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The contract that stores splits for each project.
-  */
+  /// @notice The contract that stores splits for each project.
   IJBSplitsStore public immutable override splitsStore;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    The ID of project for which the default splits are stored. 
-  */
+  /// @notice The ID of project for which the default splits are stored.
   uint256 public override defaultSplitsProjectId;
 
-  /**
-    @notice
-    The domain within which the default splits are stored. 
-  */
+  /// @notice The domain within which the default splits are stored.
   uint256 public override defaultSplitsDomain;
 
-  /**
-    @notice
-    The group within which the default splits are stored. 
-  */
+  /// @notice The group within which the default splits are stored.
   uint256 public override defaultSplitsGroup;
 
   //*********************************************************************//
   // -------------------------- public views --------------------------- //
   //*********************************************************************//
 
-  /**
-    @notice
-    Indicates if this contract adheres to the specified interface.
-
-    @dev 
-    See {IERC165-supportsInterface}.
-
-    @param _interfaceId The ID of the interface to check for adherance to.
-
-    @return A flag indicating if this contract adheres to the specified interface.
-  */
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBETHERC20ProjectPayer, IERC165)
-    returns (bool)
-  {
+  /// @notice Indicates if this contract adheres to the specified interface.
+  /// @dev See {IERC165-supportsInterface}.
+  /// @param _interfaceId The ID of the interface to check for adherance to.
+  /// @return A flag indicating if this contract adheres to the specified interface.
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBETHERC20ProjectPayer, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBSplitsPayer).interfaceId || super.supportsInterface(_interfaceId);
   }
@@ -90,32 +60,23 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
-/**
-    @param _splitsStore A contract that stores splits for each project.
-*/
-  constructor(
-    IJBSplitsStore _splitsStore
-  )
-    JBETHERC20ProjectPayer(
-      _splitsStore.directory()
-    )
-  {
+
+  /// @param _splitsStore A contract that stores splits for each project.
+  constructor(IJBSplitsStore _splitsStore) JBETHERC20ProjectPayer(_splitsStore.directory()) {
     splitsStore = _splitsStore;
   }
-  /**
-    @dev   The re-initialize check is done in the inherited paroject payer
-    
-    @param _defaultSplitsProjectId The ID of project for which the default splits are stored.
-    @param _defaultSplitsDomain The splits domain to payout when this contract receives direct payments.
-    @param _defaultSplitsGroup The splits group to payout when this contract receives direct payments.
-    @param _defaultProjectId The ID of the project whose treasury should be forwarded the splits payer contract's received payment leftovers after distributing to the default splits group.
-    @param _defaultBeneficiary The address that'll receive the project's tokens. 
-    @param _defaultPreferClaimedTokens A flag indicating whether issued tokens should be automatically claimed into the beneficiary's wallet. 
-    @param _defaultMemo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
-    @param _defaultMetadata Bytes to send along to the project's data source and delegate, if provided.
-    @param _preferAddToBalance  A flag indicating if received payments should call the `pay` function or the `addToBalance` function of a project.
-    @param _owner The address that will own the contract.
-  */
+
+  /// @dev The re-initialize check is done in the inherited paroject payer
+  /// @param _defaultSplitsProjectId The ID of project for which the default splits are stored.
+  /// @param _defaultSplitsDomain The splits domain to payout when this contract receives direct payments.
+  /// @param _defaultSplitsGroup The splits group to payout when this contract receives direct payments.
+  /// @param _defaultProjectId The ID of the project whose treasury should be forwarded the splits payer contract's received payment leftovers after distributing to the default splits group.
+  /// @param _defaultBeneficiary The address that'll receive the project's tokens.
+  /// @param _defaultPreferClaimedTokens A flag indicating whether issued tokens should be automatically claimed into the beneficiary's wallet.
+  /// @param _defaultMemo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
+  /// @param _defaultMetadata Bytes to send along to the project's data source and delegate, if provided.
+  /// @param _preferAddToBalance  A flag indicating if received payments should call the `pay` function or the `addToBalance` function of a project.
+  /// @param _owner The address that will own the contract.
   function initialize(
     uint256 _defaultSplitsProjectId,
     uint256 _defaultSplitsDomain,
@@ -128,7 +89,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     bool _preferAddToBalance,
     address _owner
   ) external override {
-
     super.initialize(
       _defaultProjectId,
       _defaultBeneficiary,
@@ -144,19 +104,12 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     defaultSplitsGroup = _defaultSplitsGroup;
   }
 
-
-
   //*********************************************************************//
   // ------------------------- default receive ------------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Received funds are paid to the default split group using the stored default properties.
-
-    @dev
-    This function is called automatically when the contract receives an ETH payment.
-  */
+  /// @notice Received funds are paid to the default split group using the stored default properties.
+  /// @dev This function is called automatically when the contract receives an ETH payment.
   receive() external payable virtual override nonReentrant {
     // Pay the splits and get a reference to the amount leftover.
     uint256 _leftoverAmount = _payToSplits(
@@ -209,15 +162,11 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Sets the splits in the splits store that payments this contract receives will be split between.
-
-    @param _projectId The ID of project for which the default splits are stored. 
-    @param _domain The domain within which the default splits are stored. 
-    @param _group The group within which the default splits are stored. 
-    @param _groupedSplits The split groups to set.
-  */
+  /// @notice Sets the splits in the splits store that payments this contract receives will be split between.
+  /// @param _projectId The ID of project for which the default splits are stored.
+  /// @param _domain The domain within which the default splits are stored.
+  /// @param _group The group within which the default splits are stored.
+  /// @param _groupedSplits The split groups to set.
   function setDefaultSplits(
     uint256 _projectId,
     uint256 _domain,
@@ -235,14 +184,10 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   // ----------------------- public transactions ----------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Sets the location of the splits that payments this contract receives will be split between.
-
-    @param _projectId The ID of project for which the default splits are stored. 
-    @param _domain The domain within which the default splits are stored. 
-    @param _group The group within which the default splits are stored. 
-  */
+  /// @notice Sets the location of the splits that payments this contract receives will be split between.
+  /// @param _projectId The ID of project for which the default splits are stored.
+  /// @param _domain The domain within which the default splits are stored.
+  /// @param _group The group within which the default splits are stored.
   function setDefaultSplitsReference(
     uint256 _projectId,
     uint256 _domain,
@@ -260,20 +205,16 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     emit SetDefaultSplitsReference(_projectId, _domain, _group, msg.sender);
   }
 
-  /** 
-    @notice 
-    Make a payment to the specified project after first splitting the amount among the stored default splits.
-
-    @param _projectId The ID of the project that is being paid after.
-    @param _token The token being paid in.
-    @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
-    @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
-    @param _beneficiary The address who will receive tokens from the payment made with leftover funds.
-    @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with 18 decimals.
-    @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-    @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate. A data source can alter the memo before emitting in the event and forwarding to the delegate.
-    @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-  */
+  /// @notice Make a payment to the specified project after first splitting the amount among the stored default splits.
+  /// @param _projectId The ID of the project that is being paid after.
+  /// @param _token The token being paid in.
+  /// @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
+  /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
+  /// @param _beneficiary The address who will receive tokens from the payment made with leftover funds.
+  /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with 18 decimals.
+  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
+  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate. A data source can alter the memo before emitting in the event and forwarding to the delegate.
+  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
   function pay(
     uint256 _projectId,
     address _token,
@@ -372,17 +313,13 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     );
   }
 
-  /** 
-    @notice 
-    Add to the balance of the specified project after first splitting the amount among the stored default splits.
-
-    @param _projectId The ID of the project that is being paid after.
-    @param _token The token being paid in.
-    @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
-    @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
-    @param _memo A memo to pass along to the emitted event.  
-    @param _metadata Extra data to pass along to the terminal.
-  */
+  /// @notice Add to the balance of the specified project after first splitting the amount among the stored default splits.
+  /// @param _projectId The ID of the project that is being paid after.
+  /// @param _token The token being paid in.
+  /// @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
+  /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _metadata Extra data to pass along to the terminal.
   function addToBalanceOf(
     uint256 _projectId,
     address _token,
@@ -463,20 +400,15 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   // ---------------------- internal transactions ---------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    Split an amount between all splits.
-
-    @param _splitsProjectId The ID of the project to which the splits belong.
-    @param _splitsDomain The splits domain to which the group belongs.
-    @param _splitsGroup The splits group to pay.
-    @param _token The token the amonut being split is in.
-    @param _amount The amount of tokens being split, as a fixed point number. If the `_token` is ETH, this is ignored and msg.value is used in its place.
-    @param _decimals The number of decimals in the `_amount` fixed point number. 
-    @param _defaultBeneficiary The address that will benefit from any non-specified beneficiaries in splits.
-
-    @return leftoverAmount The amount leftover after all splits were paid.
-  */
+  /// @notice Split an amount between all splits.
+  /// @param _splitsProjectId The ID of the project to which the splits belong.
+  /// @param _splitsDomain The splits domain to which the group belongs.
+  /// @param _splitsGroup The splits group to pay.
+  /// @param _token The token the amonut being split is in.
+  /// @param _amount The amount of tokens being split, as a fixed point number. If the `_token` is ETH, this is ignored and msg.value is used in its place.
+  /// @param _decimals The number of decimals in the `_amount` fixed point number.
+  /// @param _defaultBeneficiary The address that will benefit from any non-specified beneficiaries in splits.
+  /// @return leftoverAmount The amount leftover after all splits were paid.
   function _payToSplits(
     uint256 _splitsProjectId,
     uint256 _splitsDomain,
@@ -497,18 +429,13 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     emit DistributeToSplitGroup(_splitsProjectId, _splitsDomain, _splitsGroup, msg.sender);
   }
 
-  /** 
-    @notice 
-    Split an amount between all splits.
-
-    @param _splits The splits.
-    @param _token The token the amonut being split is in.
-    @param _amount The amount of tokens being split, as a fixed point number. If the `_token` is ETH, this is ignored and msg.value is used in its place.
-    @param _decimals The number of decimals in the `_amount` fixed point number. 
-    @param _defaultBeneficiary The address that will benefit from any non-specified beneficiaries in splits.
-
-    @return leftoverAmount The amount leftover after all splits were paid.
-  */
+  /// @notice Split an amount between all splits.
+  /// @param _splits The splits.
+  /// @param _token The token the amonut being split is in.
+  /// @param _amount The amount of tokens being split, as a fixed point number. If the `_token` is ETH, this is ignored and msg.value is used in its place.
+  /// @param _decimals The number of decimals in the `_amount` fixed point number.
+  /// @param _defaultBeneficiary The address that will benefit from any non-specified beneficiaries in splits.
+  /// @return leftoverAmount The amount leftover after all splits were paid.
   function _payTo(
     JBSplit[] memory _splits,
     address _token,

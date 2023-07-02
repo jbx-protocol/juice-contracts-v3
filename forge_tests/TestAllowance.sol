@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.6;
 
-import "./helpers/TestBaseWorkflow.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestAllowance_Local is TestBaseWorkflow {
     JBController controller;
@@ -13,7 +13,6 @@ contract TestAllowance_Local is TestBaseWorkflow {
     IJBPaymentTerminal[] _terminals;
     JBTokenStore _tokenStore;
     address _projectOwner;
-    address _beneficiary;
 
     uint256 WEIGHT = 1000 * 10 ** 18;
 
@@ -21,8 +20,6 @@ contract TestAllowance_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-
-        _beneficiary = beneficiary();
 
         _tokenStore = jbTokenStore();
 
@@ -115,7 +112,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "MEMO"
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
                 projectId,
                 5 ether,
                 1, // Currency
@@ -143,7 +140,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 ether,
                 1, // Currency
@@ -241,7 +238,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "MEMO"
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
                 projectId,
                 ALLOWANCE,
                 CURRENCY, // Currency
@@ -279,7 +276,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                 projectId,
                 TARGET,
                 1, // Currency

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './IJBFundingCycleStore.sol';
-import './IJBProjects.sol';
-import './IJBToken.sol';
+import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';
+import {IJBProjects} from './IJBProjects.sol';
+import {IJBToken} from './IJBToken.sol';
 
 interface IJBTokenStore {
   event Issue(
@@ -51,52 +51,48 @@ interface IJBTokenStore {
     address caller
   );
 
-  function tokenOf(uint256 _projectId) external view returns (IJBToken);
+  function tokenOf(uint256 projectId) external view returns (IJBToken);
 
   function projects() external view returns (IJBProjects);
 
   function fundingCycleStore() external view returns (IJBFundingCycleStore);
 
-  function unclaimedBalanceOf(address _holder, uint256 _projectId) external view returns (uint256);
+  function unclaimedBalanceOf(address holder, uint256 projectId) external view returns (uint256);
 
-  function unclaimedTotalSupplyOf(uint256 _projectId) external view returns (uint256);
+  function unclaimedTotalSupplyOf(uint256 projectId) external view returns (uint256);
 
-  function totalSupplyOf(uint256 _projectId) external view returns (uint256);
+  function totalSupplyOf(uint256 projectId) external view returns (uint256);
 
-  function balanceOf(address _holder, uint256 _projectId) external view returns (uint256 _result);
+  function balanceOf(address holder, uint256 projectId) external view returns (uint256 result);
 
   function issueFor(
-    uint256 _projectId,
-    string calldata _name,
-    string calldata _symbol
+    uint256 projectId,
+    string calldata name,
+    string calldata symbol
   ) external returns (IJBToken token);
 
-  function setFor(uint256 _projectId, IJBToken _token) external;
+  function setFor(uint256 projectId, IJBToken token) external;
 
   function burnFrom(
-    address _holder,
-    uint256 _projectId,
-    uint256 _amount,
-    bool _preferClaimedTokens
+    address holder,
+    uint256 projectId,
+    uint256 amount,
+    bool preferClaimedTokens
   ) external;
 
   function mintFor(
-    address _holder,
-    uint256 _projectId,
-    uint256 _amount,
-    bool _preferClaimedTokens
+    address holder,
+    uint256 projectId,
+    uint256 amount,
+    bool preferClaimedTokens
   ) external;
 
-  function claimFor(
-    address _holder,
-    uint256 _projectId,
-    uint256 _amount
-  ) external;
+  function claimFor(address holder, uint256 projectId, uint256 amount) external;
 
   function transferFrom(
-    address _holder,
-    uint256 _projectId,
-    address _recipient,
-    uint256 _amount
+    address holder,
+    uint256 projectId,
+    address recipient,
+    uint256 amount
   ) external;
 }

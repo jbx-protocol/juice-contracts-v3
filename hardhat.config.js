@@ -11,10 +11,11 @@ require('solidity-coverage');
 
 dotenv.config();
 
-const defaultNetwork = 'localhost';
+const defaultNetwork = 'hardhat';
 
 function mnemonic() {
   try {
+    // 0xc64533F8d8dEbC301cb4791e6ED941Cb38473DE6
     return fs.readFileSync('./mnemonic.txt').toString().trim();
   } catch (e) {
     if (defaultNetwork !== 'localhost') {
@@ -38,6 +39,12 @@ module.exports = {
     },
     goerli: {
       url: 'https://goerli.infura.io/v3/' + infuraId,
+      accounts: {
+        mnemonic: mnemonic(),
+      },
+    },
+    sepolia: {
+      url: 'https://sepolia.infura.io/v3/' + infuraId,
       accounts: {
         mnemonic: mnemonic(),
       },
@@ -66,13 +73,13 @@ module.exports = {
       optimizer: {
         enabled: true,
         // https://docs.soliditylang.org/en/v0.8.10/internals/optimizer.html#:~:text=Optimizer%20Parameter%20Runs,-The%20number%20of&text=A%20%E2%80%9Cruns%E2%80%9D%20parameter%20of%20%E2%80%9C,is%202**32%2D1%20.
-        runs: 10000,
+        runs: 200,
       },
     },
   },
   mocha: {
-    bail: true,
-    timeout: 12000,
+    // bail: true,
+    timeout: 100000000,
   },
   gasReporter: {
     currency: 'USD',

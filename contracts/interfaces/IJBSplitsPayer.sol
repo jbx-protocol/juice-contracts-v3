@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import './../structs/JBSplit.sol';
-import './../structs/JBGroupedSplits.sol';
-import './IJBSplitsStore.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
+import {JBGroupedSplits} from './../structs/JBGroupedSplits.sol';
+import {IJBSplitsStore} from './IJBSplitsStore.sol';
 
 interface IJBSplitsPayer is IERC165 {
   event SetDefaultSplitsReference(
@@ -62,28 +62,24 @@ interface IJBSplitsPayer is IERC165 {
   function splitsStore() external view returns (IJBSplitsStore);
 
   function initialize(
-    uint256 _defaultSplitsProjectId,
-    uint256 _defaultSplitsDomain,
-    uint256 _defaultSplitsGroup,
-    uint256 _defaultProjectId,
-    address payable _defaultBeneficiary,
-    bool _defaultPreferClaimedTokens,
-    string memory _defaultMemo,
-    bytes memory _defaultMetadata,
-    bool _preferAddToBalance,
-    address _owner
+    uint256 defaultSplitsProjectId,
+    uint256 defaultSplitsDomain,
+    uint256 defaultSplitsGroup,
+    uint256 defaultProjectId,
+    address payable defaultBeneficiary,
+    bool defaultPreferClaimedTokens,
+    string memory defaultMemo,
+    bytes memory defaultMetadata,
+    bool preferAddToBalance,
+    address owner
   ) external;
 
-  function setDefaultSplitsReference(
-    uint256 _projectId,
-    uint256 _domain,
-    uint256 _group
-  ) external;
+  function setDefaultSplitsReference(uint256 projectId, uint256 domain, uint256 group) external;
 
   function setDefaultSplits(
-    uint256 _projectId,
-    uint256 _domain,
-    uint256 _group,
-    JBGroupedSplits[] memory _splitsGroup
+    uint256 projectId,
+    uint256 domain,
+    uint256 group,
+    JBGroupedSplits[] memory splitsGroup
   ) external;
 }

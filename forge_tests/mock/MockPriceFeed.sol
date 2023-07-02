@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import "@juicebox/interfaces/IJBPriceFeed.sol";
+import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
 contract MockPriceFeed is IJBPriceFeed {
     uint256 public fakePrice;

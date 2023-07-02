@@ -1,24 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import './abstract/JBOperatable.sol';
-import './interfaces/IJBDirectory.sol';
-import './interfaces/IJBSplitsStore.sol';
-import './libraries/JBConstants.sol';
-import './libraries/JBOperations.sol';
+import {JBOperatable} from './abstract/JBOperatable.sol';
+import {IJBDirectory} from './interfaces/IJBDirectory.sol';
+import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
+import {IJBProjects} from './interfaces/IJBProjects.sol';
+import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
+import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
+import {JBConstants} from './libraries/JBConstants.sol';
+import {JBOperations} from './libraries/JBOperations.sol';
+import {JBGroupedSplits} from './structs/JBGroupedSplits.sol';
+import {JBSplit} from './structs/JBSplit.sol';
 
-/**
-  @notice
-  Stores splits for each project.
-
-  @dev
-  Adheres to -
-  IJBSplitsStore: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-
-  @dev
-  Inherits from -
-  JBOperatable: Includes convenience functionality for checking a message sender's permissions before executing certain transactions.
-*/
+/// @notice Stores splits for each project.
 contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -33,40 +27,26 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   // --------------------- private stored properties ------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    The number of splits currently set for each project ID's configurations.
-
-    _projectId The ID of the project to get the split count for.
-    _domain An identifier within which the returned splits should be considered active.
-    _group The identifying group of the splits.
-  */
+  /// @notice The number of splits currently set for each project ID's configurations.
+  /// @custom:param _projectId The ID of the project to get the split count for.
+  /// @custom:param _domain An identifier within which the returned splits should be considered active.
+  /// @custom:param _group The identifying group of the splits.
   mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) private _splitCountOf;
 
-  /** 
-    @notice
-    Packed data of splits for each project ID's configurations.
-
-    _projectId The ID of the project to get packed splits data for.
-    _domain An identifier within which the returned splits should be considered active.
-    _group The identifying group of the splits.
-    _index The indexed order that the split was set at.
-  */
+  /// @notice Packed data of splits for each project ID's configurations.
+  /// @custom:param _projectId The ID of the project to get packed splits data for.
+  /// @custom:param _domain An identifier within which the returned splits should be considered active.
+  /// @custom:param _group The identifying group of the splits.
+  /// @custom:param _index The indexed order that the split was set at.
   mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))))
     private _packedSplitParts1Of;
 
-  /** 
-    @notice
-    More packed data of splits for each project ID's configurations.
-
-    @dev
-    This packed data is often 0.
-
-    _projectId The ID of the project to get packed splits data for.
-    _domain An identifier within which the returned splits should be considered active.
-    _group The identifying group of the splits.
-    _index The indexed order that the split was set at.
-  */
+  /// @notice More packed data of splits for each project ID's configurations.
+  /// @dev This packed data is often 0.
+  /// @custom:param _projectId The ID of the project to get packed splits data for.
+  /// @custom:param _domain An identifier within which the returned splits should be considered active.
+  /// @custom:param _group The identifying group of the splits.
+  /// @custom:param _index The indexed order that the split was set at.
   mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))))
     private _packedSplitParts2Of;
 
@@ -74,32 +54,21 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    Mints ERC-721's that represent project ownership and transfers.
-  */
+  /// @notice Mints ERC-721's that represent project ownership and transfers.
   IJBProjects public immutable override projects;
 
-  /** 
-    @notice 
-    The directory of terminals and controllers for projects.
-  */
+  /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
 
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /**
-  @notice 
-  Get all splits for the specified project ID, within the specified domain, for the specified group.
-
-  @param _projectId The ID of the project to get splits for.
-  @param _domain An identifier within which the returned splits should be considered active.
-  @param _group The identifying group of the splits.
-
-  @return An array of all splits for the project.
-*/
+  /// @notice Get all splits for the specified project ID, within the specified domain, for the specified group.
+  /// @param _projectId The ID of the project to get splits for.
+  /// @param _domain An identifier within which the returned splits should be considered active.
+  /// @param _group The identifying group of the splits.
+  /// @return An array of all splits for the project.
   function splitsOf(
     uint256 _projectId,
     uint256 _domain,
@@ -112,11 +81,9 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /** 
-    @param _operatorStore A contract storing operator assignments.
-    @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-    @param _directory A contract storing directories of terminals and controllers for each project.
-  */
+  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+  /// @param _directory A contract storing directories of terminals and controllers for each project.
   constructor(
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
@@ -130,20 +97,12 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    Sets a project's splits.
-
-    @dev
-    Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
-
-    @dev
-    The new splits must include any currently set splits that are locked.
-
-    @param _projectId The ID of the project for which splits are being added.
-    @param _domain An identifier within which the splits should be considered active.
-    @param _groupedSplits An array of splits to set for any number of groups. 
-  */
+  /// @notice Sets a project's splits.
+  /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
+  /// @dev The new splits must include any currently set splits that are locked.
+  /// @param _projectId The ID of the project for which splits are being added.
+  /// @param _domain An identifier within which the splits should be considered active.
+  /// @param _groupedSplits An array of splits to set for any number of groups.
   function set(
     uint256 _projectId,
     uint256 _domain,
@@ -179,18 +138,12 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
   // --------------------- private helper functions -------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    Sets a project's splits.
-
-    @dev
-    The new splits must include any currently set splits that are locked.
-
-    @param _projectId The ID of the project for which splits are being added.
-    @param _domain An identifier within which the splits should be considered active.
-    @param _group An identifier between of splits being set. All splits within this _group must add up to within 100%.
-    @param _splits The splits to set.
-  */
+  /// @notice Sets a project's splits.
+  /// @dev The new splits must include any currently set splits that are locked.
+  /// @param _projectId The ID of the project for which splits are being added.
+  /// @param _domain An identifier within which the splits should be considered active.
+  /// @param _group An identifier between of splits being set. All splits within this _group must add up to within 100%.
+  /// @param _splits The splits to set.
   function _set(
     uint256 _projectId,
     uint256 _domain,
@@ -279,20 +232,14 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     _splitCountOf[_projectId][_domain][_group] = _splitsLength;
   }
 
-  /** 
-    @notice
-    A flag indiciating if the provided splits array includes the locked split. 
-
-    @param _splits The array of splits to check within.
-    @param _lockedSplit The locked split.
-
-    @return A flag indicating if the `_lockedSplit` is contained in the `_splits`.
-  */
-  function _includesLocked(JBSplit[] memory _splits, JBSplit memory _lockedSplit)
-    private
-    pure
-    returns (bool)
-  {
+  /// @notice A flag indiciating if the provided splits array includes the locked split.
+  /// @param _splits The array of splits to check within.
+  /// @param _lockedSplit The locked split.
+  /// @return A flag indicating if the `_lockedSplit` is contained in the `_splits`.
+  function _includesLocked(
+    JBSplit[] memory _splits,
+    JBSplit memory _lockedSplit
+  ) private pure returns (bool) {
     // Keep a reference to the number of splits.
     uint256 _numberOfSplits = _splits.length;
 
@@ -317,16 +264,11 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     return false;
   }
 
-  /**
-    @notice 
-    Unpack splits' packed stored values into easy-to-work-with split structs.
-
-    @param _projectId The ID of the project to which the split belongs.
-    @param _domain The identifier within which the returned splits should be considered active.
-    @param _group The identifying group of the splits.
-
-    @return splits The split structs.
-  */
+  /// @notice Unpack splits' packed stored values into easy-to-work-with split structs.
+  /// @param _projectId The ID of the project to which the split belongs.
+  /// @param _domain The identifier within which the returned splits should be considered active.
+  /// @param _group The identifying group of the splits.
+  /// @return splits The split structs.
   function _getStructsFor(
     uint256 _projectId,
     uint256 _domain,

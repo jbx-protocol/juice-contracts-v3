@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './../structs/JBFee.sol';
-import './IJBAllowanceTerminal3_1.sol';
-import './IJBDirectory.sol';
-import './IJBFeeGauge.sol';
-import './IJBFeeHoldingTerminal.sol';
-import './IJBPayDelegate.sol';
-import './IJBPaymentTerminal.sol';
-import './IJBPayoutTerminal3_1.sol';
-import './IJBPrices.sol';
-import './IJBProjects.sol';
-import './IJBRedemptionDelegate.sol';
-import './IJBRedemptionTerminal.sol';
-import './IJBSingleTokenPaymentTerminalStore.sol';
-import './IJBSplitsStore.sol';
+import {JBFee} from './../structs/JBFee.sol';
+import {IJBAllowanceTerminal3_1} from './IJBAllowanceTerminal3_1.sol';
+import {IJBDirectory} from './IJBDirectory.sol';
+import {IJBFeeHoldingTerminal} from './IJBFeeHoldingTerminal.sol';
+import {IJBPayDelegate} from './IJBPayDelegate.sol';
+import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
+import {IJBPayoutTerminal3_1} from './IJBPayoutTerminal3_1.sol';
+import {IJBPrices} from './IJBPrices.sol';
+import {IJBProjects} from './IJBProjects.sol';
+import {IJBRedemptionDelegate} from './IJBRedemptionDelegate.sol';
+import {IJBRedemptionTerminal} from './IJBRedemptionTerminal.sol';
+import {IJBSplitsStore} from './IJBSplitsStore.sol';
+import {JBDidPayData} from './../structs/JBDidPayData.sol';
+import {JBDidRedeemData} from './../structs/JBDidRedeemData.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
 
 interface IJBPayoutRedemptionPaymentTerminal3_1 is
   IJBPaymentTerminal,
@@ -142,11 +143,17 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   event SetFee(uint256 fee, address caller);
 
-  event SetFeeGauge(IJBFeeGauge indexed feeGauge, address caller);
+  event SetFeeGauge(address indexed feeGauge, address caller);
 
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
-  event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
+  event PayoutReverted(
+    uint256 indexed projectId,
+    JBSplit split,
+    uint256 amount,
+    bytes reason,
+    address caller
+  );
 
   event FeeReverted(
     uint256 indexed projectId,
@@ -164,27 +171,27 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   function prices() external view returns (IJBPrices);
 
-  function store() external view returns (IJBSingleTokenPaymentTerminalStore);
+  function store() external view returns (address);
 
   function baseWeightCurrency() external view returns (uint256);
 
   function payoutSplitsGroup() external view returns (uint256);
 
-  function heldFeesOf(uint256 _projectId) external view returns (JBFee[] memory);
+  function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
 
   function fee() external view returns (uint256);
 
-  function feeGauge() external view returns (IJBFeeGauge);
+  function feeGauge() external view returns (address);
 
-  function isFeelessAddress(address _contract) external view returns (bool);
+  function isFeelessAddress(address account) external view returns (bool);
 
-  function migrate(uint256 _projectId, IJBPaymentTerminal _to) external returns (uint256 balance);
+  function migrate(uint256 projectId, IJBPaymentTerminal to) external returns (uint256 balance);
 
-  function processFees(uint256 _projectId) external;
+  function processFees(uint256 projectId) external;
 
-  function setFee(uint256 _fee) external;
+  function setFee(uint256 fee) external;
 
-  function setFeeGauge(IJBFeeGauge _feeGauge) external;
+  function setFeeGauge(address feeGauge) external;
 
-  function setFeelessAddress(address _contract, bool _flag) external;
+  function setFeelessAddress(address account, bool flag) external;
 }

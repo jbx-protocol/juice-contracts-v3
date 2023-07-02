@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import './../structs/JBFundAccessConstraints.sol';
-import './../structs/JBFundingCycleData.sol';
-import './../structs/JBFundingCycleMetadata.sol';
-import './../structs/JBGroupedSplits.sol';
-import './../structs/JBProjectMetadata.sol';
-import './IJBDirectory.sol';
-import './IJBFundingCycleStore.sol';
-import './IJBMigratable.sol';
-import './IJBPaymentTerminal.sol';
-import './IJBSplitsStore.sol';
-import './IJBTokenStore.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {JBBallotState} from './../enums/JBBallotState.sol';
+import {JBFundAccessConstraints} from './../structs/JBFundAccessConstraints.sol';
+import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
+import {JBFundingCycleData} from './../structs/JBFundingCycleData.sol';
+import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
+import {JBGroupedSplits} from './../structs/JBGroupedSplits.sol';
+import {JBProjectMetadata} from './../structs/JBProjectMetadata.sol';
+import {JBSplit} from './../structs/JBSplit.sol';
+import {IJBDirectory} from './IJBDirectory.sol';
+import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';
+import {IJBMigratable} from './IJBMigratable.sol';
+import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
+import {IJBProjects} from './IJBProjects.sol';
+import {IJBSplitsStore} from './IJBSplitsStore.sol';
+import {IJBTokenStore} from './IJBTokenStore.sol';
 
 interface IJBController is IERC165 {
   event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
@@ -86,107 +90,113 @@ interface IJBController is IERC165 {
 
   function directory() external view returns (IJBDirectory);
 
-  function reservedTokenBalanceOf(uint256 _projectId, uint256 _reservedRate)
-    external
-    view
-    returns (uint256);
+  function reservedTokenBalanceOf(
+    uint256 projectId,
+    uint256 reservedRate
+  ) external view returns (uint256);
 
   function distributionLimitOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
+    uint256 projectId,
+    uint256 configuration,
+    IJBPaymentTerminal terminal,
+    address token
   ) external view returns (uint256 distributionLimit, uint256 distributionLimitCurrency);
 
   function overflowAllowanceOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token
+    uint256 projectId,
+    uint256 configuration,
+    IJBPaymentTerminal terminal,
+    address token
   ) external view returns (uint256 overflowAllowance, uint256 overflowAllowanceCurrency);
 
-  function totalOutstandingTokensOf(uint256 _projectId, uint256 _reservedRate)
-    external
-    view
-    returns (uint256);
+  function totalOutstandingTokensOf(
+    uint256 projectId,
+    uint256 reservedRate
+  ) external view returns (uint256);
 
-  function getFundingCycleOf(uint256 _projectId, uint256 _configuration)
-    external
-    view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
-
-  function latestConfiguredFundingCycleOf(uint256 _projectId)
-    external
-    view
-    returns (
-      JBFundingCycle memory,
-      JBFundingCycleMetadata memory metadata,
-      JBBallotState
-    );
-
-  function currentFundingCycleOf(uint256 _projectId)
+  function getFundingCycleOf(
+    uint256 projectId,
+    uint256 configuration
+  )
     external
     view
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
-  function queuedFundingCycleOf(uint256 _projectId)
+  function latestConfiguredFundingCycleOf(
+    uint256 projectId
+  )
+    external
+    view
+    returns (JBFundingCycle memory, JBFundingCycleMetadata memory metadata, JBBallotState);
+
+  function currentFundingCycleOf(
+    uint256 projectId
+  )
+    external
+    view
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+
+  function queuedFundingCycleOf(
+    uint256 projectId
+  )
     external
     view
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
   function launchProjectFor(
-    address _owner,
-    JBProjectMetadata calldata _projectMetadata,
-    JBFundingCycleData calldata _data,
-    JBFundingCycleMetadata calldata _metadata,
-    uint256 _mustStartAtOrAfter,
-    JBGroupedSplits[] memory _groupedSplits,
-    JBFundAccessConstraints[] memory _fundAccessConstraints,
-    IJBPaymentTerminal[] memory _terminals,
-    string calldata _memo
+    address owner,
+    JBProjectMetadata calldata projectMetadata,
+    JBFundingCycleData calldata data,
+    JBFundingCycleMetadata calldata metadata,
+    uint256 mustStartAtOrAfter,
+    JBGroupedSplits[] memory groupedSplits,
+    JBFundAccessConstraints[] memory fundAccessConstraints,
+    IJBPaymentTerminal[] memory terminals,
+    string calldata memo
   ) external returns (uint256 projectId);
 
   function launchFundingCyclesFor(
-    uint256 _projectId,
-    JBFundingCycleData calldata _data,
-    JBFundingCycleMetadata calldata _metadata,
-    uint256 _mustStartAtOrAfter,
-    JBGroupedSplits[] memory _groupedSplits,
-    JBFundAccessConstraints[] memory _fundAccessConstraints,
-    IJBPaymentTerminal[] memory _terminals,
-    string calldata _memo
+    uint256 projectId,
+    JBFundingCycleData calldata data,
+    JBFundingCycleMetadata calldata metadata,
+    uint256 mustStartAtOrAfter,
+    JBGroupedSplits[] memory groupedSplits,
+    JBFundAccessConstraints[] memory fundAccessConstraints,
+    IJBPaymentTerminal[] memory terminals,
+    string calldata memo
   ) external returns (uint256 configuration);
 
   function reconfigureFundingCyclesOf(
-    uint256 _projectId,
-    JBFundingCycleData calldata _data,
-    JBFundingCycleMetadata calldata _metadata,
-    uint256 _mustStartAtOrAfter,
-    JBGroupedSplits[] memory _groupedSplits,
-    JBFundAccessConstraints[] memory _fundAccessConstraints,
-    string calldata _memo
+    uint256 projectId,
+    JBFundingCycleData calldata data,
+    JBFundingCycleMetadata calldata metadata,
+    uint256 mustStartAtOrAfter,
+    JBGroupedSplits[] memory groupedSplits,
+    JBFundAccessConstraints[] memory fundAccessConstraints,
+    string calldata memo
   ) external returns (uint256);
 
   function mintTokensOf(
-    uint256 _projectId,
-    uint256 _tokenCount,
-    address _beneficiary,
-    string calldata _memo,
-    bool _preferClaimedTokens,
-    bool _useReservedRate
+    uint256 projectId,
+    uint256 tokenCount,
+    address beneficiary,
+    string calldata memo,
+    bool preferClaimedTokens,
+    bool useReservedRate
   ) external returns (uint256 beneficiaryTokenCount);
 
   function burnTokensOf(
-    address _holder,
-    uint256 _projectId,
-    uint256 _tokenCount,
-    string calldata _memo,
-    bool _preferClaimedTokens
+    address holder,
+    uint256 projectId,
+    uint256 tokenCount,
+    string calldata memo,
+    bool preferClaimedTokens
   ) external;
 
-  function distributeReservedTokensOf(uint256 _projectId, string memory _memo)
-    external
-    returns (uint256);
+  function distributeReservedTokensOf(
+    uint256 projectId,
+    string memory memo
+  ) external returns (uint256);
 
-  function migrate(uint256 _projectId, IJBMigratable _to) external;
+  function migrate(uint256 projectId, IJBMigratable to) external;
 }

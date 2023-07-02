@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import './../interfaces/IJBOperatable.sol';
+import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
+import {IJBOperatorStore} from './../interfaces/IJBOperatorStore.sol';
 
-/** 
-  @notice
-  Modifiers to allow access to functions based on the message sender's operator status.
-
-  @dev
-  Adheres to -
-  IJBOperatable: General interface for the methods in this contract that interact with the blockchain's state according to the protocol's rules.
-*/
+/// @notice Modifiers to allow access to functions based on the message sender's operator status.
 abstract contract JBOperatable is IJBOperatable {
   //*********************************************************************//
   // --------------------------- custom errors -------------------------- //
@@ -21,14 +15,10 @@ abstract contract JBOperatable is IJBOperatable {
   // ---------------------------- modifiers ---------------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Only allows the speficied account or an operator of the account to proceed. 
-
-    @param _account The account to check for.
-    @param _domain The domain namespace to look for an operator within. 
-    @param _permissionIndex The index of the permission to check for. 
-  */
+  /// @notice Only allows the speficied account or an operator of the account to proceed.
+  /// @param _account The account to check for.
+  /// @param _domain The domain namespace to look for an operator within.
+  /// @param _permissionIndex The index of the permission to check for.
   modifier requirePermission(
     address _account,
     uint256 _domain,
@@ -38,15 +28,11 @@ abstract contract JBOperatable is IJBOperatable {
     _;
   }
 
-  /** 
-    @notice
-    Only allows the speficied account, an operator of the account to proceed, or a truthy override flag. 
-
-    @param _account The account to check for.
-    @param _domain The domain namespace to look for an operator within. 
-    @param _permissionIndex The index of the permission to check for. 
-    @param _override A condition to force allowance for.
-  */
+  /// @notice Only allows the speficied account, an operator of the account to proceed, or a truthy override flag.
+  /// @param _account The account to check for.
+  /// @param _domain The domain namespace to look for an operator within.
+  /// @param _permissionIndex The index of the permission to check for.
+  /// @param _override A condition to force allowance for.
   modifier requirePermissionAllowingOverride(
     address _account,
     uint256 _domain,
@@ -61,19 +47,14 @@ abstract contract JBOperatable is IJBOperatable {
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /** 
-    @notice 
-    A contract storing operator assignments.
-  */
+  /// @notice A contract storing operator assignments.
   IJBOperatorStore public immutable override operatorStore;
 
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /** 
-    @param _operatorStore A contract storing operator assignments.
-  */
+  /// @param _operatorStore A contract storing operator assignments.
   constructor(IJBOperatorStore _operatorStore) {
     operatorStore = _operatorStore;
   }
@@ -82,14 +63,10 @@ abstract contract JBOperatable is IJBOperatable {
   // -------------------------- internal views ------------------------- //
   //*********************************************************************//
 
-  /** 
-    @notice
-    Require the message sender is either the account or has the specified permission.
-
-    @param _account The account to allow.
-    @param _domain The domain namespace within which the permission index will be checked.
-    @param _permissionIndex The permission index that an operator must have within the specified domain to be allowed.
-  */
+  /// @notice Require the message sender is either the account or has the specified permission.
+  /// @param _account The account to allow.
+  /// @param _domain The domain namespace within which the permission index will be checked.
+  /// @param _permissionIndex The permission index that an operator must have within the specified domain to be allowed.
   function _requirePermission(
     address _account,
     uint256 _domain,
@@ -102,15 +79,11 @@ abstract contract JBOperatable is IJBOperatable {
     ) revert UNAUTHORIZED();
   }
 
-  /** 
-    @notice
-    Require the message sender is either the account, has the specified permission, or the override condition is true.
-
-    @param _account The account to allow.
-    @param _domain The domain namespace within which the permission index will be checked.
-    @param _domain The permission index that an operator must have within the specified domain to be allowed.
-    @param _override The override condition to allow.
-  */
+  /// @notice Require the message sender is either the account, has the specified permission, or the override condition is true.
+  /// @param _account The account to allow.
+  /// @param _domain The domain namespace within which the permission index will be checked.
+  /// @param _domain The permission index that an operator must have within the specified domain to be allowed.
+  /// @param _override The override condition to allow.
   function _requirePermissionAllowingOverride(
     address _account,
     uint256 _domain,

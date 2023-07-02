@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import './IJBDirectory.sol';
+import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {IJBDirectory} from './IJBDirectory.sol';
 
 interface IJBProjectPayer is IERC165 {
   event SetDefaultValues(
@@ -32,43 +32,43 @@ interface IJBProjectPayer is IERC165 {
   function defaultPreferAddToBalance() external view returns (bool);
 
   function initialize(
-    uint256 _defaultProjectId,
-    address payable _defaultBeneficiary,
-    bool _defaultPreferClaimedTokens,
-    string memory _defaultMemo,
-    bytes memory _defaultMetadata,
-    bool _defaultPreferAddToBalance,
-    address _owner
+    uint256 defaultProjectId,
+    address payable defaultBeneficiary,
+    bool defaultPreferClaimedTokens,
+    string memory defaultMemo,
+    bytes memory defaultMetadata,
+    bool defaultPreferAddToBalance,
+    address owner
   ) external;
 
   function setDefaultValues(
-    uint256 _projectId,
-    address payable _beneficiary,
-    bool _preferClaimedTokens,
-    string memory _memo,
-    bytes memory _metadata,
-    bool _defaultPreferAddToBalance
+    uint256 projectId,
+    address payable beneficiary,
+    bool preferClaimedTokens,
+    string memory memo,
+    bytes memory metadata,
+    bool defaultPreferAddToBalance
   ) external;
 
   function pay(
-    uint256 _projectId,
-    address _token,
-    uint256 _amount,
-    uint256 _decimals,
-    address _beneficiary,
-    uint256 _minReturnedTokens,
-    bool _preferClaimedTokens,
-    string memory _memo,
-    bytes memory _metadata
+    uint256 projectId,
+    address token,
+    uint256 amount,
+    uint256 decimals,
+    address beneficiary,
+    uint256 minReturnedTokens,
+    bool preferClaimedTokens,
+    string memory memo,
+    bytes memory metadata
   ) external payable;
 
   function addToBalanceOf(
-    uint256 _projectId,
-    address _token,
-    uint256 _amount,
-    uint256 _decimals,
-    string memory _memo,
-    bytes memory _metadata
+    uint256 projectId,
+    address token,
+    uint256 amount,
+    uint256 decimals,
+    string memory memo,
+    bytes memory metadata
   ) external payable;
 
   receive() external payable;

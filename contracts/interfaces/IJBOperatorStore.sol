@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './../structs/JBOperatorData.sol';
+import {JBOperatorData} from './../structs/JBOperatorData.sol';
 
 interface IJBOperatorStore {
   event SetOperator(
@@ -13,26 +13,26 @@ interface IJBOperatorStore {
   );
 
   function permissionsOf(
-    address _operator,
-    address _account,
-    uint256 _domain
+    address operator,
+    address account,
+    uint256 domain
   ) external view returns (uint256);
 
   function hasPermission(
-    address _operator,
-    address _account,
-    uint256 _domain,
-    uint256 _permissionIndex
+    address operator,
+    address account,
+    uint256 domain,
+    uint256 permissionIndex
   ) external view returns (bool);
 
   function hasPermissions(
-    address _operator,
-    address _account,
-    uint256 _domain,
-    uint256[] calldata _permissionIndexes
+    address operator,
+    address account,
+    uint256 domain,
+    uint256[] calldata permissionIndexes
   ) external view returns (bool);
 
-  function setOperator(JBOperatorData calldata _operatorData) external;
+  function setOperator(JBOperatorData calldata operatorData) external;
 
-  function setOperators(JBOperatorData[] calldata _operatorData) external;
+  function setOperators(JBOperatorData[] calldata operatorData) external;
 }

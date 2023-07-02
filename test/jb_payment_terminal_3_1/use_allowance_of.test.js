@@ -6,7 +6,7 @@ import errors from '../helpers/errors.json';
 import { packFundingCycleMetadata, setBalance } from '../helpers/utils.js';
 
 import jbDirectory from '../../artifacts/contracts/interfaces/IJBDirectory.sol/IJBDirectory.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1.sol/JBSingleTokenPaymentTerminalStore3_1.json';
 import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge.sol/IJBFeeGauge.json';
 import jbOperatoreStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/interfaces/IJBProjects.sol/IJBProjects.json';
@@ -212,6 +212,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* _distributedAmount */ AMOUNT,
         /* _netDistributedAmount */ AMOUNT,
         MEMO,
+        METADATA,
         /* msg.sender */ projectOwner.address,
       );
 
@@ -272,6 +273,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* _distributedAmount */ AMOUNT,
         /* _netDistributedAmount */ AMOUNT,
         MEMO,
+        METADATA,
         /* msg.sender */ projectOwner.address,
       );
 
@@ -349,7 +351,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(fundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -442,7 +444,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(fundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -531,7 +533,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(fundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -620,7 +622,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(fundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(fundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -717,7 +719,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(newFundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(newFundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -826,7 +828,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(newFundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(newFundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)
@@ -939,7 +941,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1::useAllowanceOf(...)', function (
         /* memo */ '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
       )
-      .returns(newFundingCycle, 0, /* delegateAllocation */ [], '');
+      .returns(newFundingCycle, 0, /* delegateAllocation */[], '');
 
     await mockJbDirectory.mock.primaryTerminalOf
       .withArgs(1, ETH_ADDRESS)

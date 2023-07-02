@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.6;
 
-import "./helpers/TestBaseWorkflow.sol";
+import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDelegates_Local is TestBaseWorkflow {
     JBController controller;
@@ -14,7 +14,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
     JBTokenStore _tokenStore;
 
     address _projectOwner;
-    address _beneficiary;
     address _datasource = address(bytes20(keccak256("datasource")));
 
     uint256 _projectId;
@@ -25,8 +24,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-
-        _beneficiary = beneficiary();
 
         _tokenStore = jbTokenStore();
 
