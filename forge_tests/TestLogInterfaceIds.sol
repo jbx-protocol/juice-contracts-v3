@@ -16,7 +16,7 @@ import {IJBPayoutRedemptionPaymentTerminal3_1_1} from '@juicebox/interfaces/IJBP
 import {IJBRedemptionDelegate3_1_1} from '@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol';
 import {IJBRedemptionDelegate} from '@juicebox/interfaces/IJBRedemptionDelegate.sol';
 import {IJBSingleTokenPaymentTerminalStore3_1_1} from '@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
-import {IJBPaymentTerminalUtility} from '@juicebox/interfaces/IJBTerminalUtility.sol';
+import {IJBPaymentTerminalUtility} from '@juicebox/interfaces/IJBPaymentTerminalUtility.sol';
 import {IJBTokenUriResolver} from '@juicebox/interfaces/IJBTokenUriResolver.sol';
 
 contract TestLogInterfaceIds_Local is TestBaseWorkflow {
