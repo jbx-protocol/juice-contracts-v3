@@ -19,6 +19,7 @@ interface IJBFundingCycleDataSource3_1_1 is IERC165 {
     JBPayParamsData calldata data
   )
     external
+    view
     returns (
       uint256 weight,
       string memory memo,
@@ -34,6 +35,7 @@ interface IJBFundingCycleDataSource3_1_1 is IERC165 {
     JBRedeemParamsData calldata data
   )
     external
+    view
     returns (
       uint256 reclaimAmount,
       string memory memo,
