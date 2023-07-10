@@ -41,7 +41,7 @@ curl -L https://foundry.paradigm.xyz | sh
 2. Install external lib(s)
 
 ```bash
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 3. Run tests:

@@ -45,7 +45,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_1 is
   JBSingleTokenPaymentTerminal,
   JBOperatable,
   Ownable,
-  IJBPayoutRedemptionPaymentTerminal3_1,
   IJBPayoutRedemptionPaymentTerminal3_1_1
 {
   // A library that parses the packed funding cycle metadata into a friendlier format.
