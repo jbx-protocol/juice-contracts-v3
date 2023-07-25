@@ -798,26 +798,4 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
       }),
     ).to.be.revertedWith(errors.NO_MSG_VALUE_ALLOWED);
   });
-
-  // it("Can't add to balance if terminal doesn't belong to project", async function () {
-  //   const { caller, jbEthPaymentTerminal, mockJbDirectory } = await setup();
-
-  //   const otherProjectId = 18;
-  //   await mockJbDirectory.mock.isTerminalOf
-  //     .withArgs(otherProjectId, jbEthPaymentTerminal.address)
-  //     .returns(false);
-
-  //   await expect(
-  //     jbEthPaymentTerminal
-  //       .connect(caller)
-  //     ['addToBalanceOf(uint256,uint256,address,string,bytes)'](
-  //       otherProjectId,
-  //       AMOUNT,
-  //       ETH_ADDRESS,
-  //       MEMO,
-  //       METADATA,
-  //       { value: 0 },
-  //     ),
-  //   ).to.be.revertedWith(errors.PROJECT_TERMINAL_MISMATCH);
-  // });
 });
