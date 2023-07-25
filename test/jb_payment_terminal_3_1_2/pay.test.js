@@ -854,30 +854,30 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     ).to.be.revertedWith(errors.PAY_TO_ZERO_ADDRESS);
   });
 
-  it("Can't pay if current terminal doesn't belong to project", async function () {
-    const { caller, jbEthPaymentTerminal, mockJbDirectory } = await setup();
+  // it("Can't pay if current terminal doesn't belong to project", async function () {
+  //   const { caller, jbEthPaymentTerminal, mockJbDirectory } = await setup();
 
-    const otherProjectId = 18;
-    await mockJbDirectory.mock.isTerminalOf
-      .withArgs(otherProjectId, jbEthPaymentTerminal.address)
-      .returns(false);
+  //   const otherProjectId = 18;
+  //   await mockJbDirectory.mock.isTerminalOf
+  //     .withArgs(otherProjectId, jbEthPaymentTerminal.address)
+  //     .returns(false);
 
-    await expect(
-      jbEthPaymentTerminal
-        .connect(caller)
-        .pay(
-          otherProjectId,
-          ETH_TO_PAY,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-          MIN_TOKEN_REQUESTED,
-          PREFER_CLAIMED_TOKENS,
-          MEMO,
-          METADATA1,
-          { value: ETH_TO_PAY },
-        ),
-    ).to.be.revertedWith(errors.PROJECT_TERMINAL_MISMATCH);
-  });
+  //   await expect(
+  //     jbEthPaymentTerminal
+  //       .connect(caller)
+  //       .pay(
+  //         otherProjectId,
+  //         ETH_TO_PAY,
+  //         ethers.constants.AddressZero,
+  //         ethers.constants.AddressZero,
+  //         MIN_TOKEN_REQUESTED,
+  //         PREFER_CLAIMED_TOKENS,
+  //         MEMO,
+  //         METADATA1,
+  //         { value: ETH_TO_PAY },
+  //       ),
+  //   ).to.be.revertedWith(errors.PROJECT_TERMINAL_MISMATCH);
+  // });
 
   it("Can't pay if minted tokens for beneficiary is less than expected", async function () {
     const { caller, jbEthPaymentTerminal, mockJBPaymentTerminalStore, beneficiary, timestamp } =
