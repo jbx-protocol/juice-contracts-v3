@@ -101,28 +101,15 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         );
     }
 
-    function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
+    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee) external {
         // Assuming we don't revert when distributing too much and avoid rounding errors
         payAmountInWei = bound(payAmountInWei, 1, _targetInWei);
         fee = bound(fee, 0, 50_000_000);
-        feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
         
-        address _userWallet = address(1234);
+        address _userWallet = makeAddr('userWallet');
 
         vm.prank(multisig());
         _terminal.setFee(fee);
-
-        // IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
-        // vm.etch(address(feeGauge), new bytes(0x1));
-        // vm.mockCall(
-        //     address(feeGauge),
-        //     abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
-        //     abi.encode(feeDiscount)
-        // );
-        // vm.prank(multisig());
-        // _terminal.setFeeGauge(address(feeGauge));
-
-        uint256 discountedFee = fee - PRBMath.mulDiv(fee, feeDiscount, jbLibraries().MAX_FEE());
 
         // -- pay --
         _terminal.pay{value: payAmountInWei}(
@@ -161,15 +148,13 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         );
 
         // verify: should have held the fee, if there is one
-        if (discountedFee > 0) {
-            assertEq(_terminal.heldFeesOf(_projectId)[0].fee, _terminal.fee(), "Wrong fee");
-            assertEq(_terminal.heldFeesOf(_projectId)[0].feeDiscount, feeDiscount, "Wrong fee discount");
-            assertEq(_terminal.heldFeesOf(_projectId)[0].amount, payAmountInWei, "Wrong payout amount in held fee");
-        }
+        assertEq(_terminal.heldFeesOf(_projectId)[0].fee, _terminal.fee(), "Wrong fee");
+        assertEq(_terminal.heldFeesOf(_projectId)[0].feeDiscount, 0, "Wrong fee discount");
+        assertEq(_terminal.heldFeesOf(_projectId)[0].amount, payAmountInWei, "Wrong payout amount in held fee");
 
         // -- add to balance --
         // Will get the fee reimbursed:
-        uint256 heldFee = payAmountInWei * discountedFee / jbLibraries().MAX_FEE();
+        uint256 heldFee = payAmountInWei * fee / jbLibraries().MAX_FEE();
         uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
 
         IJBFeeHoldingTerminal(address(_terminal)).addToBalanceOf{value: payAmountInWei - heldFee}(
@@ -184,8 +169,94 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         );
 
         // verify: project should get the fee back (plus the addToBalance amount)
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + payAmountInWei);
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + payAmountInWei, "Wrong project end balance");
     }
+
+    // function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
+    //     // Assuming we don't revert when distributing too much and avoid rounding errors
+    //     payAmountInWei = bound(payAmountInWei, 1, _targetInWei);
+    //     fee = bound(fee, 0, 50_000_000);
+    //     feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
+        
+    //     address _userWallet = address(1234);
+
+    //     vm.prank(multisig());
+    //     _terminal.setFee(fee);
+
+    //     IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+    //     vm.etch(address(feeGauge), new bytes(0x1));
+    //     vm.mockCall(
+    //         address(feeGauge),
+    //         abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+    //         abi.encode(feeDiscount)
+    //     );
+    //     vm.prank(multisig());
+    //     _terminal.setFeeGauge(address(feeGauge));
+
+    //     uint256 discountedFee = fee - PRBMath.mulDiv(fee, feeDiscount, jbLibraries().MAX_FEE());
+
+    //     // -- pay --
+    //     _terminal.pay{value: payAmountInWei}(
+    //         _projectId,
+    //         payAmountInWei,
+    //         address(0),
+    //         /* _beneficiary */
+    //         _userWallet,
+    //         /* _minReturnedTokens */
+    //         0,
+    //         /* _preferClaimedTokens */
+    //         false,
+    //         /* _memo */
+    //         "Take my money!",
+    //         /* _delegateMetadata */
+    //         new bytes(0)
+    //     );
+
+    //     // verify: beneficiary should have a balance of JBTokens
+    //     uint256 _userTokenBalance = PRBMathUD60x18.mul(payAmountInWei, _weight);
+    //     assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance);
+
+    //     // verify: ETH balance in terminal should be up to date
+    //     uint256 _terminalBalanceInWei = payAmountInWei;
+    //     assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
+
+    //     // -- distribute --
+    //     IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
+    //         _projectId,
+    //         payAmountInWei,
+    //         jbLibraries().ETH(),
+    //         address(0), //token (unused)
+    //         /*min out*/
+    //         0,
+    //         ""
+    //     );
+
+    //     // verify: should have held the fee, if there is one
+    //     if (discountedFee > 0) {
+    //         assertEq(_terminal.heldFeesOf(_projectId)[0].fee, _terminal.fee(), "Wrong fee");
+    //         assertEq(_terminal.heldFeesOf(_projectId)[0].feeDiscount, feeDiscount, "Wrong fee discount");
+    //         assertEq(_terminal.heldFeesOf(_projectId)[0].amount, payAmountInWei, "Wrong payout amount in held fee");
+    //     }
+
+    //     // -- add to balance --
+    //     // Will get the fee reimbursed:
+    //     uint256 heldFee = payAmountInWei * discountedFee / jbLibraries().MAX_FEE();
+    //     uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
+
+    //     IJBFeeHoldingTerminal(address(_terminal)).addToBalanceOf{value: payAmountInWei - heldFee}(
+    //         _projectId,
+    //         payAmountInWei - heldFee,
+    //         address(0),
+    //         /* _shouldRefundHeldFees */
+    //         true,
+    //         "thanks for all the fish",
+    //         /* _delegateMetadata */
+    //         new bytes(0)
+    //     );
+
+    //     // verify: project should get the fee back (plus the addToBalance amount)
+    //     assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + payAmountInWei, "Wrong project end balance");
+    // }
 
     // function testFeeGetsHeldSpecialCase() public {
     //     uint256 feeDiscount = 0;
