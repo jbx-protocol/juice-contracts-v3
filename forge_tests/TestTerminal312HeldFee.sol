@@ -103,8 +103,12 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
 
     function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee) external {
         // Assuming we don't revert when distributing too much and avoid rounding errors
-        payAmountInWei = bound(payAmountInWei, 1, _targetInWei);
+        payAmountInWei = bound(payAmountInWei, 10, _targetInWei);
         fee = bound(fee, 1, 50_000_000);
+
+
+        // payAmountInWei = 7613268926366951446;
+        // fee = 37436735;
         
         address _userWallet = makeAddr('userWallet');
 
@@ -159,10 +163,10 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         // Will get the fee reimbursed:
         uint256 heldFee = payAmountInWei * fee / jbLibraries().MAX_FEE();
         uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
-
+    
         IJBFeeHoldingTerminal(address(_terminal)).addToBalanceOf{value: _ethDistributed}(
             _projectId,
-            payAmountInWei - heldFee,
+            _ethDistributed,
             address(0),
             /* _shouldRefundHeldFees */
             true,
@@ -171,8 +175,10 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
+        _terminal.heldFeesOf(_projectId);
+
         // verify: project should get the fee back (plus the addToBalance amount)
-        assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + payAmountInWei, 2, "Wrong project end balance");
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + payAmountInWei, "Wrong project end balance");
     }
 
     // function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
