@@ -1503,13 +1503,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     uint256 _heldFeesLength = _heldFees.length;
 
     // Process each fee.
-    // Process each fee.
     for (uint256 _i; _i < _heldFeesLength; ) {
-      if (leftoverAmount == 0) { 
-        _heldFeesOf[_projectId].push(_heldFees[_i]);
-        continue;
-      }
-      
       // Notice here we take feeIn the stored .amount
       uint256 _feeAmount = (
         _heldFees[_i].fee == 0 || _heldFees[_i].feeDiscount == JBConstants.MAX_FEE_DISCOUNT
@@ -1517,7 +1511,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
           : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee, _heldFees[_i].feeDiscount)
       );
 
-      if (leftoverAmount >= _heldFees[_i].amount - _feeAmount) {
+      if (leftoverAmount == 0) { 
+        _heldFeesOf[_projectId].push(_heldFees[_i]);
+        continue;
+      } else if (leftoverAmount >= _heldFees[_i].amount - _feeAmount) {
         unchecked {
           leftoverAmount = leftoverAmount - (_heldFees[_i].amount - _feeAmount);
           refundedFees += _feeAmount;
