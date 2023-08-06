@@ -40,8 +40,6 @@ library JBFees {
       PRBMath.mulDiv(_feePercent, _feeDiscount, JBConstants.MAX_FEE_DISCOUNT);
 
     // The amount of tokens from the `_amount` to pay as a fee. If reverse, the fee taken from a payout of `_amount`.
-    uint256 _expectedFeeAmount = PRBMath.mulDiv(_amount, _discountedFeePercent, JBConstants.MAX_FEE);
-
-    return feeIn(_amount + _expectedFeeAmount, _feePercent, _feeDiscount);
+    return PRBMath.mulDiv(_amount, _discountedFeePercent, JBConstants.MAX_FEE);
   }
 }
