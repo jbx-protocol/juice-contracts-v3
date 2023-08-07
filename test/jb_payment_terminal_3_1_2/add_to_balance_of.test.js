@@ -15,7 +15,7 @@ import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsS
 import jbPrices from '../../artifacts/contracts/JBPrices.sol/JBPrices.json';
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
-describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function () {
+describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function () {
   const PROTOCOL_PROJECT_ID = 1;
   const PROJECT_ID = 2;
   const AMOUNT = ethers.utils.parseEther('10');
