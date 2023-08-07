@@ -437,8 +437,16 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
         MIN_TOKEN_REQUESTED,
         METADATA,
       );
+    
+    let heldFee = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    let feeNetAmount = ethers.BigNumber.from(1).mul(MAX_FEE).div(discountedFee);
+    let discountedFee = ethers.BigNumber.from(heldFee[0].fee).sub(
+      ethers.BigNumber.from(heldFee[0].fee)
+        .mul(ethers.BigNumber.from(heldFee[0].feeDiscount))
+        .div(MAX_FEE_DISCOUNT),
+    );
+
+    let feeNetAmount = ethers.BigNumber.from(1).mul(discountedFee).div(MAX_FEE);
     
     // Add 1 and refund 1
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
@@ -659,9 +667,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     const amountToAdd = AMOUNT.div(2);
 
     // fee from one distribute
-    let feeNetAmount = ethers.BigNumber.from(amountToAdd).sub(
-      ethers.BigNumber.from(amountToAdd).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
-    );
+    let feeNetAmount = ethers.BigNumber.from(amountToAdd).mul(discountedFee).div(MAX_FEE);
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
       .withArgs(PROJECT_ID, amountToAdd.add(feeNetAmount))
