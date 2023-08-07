@@ -552,7 +552,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     );
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
-      .withArgs(PROJECT_ID, AMOUNT.sub('10').add(feeNetAmount.mul(2)))
+      .withArgs(PROJECT_ID,AMOUNT.sub(feeNetAmount.mul(2)).sub('10').add(AMOUNT.sub(feeNetAmount.mul(2)).sub('10').mul(discountedFee).div(MAX_FEE))
       .returns();
 
     expect(
@@ -560,7 +560,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
         .connect(caller)
       ['addToBalanceOf(uint256,uint256,address,bool,string,bytes)'](
         PROJECT_ID,
-        AMOUNT.sub('10'),
+        AMOUNT.sub(feeNetAmount.mul(2)).sub('10'),
         ETH_ADDRESS,
         true,
         MEMO,
@@ -583,7 +583,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
       // add to balance: AMOUNT.sub('10') -> refund feeNetAmount.mul(2) and left over is 0
       .withArgs(
         PROJECT_ID,
-        AMOUNT.sub('10') /*amount*/,
+        AMOUNT.sub(feeNetAmount.mul(2)).sub('10').add(AMOUNT.sub(feeNetAmount.mul(2)).sub('10').mul(discountedFee).div(MAX_FEE) /*amount*/,
         feeNetAmount.mul(2) /*refund*/,
         0 /*leftOver*/,
         caller.address,
@@ -703,7 +703,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     let heldFeeAfter = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
     // Only 25% of the initial held fee left
-    expect(heldFeeAfter[0].amount).to.equal(AMOUNT.div(2));
+    expect(heldFeeAfter[0].amount).to.equal(AMOUNT);
+    expect(heldFeeAfter.length).to.equal(1);
+
   });
 
   it('Should add to the project balance, refund all the held fees if the amount to add to balance if bigger and emit event', async function () {
