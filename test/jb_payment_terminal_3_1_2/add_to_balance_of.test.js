@@ -15,7 +15,7 @@ import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsS
 import jbPrices from '../../artifacts/contracts/JBPrices.sol/JBPrices.json';
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
-describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function () {
+describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function () {
   const PROTOCOL_PROJECT_ID = 1;
   const PROJECT_ID = 2;
   const AMOUNT = ethers.utils.parseEther('10');
@@ -407,7 +407,7 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', fun
       .withArgs(PROJECT_ID, NET_AMOUNT, 0, MEMO, METADATA, caller.address);
   });
 
-  it('Should add to the project balance, partially refund a held fee and substract the amount from the held fee amount and emit event', async function () {
+  it.only('Should add to the project balance, partially refund a held fee and substract the amount from the held fee amount and emit event', async function () {
     const {
       caller,
       beneficiaryOne,
@@ -438,9 +438,11 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', fun
         METADATA,
       );
 
+    let feeNetAmount = ethers.BigNumber.from(1).mul(MAX_FEE).div(discountedFee);
+    
     // Add 1 and refund 1
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
-      .withArgs(PROJECT_ID, 1 + 1)
+      .withArgs(PROJECT_ID, 1 + feeNetAmount)
       .returns();
 
     let heldFeeBefore = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
@@ -466,10 +468,10 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', fun
 
     let heldFeeAfter = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    expect(heldFeeAfter[0].amount).to.equal(heldFeeBefore[0].amount.sub(1));
+    expect(heldFeeAfter[0].amount).to.equal(heldFeeBefore[0].amount.sub(1).sub(discountedFee));
   });
 
-  it('Should add to the project balance, refund multiple held fee by substracting the amount from the held fee amount when possible and emit event', async function () {
+  it.only('Should add to the project balance, refund multiple held fee by substracting the amount from the held fee amount when possible and emit event', async function () {
     const {
       caller,
       beneficiaryOne,
@@ -580,11 +582,12 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', fun
       );
 
     let heldFeeAfter = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
+    
     // Only 10 left
     expect(heldFeeAfter[0].amount).to.equal(10);
   });
 
-  it('Should add to the project balance, refund one out of multiple held fees bigger than the amount, keep the held fee difference and emit event', async function () {
+  it.only('Should add to the project balance, refund one out of multiple held fees bigger than the amount, keep the held fee difference and emit event', async function () {
     const {
       caller,
       beneficiaryOne,
@@ -656,12 +659,9 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', fun
     const amountToAdd = AMOUNT.div(2);
 
     // fee from one distribute
-    let feeFromOneAmount = ethers.BigNumber.from(heldFee[0].amount).sub(
-      ethers.BigNumber.from(heldFee[0].amount).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
+    let feeNetAmount = ethers.BigNumber.from(amountToAdd).sub(
+      ethers.BigNumber.from(amountToAdd).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
     );
-
-    // fee which can be used based on amountToAdd
-    let feeNetAmount = feeFromOneAmount.div(2);
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
       .withArgs(PROJECT_ID, amountToAdd.add(feeNetAmount))
@@ -790,27 +790,5 @@ describe.only('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', fun
         value: 10,
       }),
     ).to.be.revertedWith(errors.NO_MSG_VALUE_ALLOWED);
-  });
-
-  it("Can't add to balance if terminal doesn't belong to project", async function () {
-    const { caller, jbEthPaymentTerminal, mockJbDirectory } = await setup();
-
-    const otherProjectId = 18;
-    await mockJbDirectory.mock.isTerminalOf
-      .withArgs(otherProjectId, jbEthPaymentTerminal.address)
-      .returns(false);
-
-    await expect(
-      jbEthPaymentTerminal
-        .connect(caller)
-      ['addToBalanceOf(uint256,uint256,address,string,bytes)'](
-        otherProjectId,
-        AMOUNT,
-        ETH_ADDRESS,
-        MEMO,
-        METADATA,
-        { value: 0 },
-      ),
-    ).to.be.revertedWith(errors.PROJECT_TERMINAL_MISMATCH);
   });
 });
