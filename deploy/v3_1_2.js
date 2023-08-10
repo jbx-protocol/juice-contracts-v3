@@ -46,7 +46,7 @@ module.exports = async ({ deployments, getChainId }) => {
       break;
   }
 
-  console.log({ ownerAddress });
+  console.log({ ownerAddress, depAd: deployer.address });
 
   // Deploy a JBOperatorStore contract.
   const JBOperatorStore = await deploy('JBOperatorStore', {
