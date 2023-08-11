@@ -7,7 +7,7 @@ import errors from '../helpers/errors.json';
 
 import jbController from '../../artifacts/contracts/interfaces/IJBController3_1.sol/IJBController3_1.json';
 import jbDirectory from '../../artifacts/contracts/interfaces/IJBDirectory.sol/IJBDirectory.json';
-import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_1.sol/JBETHPaymentTerminal3_1_1.json';
+import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_2.sol/JBETHPaymentTerminal3_1_2.json';
 import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge3_1.sol/IJBFeeGauge3_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
@@ -16,7 +16,7 @@ import jbSplitsStore from '../../artifacts/contracts/interfaces/IJBSplitsStore.s
 import jbPrices from '../../artifacts/contracts/interfaces/IJBPrices.sol/IJBPrices.json';
 import jbRedemptionDelegate from '../../artifacts/contracts/interfaces/IJBRedemptionDelegate3_1_1.sol/IJBRedemptionDelegate3_1_1.json';
 
-describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function () {
+describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function () {
   const AMOUNT = 50000;
   const RECLAIM_AMOUNT = 40000;
   const MIN_RETURNED_AMOUNT = 30000;
@@ -86,7 +86,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_1::redeemTokensOf(...)', function
     CURRENCY_ETH = await jbCurrencies.ETH();
 
     const jbTerminalFactory = await ethers.getContractFactory(
-      'contracts/JBETHPaymentTerminal3_1_1.sol:JBETHPaymentTerminal3_1_1',
+      'contracts/JBETHPaymentTerminal3_1_2.sol:JBETHPaymentTerminal3_1_2',
       deployer,
     );
 

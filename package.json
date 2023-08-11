@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/jbx-protocol/juice-contracts-v3"
   },
-  "version": "4.0.2",
+  "version": "5.0.0",
   "license": "MIT",
   "dependencies": {
     "@chainlink/contracts": "^0.1.6",
