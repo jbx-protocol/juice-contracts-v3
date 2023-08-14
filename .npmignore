@@ -4,6 +4,7 @@
 # Allowlisted deployment networks.
 !/deployments/goerli/**
 !/deployments/mainnet/**
+!/deployments/sepolia/**
 
 # Allow everything in /contracts ...
 !/contracts/**
