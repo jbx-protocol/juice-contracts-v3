@@ -2695,6 +2695,15 @@ describe.only('JBFundingCycleStore::configureFor(...)', function () {
     expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql(
       expectedSecondFundingCycle,
     );
+
+    //fast forward to after the ballot.
+    await fastForward(
+      firstConfigureForTx.blockNumber,
+      firstFundingCycleData.duration.mul(2),
+    );
+
+    expect(cleanFundingCycle(await jbFundingCycleStore.currentOf(PROJECT_ID))).to.eql(expectedSecondFundingCycle);
+    expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql(expectedThirdFundingCycle);
   });
 
   it("Can't configure if caller is not project's controller", async function () {

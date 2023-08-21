@@ -509,15 +509,14 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
 
     // Find the base cycle that is not still queued.
-    while (_baseFundingCycle.start >= block.timestamp) {
+    while (_baseFundingCycle.start > block.timestamp) {
       // Set the configuration.
       configuration = _baseFundingCycle.configuration;
+      // Get the funding cycle for the configuration.
+      _fundingCycle = _getStructFor(_projectId, configuration);
       // Set the new funding cycle.
       _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
     }
-
-    // Get the funding cycle for the configuration.
-    _fundingCycle = _getStructFor(_projectId, configuration);
 
     // If the latest configuration doesn't start until after another base cycle, return 0.
     if (
