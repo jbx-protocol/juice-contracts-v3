@@ -265,8 +265,13 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       }
     }
 
-    // The configuration timestamp is now.
-    uint256 _configuration = block.timestamp;
+    // Get a reference to the latest configration.
+    uint256 _latestConfiguration = latestConfigurationOf[_projectId];
+
+    // The configuration timestamp is now, or an increment from now if the current timestamp is taken.
+    uint256 _configuration = _latestConfiguration >= block.timestamp
+      ? _latestConfiguration + 1
+      : block.timestamp;
 
     // Set up a reconfiguration by configuring intrinsic properties.
     _configureIntrinsicPropertiesFor(_projectId, _configuration, _data.weight, _mustStartAtOrAfter);
@@ -332,10 +337,12 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // Get a reference to the funding cycle.
     JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _currentConfiguration);
 
-    if (!_isApproved(_projectId, _baseFundingCycle) || block.timestamp < _baseFundingCycle.start)
-      // If it hasn't been approved or hasn't yet started, set the ID to be the funding cycle it's based on,
-      // which carries the latest approved configuration.
-      _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
+    // If the funding cycle hasn't started but is currently approved OR or it has started but wasn't approved, set the ID to be the funding cycle it's based on,
+    // which carries the latest approved configuration.
+    if (
+      (block.timestamp < _baseFundingCycle.start && _isApproved(_projectId, _baseFundingCycle)) ||
+      (block.timestamp > _baseFundingCycle.start && !_isApproved(_projectId, _baseFundingCycle))
+    ) _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
 
     // The configuration can't be the same as the base configuration.
     if (_baseFundingCycle.configuration == _configuration) revert NO_SAME_BLOCK_RECONFIGURATION();
@@ -476,35 +483,30 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   /// @dev A value of 0 is returned if no funding cycle was found.
   /// @dev Assumes the project has a latest configuration.
   /// @param _projectId The ID of the project to look through.
-  /// @return configuration The configuration of an eligible funding cycle if one exists, or 0 if one doesn't exist.
-  function _eligibleOf(uint256 _projectId) private view returns (uint256 configuration) {
+  /// @return The configuration of an eligible funding cycle if one exists, or 0 if one doesn't exist.
+  function _eligibleOf(uint256 _projectId) private view returns (uint256) {
     // Get a reference to the project's latest funding cycle.
-    configuration = latestConfigurationOf[_projectId];
+    uint256 _configuration = latestConfigurationOf[_projectId];
 
     // Get the latest funding cycle.
-    JBFundingCycle memory _fundingCycle = _getStructFor(_projectId, configuration);
+    JBFundingCycle memory _fundingCycle = _getStructFor(_projectId, _configuration);
 
-    // If the latest is expired, return an empty funding cycle.
-    // A duration of 0 cannot be expired.
-    if (
-      _fundingCycle.duration > 0 && block.timestamp >= _fundingCycle.start + _fundingCycle.duration
-    ) return 0;
+    // Loop through all most recently configured funding cycles until an eligible one is found, or we've proven one can't exit.
+    while (_fundingCycle.number != 0) {
+      // If the latest is expired, return an empty funding cycle.
+      // A duration of 0 cannot be expired.
+      if (
+        _fundingCycle.duration != 0 &&
+        block.timestamp >= _fundingCycle.start + _fundingCycle.duration
+      ) return 0;
 
-    // Return the funding cycle's configuration if it has started.
-    if (block.timestamp >= _fundingCycle.start) return _fundingCycle.configuration;
+      // Return the funding cycle's configuration if it has started.
+      if (block.timestamp >= _fundingCycle.start) return _fundingCycle.configuration;
 
-    // Get a reference to the cycle's base configuration.
-    JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
+      _fundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
+    }
 
-    // If the base cycle isn't eligible, the project has no eligible cycle.
-    // A duration of 0 is always eligible.
-    if (
-      _baseFundingCycle.duration > 0 &&
-      block.timestamp >= _baseFundingCycle.start + _baseFundingCycle.duration
-    ) return 0;
-
-    // Return the configuration that the latest funding cycle is based on.
-    configuration = _fundingCycle.basedOn;
+    return 0;
   }
 
   /// @notice A view of the funding cycle that would be created based on the provided one if the project doesn't make a reconfiguration.
