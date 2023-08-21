@@ -100,11 +100,19 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // Get a reference to the configuration of the standby funding cycle.
     uint256 _standbyFundingCycleConfiguration = _standbyOf(_projectId);
 
+    // Keep a reference to the ballot state.
+    JBBallotState _ballotState;
+
     // If it exists, return its funding cycle if it is approved.
-    if (_standbyFundingCycleConfiguration > 0) {
+    if (_standbyFundingCycleConfiguration != 0) {
       fundingCycle = _getStructFor(_projectId, _standbyFundingCycleConfiguration);
 
-      if (_isApproved(_projectId, fundingCycle)) return fundingCycle;
+      // Get a reference to the ballot state.
+      _ballotState = _ballotStateOf(_projectId, fundingCycle);
+
+      // If the ballot hasn't failed, return it.
+      if (_ballotState == JBBallotState.Approved || _ballotState == JBBallotState.Empty)
+        return fundingCycle;
 
       // Resolve the funding cycle for the latest configured funding cycle.
       fundingCycle = _getStructFor(_projectId, fundingCycle.basedOn);
@@ -121,9 +129,13 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // There's no queued if the current has a duration of 0.
     if (fundingCycle.duration == 0) return _getStructFor(0, 0);
 
-    // Check to see if this funding cycle's ballot is approved.
+    // Get a reference to the ballot state.
+    _ballotState = _ballotStateOf(_projectId, fundingCycle);
+
+    // Check to see if this funding cycle's ballot hasn't failed.
     // If so, return a funding cycle based on it.
-    if (_isApproved(_projectId, fundingCycle)) return _mockFundingCycleBasedOn(fundingCycle, false);
+    if (_ballotState == JBBallotState.Approved || _ballotState == JBBallotState.Empty)
+      return _mockFundingCycleBasedOn(fundingCycle, false);
 
     // Get the funding cycle of its base funding cycle, which carries the last approved configuration.
     fundingCycle = _getStructFor(_projectId, fundingCycle.basedOn);
@@ -152,17 +164,24 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     JBFundingCycle memory _fundingCycle;
 
     // If an eligible funding cycle exists...
-    if (_fundingCycleConfiguration > 0) {
+    if (_fundingCycleConfiguration != 0) {
       // Resolve the funding cycle for the eligible configuration.
       _fundingCycle = _getStructFor(_projectId, _fundingCycleConfiguration);
 
-      // Check to see if this funding cycle's ballot is approved.
+      // Get a reference to the ballot state.
+      JBBallotState _ballotState = _ballotStateOf(_projectId, _fundingCycle);
+
+      // Check to see if this funding cycle's ballot is approved if it exists.
       // If so, return it.
-      if (_isApproved(_projectId, _fundingCycle)) return _fundingCycle;
+      if (_ballotState == JBBallotState.Approved || _ballotState == JBBallotState.Empty)
+        return _fundingCycle;
 
       // If it hasn't been approved, set the funding cycle configuration to be the configuration of the funding cycle that it's based on,
       // which carries the last approved configuration.
       _fundingCycleConfiguration = _fundingCycle.basedOn;
+
+      // Keep a reference to its funding cycle.
+      _fundingCycle = _getStructFor(_projectId, _fundingCycleConfiguration);
     } else {
       // No upcoming funding cycle found that is eligible to become active,
       // so use the last configuration.
@@ -171,16 +190,22 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       // Get the funding cycle for the latest ID.
       _fundingCycle = _getStructFor(_projectId, _fundingCycleConfiguration);
 
-      // If it's not approved or if it hasn't yet started, get a reference to the funding cycle that the latest is based on, which has the latest approved configuration.
-      if (!_isApproved(_projectId, _fundingCycle) || block.timestamp < _fundingCycle.start)
+      // Get a reference to the ballot state.
+      JBBallotState _ballotState = _ballotStateOf(_projectId, _fundingCycle);
+
+      // While the cycle has a ballot that isn't approved or if it hasn't yet started, get a reference to the funding cycle that the latest is based on, which has the latest approved configuration.
+      while (
+        (_ballotState != JBBallotState.Approved && _ballotState != JBBallotState.Empty) ||
+        block.timestamp < _fundingCycle.start
+      ) {
         _fundingCycleConfiguration = _fundingCycle.basedOn;
+        _fundingCycle = _getStructFor(_projectId, _fundingCycleConfiguration);
+        _ballotState = _ballotStateOf(_projectId, _fundingCycle);
+      }
     }
 
     // If there is not funding cycle to base the current one on, there can't be a current one.
     if (_fundingCycleConfiguration == 0) return _getStructFor(0, 0);
-
-    // The funding cycle to base a current one on.
-    _fundingCycle = _getStructFor(_projectId, _fundingCycleConfiguration);
 
     // If the base has no duration, it's still the current one.
     if (_fundingCycle.duration == 0) return _fundingCycle;
@@ -337,11 +362,22 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // Get a reference to the funding cycle.
     JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _currentConfiguration);
 
-    // If the funding cycle hasn't started but is currently approved OR or it has started but wasn't approved, set the ID to be the funding cycle it's based on,
+    // Get a reference to the ballot state.
+    JBBallotState _ballotState = _ballotStateOf(_projectId, _baseFundingCycle);
+
+    // If the funding cycle hasn't started but is currently approved OR or it has started but wasn't approved if a ballot exists, set the ID to be the funding cycle it's based on,
     // which carries the latest approved configuration.
+    // if (
+    //   (block.timestamp < _baseFundingCycle.start && _ballotState == JBBallotState.Approved) ||
+    //   (block.timestamp > _baseFundingCycle.start &&
+    //     _ballotState != JBBallotState.Approved &&
+    //     _ballotState != JBBallotState.Empty)
+    // ) _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
     if (
-      (block.timestamp < _baseFundingCycle.start && _isApproved(_projectId, _baseFundingCycle)) ||
-      (block.timestamp > _baseFundingCycle.start && !_isApproved(_projectId, _baseFundingCycle))
+      (block.timestamp >= _baseFundingCycle.start &&
+        _ballotState != JBBallotState.Approved &&
+        _ballotState != JBBallotState.Empty) ||
+      (block.timestamp < _baseFundingCycle.start && _ballotState != JBBallotState.Approved)
     ) _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
 
     // The configuration can't be the same as the base configuration.
@@ -472,9 +508,20 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // Get the necessary properties for the base funding cycle.
     JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
 
+    // Find the base cycle that is not still queued.
+    while (_baseFundingCycle.start >= block.timestamp) {
+      // Set the configuration.
+      configuration = _baseFundingCycle.configuration;
+      // Set the new funding cycle.
+      _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
+    }
+
+    // Get the funding cycle for the configuration.
+    _fundingCycle = _getStructFor(_projectId, configuration);
+
     // If the latest configuration doesn't start until after another base cycle, return 0.
     if (
-      _baseFundingCycle.duration > 0 &&
+      _baseFundingCycle.duration != 0 &&
       block.timestamp < _fundingCycle.start - _baseFundingCycle.duration
     ) return 0;
   }
@@ -644,18 +691,18 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   /// @notice Checks to see if the provided funding cycle is approved according to the correct ballot.
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @param _fundingCycle The funding cycle to get an approval flag for.
-  /// @return The approval flag.
-  function _isApproved(
+  /// @return The ballot state of the project.
+  function _ballotStateOf(
     uint256 _projectId,
     JBFundingCycle memory _fundingCycle
-  ) private view returns (bool) {
+  ) private view returns (JBBallotState) {
     return
       _ballotStateOf(
         _projectId,
         _fundingCycle.configuration,
         _fundingCycle.start,
         _fundingCycle.basedOn
-      ) == JBBallotState.Approved;
+      );
   }
 
   /// @notice A project's latest funding cycle configuration approval status.
@@ -670,8 +717,8 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     uint256 _start,
     uint256 _ballotFundingCycleConfiguration
   ) private view returns (JBBallotState) {
-    // If there is no ballot funding cycle, implicitly approve.
-    if (_ballotFundingCycleConfiguration == 0) return JBBallotState.Approved;
+    // If there is no ballot funding cycle, the ballot is empty.
+    if (_ballotFundingCycleConfiguration == 0) return JBBallotState.Empty;
 
     // Get the ballot funding cycle.
     JBFundingCycle memory _ballotFundingCycle = _getStructFor(
@@ -679,9 +726,8 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       _ballotFundingCycleConfiguration
     );
 
-    // If there is no ballot, the ID is auto approved.
-    if (_ballotFundingCycle.ballot == IJBFundingCycleBallot(address(0)))
-      return JBBallotState.Approved;
+    // If there is no ballot, it's considered empty.
+    if (_ballotFundingCycle.ballot == IJBFundingCycleBallot(address(0))) return JBBallotState.Empty;
 
     // Return the ballot's state
     return _ballotFundingCycle.ballot.stateOf(_projectId, _configuration, _start);
