@@ -367,12 +367,6 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     // If the funding cycle hasn't started but is currently approved OR or it has started but wasn't approved if a ballot exists, set the ID to be the funding cycle it's based on,
     // which carries the latest approved configuration.
-    // if (
-    //   (block.timestamp < _baseFundingCycle.start && _ballotState == JBBallotState.Approved) ||
-    //   (block.timestamp > _baseFundingCycle.start &&
-    //     _ballotState != JBBallotState.Approved &&
-    //     _ballotState != JBBallotState.Empty)
-    // ) _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
     if (
       (block.timestamp >= _baseFundingCycle.start &&
         _ballotState != JBBallotState.Approved &&
