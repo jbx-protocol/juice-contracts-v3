@@ -107,6 +107,9 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     if (_standbyFundingCycleConfiguration != 0) {
       fundingCycle = _getStructFor(_projectId, _standbyFundingCycleConfiguration);
 
+      // Get a reference to the base cycle
+      JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, fundingCycle.basedOn);
+
       // Get a reference to the ballot state.
       _ballotState = _ballotStateOf(_projectId, fundingCycle);
 
@@ -115,10 +118,14 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
         _ballotState == JBBallotState.Approved ||
         _ballotState == JBBallotState.ApprovalExpected ||
         _ballotState == JBBallotState.Empty
-      ) return fundingCycle;
-
+      ) {
+        JBBallotState _baseBallotState = _ballotStateOf(_projectId, _baseFundingCycle);
+        if (_baseBallotState == JBBallotState.Approved || _baseBallotState == JBBallotState.Empty)
+          return fundingCycle;
+        else fundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
+      }
       // Resolve the funding cycle for the latest configured funding cycle.
-      fundingCycle = _getStructFor(_projectId, fundingCycle.basedOn);
+      else fundingCycle = _baseFundingCycle;
     } else {
       // Resolve the funding cycle for the latest configured funding cycle.
       fundingCycle = _getStructFor(_projectId, latestConfigurationOf[_projectId]);
