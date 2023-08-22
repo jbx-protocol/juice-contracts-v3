@@ -111,8 +111,11 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       _ballotState = _ballotStateOf(_projectId, fundingCycle);
 
       // If the ballot hasn't failed, return it.
-      if (_ballotState == JBBallotState.Approved || _ballotState == JBBallotState.Empty)
-        return fundingCycle;
+      if (
+        _ballotState == JBBallotState.Approved ||
+        _ballotState == JBBallotState.ApprovalExpected ||
+        _ballotState == JBBallotState.Empty
+      ) return fundingCycle;
 
       // Resolve the funding cycle for the latest configured funding cycle.
       fundingCycle = _getStructFor(_projectId, fundingCycle.basedOn);
@@ -134,8 +137,11 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     // Check to see if this funding cycle's ballot hasn't failed.
     // If so, return a funding cycle based on it.
-    if (_ballotState == JBBallotState.Approved || _ballotState == JBBallotState.Empty)
-      return _mockFundingCycleBasedOn(fundingCycle, false);
+    if (
+      _ballotState == JBBallotState.Approved ||
+      _ballotState == JBBallotState.ApprovalExpected ||
+      _ballotState == JBBallotState.Empty
+    ) return _mockFundingCycleBasedOn(fundingCycle, false);
 
     // Get the funding cycle of its base funding cycle, which carries the last approved configuration.
     fundingCycle = _getStructFor(_projectId, fundingCycle.basedOn);
@@ -173,8 +179,11 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
       // Check to see if this funding cycle's ballot is approved if it exists.
       // If so, return it.
-      if (_ballotState == JBBallotState.Approved || _ballotState == JBBallotState.Empty)
-        return _fundingCycle;
+      if (
+        _ballotState == JBBallotState.Approved ||
+        _ballotState == JBBallotState.ApprovalExpected ||
+        _ballotState == JBBallotState.Empty
+      ) return _fundingCycle;
 
       // If it hasn't been approved, set the funding cycle configuration to be the configuration of the funding cycle that it's based on,
       // which carries the last approved configuration.
