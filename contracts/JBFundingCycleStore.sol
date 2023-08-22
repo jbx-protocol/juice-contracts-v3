@@ -345,22 +345,25 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     uint256 _weight,
     uint256 _mustStartAtOrAfter
   ) private {
+    // Keep a reference to the project's latest configuration.
+    uint256 _latestConfiguration = latestConfigurationOf[_projectId];
+
     // If there's not yet a funding cycle for the project, initialize one.
-    if (latestConfigurationOf[_projectId] == 0)
+    if (_latestConfiguration == 0)
       // Use an empty funding cycle as the base.
       return
         _initFor(_projectId, _getStructFor(0, 0), _configuration, _mustStartAtOrAfter, _weight);
 
-    // Get the active funding cycle's configuration.
-    uint256 _currentConfiguration = _eligibleOf(_projectId);
+    // // Get the active funding cycle's configuration.
+    // uint256 _currentConfiguration = _eligibleOf(_projectId);
 
-    // If an eligible funding cycle does not exist, get a reference to the latest funding cycle configuration for the project.
-    if (_currentConfiguration == 0)
-      // Get the latest funding cycle's configuration.
-      _currentConfiguration = latestConfigurationOf[_projectId];
+    // // If an eligible funding cycle does not exist, get a reference to the latest funding cycle configuration for the project.
+    // if (_currentConfiguration == 0)
+    //   // Get the latest funding cycle's configuration.
+    //   _currentConfiguration = latestConfigurationOf[_projectId];
 
     // Get a reference to the funding cycle.
-    JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _currentConfiguration);
+    JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _latestConfiguration);
 
     // Get a reference to the ballot state.
     JBBallotState _ballotState = _ballotStateOf(_projectId, _baseFundingCycle);
@@ -371,7 +374,13 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       (block.timestamp >= _baseFundingCycle.start &&
         _ballotState != JBBallotState.Approved &&
         _ballotState != JBBallotState.Empty) ||
-      (block.timestamp < _baseFundingCycle.start && _ballotState != JBBallotState.Approved)
+      (block.timestamp < _baseFundingCycle.start &&
+        _mustStartAtOrAfter < _baseFundingCycle.start + _baseFundingCycle.duration &&
+        _ballotState != JBBallotState.Approved &&
+        _ballotState != JBBallotState.ApprovalExpected) ||
+      (block.timestamp < _baseFundingCycle.start &&
+        _mustStartAtOrAfter >= _baseFundingCycle.start + _baseFundingCycle.duration &&
+        _ballotState == JBBallotState.Failed)
     ) _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
 
     // The configuration can't be the same as the base configuration.

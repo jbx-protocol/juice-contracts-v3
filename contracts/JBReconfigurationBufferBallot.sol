@@ -36,10 +36,14 @@ contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
     if (_configured > _start) return JBBallotState.Failed;
 
     unchecked {
-      // If the ballot hasn't yet started, it's state is Standby.
-      if (block.timestamp < _start - duration) return JBBallotState.Standby;
       // If there was sufficient time between configuration and the start of the cycle, it is approved. Otherwise, it is failed.
-      return (_start - _configured < duration) ? JBBallotState.Failed : JBBallotState.Approved;
+      // If the ballot hasn't yet started, it's state is ApprovalExpected.
+      return
+        (_start - _configured < duration)
+          ? JBBallotState.Failed
+          : (block.timestamp < _start - duration)
+          ? JBBallotState.ApprovalExpected
+          : JBBallotState.Approved;
     }
   }
 

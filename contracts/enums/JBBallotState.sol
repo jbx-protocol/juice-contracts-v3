@@ -5,6 +5,7 @@ enum JBBallotState {
   Empty,
   Standby,
   Active,
+  ApprovalExpected,
   Approved,
   Failed
 }
