@@ -671,7 +671,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         uint256 _tokenBalance = _balance();
 
         // Normalize the amount given the rebasing token.
-        if (_tokenBalance != _recordedBalanceBefore)
+        if (_tokenBalance != _recordedBalanceBefore && _tokenBalance > 0)
           reclaimAmount = PRBMath.mulDiv(reclaimAmount, _recordedBalanceBefore, _tokenBalance);
 
         // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
