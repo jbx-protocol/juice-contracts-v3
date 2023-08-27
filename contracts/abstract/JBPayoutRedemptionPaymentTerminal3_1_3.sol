@@ -668,7 +668,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         );
 
         // Get a reference to the token balance in this contract.
-        uint256 _tokenBalance = IERC20(token).balanceOf(address(this));
+        uint256 _tokenBalance = _balance();
 
         // Normalize the amount given the rebasing token.
         if (_tokenBalance != _recordedBalanceBefore)
