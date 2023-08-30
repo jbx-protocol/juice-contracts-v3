@@ -118,8 +118,8 @@ library JBFundingCycleMetadataResolver3_2 {
     pure
     returns (uint256 packed)
   {
-    // version 1 in the bits 0-7 (8 bits).
-    packed = 1;
+    // version 2 in the bits 0-7 (8 bits).
+    packed = 2;
     // global metadata in bits 8-15 (8 bits).
     packed |=
       JBGlobalFundingCycleMetadataResolver.packFundingCycleGlobalMetadata(_metadata.global) <<
@@ -168,10 +168,10 @@ library JBFundingCycleMetadataResolver3_2 {
   function expandMetadata(JBFundingCycle memory _fundingCycle)
     internal
     pure
-    returns (JBFundingCycleMetadata memory)
+    returns (JBFundingCycleMetadata3_2 memory)
   {
     return
-      JBFundingCycleMetadata(
+      JBFundingCycleMetadata3_2(
         global(_fundingCycle),
         reservedRate(_fundingCycle),
         redemptionRate(_fundingCycle),
