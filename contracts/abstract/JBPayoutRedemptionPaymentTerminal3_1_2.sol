@@ -244,57 +244,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   // ---------------------- external transactions ---------------------- //
   //*********************************************************************//
 
-  /// @notice Contribute tokens to a project.
-  /// @param _projectId The ID of the project being paid.
-  /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
-  /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
-  /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
-  /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
-  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
-  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-  /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
-  function pay(
-    uint256 _projectId,
-    uint256 _amount,
-    address _token,
-    address _beneficiary,
-    uint256 _minReturnedTokens,
-    bool _preferClaimedTokens,
-    string calldata _memo,
-    bytes calldata _metadata
-  ) external payable virtual override returns (uint256) {
-    _token; // Prevents unused var compiler and natspec complaints.
-
-    // ETH shouldn't be sent if this terminal's token isn't ETH.
-    if (token != JBTokens.ETH) {
-      if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
-
-      // Get a reference to the balance before receiving tokens.
-      uint256 _balanceBefore = _balance();
-
-      // Transfer tokens to this terminal from the msg sender.
-      _transferFrom(msg.sender, payable(address(this)), _amount);
-
-      // The amount should reflect the change in balance.
-      _amount = _balance() - _balanceBefore;
-    }
-    // If this terminal's token is ETH, override _amount with msg.value.
-    else _amount = msg.value;
-
-    return
-      _pay(
-        _amount,
-        msg.sender,
-        _projectId,
-        _beneficiary,
-        _minReturnedTokens,
-        _preferClaimedTokens,
-        _memo,
-        _metadata
-      );
-  }
-
   /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
   /// @dev Only a token holder or a designated operator can redeem its tokens.
   /// @param _holder The account to redeem tokens for.
@@ -540,6 +489,57 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   //*********************************************************************//
   // ----------------------- public transactions ----------------------- //
   //*********************************************************************//
+
+  /// @notice Contribute tokens to a project.
+  /// @param _projectId The ID of the project being paid.
+  /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
+  /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
+  /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
+  /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
+  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
+  /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+  /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
+  function pay(
+    uint256 _projectId,
+    uint256 _amount,
+    address _token,
+    address _beneficiary,
+    uint256 _minReturnedTokens,
+    bool _preferClaimedTokens,
+    string calldata _memo,
+    bytes calldata _metadata
+  ) public payable virtual override returns (uint256) {
+    _token; // Prevents unused var compiler and natspec complaints.
+
+    // ETH shouldn't be sent if this terminal's token isn't ETH.
+    if (token != JBTokens.ETH) {
+      if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
+
+      // Get a reference to the balance before receiving tokens.
+      uint256 _balanceBefore = _balance();
+
+      // Transfer tokens to this terminal from the msg sender.
+      _transferFrom(msg.sender, payable(address(this)), _amount);
+
+      // The amount should reflect the change in balance.
+      _amount = _balance() - _balanceBefore;
+    }
+    // If this terminal's token is ETH, override _amount with msg.value.
+    else _amount = msg.value;
+
+    return
+      _pay(
+        _amount,
+        msg.sender,
+        _projectId,
+        _beneficiary,
+        _minReturnedTokens,
+        _preferClaimedTokens,
+        _memo,
+        _metadata
+      );
+  }
 
   /// @notice Receives funds belonging to the specified project.
   /// @param _projectId The ID of the project to which the funds received belong.
@@ -1504,10 +1504,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
 
     // Process each fee.
     for (uint256 _i; _i < _heldFeesLength; ) {
-
-      if (leftoverAmount == 0) { 
+      if (leftoverAmount == 0) {
         _heldFeesOf[_projectId].push(_heldFees[_i]);
-
       } else {
         // Notice here we take feeIn the stored .amount
         uint256 _feeAmount = (
@@ -1542,7 +1540,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
           }
           leftoverAmount = 0;
         }
-        
       }
 
       unchecked {
