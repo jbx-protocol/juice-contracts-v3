@@ -809,7 +809,8 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
       revert INVALID_REDEMPTION_RATE();
 
     // Make sure the provided ballot redemption rate is valid.
-    if (_metadata.baseCurrency > type(uint32).max) revert INVALID_BALLOT_REDEMPTION_RATE();
+    if (_metadata.ballotRedemptionRate > JBConstants.MAX_REDEMPTION_RATE)
+      revert INVALID_BALLOT_REDEMPTION_RATE();
 
     // Configure the funding cycle's properties.
     JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(
