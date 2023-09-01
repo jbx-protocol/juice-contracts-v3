@@ -482,7 +482,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     bool _preferClaimedTokens,
     string calldata _memo,
     bytes calldata _metadata
-  ) external payable virtual override returns (uint256) {
+  ) public payable virtual override returns (uint256) {
     _token; // Prevents unused var compiler and natspec complaints.
 
     // ETH shouldn't be sent if this terminal's token isn't ETH.
