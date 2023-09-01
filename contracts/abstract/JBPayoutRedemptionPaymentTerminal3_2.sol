@@ -132,13 +132,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     );
 
     // Adjust the decimals of the fixed point number if needed to have 18 decimals.
-    uint256 _adjustedOverflow = (decimals == 18)
+    uint256 _adjustedOverflow = decimals == 18
       ? _overflow
       : JBFixedPointNumber.adjustDecimals(_overflow, decimals, 18);
 
     // Return the amount converted to ETH.
     return
-      (currency == JBCurrencies.ETH)
+      currency == JBCurrencies.ETH
         ? _adjustedOverflow
         : PRBMath.mulDiv(
           _adjustedOverflow,
