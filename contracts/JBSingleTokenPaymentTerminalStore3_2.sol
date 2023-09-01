@@ -6,7 +6,7 @@ import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSource3_1_1.sol';
+import {IJBFundingCycleDataSource3_2} from './interfaces/IJBFundingCycleDataSource3_2.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
@@ -17,10 +17,10 @@ import {JBCurrencies} from './libraries/JBCurrencies.sol';
 import {JBFixedPointNumber} from './libraries/JBFixedPointNumber.sol';
 import {JBFundingCycleMetadataResolver3_2} from './libraries/JBFundingCycleMetadataResolver3_2.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
-import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1_1.sol';
+import {JBPayDelegateAllocation3_2} from './structs/JBPayDelegateAllocation3_2.sol';
 import {JBPayParamsData} from './structs/JBPayParamsData.sol';
 import {JBRedeemParamsData} from './structs/JBRedeemParamsData.sol';
-import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBRedemptionDelegateAllocation3_2} from './structs/JBRedemptionDelegateAllocation3_2.sol';
 import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 
 /// @notice Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
@@ -249,7 +249,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 tokenCount,
-      JBPayDelegateAllocation3_1_1[] memory delegateAllocations,
+      JBPayDelegateAllocation3_2[] memory delegateAllocations,
       string memory memo
     )
   {
@@ -280,9 +280,8 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
         _memo,
         _metadata
       );
-      (_weight, memo, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
-        fundingCycle.dataSource()
-      ).payParams(_data);
+      (_weight, memo, delegateAllocations) = IJBFundingCycleDataSource3_2(fundingCycle.dataSource())
+        .payParams(_data);
     }
     // Otherwise use the funding cycle's weight
     else {
@@ -367,7 +366,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 reclaimAmount,
-      JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations,
+      JBRedemptionDelegateAllocation3_2[] memory delegateAllocations,
       string memory memo
     )
   {
@@ -448,7 +447,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
             _memo,
             _metadata
           );
-          (reclaimAmount, memo, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
+          (reclaimAmount, memo, delegateAllocations) = IJBFundingCycleDataSource3_2(
             fundingCycle.dataSource()
           ).redeemParams(_data);
         }
