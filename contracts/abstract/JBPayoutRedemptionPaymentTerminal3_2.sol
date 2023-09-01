@@ -19,7 +19,7 @@ import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
 import {IJBPrices} from './../interfaces/IJBPrices.sol';
 import {IJBProjects} from './../interfaces/IJBProjects.sol';
 import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
-import {IJBSingleTokenPaymentTerminalStore3_1_1} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
+import {IJBSingleTokenPaymentTerminalStore3_2} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
 import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './../libraries/JBConstants.sol';
 import {JBCurrencies} from './../libraries/JBCurrencies.sol';
@@ -28,12 +28,12 @@ import {JBFixedPointNumber} from './../libraries/JBFixedPointNumber.sol';
 import {JBFundingCycleMetadataResolver3_2} from './../libraries/JBFundingCycleMetadataResolver3_2.sol';
 import {JBOperations} from './../libraries/JBOperations.sol';
 import {JBTokens} from './../libraries/JBTokens.sol';
-import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
-import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
+import {JBDidRedeemData3_2} from './../structs/JBDidRedeemData3_2.sol';
+import {JBDidPayData3_2} from './../structs/JBDidPayData3_2.sol';
 import {JBFee} from './../structs/JBFee.sol';
 import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
-import {JBPayDelegateAllocation3_1_1} from './../structs/JBPayDelegateAllocation3_1_1.sol';
-import {JBRedemptionDelegateAllocation3_1_1} from './../structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBPayDelegateAllocation3_2} from './../structs/JBPayDelegateAllocation3_2.sol';
+import {JBRedemptionDelegateAllocation3_2} from './../structs/JBRedemptionDelegateAllocation3_2.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 import {JBSplitAllocationData} from './../structs/JBSplitAllocationData.sol';
 import {JBTokenAmount} from './../structs/JBTokenAmount.sol';
@@ -131,7 +131,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     uint256 _projectId
   ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
-    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_2(store).currentOverflowOf(
       this,
       _projectId
     );
@@ -411,7 +411,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore3_2(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance != 0) {
@@ -638,7 +638,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
 
       // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
       {
-        JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
+        JBRedemptionDelegateAllocation3_2[] memory _delegateAllocations;
 
         // Record the redemption.
         (
@@ -646,7 +646,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
           reclaimAmount,
           _delegateAllocations,
           _memo
-        ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
+        ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordRedemptionFor(
           _holder,
           _projectId,
           _tokenCount,
@@ -656,8 +656,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
 
         // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
         _feeDiscount = isFeelessAddress[_beneficiary] ||
-          (_fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE &&
-            _fundingCycle.ballotRedemptionRate() == JBConstants.MAX_REDEMPTION_RATE) ||
+          _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
           _feePercent == 0
           ? JBConstants.MAX_FEE_DISCOUNT
           : _currentFeeDiscount(_projectId, JBFeeType.REDEMPTION);
@@ -677,13 +676,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
 
         // If delegate allocations were specified by the data source, fulfill them.
         if (_delegateAllocations.length != 0) {
-          JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
+          JBDidRedeemData3_2 memory _data = JBDidRedeemData3_2(
             _holder,
             _projectId,
             _fundingCycle.configuration,
             _tokenCount,
             JBTokenAmount(token, reclaimAmount, decimals, currency),
             JBTokenAmount(token, 0, decimals, currency),
+            _fundingCycle.redemptionRate(),
             _beneficiary,
             _memo,
             bytes(''),
@@ -691,7 +691,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
           );
 
           // Keep a reference to the allocation.
-          JBRedemptionDelegateAllocation3_1_1 memory _delegateAllocation;
+          JBRedemptionDelegateAllocation3_2 memory _delegateAllocation;
 
           // Keep a reference to the fee.
           uint256 _delegatedAmountFee;
@@ -806,7 +806,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordDistributionFor(
+    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordDistributionFor(
         _projectId,
         _amount,
         _currency
@@ -924,7 +924,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
+    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordUsedAllowanceOf(
         _projectId,
         _amount,
         _currency
@@ -1308,10 +1308,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
-    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
-      _projectId,
-      _depositAmount
-    );
+    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(_projectId, _depositAmount);
   }
 
   /// @notice Contribute tokens to a project.
@@ -1343,7 +1340,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
 
     // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
     {
-      JBPayDelegateAllocation3_1_1[] memory _delegateAllocations;
+      JBPayDelegateAllocation3_2[] memory _delegateAllocations;
       uint256 _tokenCount;
 
       // Bundle the amount info into a JBTokenAmount struct.
@@ -1355,7 +1352,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
         _tokenCount,
         _delegateAllocations,
         _memo
-      ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordPaymentFrom(
+      ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1381,12 +1378,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
 
       // If delegate allocations were specified by the data source, fulfill them.
       if (_delegateAllocations.length != 0) {
-        JBDidPayData3_1_1 memory _data = JBDidPayData3_1_1(
+        JBDidPayData3_2 memory _data = JBDidPayData3_2(
           _payer,
           _projectId,
           _fundingCycle.configuration,
           _bundledAmount,
           JBTokenAmount(token, 0, decimals, currency),
+          _fundingCycle.weight,
           beneficiaryTokenCount,
           _beneficiary,
           _preferClaimedTokens,
@@ -1399,7 +1397,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
         uint256 _numDelegates = _delegateAllocations.length;
 
         // Keep a reference to the allocation.
-        JBPayDelegateAllocation3_1_1 memory _delegateAllocation;
+        JBPayDelegateAllocation3_2 memory _delegateAllocation;
 
         for (uint256 _i; _i < _numDelegates; ) {
           // Get a reference to the delegate being iterated on.
@@ -1463,7 +1461,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
+    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(
       _projectId,
       _amount + _refundedFees
     );
