@@ -614,7 +614,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
       uint256 _feeEligibleDistributionAmount;
 
       // Keep a reference to the fee.
-      uint256 _feePercent = fee;
+      uint256 _feePercent;
 
       // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
       {
@@ -635,22 +635,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
         );
 
         // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
-<<<<<<< Updated upstream
-        _feeDiscount = isFeelessAddress[_beneficiary] ||
-          (_fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE &&
-            _fundingCycle.ballotRedemptionRate() == JBConstants.MAX_REDEMPTION_RATE) ||
-          _feePercent == 0
-          ? JBConstants.MAX_FEE_DISCOUNT
-          : _currentFeeDiscount(_projectId, JBFeeType.REDEMPTION);
-=======
         _feePercent = isFeelessAddress[_beneficiary] ||
           _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
-          _feePercent == 0 ||
+          fee == 0 ||
           directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
           IJBPaymentTerminal(address(0))
           ? 0
-          : _feePercent;
->>>>>>> Stashed changes
+          : fee;
 
         // The amount being reclaimed must be at least as much as was expected.
         if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
