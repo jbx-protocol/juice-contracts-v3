@@ -17,7 +17,7 @@ import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
 import {IJBPrices} from './../interfaces/IJBPrices.sol';
 import {IJBProjects} from './../interfaces/IJBProjects.sol';
 import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
-import {IJBSingleTokenPaymentTerminalStore3_1_1} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
+import {IJBSingleTokenPaymentTerminalStore3_2} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
 import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './../libraries/JBConstants.sol';
 import {JBCurrencies} from './../libraries/JBCurrencies.sol';
@@ -126,7 +126,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     uint256 _projectId
   ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
-    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_2(store).currentOverflowOf(
       this,
       _projectId
     );
@@ -355,7 +355,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore3_2(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance != 0) {
@@ -626,7 +626,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
           reclaimAmount,
           _delegateAllocations,
           _memo
-        ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
+        ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordRedemptionFor(
           _holder,
           _projectId,
           _tokenCount,
@@ -780,7 +780,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordDistributionFor(
+    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordDistributionFor(
         _projectId,
         _amount,
         _currency
@@ -891,7 +891,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
+    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordUsedAllowanceOf(
         _projectId,
         _amount,
         _currency
@@ -1259,10 +1259,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
-    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
-      _projectId,
-      _depositAmount
-    );
+    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(_projectId, _depositAmount);
   }
 
   /// @notice Contribute tokens to a project.
@@ -1306,7 +1303,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
         _tokenCount,
         _delegateAllocations,
         _memo
-      ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordPaymentFrom(
+      ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1414,7 +1411,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
+    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(
       _projectId,
       _amount + _refundedFees
     );
