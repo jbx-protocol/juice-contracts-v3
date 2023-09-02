@@ -31,7 +31,7 @@ contract JBERC20PaymentTerminal3_1_2 is
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  IPermit2 immutable PERMIT2;
+  IPermit2 public immutable PERMIT2;
 
   //*********************************************************************//
   // -------------------------- public views --------------------------- //
