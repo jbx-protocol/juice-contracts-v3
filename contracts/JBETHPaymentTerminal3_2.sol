@@ -46,11 +46,10 @@ contract JBETHPaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_2 {
     address _store,
     address _owner
   )
-    JBPayoutRedemptionPaymentTerminal3_1_2(
+    JBPayoutRedemptionPaymentTerminal3_2(
       JBTokens.ETH,
       18, // 18 decimals.
       JBCurrencies.ETH,
-      _baseWeightCurrency,
       JBSplitsGroups.ETH_PAYOUT,
       _operatorStore,
       _projects,
