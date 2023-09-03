@@ -8,7 +8,7 @@ import {ECDSA} from '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 import {EIP712} from '@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol';
 
 /// @notice Stores operator permissions for all addresses. Addresses can give permissions to any other address to take specific indexed actions on their behalf.
-contract JBOperatorStore is EIP712, IJBOperatorStore {
+contract JBOperatorStore3_2 is EIP712, IJBOperatorStore {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
@@ -125,8 +125,25 @@ contract JBOperatorStore is EIP712, IJBOperatorStore {
     unchecked {
       _nonce = nonces[_user]++;
     }
+
+    bytes32 _structHash = _hashTypedDataV4(
+      keccak256(
+        abi.encode(
+          keccak256(
+            'JuiceboxPermissions(Permission _permission, uint256 nonce)Permission(address operator, uint256 domain, uint256[] permissionIndexes)'
+          ),
+          abi.encodePacked(
+            _operatorData.operator,
+            _operatorData.domain,
+            keccak256(abi.encodePacked(_operatorData.permissionIndexes))
+          ),
+          _nonce
+        )
+      )
+    );
+
     // Verify the validity of the signature
-    _permit(_user, keccak256(abi.encode(_operatorData, _nonce)), _deadline, _v, _r, _s);
+    _permit(_user, _structHash, _deadline, _v, _r, _s);
     // Set the operator data
     _setOperator(_user, _operatorData);
   }
@@ -177,18 +194,18 @@ contract JBOperatorStore is EIP712, IJBOperatorStore {
 
   function _permit(
     address _user,
-    bytes32 _structHash,
+    bytes32 _hash,
     uint256 _deadline,
     uint8 _v,
     bytes32 _r,
     bytes32 _s
   ) internal {
     // Make sure it has not expired
-    if (block.timestamp > _deadline) {
-      revert ERC2612ExpiredSignature(_deadline);
-    }
+    // if (block.timestamp > _deadline) {
+    //   revert ERC2612ExpiredSignature(_deadline);
+    // }
 
-    bytes32 _hash = _hashTypedDataV4(_structHash);
+    // bytes32 _hash = _hashTypedDataV4(_structHash);
     // This library errors if `_signer` is `address(0)`
     address _signer = ECDSA.recover(_hash, _v, _r, _s);
 
