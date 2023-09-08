@@ -56,6 +56,10 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   /// @custom:param _projectId The ID of the project to which the token belongs.  
   mapping(uint256 => IJBToken) public override tokenOf;
 
+  /// @notice Each token's project.
+  /// @custom:param _token The address of the token to which the project belongs.
+  mapping(IJBToken => uint256) public override projectIdOf;
+
   /// @notice The total supply of unclaimed tokens for each project.
   /// @custom:param _projectId The ID of the project to which the token belongs.  
   mapping(uint256 => uint256) public override unclaimedTotalSupplyOf;
@@ -161,6 +165,9 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     // Store the token contract.
     tokenOf[_projectId] = token;
 
+    // Store the project for the token.
+    projectIdOf[token] = _projectId;
+
     emit Issue(_projectId, token, _name, _symbol, msg.sender);
   }
 
@@ -176,14 +183,20 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     // Can't set to the zero address.
     if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
 
-    // Can't set token if already set.
+    // Can't set token if the project is already associated with another token.
     if (tokenOf[_projectId] != IJBToken(address(0))) revert ALREADY_SET();
+
+    // Can't set token if its already associated with another project.
+    if (projectIdOf[_token] != 0) revert ALREADY_SET();
 
     // Can't change to a token that doesn't use 18 decimals.
     if (_token.decimals() != 18) revert TOKENS_MUST_HAVE_18_DECIMALS();
 
     // Store the new token.
     tokenOf[_projectId] = _token;
+
+    // Store the project for the token.
+    projectIdOf[_token] = _projectId;
 
     emit Set(_projectId, _token, msg.sender);
   }
