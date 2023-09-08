@@ -82,7 +82,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
   /// @param _amount The amount of tokens to mint, as a fixed point number with 18 decimals.
   function mint(uint256 _projectId, address _account, uint256 _amount) external override onlyOwner {
     // Can't mint for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     return _mint(_account, _amount);
   }
@@ -94,7 +94,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
   /// @param _amount The amount of tokens to burn, as a fixed point number with 18 decimals.
   function burn(uint256 _projectId, address _account, uint256 _amount) external override onlyOwner {
     // Can't burn for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     return _burn(_account, _amount);
   }
@@ -105,7 +105,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
   /// @param _amount The amount the `_spender` is allowed to spend.
   function approve(uint256 _projectId, address _spender, uint256 _amount) external override {
     // Can't approve for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     approve(_spender, _amount);
   }
@@ -116,7 +116,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
   /// @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
   function transfer(uint256 _projectId, address _to, uint256 _amount) external override {
     // Can't transfer for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     transfer(_to, _amount);
   }
@@ -133,7 +133,7 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     uint256 _amount
   ) external override {
     // Can't transfer for a wrong project.
-    if (projectId != 0 && _projectId != projectId) revert BAD_PROJECT();
+    if (_projectId != projectId) revert BAD_PROJECT();
 
     transferFrom(_from, _to, _amount);
   }
