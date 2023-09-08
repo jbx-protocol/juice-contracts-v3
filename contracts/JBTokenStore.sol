@@ -38,6 +38,15 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   error TRANSFERS_PAUSED();
   error OVERFLOW_ALERT();
 
+
+  //*********************************************************************//
+  // --------------------- private stored properties ------------------- //
+  //*********************************************************************//
+
+  /// @notice Each token's project.
+  /// @custom:param _token The address of the token to which the project belongs.
+  mapping(IJBToken => uint256[]) private _projectIdsOf;
+
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
@@ -87,6 +96,34 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
     // If the project has a current token, add the holder's balance to the total.
     if (_token != IJBToken(address(0))) balance = balance + _token.balanceOf(_holder, _projectId);
+  }
+
+  /// @notice Each token's project.
+  /// @param _token The address of the token to which the project belongs.
+  /// @return The ID of the projects to which the token apply
+  function projectIdsOf(IJBToken _token) external view returns (uint256[] memory) {
+    return _projectIdsOf[_token];
+  }
+
+  /// @notice Each token's project.
+  /// @param _token The address of the token to which the project belongs.
+  /// @return _projectId The ID of the projects to which the token apply
+  function isProjectIdOfToken(IJBToken _token, uint256 _projectId) external view returns (bool) {
+    // Get a reference to the project IDs for the token.
+    uint256[] memory _projectIds = _projectIdsOf[_token];
+
+    // Keep a reference to the number of project IDs belong to the token. 
+    uint256 _numberOfProjectIds = _projectIds.length;
+    
+    // Check to see if the provided project ID is in the set.
+    for (uint256 _i; _i < _numberOfProjectIds;) {
+      if (_projectIds[_i] == _projectId) return true;
+      unchecked {
+        ++_i;
+      }
+    }
+
+    return false;
   }
 
   //*********************************************************************//
@@ -161,6 +198,9 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     // Store the token contract.
     tokenOf[_projectId] = token;
 
+    // Store the project for the token.
+    _projectIdsOf[token].push(_projectId);
+
     emit Issue(_projectId, token, _name, _symbol, msg.sender);
   }
 
@@ -184,6 +224,9 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
     // Store the new token.
     tokenOf[_projectId] = _token;
+
+    // Store the project for the token.
+    _projectIdsOf[_token].push(_projectId);
 
     emit Set(_projectId, _token, msg.sender);
   }
