@@ -701,7 +701,5 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
         ++_i;
       }
     }
-
-    return 0;
   }
 }
