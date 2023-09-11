@@ -672,6 +672,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     uint256 _numberOfConfigurations = _configurations.length;
 
     for (uint256 _i; _i < _numberOfConfigurations; ) {
+      // Get a reference to the configuration being iterated on.
       _configuration = _configurations[_i];
 
       // Make sure the provided reserved rate is valid.
