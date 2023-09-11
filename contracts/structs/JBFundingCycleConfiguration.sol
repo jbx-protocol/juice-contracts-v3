@@ -6,10 +6,10 @@ import {JBFundingCycleMetadata} from './JBFundingCycleMetadata.sol';
 import {JBGroupedSplits} from './JBGroupedSplits.sol';
 import {JBFundAccessConstraints} from './JBFundAccessConstraints.sol';
 
-/// @custom:member _data Data that defines the project's first funding cycle. These properties will remain fixed for the duration of the funding cycle.
+/// @custom:member _data Data that defines the project's funding cycle. These properties will remain fixed for the duration of the funding cycle.
 /// @custom:member _metadata Metadata specifying the controller specific params that a funding cycle can have. These properties will remain fixed for the duration of the funding cycle.
-/// @custom:member _groupedSplits An array of splits to set for any number of groups.
-/// @custom:member _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
+/// @custom:member _groupedSplits An array of splits to set for any number of groups while the funding cycle configuration is active.
+/// @custom:member _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal while the funding cycle configuration is active. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
 struct JBFundingCycleConfiguration {
   JBFundingCycleData data;
   JBFundingCycleMetadata metadata;
