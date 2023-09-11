@@ -121,7 +121,6 @@ interface IJBController3_2 is IERC165 {
     address owner,
     JBProjectMetadata calldata projectMetadata,
     JBFundingCycleConfiguration[] calldata configurations,
-    uint256 mustStartAtOrAfter,
     IJBPaymentTerminal[] memory terminals,
     string calldata memo
   ) external returns (uint256 projectId);
@@ -129,7 +128,6 @@ interface IJBController3_2 is IERC165 {
   function launchFundingCyclesFor(
     uint256 projectId,
     JBFundingCycleConfiguration[] calldata configurations,
-    uint256 mustStartAtOrAfter,
     IJBPaymentTerminal[] memory terminals,
     string calldata memo
   ) external returns (uint256 configured);
@@ -137,7 +135,6 @@ interface IJBController3_2 is IERC165 {
   function reconfigureFundingCyclesOf(
     uint256 projectId,
     JBFundingCycleConfiguration[] calldata configurations,
-    uint256 mustStartAtOrAfter,
     string calldata memo
   ) external returns (uint256 configured);
 

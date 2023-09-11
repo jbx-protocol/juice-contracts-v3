@@ -243,7 +243,6 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
   /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
   /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
   /// @param _configurations The funding cycle configurations to schedule.
-  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
   /// @param _terminals Payment terminals to add for the project.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return projectId The ID of the project.
@@ -251,7 +250,6 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     address _owner,
     JBProjectMetadata calldata _projectMetadata,
     JBFundingCycleConfiguration[] calldata _configurations,
-    uint256 _mustStartAtOrAfter,
     IJBPaymentTerminal[] memory _terminals,
     string memory _memo
   ) external virtual override returns (uint256 projectId) {
@@ -265,7 +263,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     _directory.setControllerOf(projectId, address(this));
 
     // Configure the first funding cycle.
-    uint256 _configuration = _configure(projectId, _configurations, _mustStartAtOrAfter);
+    uint256 _configuration = _configure(projectId, _configurations);
 
     // Add the provided terminals to the list of terminals.
     if (_terminals.length > 0) _directory.setTerminalsOf(projectId, _terminals);
@@ -278,14 +276,12 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
   /// @dev Only a project owner or operator can launch its funding cycles.
   /// @param _projectId The ID of the project to launch funding cycles for.
   /// @param _configurations The funding cycle configurations to schedule.
-  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
   /// @param _terminals Payment terminals to add for the project.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function launchFundingCyclesFor(
     uint256 _projectId,
     JBFundingCycleConfiguration[] calldata _configurations,
-    uint256 _mustStartAtOrAfter,
     IJBPaymentTerminal[] memory _terminals,
     string memory _memo
   )
@@ -303,7 +299,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     directory.setControllerOf(_projectId, address(this));
 
     // Configure the first funding cycle.
-    configured = _configure(_projectId, _configurations, _mustStartAtOrAfter);
+    configured = _configure(_projectId, _configurations);
 
     // Add the provided terminals to the list of terminals.
     if (_terminals.length > 0) directory.setTerminalsOf(_projectId, _terminals);
@@ -315,13 +311,11 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
   /// @dev Only a project's owner or a designated operator can configure its funding cycles.
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
   /// @param _configurations The funding cycle configurations to schedule.
-  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function reconfigureFundingCyclesOf(
     uint256 _projectId,
     JBFundingCycleConfiguration[] calldata _configurations,
-    uint256 _mustStartAtOrAfter,
     string calldata _memo
   )
     external
@@ -331,7 +325,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     returns (uint256 configured)
   {
     // Configure the next funding cycle.
-    configured = _configure(_projectId, _configurations, _mustStartAtOrAfter);
+    configured = _configure(_projectId, _configurations);
 
     emit ReconfigureFundingCycles(configured, _projectId, _memo, msg.sender);
   }
@@ -655,12 +649,10 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
   /// @notice Configures a funding cycle and stores information pertinent to the configuration.
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
   /// @param _configurations The funding cycle configurations to schedule.
-  /// @param _mustStartAtOrAfter The time before which the configured funding cycle cannot start.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function _configure(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _configurations,
-    uint256 _mustStartAtOrAfter
+    JBFundingCycleConfiguration[] calldata _configurations
   ) internal returns (uint256 configured) {
     // Keep a reference to the configuration being iterated on.
     JBFundingCycleConfiguration memory _configuration;
@@ -689,7 +681,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
         _projectId,
         _configuration.data,
         JBFundingCycleMetadataResolver.packFundingCycleMetadata(_configuration.metadata),
-        _mustStartAtOrAfter
+        _configuration.mustStartAtOrAfter
       );
 
       // Set splits for the group.
