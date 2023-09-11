@@ -24,15 +24,12 @@ import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadata
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
-import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
-import {JBFundAccessConstraints} from './structs/JBFundAccessConstraints.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
-import {JBFundingCycleData} from './structs/JBFundingCycleData.sol';
+import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
 import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
-import {JBGroupedSplits} from './structs/JBGroupedSplits.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
 import {JBSplit} from './structs/JBSplit.sol';
-import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
+import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
 /// @dev This Controller has the same functionality as JBController3_0_1, except it is not backwards compatible with the original IJBController view methods.
