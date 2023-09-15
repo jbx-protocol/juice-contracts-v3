@@ -262,7 +262,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     // Set this contract as the project's controller in the directory.
     _directory.setControllerOf(projectId, address(this));
 
-    // Configure the first funding cycle.
+    // Configure the funding cycles.
     uint256 _configuration = _configure(projectId, _configurations);
 
     // Add the provided terminals to the list of terminals.
@@ -298,7 +298,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     // Set this contract as the project's controller in the directory.
     directory.setControllerOf(_projectId, address(this));
 
-    // Configure the first funding cycle.
+    // Configure the funding cycles.
     configured = _configure(_projectId, _configurations);
 
     // Add the provided terminals to the list of terminals.
@@ -324,7 +324,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.RECONFIGURE)
     returns (uint256 configured)
   {
-    // Configure the next funding cycle.
+    // Configure the funding cycles.
     configured = _configure(_projectId, _configurations);
 
     emit ReconfigureFundingCycles(configured, _projectId, _memo, msg.sender);
@@ -649,7 +649,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
   /// @notice Configures a funding cycle and stores information pertinent to the configuration.
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
   /// @param _configurations The funding cycle configurations to schedule.
-  /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
+  /// @return configured The configuration timestamp of the last configuration scheduled.
   function _configure(
     uint256 _projectId,
     JBFundingCycleConfiguration[] calldata _configurations

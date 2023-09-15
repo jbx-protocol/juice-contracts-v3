@@ -158,6 +158,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             ""
         );
 
+        uint256 firstReconfiguration = block.timestamp;
+
         vm.warp(block.timestamp + 1); // Avoid overwrite
 
         // Second reconfiguration (different configuration)
@@ -182,19 +184,37 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Jump to after the ballot passed, but before the next FC
         vm.warp(fundingCycle.start + fundingCycle.duration - 1);
 
-        // Queued should be the second reconfiguration
-        JBFundingCycle memory queuedFundingCycle = jbFundingCycleStore().queuedOf(projectId);
-        assertEq(queuedFundingCycle.number, 3);
-        assertEq(queuedFundingCycle.configuration, secondReconfiguration);
-        assertEq(queuedFundingCycle.weight, weightSecondReconfiguration);
+        // Queued should be the first reconfiguration
+        JBFundingCycle memory queuedFirstReconfigFundingCycle = jbFundingCycleStore().queuedOf(projectId);
+        assertEq(queuedFirstReconfigFundingCycle.number, 3);
+        assertEq(queuedFirstReconfigFundingCycle.configuration, firstReconfiguration);
+        assertEq(queuedFirstReconfigFundingCycle.weight, weightFirstReconfiguration);
 
         vm.warp(fundingCycle.start + fundingCycle.duration);
 
-        // Second reconfiguration should be now the current one
-        JBFundingCycle memory newFundingCycle = jbFundingCycleStore().currentOf(projectId);
-        assertEq(newFundingCycle.number, 3);
-        assertEq(newFundingCycle.configuration, secondReconfiguration);
-        assertEq(newFundingCycle.weight, weightSecondReconfiguration);
+        // First reconfiguration should now be the current one
+        JBFundingCycle memory newlyActiveFirstReconfigFundingCycle = jbFundingCycleStore().currentOf(projectId);
+        assertEq(newlyActiveFirstReconfigFundingCycle.number, 3);
+        assertEq(newlyActiveFirstReconfigFundingCycle.configuration, firstReconfiguration);
+        assertEq(newlyActiveFirstReconfigFundingCycle.weight, weightFirstReconfiguration);
+
+        // Queued should now be the second reconfiguration
+        JBFundingCycle memory queuedSecondReconfigFundingCycle = jbFundingCycleStore().queuedOf(projectId);
+        assertEq(queuedSecondReconfigFundingCycle.configuration, secondReconfiguration);
+        assertEq(queuedSecondReconfigFundingCycle.weight, weightSecondReconfiguration);
+
+        // Warp to when second reconfig becomes active
+        vm.warp(queuedSecondReconfigFundingCycle.start + fundingCycle.duration);
+
+        // currentOf and queuedOf should match here as it will use the last configured base cycle
+        JBFundingCycle memory newlyActiveSecondReconfigFundingCycle = jbFundingCycleStore().currentOf(projectId);
+        assertEq(newlyActiveSecondReconfigFundingCycle.configuration, secondReconfiguration);
+        assertEq(newlyActiveSecondReconfigFundingCycle.weight, weightSecondReconfiguration);
+
+        // Queued should be the last base cycle carried over
+        JBFundingCycle memory queuedBaseFCFromSecondReconfig = jbFundingCycleStore().queuedOf(projectId);
+        assertEq(queuedBaseFCFromSecondReconfig.configuration, secondReconfiguration);
+        assertEq(queuedBaseFCFromSecondReconfig.weight, weightSecondReconfiguration);
     }
 
     function testMultipleReconfigure(uint8 FUZZED_BALLOT_DURATION) public {
