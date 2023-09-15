@@ -1040,6 +1040,164 @@ describe.only('JBFundingCycleStore::configureFor(...)', function () {
     });
   });
 
+  it('Should override a funding cycle with approval expected', async function () {
+    const { controller, mockJbDirectory, jbFundingCycleStore, mockBallot } = await setup();
+    await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(controller.address);
+
+    const firstFundingCycleData = createFundingCycleData({
+      ballot: mockBallot.address
+    });
+
+    // Set the ballot to have a short duration.
+    await mockBallot.mock.duration.withArgs().returns(0);
+
+    // Configure first funding cycle
+    const firstConfigureForTx = await jbFundingCycleStore
+      .connect(controller)
+      .configureFor(
+        PROJECT_ID,
+        firstFundingCycleData,
+        RANDOM_FUNDING_CYCLE_METADATA_1,
+        FUNDING_CYCLE_CAN_START_ASAP,
+      );
+
+    // The timestamp the first configuration was made during.
+    const firstConfigurationTimestamp = await getTimestamp(firstConfigureForTx.blockNumber);
+
+    const expectedFirstFundingCycle = {
+      number: ethers.BigNumber.from(1),
+      configuration: firstConfigurationTimestamp,
+      basedOn: ethers.BigNumber.from(0),
+      start: firstConfigurationTimestamp,
+      duration: firstFundingCycleData.duration,
+      weight: firstFundingCycleData.weight,
+      discountRate: firstFundingCycleData.discountRate,
+      ballot: firstFundingCycleData.ballot,
+      metadata: RANDOM_FUNDING_CYCLE_METADATA_1,
+    };
+
+    const secondFundingCycleData = createFundingCycleData({
+      duration: firstFundingCycleData.duration.add(1),
+      weight: firstFundingCycleData.weight.add(1),
+    });
+
+    const thirdFundingCycleData = createFundingCycleData({
+      duration: firstFundingCycleData.duration.add(2),
+      weight: firstFundingCycleData.weight.add(2),
+    });
+
+    const secondFundingCycleMustStartOnOrAfter = 0; // asap
+
+    const thirdFundingCycleMustStartOnOrAfter = 0; // asap
+
+    // Configure second funding cycle
+    const secondConfigureForTx = await jbFundingCycleStore
+      .connect(controller)
+      .configureFor(
+        PROJECT_ID,
+        secondFundingCycleData,
+        RANDOM_FUNDING_CYCLE_METADATA_2,
+        secondFundingCycleMustStartOnOrAfter,
+      );
+
+    // The timestamp the second configuration was made during.
+    const secondConfigurationTimestamp = await getTimestamp(secondConfigureForTx.blockNumber);
+
+    await expect(secondConfigureForTx)
+      .to.emit(jbFundingCycleStore, `Init`)
+      .withArgs(secondConfigurationTimestamp, PROJECT_ID, /*basedOn=*/ firstConfigurationTimestamp);
+
+    // Mock the ballot on the failed funding cycle as approved.
+    await mockBallot.mock.stateOf
+      .withArgs(
+        PROJECT_ID,
+        secondConfigurationTimestamp,
+        firstConfigurationTimestamp.add(firstFundingCycleData.duration),
+      )
+      .returns(ballotStatus.APPROVAL_EXPECTED);
+
+    const expectedSecondFundingCycle = {
+      number: ethers.BigNumber.from(2), // second cycle
+      configuration: secondConfigurationTimestamp,
+      basedOn: firstConfigurationTimestamp, // based on the first cycle
+      start: firstConfigurationTimestamp.add(firstFundingCycleData.duration), // starts at the end of the second cycle
+      duration: secondFundingCycleData.duration,
+      weight: secondFundingCycleData.weight,
+      discountRate: secondFundingCycleData.discountRate,
+      ballot: secondFundingCycleData.ballot,
+      metadata: RANDOM_FUNDING_CYCLE_METADATA_2,
+    };
+
+    expect(
+      cleanFundingCycle(await jbFundingCycleStore.get(PROJECT_ID, secondConfigurationTimestamp)),
+    ).to.eql(expectedSecondFundingCycle);
+
+    let [latestFundingCycle, ballotState] = await jbFundingCycleStore.latestConfiguredOf(
+      PROJECT_ID,
+    );
+    expect(cleanFundingCycle(latestFundingCycle)).to.eql(expectedSecondFundingCycle);
+    expect(ballotState).to.deep.eql(ballotStatus.APPROVAL_EXPECTED);
+
+    // Queued shows the second.
+    expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql(expectedSecondFundingCycle);
+
+    // Configure third funding cycle to overwrite
+    const thirdConfigureForTx = await jbFundingCycleStore
+      .connect(controller)
+      .configureFor(
+        PROJECT_ID,
+        thirdFundingCycleData,
+        RANDOM_FUNDING_CYCLE_METADATA_2,
+        thirdFundingCycleMustStartOnOrAfter,
+      );
+
+    // The timestamp the second configuration was made during.
+    const thirdConfigurationTimestamp = await getTimestamp(thirdConfigureForTx.blockNumber);
+
+    await expect(thirdConfigureForTx)
+      .to.emit(jbFundingCycleStore, `Init`)
+      .withArgs(thirdConfigurationTimestamp, PROJECT_ID, /*basedOn=*/ firstConfigurationTimestamp);
+
+    // Mock the ballot on the failed funding cycle as approved.
+    await mockBallot.mock.stateOf
+      .withArgs(
+        PROJECT_ID,
+        thirdConfigurationTimestamp,
+        firstConfigurationTimestamp.add(firstFundingCycleData.duration),
+      )
+      .returns(ballotStatus.APPROVAL_EXPECTED);
+
+    const expectedThirdFundingCycle = {
+      number: ethers.BigNumber.from(2), // second cycle
+      configuration: thirdConfigurationTimestamp,
+      basedOn: firstConfigurationTimestamp, // based on the first cycle
+      start: firstConfigurationTimestamp.add(firstFundingCycleData.duration), // starts at the end of the second cycle
+      duration: thirdFundingCycleData.duration,
+      weight: thirdFundingCycleData.weight,
+      discountRate: thirdFundingCycleData.discountRate,
+      ballot: thirdFundingCycleData.ballot,
+      metadata: RANDOM_FUNDING_CYCLE_METADATA_2,
+    };
+
+    // Queued shows the third which overwrote the second.
+    expect(cleanFundingCycle(await jbFundingCycleStore.queuedOf(PROJECT_ID))).to.eql(expectedThirdFundingCycle);
+
+    // fast forward to after the first cycle.
+    await fastForward(firstConfigureForTx.blockNumber, firstFundingCycleData.duration);
+
+    // Mock the ballot on the failed funding cycle as approved.
+    await mockBallot.mock.stateOf
+      .withArgs(
+        PROJECT_ID,
+        thirdConfigurationTimestamp,
+        firstConfigurationTimestamp.add(firstFundingCycleData.duration),
+      )
+      .returns(ballotStatus.APPROVED);
+
+    // Current shows the third which overwrote the second.
+    expect(cleanFundingCycle(await jbFundingCycleStore.currentOf(PROJECT_ID))).to.eql(expectedThirdFundingCycle);
+  });
+
   it('Should configure multiple subsequent cycles that start in the future with standby ballots that turn failed with deeper nesting', async function () {
     const { controller, mockJbDirectory, jbFundingCycleStore, mockBallot } = await setup();
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(controller.address);
@@ -1101,7 +1259,7 @@ describe.only('JBFundingCycleStore::configureFor(...)', function () {
 
     const fourthFundingCycleMustStartOnOrAfter = firstConfigurationTimestamp.add(
       firstFundingCycleData.duration,
-    ).add(secondFundingCycleData.duration).add(thirdFundingCycleData.duration);
+    ).add(firstFundingCycleData.duration).add(firstFundingCycleData.duration).add(thirdFundingCycleData.duration);
 
     // Configure second funding cycle
     const secondConfigureForTx = await jbFundingCycleStore
@@ -1120,7 +1278,7 @@ describe.only('JBFundingCycleStore::configureFor(...)', function () {
       .to.emit(jbFundingCycleStore, `Init`)
       .withArgs(secondConfigurationTimestamp, PROJECT_ID, /*basedOn=*/ firstConfigurationTimestamp);
 
-    // Mock the ballot on the failed funding cycle as approved.
+    // Mock the ballot on the failed funding cycle as standby.
     await mockBallot.mock.stateOf
       .withArgs(
         PROJECT_ID,
@@ -1175,7 +1333,7 @@ describe.only('JBFundingCycleStore::configureFor(...)', function () {
       .to.emit(jbFundingCycleStore, `Init`)
       .withArgs(thirdConfigurationTimestamp, PROJECT_ID, /*basedOn=*/ firstConfigurationTimestamp);
 
-    // Mock the ballot on the failed funding cycle as approved.
+    // Mock the ballot on the failed funding cycle as approval expected.
     await mockBallot.mock.stateOf
       .withArgs(
         PROJECT_ID,

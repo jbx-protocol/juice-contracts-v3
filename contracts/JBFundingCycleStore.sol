@@ -369,8 +369,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
         _ballotState != JBBallotState.Empty) ||
       (block.timestamp < _baseFundingCycle.start &&
         _mustStartAtOrAfter < _baseFundingCycle.start + _baseFundingCycle.duration &&
-        _ballotState != JBBallotState.Approved &&
-        _ballotState != JBBallotState.ApprovalExpected) ||
+        _ballotState != JBBallotState.Approved) ||
       (block.timestamp < _baseFundingCycle.start &&
         _mustStartAtOrAfter >= _baseFundingCycle.start + _baseFundingCycle.duration &&
         _ballotState != JBBallotState.Approved &&
