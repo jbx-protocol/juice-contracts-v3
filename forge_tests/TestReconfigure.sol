@@ -566,7 +566,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(fundingCycle.weight, _dataReconfiguration.weight);
     }
 
-    function testSingleBlockOverwriteApprovalExpected() public {
+    function testSingleBlockOverwriteQueued() public {
         uint256 weightFirstReconfiguration = 1234 * 10 ** 18;
         uint256 weightSecondReconfiguration = 6969 * 10 ** 18;
 
@@ -587,15 +587,15 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
 
-        // Initial funding cycle data: will have a block.timestamp that is 2 less than the second reconfiguration (timestamps are incremented when queued in same block now)
+        // Initial funding cycle data: will have a block.timestamp (configuration) that is 2 less than the second reconfiguration (timestamps are incremented when queued in same block now)
         assertEq(fundingCycle.number, 1);
         assertEq(fundingCycle.weight, _data.weight);
 
-        // Overwrites the initial configuration & will also be overwritten as 3 days will not pass and it's status is "ApprovalExpected"
+        // Becomes queued & will be overwritten as 3 days will not pass and it's status is "ApprovalExpected"
         vm.prank(multisig());
         controller.reconfigureFundingCyclesOf(
             projectId,
-            JBFundingCycleData({duration: 6 days, weight: weightFirstReconfiguration, discountRate: 0, ballot: _ballot}), // 3days ballot
+            JBFundingCycleData({duration: 6 days, weight: weightFirstReconfiguration, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}), // 3days ballot
             _metadata,
             block.timestamp + 3 days,
             _groupedSplits,
@@ -604,6 +604,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         );
 
         expectedTimestamp += 1;
+
+        JBFundingCycle memory queuedToOverwrite = jbFundingCycleStore().queuedOf(projectId);
+
+        assertEq(queuedToOverwrite.number, 2);
+        assertEq(queuedToOverwrite.configuration, expectedTimestamp);
+        assertEq(queuedToOverwrite.weight, weightFirstReconfiguration);
 
         // overwriting reconfiguration
         vm.prank(multisig());
@@ -619,11 +625,11 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         expectedTimestamp += 1;
 
-        JBFundingCycle memory current = jbFundingCycleStore().queuedOf(projectId);
+        JBFundingCycle memory queued = jbFundingCycleStore().queuedOf(projectId);
 
-        assertEq(current.number, 2);
-        assertEq(current.configuration, expectedTimestamp);
-        assertEq(current.weight, weightSecondReconfiguration);
+        assertEq(queued.number, 2);
+        assertEq(queued.configuration, expectedTimestamp);
+        assertEq(queued.weight, weightSecondReconfiguration);
 
     }
 }
