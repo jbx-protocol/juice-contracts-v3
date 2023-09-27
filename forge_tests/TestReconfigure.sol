@@ -565,4 +565,65 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(fundingCycle.number, 2);
         assertEq(fundingCycle.weight, _dataReconfiguration.weight);
     }
+
+    function testSingleBlockOverwriteApprovalExpected() public {
+        uint256 weightFirstReconfiguration = 1234 * 10 ** 18;
+        uint256 weightSecondReconfiguration = 6969 * 10 ** 18;
+
+        // Keep a reference to the expected timestamp after reconfigurations, starting now, incremented later in-line for readability.
+        uint256 expectedTimestamp = block.timestamp;
+
+        uint256 projectId = controller.launchProjectFor(
+            multisig(),
+            _projectMetadata,
+            _data,
+            _metadata,
+            0, // Start asap
+            _groupedSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
+
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
+
+        // Initial funding cycle data: will have a block.timestamp that is 2 less than the second reconfiguration (timestamps are incremented when queued in same block now)
+        assertEq(fundingCycle.number, 1);
+        assertEq(fundingCycle.weight, _data.weight);
+
+        // Overwrites the initial configuration & will also be overwritten as 3 days will not pass and it's status is "ApprovalExpected"
+        vm.prank(multisig());
+        controller.reconfigureFundingCyclesOf(
+            projectId,
+            JBFundingCycleData({duration: 6 days, weight: weightFirstReconfiguration, discountRate: 0, ballot: _ballot}), // 3days ballot
+            _metadata,
+            block.timestamp + 3 days,
+            _groupedSplits,
+            _fundAccessConstraints,
+            ""
+        );
+
+        expectedTimestamp += 1;
+
+        // overwriting reconfiguration
+        vm.prank(multisig());
+        controller.reconfigureFundingCyclesOf(
+            projectId,
+            JBFundingCycleData({duration: 6 days, weight: weightSecondReconfiguration, discountRate: 0, ballot: JBReconfigurationBufferBallot(address(0))}), // 3days ballot
+            _metadata,
+            block.timestamp + 3 days,
+            _groupedSplits,
+            _fundAccessConstraints,
+            ""
+        );
+
+        expectedTimestamp += 1;
+
+        JBFundingCycle memory current = jbFundingCycleStore().queuedOf(projectId);
+
+        assertEq(current.number, 2);
+        assertEq(current.configuration, expectedTimestamp);
+        assertEq(current.weight, weightSecondReconfiguration);
+
+    }
 }
