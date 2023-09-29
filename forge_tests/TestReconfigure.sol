@@ -566,6 +566,92 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(fundingCycle.weight, _dataReconfiguration.weight);
     }
 
+    function testMixedStarts() public {
+        // Keep references to our different weights for assertions
+        uint256 weightInitial = 1000 * 10 ** 18;
+        uint256 weightFirstReconfiguration = 1234 * 10 ** 18;
+        uint256 weightSecondReconfiguration = 6969 * 10 ** 18;
+
+        // Keep a reference to the expected configuration timestamps
+        uint256 initialTimestamp = block.timestamp;
+        uint256 expectedTimestamp = block.timestamp;
+
+        uint256 projectId = controller.launchProjectFor(
+            multisig(),
+            _projectMetadata,
+            JBFundingCycleData({duration: 6 days, weight: weightInitial, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}), // 3days ballot
+            _metadata,
+            0,
+            _groupedSplits,
+            _fundAccessConstraints,
+            _terminals,
+            ""
+        );
+
+        JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
+
+        // First cycle has begun
+        assertEq(fundingCycle.number, 1);
+        assertEq(fundingCycle.weight, weightInitial);
+        assertEq(fundingCycle.configuration, block.timestamp);
+
+        // create a to-be overridden reconfiguration (will be in ApprovalExpected status due to ballot)
+        vm.prank(multisig());
+        controller.reconfigureFundingCyclesOf(
+            projectId,
+            JBFundingCycleData({duration: 6 days, weight: weightFirstReconfiguration, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}), // 3days ballot
+            _metadata,
+            0, // Start asap, inherently accounts for ballot duration, so this is 9 days
+            _groupedSplits,
+            _fundAccessConstraints,
+            ""
+        );
+
+        // Confirm the configuration is queued
+        expectedTimestamp += 1;
+        JBFundingCycle memory queued = jbFundingCycleStore().queuedOf(projectId);
+
+        assertEq(queued.number, 2);
+        assertEq(queued.configuration, expectedTimestamp);
+        assertEq(queued.weight, weightFirstReconfiguration);
+
+        // Will follow the rolledover (FC #1) cycle, after overriding the above config, bc first reconfig is in ApprovalExpected status (3 days ballot has not passed)
+        // FC #1 rolls over bc our mustStartAtOrAfter occurs later than when FC #1 ends.
+        vm.prank(multisig());
+        controller.reconfigureFundingCyclesOf(
+            projectId,
+            JBFundingCycleData({duration: 6 days, weight: weightSecondReconfiguration, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}), // 3days ballot
+            _metadata,
+            block.timestamp + 9 days, // Starts 3 days into FC #2
+            _groupedSplits,
+            _fundAccessConstraints,
+            ""
+        );
+
+        // Confirm that this latest reconfiguration implies a rolled over cycle of FC #1.
+        expectedTimestamp += 1;
+        JBFundingCycle memory requeued = jbFundingCycleStore().queuedOf(projectId);
+
+        assertEq(requeued.number, 2);
+        assertEq(requeued.configuration, initialTimestamp);
+        assertEq(requeued.weight, weightInitial);
+
+        // Warp to when the initial configuration rolls over and again becomes the current
+        vm.warp(block.timestamp + 6 days);
+
+        // Rolled over configuration
+        JBFundingCycle memory initialIsCurrent = jbFundingCycleStore().currentOf(projectId);
+        assertEq(initialIsCurrent.number, 2);
+        assertEq(initialIsCurrent.configuration, initialTimestamp);
+        assertEq(initialIsCurrent.weight, weightInitial);
+
+        // Queued second reconfiguration that replaced our first reconfiguration
+        JBFundingCycle memory requeued2 = jbFundingCycleStore().queuedOf(projectId);
+        assertEq(requeued2.number, 3);
+        assertEq(requeued2.configuration, expectedTimestamp);
+        assertEq(requeued2.weight, weightSecondReconfiguration);
+    }
+
     function testSingleBlockOverwriteQueued() public {
         uint256 weightFirstReconfiguration = 1234 * 10 ** 18;
         uint256 weightSecondReconfiguration = 6969 * 10 ** 18;
