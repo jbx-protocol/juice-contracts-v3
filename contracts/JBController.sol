@@ -31,6 +31,8 @@ import {JBGroupedSplits} from './structs/JBGroupedSplits.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 
+import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
+
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
 contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
@@ -345,6 +347,40 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
       _groupedSplits,
       _fundAccessConstraints
     );
+
+    // Add the provided terminals to the list of terminals.
+    if (_terminals.length > 0) _directory.setTerminalsOf(projectId, _terminals);
+
+    emit LaunchProject(_configuration, projectId, _memo, msg.sender);
+  }
+
+  /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first funding cycle, and set up any splits.
+  /// @dev Each operation within this transaction can be done in sequence separately.
+  /// @dev Anyone can deploy a project on an owner's behalf.
+  /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
+  /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
+  /// @param _configurations The funding cycle configurations to schedule.
+  /// @param _terminals Payment terminals to add for the project.
+  /// @param _memo A memo to pass along to the emitted event.
+  /// @return projectId The ID of the project.
+  function launchProjectFor(
+    address _owner,
+    JBProjectMetadata calldata _projectMetadata,
+    JBFundingCycleConfiguration[] calldata _configurations,
+    IJBPaymentTerminal[] memory _terminals,
+    string memory _memo
+  ) external virtual returns (uint256 projectId) {
+    // Keep a reference to the directory.
+    IJBDirectory _directory = directory;
+
+    // Mint the project into the wallet of the owner.
+    projectId = projects.createFor(_owner, _projectMetadata);
+
+    // Set this contract as the project's controller in the directory.
+    _directory.setControllerOf(projectId, address(this));
+
+    // Configure the first funding cycle.
+    uint256 _configuration = _configure(projectId, _configurations);
 
     // Add the provided terminals to the list of terminals.
     if (_terminals.length > 0) _directory.setTerminalsOf(projectId, _terminals);
@@ -871,6 +907,110 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     }
 
     return _fundingCycle.configuration;
+  }
+
+  /// @notice Configures a funding cycle and stores information pertinent to the configuration.
+  /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
+  /// @param _configurations The funding cycle configurations to schedule.
+  /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
+  function _configure(
+    uint256 _projectId,
+    JBFundingCycleConfiguration[] calldata _configurations
+  ) internal returns (uint256 configured) {
+    // Keep a reference to the configuration being iterated on.
+    JBFundingCycleConfiguration memory _configuration;
+
+    // Keep a reference to the number of configurations being scheduled.
+    uint256 _numberOfConfigurations = _configurations.length;
+
+    for (uint256 _i; _i < _numberOfConfigurations; ) {
+      // Get a reference to the configuration being iterated on.
+      _configuration = _configurations[_i];
+
+      // Make sure the provided reserved rate is valid.
+      if (_configuration.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE)
+        revert INVALID_RESERVED_RATE();
+
+      // Make sure the provided redemption rate is valid.
+      if (_configuration.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE)
+        revert INVALID_REDEMPTION_RATE();
+
+      // Make sure the provided ballot redemption rate is valid.
+      if (_configuration.metadata.ballotRedemptionRate > JBConstants.MAX_REDEMPTION_RATE)
+        revert INVALID_BALLOT_REDEMPTION_RATE();
+
+      // Configure the funding cycle's properties.
+      JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(
+        _projectId,
+        _configuration.data,
+        JBFundingCycleMetadataResolver.packFundingCycleMetadata(_configuration.metadata),
+        _configuration.mustStartAtOrAfter
+      );
+
+      // Set splits for the group.
+      splitsStore.set(_projectId, _fundingCycle.configuration, _configuration.groupedSplits);
+
+      // Set distribution limits if there are any.
+    for (uint256 i_; i_ < _configuration.fundAccessConstraints.length; ) {
+      JBFundAccessConstraints memory _constraints = _configuration.fundAccessConstraints[i_];
+
+      // If distribution limit value is larger than 232 bits, revert.
+      if (_constraints.distributionLimit > type(uint232).max) revert INVALID_DISTRIBUTION_LIMIT();
+
+      // If distribution limit currency value is larger than 24 bits, revert.
+      if (_constraints.distributionLimitCurrency > type(uint24).max)
+        revert INVALID_DISTRIBUTION_LIMIT_CURRENCY();
+
+      // If overflow allowance value is larger than 232 bits, revert.
+      if (_constraints.overflowAllowance > type(uint232).max) revert INVALID_OVERFLOW_ALLOWANCE();
+
+      // If overflow allowance currency value is larger than 24 bits, revert.
+      if (_constraints.overflowAllowanceCurrency > type(uint24).max)
+        revert INVALID_OVERFLOW_ALLOWANCE_CURRENCY();
+
+      // Set the distribution limit if there is one.
+      if (_constraints.distributionLimit > 0)
+        _packedDistributionLimitDataOf[_projectId][_fundingCycle.configuration][
+          _constraints.terminal
+        ][_constraints.token] =
+          _constraints.distributionLimit |
+          (_constraints.distributionLimitCurrency << 232);
+
+      // Set the overflow allowance if there is one.
+      if (_constraints.overflowAllowance > 0)
+        _packedOverflowAllowanceDataOf[_projectId][_fundingCycle.configuration][
+          _constraints.terminal
+        ][_constraints.token] =
+          _constraints.overflowAllowance |
+          (_constraints.overflowAllowanceCurrency << 232);
+
+      emit SetFundAccessConstraints(
+        _fundingCycle.configuration,
+        _fundingCycle.number,
+        _projectId,
+        _constraints,
+        msg.sender
+      );
+
+      unchecked {
+        ++i_;
+      }
+    }
+
+      /* // Set the funds access constraints.
+      fundAccessConstraintsStore.setFor(
+        _projectId,
+        _fundingCycle.configuration,
+        _configuration.fundAccessConstraints
+      ); */
+
+      // Return the configured timestamp if this is the last configuration being scheduled.
+      if (_i == _numberOfConfigurations - 1) configured = _fundingCycle.configuration;
+
+      unchecked {
+        ++_i;
+      }
+    }
   }
 
   /// @notice Gets the amount of reserved tokens currently tracked for a project given a reserved rate.
