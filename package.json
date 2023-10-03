@@ -41,7 +41,7 @@
     "test": "mocha './test/**/*.test.js' -r esm --bail --timeout 20000 && FOUNDRY_PROFILE=fork foundry test",
     "coverage": "node --require esm ./node_modules/.bin/hardhat coverage --network hardhat",
     "clean": "rimraf ./cache && rimraf ./artifacts",
-    "compile": "yarn clean && hardhat compile",
+    "compile": "npm run clean && hardhat compile",
     "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
   }
 }
