@@ -56,6 +56,7 @@ node --require esm ./node_modules/.bin/hardhat coverage --network hardhat
 
 A few notes:
 
+- Unit tests can be found in the `test` directory.
 - Hardhat doesn't support [esm](https://nodejs.org/api/esm.html) yet, hence running manually with node.
 - We are currently using a forked version of [solidity-coverage](https://www.npmjs.com/package/solidity-coverage) that includes optimizer settings. Ideally we will move to the maintained version after this is fixed on their end.
 - Juicebox V3 codebase being quite large, Solidity Coverage might run out of memory if you modify/add parts to it. Please check [Solidity-coverage FAQ](https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md) in order to address the issue.
@@ -67,6 +68,8 @@ End-to-end tests have been written in Solidity, using Foundry. Once you have ins
 ```bash
 forge test
 ```
+
+System tests can be found in the `forge_tests` directory.
 
 ## Deployment
 
