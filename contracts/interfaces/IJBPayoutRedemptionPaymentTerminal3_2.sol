@@ -179,8 +179,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_2 is
 
   function fee() external view returns (uint256);
 
-  function feeGauge() external view returns (address);
-
   function isFeelessAddress(address account) external view returns (bool);
 
   function migrate(uint256 projectId, IJBPaymentTerminal to) external returns (uint256 balance);
@@ -188,8 +186,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_2 is
   function processFees(uint256 projectId) external;
 
   function setFee(uint256 fee) external;
-
-  function setFeeGauge(address feeGauge) external;
 
   function setFeelessAddress(address account, bool flag) external;
 }
