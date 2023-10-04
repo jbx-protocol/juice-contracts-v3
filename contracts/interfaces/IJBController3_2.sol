@@ -3,11 +3,9 @@ pragma solidity ^0.8.0;
 
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBBallotState} from './../enums/JBBallotState.sol';
-import {JBFundAccessConstraints3_1} from './../structs/JBFundAccessConstraints3_1.sol';
 import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
-import {JBFundingCycleData} from './../structs/JBFundingCycleData.sol';
-import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
-import {JBGroupedSplits} from './../structs/JBGroupedSplits.sol';
+import {JBFundingCycleConfiguration} from './../structs/JBFundingCycleConfiguration.sol';
+import {JBFundingCycleMetadata3_2} from './../structs/JBFundingCycleMetadata3_2.sol';
 import {JBProjectMetadata} from './../structs/JBProjectMetadata.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 import {IJBController3_0_1} from './IJBController3_0_1.sol';
@@ -20,7 +18,7 @@ import {IJBProjects} from './IJBProjects.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
 import {IJBTokenStore} from './IJBTokenStore.sol';
 
-interface IJBController3_2 is IJBController3_0_1, IERC165 {
+interface IJBController3_2 is IERC165 {
   event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
 
   event LaunchFundingCycles(uint256 configuration, uint256 projectId, string memo, address caller);
@@ -96,61 +94,49 @@ interface IJBController3_2 is IJBController3_0_1, IERC165 {
   )
     external
     view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata);
 
   function latestConfiguredFundingCycleOf(
     uint256 projectId
   )
     external
     view
-    returns (JBFundingCycle memory, JBFundingCycleMetadata memory metadata, JBBallotState);
+    returns (JBFundingCycle memory, JBFundingCycleMetadata3_2 memory metadata, JBBallotState);
 
   function currentFundingCycleOf(
     uint256 projectId
   )
     external
     view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata);
 
   function queuedFundingCycleOf(
     uint256 projectId
   )
     external
     view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata);
 
   function launchProjectFor(
     address owner,
     JBProjectMetadata calldata projectMetadata,
-    JBFundingCycleData calldata data,
-    JBFundingCycleMetadata calldata metadata,
-    uint256 mustStartAtOrAfter,
-    JBGroupedSplits[] memory groupedSplits,
-    JBFundAccessConstraints3_1[] memory fundAccessConstraints,
+    JBFundingCycleConfiguration[] calldata configurations,
     IJBPaymentTerminal[] memory terminals,
     string calldata memo
   ) external returns (uint256 projectId);
 
   function launchFundingCyclesFor(
     uint256 projectId,
-    JBFundingCycleData calldata data,
-    JBFundingCycleMetadata calldata metadata,
-    uint256 mustStartAtOrAfter,
-    JBGroupedSplits[] memory groupedSplits,
-    JBFundAccessConstraints3_1[] memory fundAccessConstraints,
+    JBFundingCycleConfiguration[] calldata configurations,
     IJBPaymentTerminal[] memory terminals,
     string calldata memo
-  ) external returns (uint256 configuration);
+  ) external returns (uint256 configured);
 
   function reconfigureFundingCyclesOf(
     uint256 projectId,
-    JBFundingCycleData calldata data,
-    JBFundingCycleMetadata calldata metadata,
-    uint256 mustStartAtOrAfter,
-    JBGroupedSplits[] memory groupedSplits,
-    JBFundAccessConstraints3_1[] memory fundAccessConstraints,
+    JBFundingCycleConfiguration[] calldata configurations,
     string calldata memo
-  ) external returns (uint256);
+  ) external returns (uint256 configured);
 
   function mintTokensOf(
     uint256 projectId,

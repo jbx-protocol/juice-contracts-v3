@@ -65,7 +65,6 @@ interface IJBSingleTokenPaymentTerminalStore3_2 {
     address payer,
     JBTokenAmount memory amount,
     uint256 projectId,
-    uint256 baseWeightCurrency,
     address beneficiary,
     string calldata inputMemo,
     bytes calldata metadata
