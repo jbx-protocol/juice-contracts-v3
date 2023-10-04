@@ -20,7 +20,7 @@ import {IJBProjects} from './IJBProjects.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
 import {IJBTokenStore} from './IJBTokenStore.sol';
 
-interface IJBController3_1 is IJBController3_0_1, IERC165 {
+interface IJBController3_2 is IJBController3_0_1, IERC165 {
   event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
 
   event LaunchFundingCycles(uint256 configuration, uint256 projectId, string memo, address caller);

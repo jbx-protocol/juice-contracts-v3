@@ -3,17 +3,17 @@ pragma solidity ^0.8.16;
 
 import {ERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import {JBControllerUtility} from './abstract/JBControllerUtility.sol';
-import {IJBFundAccessConstraintsStore} from './interfaces/IJBFundAccessConstraintsStore.sol';
+import {IJBFundAccessConstraintsStore3_1} from './interfaces/IJBFundAccessConstraintsStore3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
-import {JBFundAccessConstraints} from './structs/JBFundAccessConstraints.sol';
+import {JBFundAccessConstraints3_1} from './structs/JBFundAccessConstraints3_1.sol';
 import {JBCurrencyAmount} from './structs/JBCurrencyAmount.sol';
 
 /// @notice Information pertaining to how much funds can be accessed by a project from each payment terminal.
-contract JBFundAccessConstraintsStore is
+contract JBFundAccessConstraintsStore3_1 is
   JBControllerUtility,
   ERC165,
-  IJBFundAccessConstraintsStore
+  IJBFundAccessConstraintsStore3_1
 {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -106,7 +106,7 @@ contract JBFundAccessConstraintsStore is
   /// @param _token The token for which the distribution limit applies.
   /// @param _currency The currency to get the distribution limit of.
   /// @return distributionLimit The distribution limit, as a fixed point number with the same number of decimals as the provided terminal.
-  function distributionLimitsOf(
+  function distributionLimitOf(
     uint256 _projectId,
     uint256 _configuration,
     IJBPaymentTerminal _terminal,
@@ -119,7 +119,7 @@ contract JBFundAccessConstraintsStore is
     ];
 
     // Get a reference to the number of distribution limits.
-    uint256 _numberOfData = _packedDistributionLimitsData.length;
+    uint256 _numberOfData = _data.length;
 
     // Keep a reference to the data that'll be iterated.
     uint256 _packedDistributionLimitData;
@@ -132,47 +132,6 @@ contract JBFundAccessConstraintsStore is
       // If the currencies match, return the value.
       if (_currency == _packedDistributionLimitData >> 232)
         return uint256(uint232(_packedDistributionLimitData));
-
-      unchecked {
-        ++_i;
-      }
-    }
-  }
-
-  /// @notice The amounts of overflow that a project is allowed to tap into on-demand throughout a configuration, for any currency.
-  /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
-  /// @param _projectId The ID of the project to get the overflow allowance of.
-  /// @param _configuration The configuration of the during which the allowance applies.
-  /// @param _terminal The terminal managing the overflow.
-  /// @param _token The token for which the overflow allowance applies.
-  /// @param _currency The currency to get the overflow allowance of.
-  /// @return overflowAllowance The overflow allowance, as a fixed point number with the same number of decimals as the provided terminal.
-  function overflowAllowancesOf(
-    uint256 _projectId,
-    uint256 _configuration,
-    IJBPaymentTerminal _terminal,
-    address _token,
-    uint256 _currency
-  ) external view override returns (uint256 overflowAllowance) {
-    // Get a reference to the packed data.
-    uint256[] memory _data = _packedOverflowAllowancesDataOf[_projectId][_configuration][_terminal][
-      _token
-    ];
-
-    // Get a reference to the number of overflow allowances.
-    uint256 _numberOfData = _packedOverflowAllowancesData.length;
-
-    // Keep a reference to the data that'll be iterated.
-    uint256 _packedOverflowAllowanceData;
-
-    // Iterate through the stored packed values and format the returned value.
-    for (uint256 _i; _i < _numberOfData; ) {
-      // Set the data being iterated on.
-      _packedOverflowAllowanceData = _packedOverflowAllowancesData[_i];
-
-      // If the currencies match, return the value.
-      if (_currency == _packedOverflowAllowanceData >> 232)
-        return uint256(uint232(_packedOverflowAllowanceData));
 
       unchecked {
         ++_i;
@@ -224,6 +183,47 @@ contract JBFundAccessConstraintsStore is
     }
   }
 
+  /// @notice The amounts of overflow that a project is allowed to tap into on-demand throughout a configuration, for any currency.
+  /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
+  /// @param _projectId The ID of the project to get the overflow allowance of.
+  /// @param _configuration The configuration of the during which the allowance applies.
+  /// @param _terminal The terminal managing the overflow.
+  /// @param _token The token for which the overflow allowance applies.
+  /// @param _currency The currency to get the overflow allowance of.
+  /// @return overflowAllowance The overflow allowance, as a fixed point number with the same number of decimals as the provided terminal.
+  function overflowAllowanceOf(
+    uint256 _projectId,
+    uint256 _configuration,
+    IJBPaymentTerminal _terminal,
+    address _token,
+    uint256 _currency
+  ) external view override returns (uint256 overflowAllowance) {
+    // Get a reference to the packed data.
+    uint256[] memory _data = _packedOverflowAllowancesDataOf[_projectId][_configuration][_terminal][
+      _token
+    ];
+
+    // Get a reference to the number of overflow allowances.
+    uint256 _numberOfData = _data.length;
+
+    // Keep a reference to the data that'll be iterated.
+    uint256 _packedOverflowAllowanceData;
+
+    // Iterate through the stored packed values and format the returned value.
+    for (uint256 _i; _i < _numberOfData; ) {
+      // Set the data being iterated on.
+      _packedOverflowAllowanceData = _data[_i];
+
+      // If the currencies match, return the value.
+      if (_currency == _packedOverflowAllowanceData >> 232)
+        return uint256(uint232(_packedOverflowAllowanceData));
+
+      unchecked {
+        ++_i;
+      }
+    }
+  }
+
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
@@ -245,13 +245,13 @@ contract JBFundAccessConstraintsStore is
   function setFor(
     uint256 _projectId,
     uint256 _configuration,
-    JBFundAccessConstraints[] calldata _fundAccessConstraints
+    JBFundAccessConstraints3_1[] calldata _fundAccessConstraints
   ) external override onlyController(_projectId) {
     // Save the number of constraints.
     uint256 _numberOfFundAccessConstraints = _fundAccessConstraints.length;
 
     // Keep a reference to the fund access constraint being iterated on.
-    JBFundAccessConstraints memory _constraints;
+    JBFundAccessConstraints3_1 memory _constraints;
 
     // Set distribution limits if there are any.
     for (uint256 _i; _i < _numberOfFundAccessConstraints; ) {
@@ -282,7 +282,7 @@ contract JBFundAccessConstraintsStore is
         ) revert INVALID_DISTRIBUTION_LIMIT_CURRENCY_ORDERING();
 
         // Set the distribution limit if there is one.
-        if (_distributionLimit.amount > 0)
+        if (_distributionLimit.value > 0)
           _packedDistributionLimitsDataOf[_projectId][_configuration][
             _fundAccessConstraints[_i].terminal
           ][_fundAccessConstraints[_i].token].push(

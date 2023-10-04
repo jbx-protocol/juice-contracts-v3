@@ -6,8 +6,7 @@ import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
-import {IJBController3_0_1} from './interfaces/IJBController3_0_1.sol';
-import {IJBController3_1} from './interfaces/IJBController3_1.sol';
+import {IJBController3_2} from './interfaces/IJBController3_2.sol';
 import {IJBController} from './interfaces/IJBController.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore3_1} from './interfaces/IJBFundAccessConstraintsStore3_1.sol';
@@ -202,8 +201,7 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
     bytes4 _interfaceId
   ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
-      _interfaceId == type(IJBController3_1).interfaceId ||
-      _interfaceId == type(IJBController3_0_1).interfaceId ||
+      _interfaceId == type(IJBController3_2).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);

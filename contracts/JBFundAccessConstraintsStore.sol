@@ -27,14 +27,14 @@ contract JBFundAccessConstraintsStore is
   // --------------------- internal stored properties ------------------ //
   //*********************************************************************//
 
-  /// @notice Data regarding the distribution limits of a project during a configuration.
+  /// @notice Data regarding the distribution limit of a project during a configuration.
   /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
   /// @dev bits 232-255: The currency of amount that a project can distribute.
   /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
   /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
   /// @custom:param _terminal The terminal from which distributions are being limited.
   /// @custom:param _token The token for which distributions are being limited.
-  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[]))))
+  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
     internal _packedDistributionLimitDataOf;
 
   /// @notice Data regarding the overflow allowance of a project during a configuration.
@@ -44,7 +44,7 @@ contract JBFundAccessConstraintsStore is
   /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
   /// @custom:param _terminal The terminal managing the overflow.
   /// @custom:param _token The token for which overflow is being allowed.
-  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[]))))
+  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
     internal _packedOverflowAllowanceDataOf;
 
   //*********************************************************************//
@@ -59,12 +59,11 @@ contract JBFundAccessConstraintsStore is
   /// @param _token The token for which the distribution limit applies.
   /// @return The distribution limit, as a fixed point number with the same number of decimals as the provided terminal.
   /// @return The currency of the distribution limit.
-  function distributionLimitsOf(
+  function distributionLimitOf(
     uint256 _projectId,
     uint256 _configuration,
     IJBPaymentTerminal _terminal,
-    address _token,
-    uint256 _currency
+    address _token
   ) external view override returns (uint256, uint256) {
     // Get a reference to the packed data.
     uint256 _data = _packedDistributionLimitDataOf[_projectId][_configuration][_terminal][_token];
