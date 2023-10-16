@@ -25,13 +25,12 @@ import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 import {JBFundAccessConstraints} from './structs/JBFundAccessConstraints.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
 import {JBFundingCycleData} from './structs/JBFundingCycleData.sol';
 import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
 import {JBGroupedSplits} from './structs/JBGroupedSplits.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
 import {JBSplit} from './structs/JBSplit.sol';
-
-import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
 contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
@@ -51,30 +50,6 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   error NO_BURNABLE_TOKENS();
   error NOT_CURRENT_CONTROLLER();
   error ZERO_TOKENS_TO_MINT();
-
-  //*********************************************************************//
-  // --------------------- internal stored properties ------------------ //
-  //*********************************************************************//
-
-  /// @notice Data regarding the distribution limit of a project during a configuration.
-  /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
-  /// @dev bits 232-255: The currency of amount that a project can distribute.
-  /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
-  /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
-  /// @custom:param _terminal The terminal from which distributions are being limited.
-  /// @custom:param _token The token for which distributions are being limited.
-  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
-    internal _packedDistributionLimitDataOf;
-
-  /// @notice Data regarding the overflow allowance of a project during a configuration.
-  /// @dev bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
-  /// @dev bits 232-255: The currency of the amount of overflow that a project is allowed to tap.
-  /// @custom:param _projectId The ID of the project to get the packed overflow allowance data of.
-  /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
-  /// @custom:param _terminal The terminal managing the overflow.
-  /// @custom:param _token The token for which overflow is being allowed.
-  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
-    internal _packedOverflowAllowanceDataOf;
 
   //*********************************************************************//
   // --------------- public immutable stored properties ---------------- //
@@ -113,7 +88,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @return fundingCycle The funding cycle.
   /// @return metadata The funding cycle's metadata.
-  function getFundingCycleOf(uint256 _projectId, uint256 _configuration)
+  function getFundingCycleOf(
+    uint256 _projectId,
+    uint256 _configuration
+  )
     external
     view
     override
@@ -128,7 +106,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @return fundingCycle The latest configured funding cycle.
   /// @return metadata The latest configured funding cycle's metadata.
   /// @return ballotState The state of the configuration.
-  function latestConfiguredFundingCycleOf(uint256 _projectId)
+  function latestConfiguredFundingCycleOf(
+    uint256 _projectId
+  )
     external
     view
     override
@@ -146,7 +126,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @return fundingCycle The current funding cycle.
   /// @return metadata The current funding cycle's metadata.
-  function currentFundingCycleOf(uint256 _projectId)
+  function currentFundingCycleOf(
+    uint256 _projectId
+  )
     external
     view
     override
@@ -160,7 +142,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @return fundingCycle The queued funding cycle.
   /// @return metadata The queued funding cycle's metadata.
-  function queuedFundingCycleOf(uint256 _projectId)
+  function queuedFundingCycleOf(
+    uint256 _projectId
+  )
     external
     view
     override
@@ -186,13 +170,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @dev See {IERC165-supportsInterface}.
   /// @param _interfaceId The ID of the interface to check for adherance to.
   /// @return A flag indicating if the provided interface ID is supported.
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(ERC165, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBController).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
@@ -452,12 +432,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @param _projectId The ID of the project to which the reserved tokens belong.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return The amount of minted reserved tokens.
-  function distributeReservedTokensOf(uint256 _projectId, string calldata _memo)
-    external
-    virtual
-    override
-    returns (uint256)
-  {
+  function distributeReservedTokensOf(
+    uint256 _projectId,
+    string calldata _memo
+  ) external virtual override returns (uint256) {
     return _distributeReservedTokensOf(_projectId, _memo);
   }
 
@@ -474,7 +452,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @dev Only a project's owner or a designated operator can migrate it.
   /// @param _projectId The ID of the project that will be migrated from this controller.
   /// @param _to The controller to which the project is migrating.
-  function migrate(uint256 _projectId, IJBMigratable _to)
+  function migrate(
+    uint256 _projectId,
+    IJBMigratable _to
+  )
     external
     virtual
     override
@@ -512,10 +493,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @param _projectId The ID of the project to which the reserved tokens belong.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return tokenCount The amount of minted reserved tokens.
-  function _distributeReservedTokensOf(uint256 _projectId, string memory _memo)
-    internal
-    returns (uint256 tokenCount)
-  {
+  function _distributeReservedTokensOf(
+    uint256 _projectId,
+    string memory _memo
+  ) internal returns (uint256 tokenCount) {
     // Keep a reference to the token store.
     IJBTokenStore _tokenStore = tokenStore;
 
@@ -644,10 +625,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
   /// @param _configurations The funding cycle configurations to schedule.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
-  function _configure(uint256 _projectId, JBFundingCycleConfiguration[] calldata _configurations)
-    internal
-    returns (uint256 configured)
-  {
+  function _configure(
+    uint256 _projectId,
+    JBFundingCycleConfiguration[] calldata _configurations
+  ) internal returns (uint256 configured) {
     // Keep a reference to the configuration being iterated on.
     JBFundingCycleConfiguration memory _configuration;
 
