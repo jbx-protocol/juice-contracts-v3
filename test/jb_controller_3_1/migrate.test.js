@@ -13,7 +13,7 @@ import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
-describe('JBController3_1::migrate(...)', function () {
+describe('JBController::migrate(...)', function () {
   const PROJECT_ID = 1;
   const TOTAL_SUPPLY = 20000;
   let MIGRATE_CONTROLLER_INDEX;
@@ -53,7 +53,7 @@ describe('JBController3_1::migrate(...)', function () {
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
-      'contracts/JBController3_1.sol:JBController3_1',
+      'contracts/JBController.sol:JBController',
     );
     let jbController = await jbControllerFactory.deploy(
       mockJbOperatorStore.address,

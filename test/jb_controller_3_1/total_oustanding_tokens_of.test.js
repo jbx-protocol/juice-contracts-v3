@@ -12,7 +12,7 @@ import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsS
 import jbToken from '../../artifacts/contracts/JBToken.sol/JBToken.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
-describe('JBController3_1::totalOutstandingTokensOf(...)', function () {
+describe('JBController::totalOutstandingTokensOf(...)', function () {
   const PROJECT_ID = 1;
   const MEMO = 'Test Memo';
   const RESERVED_AMOUNT = 20000;
@@ -61,7 +61,7 @@ describe('JBController3_1::totalOutstandingTokensOf(...)', function () {
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
-      'contracts/JBController3_1.sol:JBController3_1',
+      'contracts/JBController.sol:JBController',
     );
     let jbController = await jbControllerFactory.deploy(
       mockJbOperatorStore.address,
