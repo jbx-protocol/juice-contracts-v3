@@ -13,7 +13,7 @@ import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBTokens} from './libraries/JBTokens.sol';
 
 /// @notice Manages all inflows and outflows of ETH funds into the protocol ecosystem.
-contract JBETHPaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_2 {
+contract JBETHPaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   //*********************************************************************//
   // -------------------------- internal views ------------------------- //
   //*********************************************************************//
@@ -47,7 +47,7 @@ contract JBETHPaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_2 {
     JBPayoutRedemptionPaymentTerminal3_2(
       JBTokens.ETH,
       18, // 18 decimals.
-      JBCurrencies.ETH,
+      0,
       JBSplitsGroups.ETH_PAYOUT,
       _operatorStore,
       _projects,
@@ -70,7 +70,11 @@ contract JBETHPaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
+  function _transferFrom(
+    address _from,
+    address payable _to,
+    uint256 _amount
+  ) internal override {
     _from; // Prevents unused var compiler and natspec complaints.
 
     Address.sendValue(_to, _amount);
