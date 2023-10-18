@@ -7,7 +7,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
     JBController controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata _metadata;
+    JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
@@ -34,7 +34,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        _metadata = JBFundingCycleMetadata3_2({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -42,7 +42,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 5000, //50%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -113,10 +113,11 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 address(0), //token (unused)
                 0, // Min wei out
                 payable(_beneficiary), // Beneficiary
-                "MEMO"
+                "MEMO",
+                bytes('')
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
                 projectId,
                 5 ether,
                 1, // Currency
@@ -144,7 +145,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 ether,
                 1, // Currency
@@ -235,7 +236,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             willRevert = true;
         }
 
-        if (isUsingJbController3_0())
+        /* if (isUsingJbController3_0())
             terminal.useAllowanceOf(
                 projectId,
                 ALLOWANCE,
@@ -245,8 +246,8 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 payable(_beneficiary), // Beneficiary
                 "MEMO"
             );
-        else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+        else  */
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
                 projectId,
                 ALLOWANCE,
                 CURRENCY, // Currency
@@ -284,7 +285,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 TARGET,
                 1, // Currency

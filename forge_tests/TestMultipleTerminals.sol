@@ -9,7 +9,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBController controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata _metadata;
+    JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
 
@@ -59,7 +59,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        _metadata = JBFundingCycleMetadata3_2({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -67,7 +67,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 10000, //100%
-            ballotRedemptionRate: 0,
+            baseCurrency: 0,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -84,7 +84,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        if (isUsingJbController3_0()) {
+        /* if (isUsingJbController3_0()) {
             ERC20terminal = new JBERC20PaymentTerminal(
                 jbToken(),
                 jbLibraries().USD(), // currency
@@ -98,11 +98,9 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 address(jbPaymentTerminalStore()),
                 multisig()
             );
-        }else{
-            ERC20terminal = JBERC20PaymentTerminal(address(new JBERC20PaymentTerminal3_1(
+        }else{ */
+            ERC20terminal = JBERC20PaymentTerminal(address(new JBERC20PaymentTerminal(
                 jbToken(),
-                jbLibraries().USD(), // currency
-                jbLibraries().ETH(), // base weight currency
                 1, // JBSplitsGroupe
                 jbOperatorStore(),
                 jbProjects(),
@@ -112,7 +110,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 address(jbPaymentTerminalStore()),
                 multisig()
             )));
-        }
         
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 
@@ -207,27 +204,17 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
 
         // ---- Use allowance ----
         vm.startPrank(_projectOwner);
-        if (isUsingJbController3_0())
-            ERC20terminal.useAllowanceOf(
-                projectId,
-                5 * 10 ** 18, // amt in ETH (overflow allowance currency is in ETH)
-                jbLibraries().USD(), // Currency -> (fake price is 10)
-                address(0), //token (unused)
-                1, // Min wei out
-                payable(msg.sender), // Beneficiary
-                "MEMO"
-            );
-        else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(ERC20terminal)).useAllowanceOf(
-                projectId,
-                5 * 10 ** 18, // amt in ETH (overflow allowance currency is in ETH)
-                jbLibraries().USD(), // Currency -> (fake price is 10)
-                address(0), //token (unused)
-                1, // Min wei out
-                payable(msg.sender), // Beneficiary
-                "MEMO",
-                bytes('')
-            );
+
+        IJBPayoutRedemptionPaymentTerminal3_2(address(ERC20terminal)).useAllowanceOf(
+            projectId,
+            5 * 10 ** 18, // amt in ETH (overflow allowance currency is in ETH)
+            jbLibraries().USD(), // Currency -> (fake price is 10)
+            address(0), //token (unused)
+            1, // Min wei out
+            payable(msg.sender), // Beneficiary
+            "MEMO",
+            bytes('')
+        );
         
         vm.stopPrank();
 
@@ -250,7 +237,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(ETHterminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(ETHterminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 jbLibraries().ETH(), // Currency
@@ -271,7 +258,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         if (isUsingJbController3_0()) {
             totalSupply = jbController().totalOutstandingTokensOf(projectId);
         } else {
-            totalSupply = IJBController3_1(address(jbController())).totalOutstandingTokensOf(projectId);
+            totalSupply = IJBController(address(jbController())).totalOutstandingTokensOf(projectId);
         }
 
         uint256 overflow = jbPaymentTerminalStore().currentTotalOverflowOf(projectId, 18, 1);

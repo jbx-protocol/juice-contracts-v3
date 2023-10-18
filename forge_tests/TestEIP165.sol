@@ -50,9 +50,7 @@ contract TestEIP165_Local is TestBaseWorkflow {
             assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal).interfaceId));
             assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal).interfaceId));
         } else {
-            assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId));
+            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_2).interfaceId));
         }
 
         // Make sure it doesn't always return true
@@ -74,9 +72,7 @@ contract TestEIP165_Local is TestBaseWorkflow {
             assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal).interfaceId));
             assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal).interfaceId));
         } else {
-            assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId));
+            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_2).interfaceId));
         }
         // Make sure it doesn't always return true
         assertTrue(!terminal.supportsInterface(notSupportedInterface));

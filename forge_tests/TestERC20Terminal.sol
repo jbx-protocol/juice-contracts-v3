@@ -16,7 +16,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     JBController controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata _metadata;
+    JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
@@ -43,7 +43,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        _metadata = JBFundingCycleMetadata3_2({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -51,7 +51,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 5000, //50%
-            ballotRedemptionRate: 0,
+            baseCurrency: 0,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -120,28 +120,17 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         // Discretionary use of overflow allowance by project owner (allowance = 5ETH)
         vm.prank(_projectOwner); // Prank only next call
-        if (isUsingJbController3_0()) {
-            terminal.useAllowanceOf(
-                projectId,
-                5 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                payable(msg.sender), // Beneficiary
-                "MEMO"
-            );
-        } else {
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
-                projectId,
-                5 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                payable(msg.sender), // Beneficiary
-                "MEMO",
-                bytes("")
-            );
-        }
+        
+        IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
+            projectId,
+            5 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            payable(msg.sender), // Beneficiary
+            "MEMO",
+            bytes("")
+        );
 
         assertEq(
             jbToken().balanceOf(msg.sender),
@@ -162,7 +151,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         } else {
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
@@ -265,7 +254,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
                 jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
             vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
@@ -351,7 +340,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
             // using controller 3.1
             vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
@@ -437,7 +426,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             vm.expectEmit(true, true, true, true);
             emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, abi.encode("IERC165 fail"), address(this));
 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
@@ -536,7 +525,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             vm.expectEmit(true, true, true, true);
             emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reason, address(this));
 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 1 * 10 ** 18,
                 1, // Currency
@@ -673,7 +662,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             emit FeeReverted(distributionProjectId, feeBeneficiaryProjectId, _feeCollected, _reason, _projectOwner);
 
             vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 distributionProjectId,
                 _distributionAmount,
                 1, // Currency
@@ -690,8 +679,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
             jbToken(),
-            jbLibraries().ETH(), // currency
-            jbLibraries().ETH(), // base weight currency
             1, // JBSplitsGroupe
             jbOperatorStore(),
             jbProjects(),
@@ -809,7 +796,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             vm.expectEmit(true, true, true, true);
             emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
@@ -832,8 +819,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
             jbToken(),
-            jbLibraries().ETH(), // currency
-            jbLibraries().ETH(), // base weight currency
             1, // JBSplitsGroupe
             jbOperatorStore(),
             jbProjects(),
@@ -950,7 +935,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             vm.expectEmit(true, true, true, true);
             emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 1, // Currency
@@ -1028,7 +1013,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.prank(_projectOwner); // Prank only next call
-        if (isUsingJbController3_0()) {
+        /* if (isUsingJbController3_0()) {
             terminal.useAllowanceOf(
                 projectId,
                 ALLOWANCE,
@@ -1038,8 +1023,8 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
                 payable(msg.sender), // Beneficiary
                 "MEMO"
             );
-        } else {
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+        } else { */
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
                 projectId,
                 ALLOWANCE,
                 1, // Currency
@@ -1049,7 +1034,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
                 "MEMO",
                 ""
             );
-        }
 
         if (BALANCE > 1 && !willRevert) {
             assertEq(
@@ -1080,7 +1064,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         } else {
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 TARGET,
                 1, // Currency
