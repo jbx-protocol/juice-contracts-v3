@@ -47,7 +47,7 @@ contract JBETHPaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
     JBPayoutRedemptionPaymentTerminal3_2(
       JBTokens.ETH,
       18, // 18 decimals.
-      0,
+      JBCurrencies.ETH,
       JBSplitsGroups.ETH_PAYOUT,
       _operatorStore,
       _projects,
