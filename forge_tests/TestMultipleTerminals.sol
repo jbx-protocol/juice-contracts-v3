@@ -67,7 +67,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 10000, //100%
-            baseCurrency: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,

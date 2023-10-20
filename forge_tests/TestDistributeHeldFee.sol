@@ -25,6 +25,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
 
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
+
         _tokenStore = jbTokenStore();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
@@ -44,7 +45,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10000, //100%
-            baseCurrency: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,

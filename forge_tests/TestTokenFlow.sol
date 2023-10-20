@@ -42,7 +42,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: _reservedRate,
             redemptionRate: 5000, //50%
-            baseCurrency: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
