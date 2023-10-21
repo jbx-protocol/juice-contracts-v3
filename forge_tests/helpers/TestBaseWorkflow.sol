@@ -215,7 +215,7 @@ contract TestBaseWorkflow is Test {
 
   // Returns if the current base workflow is using the JbController3_0
   function isUsingJbController3_0() internal returns (bool) {
-    return jbController() == _jbController;
+    return false;
   }
 
   //*********************************************************************//
