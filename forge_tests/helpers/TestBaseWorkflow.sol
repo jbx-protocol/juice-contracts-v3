@@ -32,9 +32,10 @@ import {JBPayoutRedemptionPaymentTerminal} from '@juicebox/abstract/JBPayoutRede
 import {JBPayoutRedemptionPaymentTerminal3_2} from '@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_2.sol';
 import {JBSingleTokenPaymentTerminal} from '@juicebox/abstract/JBSingleTokenPaymentTerminal.sol';
 
-import {JBDidPayData} from '@juicebox/structs/JBDidPayData.sol';
+import {JBDidPayData3_1_1} from '@juicebox/structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData} from '@juicebox/structs/JBDidRedeemData.sol';
 import {JBFee} from '@juicebox/structs/JBFee.sol';
+import {JBFees} from '@juicebox/libraries/JBFees.sol';
 import {JBFundAccessConstraints} from '@juicebox/structs/JBFundAccessConstraints.sol';
 import {JBFundingCycle} from '@juicebox/structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from '@juicebox/structs/JBFundingCycleData.sol';
@@ -48,7 +49,7 @@ import {JBRedeemParamsData} from '@juicebox/structs/JBRedeemParamsData.sol';
 import {JBSplit} from '@juicebox/structs/JBSplit.sol';
 import {JBProjectMetadata} from '@juicebox/structs/JBProjectMetadata.sol';
 import {JBGlobalFundingCycleMetadata} from '@juicebox/structs/JBGlobalFundingCycleMetadata.sol';
-import {JBPayDelegateAllocation} from '@juicebox/structs/JBPayDelegateAllocation.sol';
+import {JBPayDelegateAllocation3_1_1} from '@juicebox/structs/JBPayDelegateAllocation3_1_1.sol';
 import {JBTokenAmount} from '@juicebox/structs/JBTokenAmount.sol';
 import {JBSplitAllocationData} from '@juicebox/structs/JBSplitAllocationData.sol';
 import {IJBPaymentTerminal} from '@juicebox/interfaces/IJBPaymentTerminal.sol';
@@ -67,8 +68,8 @@ import {IJBFundingCycleStore} from '@juicebox/interfaces/IJBFundingCycleStore.so
 import {IJBSplitsStore} from '@juicebox/interfaces/IJBSplitsStore.sol';
 import {IJBTokenStore} from '@juicebox/interfaces/IJBTokenStore.sol';
 import {IJBSplitAllocator} from '@juicebox/interfaces/IJBSplitAllocator.sol';
-import {IJBPayDelegate} from '@juicebox/interfaces/IJBPayDelegate.sol';
-import {IJBFundingCycleDataSource} from '@juicebox/interfaces/IJBFundingCycleDataSource.sol';
+import {IJBPayDelegate3_1_1} from '@juicebox/interfaces/IJBPayDelegate3_1_1.sol';
+import {IJBFundingCycleDataSource3_1_1} from '@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol';
 import {IJBFeeGauge} from '@juicebox/interfaces/IJBFeeGauge.sol';
 import {IJBPayoutRedemptionPaymentTerminal3_2} from '@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_2.sol';
 import {IJBFeeHoldingTerminal} from '@juicebox/interfaces/IJBFeeHoldingTerminal.sol';
