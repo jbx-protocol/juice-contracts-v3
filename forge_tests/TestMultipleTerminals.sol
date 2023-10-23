@@ -84,21 +84,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        /* if (isUsingJbController3_0()) {
-            ERC20terminal = new JBERC20PaymentTerminal(
-                jbToken(),
-                jbLibraries().USD(), // currency
-                jbLibraries().ETH(), // base weight currency
-                1, // JBSplitsGroupe
-                jbOperatorStore(),
-                jbProjects(),
-                jbDirectory(),
-                jbSplitsStore(),
-                jbPrices(),
-                address(jbPaymentTerminalStore()),
-                multisig()
-            );
-        }else{ */
             ERC20terminal = JBERC20PaymentTerminal(address(new JBERC20PaymentTerminal(
                 jbToken(),
                 1, // JBSplitsGroupe
@@ -157,14 +142,19 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         );
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeed = new MockPriceFeed(FAKE_PRICE);
-        MockPriceFeed _priceFeedUsdEth = new MockPriceFeed(FAKE_PRICE);
-        vm.label(address(_priceFeed), "MockPrice Feed");
+        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed");
 
         jbPrices().addFeedFor(
-            jbLibraries().USD(), // currency
+            uint256(uint24(uint160(address(jbToken())))), // currency
             jbLibraries().ETH(), // base weight currency
-            _priceFeedUsdEth
+            _priceFeedJbEth
+        );
+
+        jbPrices().addFeedFor(
+            uint256(uint24(uint160(address(jbToken())))), // currency
+            jbLibraries().USD(), // base weight currency
+            _priceFeedJbEth
         );
 
         vm.stopPrank();
@@ -221,7 +211,8 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         // Funds leaving the contract -> take the fee
         assertEq(
             jbToken().balanceOf(msg.sender),
-            PRBMath.mulDiv(5 * 10 ** 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee())
+            // Fake price is 10
+            PRBMath.mulDiv(50 * 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee())
         );
 
         // Distribute the funding target ETH
