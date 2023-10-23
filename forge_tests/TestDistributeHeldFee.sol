@@ -3,6 +3,9 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
+import {JBFeeType} from '../contracts/enums/JBFeeType.sol';
+import {IJBFeeGauge3_1} from '../contracts/interfaces/IJBFeeGauge3_1.sol';
+
 contract TestDistributeHeldFee_Local is TestBaseWorkflow {
     JBController private _controller;
     JBETHPaymentTerminal private _terminal;
@@ -105,11 +108,11 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+        IJBFeeGauge feeGauge = IJBFeeGauge(makeAddr("FeeGauge"));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeCall(IJBFeeGauge3_1.currentDiscountFor, (_projectId, JBFeeType.PAYOUT)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
@@ -245,11 +248,11 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+        IJBFeeGauge feeGauge = IJBFeeGauge(makeAddr("FeeGauge"));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeCall(IJBFeeGauge3_1.currentDiscountFor, (_projectId, JBFeeType.PAYOUT)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
