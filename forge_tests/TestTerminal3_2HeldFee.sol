@@ -3,12 +3,12 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-import {JBETHPaymentTerminal3_1_2} from "../contracts/JBETHPaymentTerminal3_1_2.sol";
+import {JBETHPaymentTerminal3_2} from "../contracts/JBETHPaymentTerminal3_2.sol";
 import {IJBFeeGauge3_1, JBFeeType} from "../contracts/interfaces/IJBFeeGauge3_1.sol";
 
 contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
     JBController private _controller;
-    JBETHPaymentTerminal3_1_2 private _terminal;
+    JBETHPaymentTerminal private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -27,8 +27,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         super.setUp();
 
         _controller = jbController();
-        _terminal = new JBETHPaymentTerminal3_1_2(
-            _accessJBLib.ETH(),
+        _terminal = new JBETHPaymentTerminal(
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
@@ -57,7 +56,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10000, //100%
-            baseCurrency: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
