@@ -12,6 +12,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
+    MockPriceFeed _priceFeedJbUsd;
 
     IJBPaymentTerminal[] _terminals;
     JBERC20PaymentTerminal ERC20terminal;
@@ -142,8 +143,11 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         );
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE);
-        vm.label(address(_priceFeedJbEth), "MockPrice Feed");
+        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE, 18);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-ETH");
+
+        _priceFeedJbUsd = new MockPriceFeed(FAKE_PRICE, 6);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-USD");
 
         jbPrices().addFeedFor(
             uint256(uint24(uint160(address(jbToken())))), // currency
@@ -154,7 +158,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         jbPrices().addFeedFor(
             uint256(uint24(uint160(address(jbToken())))), // currency
             jbLibraries().USD(), // base weight currency
-            _priceFeedJbEth
+            _priceFeedJbUsd
         );
 
         vm.stopPrank();
@@ -173,7 +177,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
         // price feed will return FAKE_PRICE*18 (for curr usd/base eth); since it's an 18 decimal terminal (ie calling getPrice(18) )
-        uint256 _userTokenBalance = PRBMath.mulDiv(20 * 10 ** 18, WEIGHT, 36 * FAKE_PRICE);
+        uint256 _userTokenBalance = PRBMath.mulDiv(20 * 10 ** 18, WEIGHT, FAKE_PRICE) / 2;
         assertEq(_tokenStore.balanceOf(caller, projectId), _userTokenBalance);
 
         // verify: balance in terminal should be up to date
@@ -212,7 +216,8 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         assertEq(
             jbToken().balanceOf(msg.sender),
             // Fake price is 10
-            PRBMath.mulDiv(50 * 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee())
+            // fakePrice * 10**(_decimals - fakeDecimals)
+            PRBMath.mulDiv(PRBMath.mulDiv((5 * 10 ** 18), _priceFeedJbUsd.currentPrice(18), 10 ** 18), jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee())
         );
 
         // Distribute the funding target ETH

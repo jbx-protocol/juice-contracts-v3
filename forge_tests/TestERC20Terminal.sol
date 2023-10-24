@@ -25,7 +25,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     address _projectOwner;
 
     uint256 WEIGHT = 1000 * 10 ** 18;
-    uint256 FAKE_PRICE = 1;
+    uint256 FAKE_PRICE = 18;
 
     function setUp() public override {
         super.setUp();
@@ -73,7 +73,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _terminals.push(jbERC20PaymentTerminal());
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE);
+        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE, 18);
         vm.label(address(_priceFeedJbEth), "MockPrice Feed MyToken-ETH");
 
         jbPrices().addFeedFor(
