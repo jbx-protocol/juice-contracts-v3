@@ -781,19 +781,19 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         address caller = msg.sender;
         vm.label(caller, "caller");
         vm.prank(_projectOwner);
-        jbToken().transfer(caller, BALANCE);
+        jbToken().transfer(caller, balanceInTokens);
 
         vm.prank(caller); // back to regular msg.sender (bug?)
-        jbToken().approve(address(terminal), BALANCE);
+        jbToken().approve(address(terminal), balanceInTokens);
         vm.prank(caller); // back to regular msg.sender (bug?)
-        terminal.pay(projectId, BALANCE, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 ETH are now in the overflow
+        terminal.pay(projectId, balanceInTokens, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 ETH are now in the overflow
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
-        uint256 _userTokenBalance = PRBMath.mulDiv(BALANCE, WEIGHT, 18) / 2;
-        if (BALANCE != 0) assertEq(_tokenStore.balanceOf(msg.sender, projectId), _userTokenBalance);
+        uint256 _userTokenBalance = PRBMath.mulDiv(balanceInTokens, WEIGHT, 18) / 2;
+        if (balanceInTokens != 0) assertEq(_tokenStore.balanceOf(msg.sender, projectId), _userTokenBalance);
 
         // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(terminal, projectId), BALANCE);
+        assertEq(jbPaymentTerminalStore().balanceOf(terminal, projectId), balanceInTokens);
 
         bool willRevert;
 
@@ -801,7 +801,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         if (ALLOWANCE == 0) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
             willRevert = true;
-        } else if (TARGET >= BALANCE || ALLOWANCE > (BALANCE - TARGET)) {
+        } else if (allowanceInTokens != 0 && (TARGET >= BALANCE || ALLOWANCE > (BALANCE - TARGET))) {
             // Too much to withdraw or no overflow ?
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
             willRevert = true;
@@ -820,96 +820,14 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         );
 
         if (BALANCE > 1 && !willRevert) {
-            uint256 expectedBalance = PRBMath.mulDiv(allowanceInTokens, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee()); 
+            uint256 expectedBalance = PRBMath.mulDiv(allowanceInTokens, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee());
             assertApproxEqAbs(jbToken().balanceOf(msg.sender), expectedBalance, 1);
-        }
-    }
-
-    /* function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
-        BALANCE = bound(BALANCE, 0, jbToken().totalSupply());
-
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
-
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: terminal,
-                token: address(jbToken()),
-                distributionLimit: TARGET,
-                overflowAllowance: ALLOWANCE,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
-
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
-
-        uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
-
-        address caller = msg.sender;
-        vm.label(caller, "caller");
-        vm.prank(_projectOwner);
-        jbToken().transfer(caller, BALANCE);
-
-        vm.prank(caller); // back to regular msg.sender (bug?)
-        jbToken().approve(address(terminal), BALANCE);
-        vm.prank(caller); // back to regular msg.sender (bug?)
-        terminal.pay(projectId, BALANCE, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 ETH are now in the overflow
-
-        // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
-        // uint256 _userTokenBalance = PRBMath.mulDiv(BALANCE, (WEIGHT / 10 ** 18), 2);
-        uint256 _userTokenBalance = PRBMath.mulDiv(BALANCE, WEIGHT, 18) / 2;
-        if (BALANCE != 0) assertEq(_tokenStore.balanceOf(msg.sender, projectId), _userTokenBalance);
-
-        // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(terminal, projectId), BALANCE);
-
-        bool willRevert;
-
-        // Discretionary use of overflow allowance by project owner (allowance = 5ETH)
-        if (ALLOWANCE == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
-            willRevert = true;
-        } else if (TARGET >= BALANCE * 18 || ALLOWANCE > ((BALANCE * 18) - TARGET)) {
-            // Too much to withdraw or no overflow ?
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
-            willRevert = true;
-        }
-
-        vm.prank(_projectOwner); // Prank only next call
-        IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
-            projectId,
-            ALLOWANCE,
-            1, // Currency
-            address(0), //token (unused)
-            0, // Min wei out
-            payable(msg.sender), // Beneficiary
-            "MEMO",
-            ""
-        );
-
-        if (BALANCE > 1 && !willRevert) {
-            assertEq(
-                jbToken().balanceOf(msg.sender),
-                PRBMath.mulDiv(ALLOWANCE, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee())
-            );
         }
 
         // Distribute the funding target ETH -> no split then beneficiary is the project owner
         uint256 initBalance = jbToken().balanceOf(_projectOwner);
 
-        if (TARGET > BALANCE * 18) {
+        if (targetInTokens != 0 && TARGET >= BALANCE) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
         }
 
@@ -931,7 +849,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         if (TARGET <= BALANCE && TARGET > 1) {
             assertApproxEqAbs(
                 jbToken().balanceOf(_projectOwner),
-                initBalance + PRBMath.mulDiv(TARGET, jbLibraries().MAX_FEE(), terminal.fee() + jbLibraries().MAX_FEE()),
+                initBalance + PRBMath.mulDiv(targetInTokens, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee()),
                 2
             );
         }
@@ -956,5 +874,5 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         // verify: beneficiary should have a balance of 0 JBTokens
         assertEq(_tokenStore.balanceOf(msg.sender, projectId), 0);
-    } */
+    }
 }
