@@ -820,7 +820,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         );
 
         if (BALANCE > 1 && !willRevert) {
-            uint256 expectedBalance = PRBMath.mulDiv(allowanceInTokens, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee()) / 18; 
+            uint256 expectedBalance = PRBMath.mulDiv(allowanceInTokens, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee()); 
             assertApproxEqAbs(jbToken().balanceOf(msg.sender), expectedBalance, 1);
         }
     }
