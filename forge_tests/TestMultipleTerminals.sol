@@ -146,7 +146,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE, 18);
         vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-ETH");
 
-        _priceFeedJbUsd = new MockPriceFeed(FAKE_PRICE, 6);
+        _priceFeedJbUsd = new MockPriceFeed(FAKE_PRICE, 18);
         vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-USD");
 
         jbPrices().addFeedFor(
@@ -176,7 +176,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         ERC20terminal.pay(projectId, 20 * 10 ** 18, address(0), caller, 0, false, "Forge test", new bytes(0));
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
-        // price feed will return FAKE_PRICE*18 (for curr usd/base eth); since it's an 18 decimal terminal (ie calling getPrice(18) )
+        // price feed will return FAKE_PRICE; since it's an 18 decimal terminal (ie calling getPrice(18) )
         uint256 _userTokenBalance = PRBMath.mulDiv(20 * 10 ** 18, WEIGHT, FAKE_PRICE) / 2;
         assertEq(_tokenStore.balanceOf(caller, projectId), _userTokenBalance);
 
@@ -215,8 +215,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         // Funds leaving the contract -> take the fee
         assertEq(
             jbToken().balanceOf(msg.sender),
-            // Fake price is 10
-            // fakePrice * 10**(_decimals - fakeDecimals)
+            // Inverse price is returned, normalized to 18 decimals 
             PRBMath.mulDiv(PRBMath.mulDiv((5 * 10 ** 18), _priceFeedJbUsd.currentPrice(18), 10 ** 18), jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee())
         );
 
