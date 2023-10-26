@@ -6,9 +6,10 @@ import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
+import {IJBController3_2} from './interfaces/IJBController3_2.sol';
 import {IJBController} from './interfaces/IJBController.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundAccessConstraintsStore} from './interfaces/IJBFundAccessConstraintsStore.sol';
+import {IJBFundAccessConstraintsStore3_1} from './interfaces/IJBFundAccessConstraintsStore3_1.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBMigratable} from './interfaces/IJBMigratable.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
@@ -30,7 +31,8 @@ import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
+/// @dev This Controller has the same functionality as JBController3_0_1, except it is not backwards compatible with the original IJBController view methods.
+contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
   using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
 
@@ -90,7 +92,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   IJBSplitsStore public immutable override splitsStore;
 
   /// @notice A contract that stores fund access constraints for each project.
-  IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
+  IJBFundAccessConstraintsStore3_1 public immutable override fundAccessConstraintsStore;
 
   /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
@@ -215,7 +217,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     IJBFundingCycleStore _fundingCycleStore,
     IJBTokenStore _tokenStore,
     IJBSplitsStore _splitsStore,
-    IJBFundAccessConstraintsStore _fundAccessConstraintsStore
+    IJBFundAccessConstraintsStore3_1 _fundAccessConstraintsStore
   ) JBOperatable(_operatorStore) {
     projects = _projects;
     directory = _directory;
