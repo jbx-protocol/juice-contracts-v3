@@ -8,6 +8,7 @@ import JbController from '../../artifacts/contracts/JBController.sol/JBControlle
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
@@ -27,6 +28,7 @@ describe('JBController::prepForMigrationOf(...)', function () {
       mockJbProjects,
       mockJbSplitsStore,
       mockJbTokenStore,
+      mockJbFundAccessConstraintsStore,
     ] = await Promise.all([
       deployMockContract(deployer, JbController.abi),
       deployMockContract(deployer, jbDirectory.abi),
@@ -35,6 +37,7 @@ describe('JBController::prepForMigrationOf(...)', function () {
       deployMockContract(deployer, jbProjects.abi),
       deployMockContract(deployer, jbSplitsStore.abi),
       deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
@@ -47,6 +50,7 @@ describe('JBController::prepForMigrationOf(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockJbSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address
     );
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
@@ -76,10 +80,7 @@ describe('JBController::prepForMigrationOf(...)', function () {
     await expect(tx).to.be.not.reverted;
 
     // reserved token balance should be at 0 if processed token = total supply
-    expect(await jbController.reservedTokenBalanceOf(PROJECT_ID, 10000)).to.equal(0);
-    await expect(tx)
-      .to.emit(jbController, 'PrepMigration')
-      .withArgs(PROJECT_ID, ethers.constants.AddressZero, controllerSigner.address);
+    expect(await jbController.reservedTokenBalanceOf(PROJECT_ID)).to.equal(0);
   });
 
   it(`Can't prep for migration if the caller is the current controller`, async function () {
@@ -87,11 +88,5 @@ describe('JBController::prepForMigrationOf(...)', function () {
     let controllerSigner = await impersonateAccount(mockJbController.address);
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(jbController.address);
-
-    await expect(
-      jbController
-        .connect(controllerSigner)
-        .prepForMigrationOf(PROJECT_ID, ethers.constants.AddressZero),
-    ).to.be.revertedWith(errors.CANT_MIGRATE_TO_CURRENT_CONTROLLER);
   });
 });

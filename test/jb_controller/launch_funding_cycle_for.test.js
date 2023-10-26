@@ -8,9 +8,10 @@ import JbController from '../../artifacts/contracts/JBController.sol/JBControlle
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal.sol/JBETHPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
 describe('JBController::launchFundingCyclesFor(...)', function () {
@@ -52,6 +53,7 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       mockJbTerminal1,
       mockJbTerminal2,
       mockJbTokenStore,
+      mockJbFundAccessConstraintsStore,
     ] = await Promise.all([
       deployMockContract(deployer, JbController.abi),
       deployMockContract(deployer, jbDirectory.abi),
@@ -62,6 +64,7 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       deployMockContract(deployer, jbTerminal.abi),
       deployMockContract(deployer, jbTerminal.abi),
       deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
@@ -74,6 +77,7 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockJbSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address
     );
 
     await mockJbProjects.mock.createFor
@@ -125,12 +129,14 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       nonOwner,
       addrs,
       jbController,
+      mockJbSplitsStore,
       mockJbDirectory,
       mockJbTokenStore,
       mockJbController,
       mockJbProjects,
       mockJbOperatorStore,
       mockJbFundingCycleStore,
+      mockJbFundAccessConstraintsStore,
       mockJbTerminal1,
       mockJbTerminal2,
       timestamp,
@@ -232,22 +238,29 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       splits,
       mockJbTerminal1,
       mockJbTerminal2,
+      mockJbFundAccessConstraintsStore
     } = await setup();
     const groupedSplits = [{ group: 1, splits }];
     const terminals = [mockJbTerminal1.address, mockJbTerminal2.address];
     const token = ethers.Wallet.createRandom().address;
     const fundAccessConstraints = makeFundingAccessConstraints({ terminals, token });
 
+    await mockJbFundAccessConstraintsStore.mock.setFor
+      .withArgs(EXISTING_PROJECT, timestamp, fundAccessConstraints)
+      .returns();
+
     expect(
       await jbController
         .connect(projectOwner)
         .callStatic.launchFundingCyclesFor(
           EXISTING_PROJECT,
-          fundingCycleData,
-          fundingCycleMetadata.unpacked,
-          PROJECT_START,
-          groupedSplits,
-          fundAccessConstraints,
+          [{
+            mustStartAtOrAfter: PROJECT_START,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits,
+            fundAccessConstraints: fundAccessConstraints
+          }],
           terminals,
           MEMO,
         ),
@@ -257,49 +270,128 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
 
-    await Promise.all(
-      fundAccessConstraints.map(async (constraints) => {
-        await expect(tx)
-          .to.emit(jbController, 'SetFundAccessConstraints')
-          .withArgs(
-            /*fundingCycleData.configuration=*/ timestamp,
-            /*fundingCycleData.number=*/ 1,
-            EXISTING_PROJECT,
-            [
-              constraints.terminal,
-              constraints.token,
-              constraints.distributionLimit,
-              constraints.distributionLimitCurrency,
-              constraints.overflowAllowance,
-              constraints.overflowAllowanceCurrency,
-            ],
-            projectOwner.address,
-          );
-
-        const args = [EXISTING_PROJECT, timestamp, constraints.terminal, token];
-        expect(await jbController.distributionLimitOf(...args)).deep.equals([
-          ethers.BigNumber.from(constraints.distributionLimit),
-          ethers.BigNumber.from(constraints.distributionLimitCurrency),
-        ]);
-        expect(await jbController.overflowAllowanceOf(...args)).deep.equals([
-          ethers.BigNumber.from(constraints.overflowAllowance),
-          ethers.BigNumber.from(constraints.overflowAllowanceCurrency),
-        ]);
-      }),
-    );
     await expect(tx)
       .to.emit(jbController, 'LaunchFundingCycles')
       .withArgs(
         /*fundingCycleData.configuration=*/ timestamp,
+        EXISTING_PROJECT,
+        MEMO,
+        projectOwner.address,
+      );
+  });
+
+  it(`Should launch multiple funding cycles for an existing project and emit events`, async function () {
+    const {
+      jbController,
+      projectOwner,
+      timestamp,
+      fundingCycleData,
+      fundingCycleMetadata,
+      splits,
+      mockJbFundingCycleStore,
+      mockJbSplitsStore,
+      mockJbTerminal1,
+      mockJbTerminal2,
+      mockJbFundAccessConstraintsStore
+    } = await setup();
+    const groupedSplits = [{ group: 1, splits }];
+    const terminals = [mockJbTerminal1.address, mockJbTerminal2.address];
+    const token = ethers.Wallet.createRandom().address;
+    const fundAccessConstraints = makeFundingAccessConstraints({ terminals, token });
+    const fundAccessConstraints2 = makeFundingAccessConstraints({ terminals, token });
+
+    await mockJbFundAccessConstraintsStore.mock.setFor
+      .withArgs(EXISTING_PROJECT, timestamp, fundAccessConstraints)
+      .returns();
+
+    await mockJbFundAccessConstraintsStore.mock.setFor
+      .withArgs(EXISTING_PROJECT, timestamp + 1, fundAccessConstraints2)
+      .returns();
+
+    await mockJbFundingCycleStore.mock.configureFor
+      .withArgs(EXISTING_PROJECT, fundingCycleData, fundingCycleMetadata.packed, PROJECT_START + 1)
+      .returns(
+        Object.assign(
+          {
+            number: EXISTING_PROJECT + 1,
+            configuration: timestamp + 1,
+            basedOn: timestamp,
+            start: timestamp,
+            metadata: fundingCycleMetadata.packed,
+          },
+          fundingCycleData,
+        ),
+      );
+
+    const groupedSplits2 = [{ group: 1, splits }];
+
+    await mockJbSplitsStore.mock.set
+      .withArgs(EXISTING_PROJECT, /*configuration=*/ timestamp + 1, groupedSplits2)
+      .returns();
+
+    expect(
+      await jbController
+        .connect(projectOwner)
+        .callStatic.launchFundingCyclesFor(
+          EXISTING_PROJECT,
+          [{
+            mustStartAtOrAfter: PROJECT_START,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits,
+            fundAccessConstraints: fundAccessConstraints
+          },
+          {
+            mustStartAtOrAfter: PROJECT_START + 1,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits2,
+            fundAccessConstraints: fundAccessConstraints2
+          }
+          ],
+          terminals,
+          MEMO,
+        ),
+    ).to.equal(timestamp + 1);
+
+    let tx = jbController
+      .connect(projectOwner)
+      .launchFundingCyclesFor(
+        EXISTING_PROJECT,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        },
+        {
+          mustStartAtOrAfter: PROJECT_START + 1,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits2,
+          fundAccessConstraints: fundAccessConstraints2
+        }
+        ],
+        terminals,
+        MEMO,
+      );
+
+    await expect(tx)
+      .to.emit(jbController, 'LaunchFundingCycles')
+      .withArgs(
+        /*fundingCycleData.configuration=*/ timestamp + 1,
         EXISTING_PROJECT,
         MEMO,
         projectOwner.address,
@@ -314,40 +406,31 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       fundingCycleData,
       fundingCycleMetadata,
       splits,
+      mockJbFundAccessConstraintsStore
     } = await setup();
     const groupedSplits = [{ group: 1, splits }];
     const fundAccessConstraints = [];
+
+    await mockJbFundAccessConstraintsStore.mock.setFor
+      .withArgs(EXISTING_PROJECT, timestamp, fundAccessConstraints)
+      .returns();
 
     expect(
       await jbController
         .connect(projectOwner)
         .callStatic.launchFundingCyclesFor(
           EXISTING_PROJECT,
-          fundingCycleData,
-          fundingCycleMetadata.unpacked,
-          PROJECT_START,
-          groupedSplits,
-          fundAccessConstraints,
+          [{
+            mustStartAtOrAfter: PROJECT_START,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits,
+            fundAccessConstraints: fundAccessConstraints
+          }],
           [],
           MEMO,
         ),
     ).to.equal(timestamp);
-
-    // No constraint => no event
-    await expect(
-      jbController
-        .connect(projectOwner)
-        .launchFundingCyclesFor(
-          EXISTING_PROJECT,
-          fundingCycleData,
-          fundingCycleMetadata.unpacked,
-          PROJECT_START,
-          groupedSplits,
-          fundAccessConstraints,
-          [],
-          MEMO,
-        ),
-    ).to.not.emit(jbController, 'SetFundAccessConstraints');
   });
 
   it(`Can't launch a project with a reserved rate superior to 10000`, async function () {
@@ -368,11 +451,13 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -400,11 +485,13 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -433,11 +520,13 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -473,11 +562,13 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       .connect(nonOwner)
       .callStatic.launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -503,11 +594,13 @@ describe('JBController::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .callStatic.launchFundingCyclesFor(
         LAUNCHED_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );

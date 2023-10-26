@@ -3,11 +3,11 @@ import { ethers } from 'hardhat';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { packFundingCycleMetadata, makeSplits } from '../helpers/utils';
 
-import jbAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.sol/IJBSplitAllocator.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbToken from '../../artifacts/contracts/JBToken.sol/JBToken.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
@@ -48,6 +48,7 @@ describe('JBController::totalOutstandingTokensOf(...)', function () {
       mockSplitsStore,
       mockJbToken,
       mockJbTokenStore,
+      mockJbFundAccessConstraintsStore,
     ] = await Promise.all([
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, jbFundingCycleStore.abi),
@@ -56,6 +57,7 @@ describe('JBController::totalOutstandingTokensOf(...)', function () {
       deployMockContract(deployer, jbSplitsStore.abi),
       deployMockContract(deployer, jbToken.abi),
       deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
@@ -68,6 +70,7 @@ describe('JBController::totalOutstandingTokensOf(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address
     );
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
@@ -121,9 +124,9 @@ describe('JBController::totalOutstandingTokensOf(...)', function () {
         /*useReservedRate*/ true,
       );
 
-    expect(await jbController.totalOutstandingTokensOf(PROJECT_ID, RESERVED_RATE)).to.equal(
-      RESERVED_AMOUNT + ALREADY_MINTED_TOKEN + ALREADY_MINTED_TOKEN,
-    ); //unprocessed + total supply
+    expect(await jbController.totalOutstandingTokensOf(PROJECT_ID)).to.equal(
+      RESERVED_AMOUNT + ALREADY_MINTED_TOKEN,
+    );
   });
 
   it(`Should return the total amount of outstanding token, when the reserve rate is less than the maximum`, async function () {
@@ -158,10 +161,9 @@ describe('JBController::totalOutstandingTokensOf(...)', function () {
         /*useReservedRate*/ true,
       );
 
-    expect(await jbController.totalOutstandingTokensOf(PROJECT_ID, 5000)).to.equal(
-      ALREADY_MINTED_TOKEN + ((ALREADY_MINTED_TOKEN * 10000) / (10000 - 5000) - 1000),
+    expect(await jbController.totalOutstandingTokensOf(PROJECT_ID)).to.equal(
+      ALREADY_MINTED_TOKEN + (RESERVED_AMOUNT / 2),
     );
-    // total supply + reserved unprocessed token which is  [minted * 1/(1-reserved rate)] - minted
   });
 
   it(`Should return the total amount of outstanding token equals to the total supply, when the reserve rate is 0`, async function () {
@@ -195,7 +197,7 @@ describe('JBController::totalOutstandingTokensOf(...)', function () {
         /*useReservedRate*/ true,
       );
 
-    expect(await jbController.totalOutstandingTokensOf(PROJECT_ID, 0)).to.equal(
+    expect(await jbController.totalOutstandingTokensOf(PROJECT_ID)).to.equal(
       ALREADY_MINTED_TOKEN,
     );
   });

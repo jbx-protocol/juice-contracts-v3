@@ -8,8 +8,9 @@ import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.j
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal3_1.sol/JBPayoutRedemptionPaymentTerminal3_1.json';
 import jbToken from '../../artifacts/contracts/JBToken.sol/JBToken.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
@@ -44,6 +45,7 @@ describe('JBController::mintTokensOf(...)', function () {
       mockJbSplitsStore,
       mockJbToken,
       mockJbTokenStore,
+      mockJbFundAccessConstraintsStore,
     ] = await Promise.all([
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, jbFundingCycleStore.abi),
@@ -52,6 +54,7 @@ describe('JBController::mintTokensOf(...)', function () {
       deployMockContract(deployer, jbSplitsStore.abi),
       deployMockContract(deployer, jbToken.abi),
       deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
@@ -64,6 +67,7 @@ describe('JBController::mintTokensOf(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockJbSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address
     );
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
@@ -137,7 +141,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
     expect(newReservedTokenBalance).to.equal(AMOUNT_TO_MINT - AMOUNT_TO_RECEIVE);
   });
@@ -196,7 +199,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
     expect(newReservedTokenBalance).to.equal(AMOUNT_TO_MINT - AMOUNT_TO_RECEIVE);
   });
@@ -237,7 +239,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
     expect(newReservedTokenBalance).to.equal(AMOUNT_TO_MINT - AMOUNT_TO_RECEIVE);
   });
@@ -285,7 +286,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
     expect(newReservedTokenBalance).to.equal(AMOUNT_TO_MINT - AMOUNT_TO_RECEIVE);
   });
@@ -358,7 +358,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
     expect(newReservedTokenBalance).to.equal(AMOUNT_TO_MINT - AMOUNT_TO_RECEIVE);
   });
@@ -503,7 +502,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
     expect(newReservedTokenBalance).to.equal(AMOUNT_TO_MINT - AMOUNT_TO_RECEIVE);
   });
@@ -535,7 +533,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let previousReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      /*reservedRate=*/ 10000,
     );
 
     await expect(
@@ -561,7 +558,7 @@ describe('JBController::mintTokensOf(...)', function () {
         projectOwner.address,
       );
 
-    let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(PROJECT_ID, 10000);
+    let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(PROJECT_ID);
 
     expect(newReservedTokenBalance).to.equal(previousReservedTokenBalance.add(AMOUNT_TO_MINT));
   });
@@ -577,7 +574,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let previousReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
 
     await expect(
@@ -607,7 +603,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      RESERVED_RATE,
     );
 
     expect(newReservedTokenBalance).to.equal(previousReservedTokenBalance);
@@ -643,7 +638,6 @@ describe('JBController::mintTokensOf(...)', function () {
 
     let previousReservedTokenBalance = await jbController.reservedTokenBalanceOf(
       PROJECT_ID,
-      /*reservedRate=*/ 0,
     );
 
     await expect(
@@ -669,7 +663,7 @@ describe('JBController::mintTokensOf(...)', function () {
         projectOwner.address,
       );
 
-    let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(PROJECT_ID, 0);
+    let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(PROJECT_ID);
 
     expect(newReservedTokenBalance).to.equal(previousReservedTokenBalance);
   });

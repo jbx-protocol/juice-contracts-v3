@@ -7,9 +7,10 @@ import errors from '../helpers/errors.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal.sol/JBETHPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
 import jbToken from '../../artifacts/contracts/JBToken.sol/JBToken.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
@@ -45,6 +46,7 @@ describe('JBController::burnTokenOf(...)', function () {
       mockJbSplitsStore,
       mockJbToken,
       mockJbTokenStore,
+      mockJbFundAccessConstraintsStore,
     ] = await Promise.all([
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, jbFundingCycleStore.abi),
@@ -53,6 +55,8 @@ describe('JBController::burnTokenOf(...)', function () {
       deployMockContract(deployer, jbSplitsStore.abi),
       deployMockContract(deployer, jbToken.abi),
       deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
@@ -65,6 +69,7 @@ describe('JBController::burnTokenOf(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockJbSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address
     );
 
     await Promise.all([
@@ -130,8 +135,7 @@ describe('JBController::burnTokenOf(...)', function () {
   it(`Should burn if caller is token owner and update reserved token balance of the project`, async function () {
     const { holder, jbController, mockJbTokenStore } = await setup();
     let initReservedTokenBalance = await jbController.reservedTokenBalanceOf(
-      PROJECT_ID,
-      RESERVED_RATE,
+      PROJECT_ID
     );
 
     await expect(
@@ -148,8 +152,7 @@ describe('JBController::burnTokenOf(...)', function () {
       .returns(EFFECTIVE_SUPPLY - AMOUNT_TO_BURN);
 
     let newReservedTokenBalance = await jbController.reservedTokenBalanceOf(
-      PROJECT_ID,
-      RESERVED_RATE,
+      PROJECT_ID
     );
     expect(newReservedTokenBalance).to.equal(initReservedTokenBalance);
   });

@@ -5,6 +5,7 @@ import { packFundingCycleMetadata, makeSplits } from '../helpers/utils';
 
 import jbAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.sol/IJBSplitAllocator.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
@@ -41,6 +42,7 @@ describe('JBController::distributeReservedTokensOf(...)', function () {
     let [
       mockJbAllocator,
       mockJbDirectory,
+      mockJbFundAccessConstraintsStore,
       mockJbFundingCycleStore,
       mockJbOperatorStore,
       mockJbProjects,
@@ -50,6 +52,7 @@ describe('JBController::distributeReservedTokensOf(...)', function () {
     ] = await Promise.all([
       deployMockContract(deployer, jbAllocator.abi),
       deployMockContract(deployer, jbDirectory.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
       deployMockContract(deployer, jbFundingCycleStore.abi),
       deployMockContract(deployer, jbOperatoreStore.abi),
       deployMockContract(deployer, jbProjects.abi),
@@ -68,6 +71,7 @@ describe('JBController::distributeReservedTokensOf(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address,
     );
 
     await Promise.all([
@@ -543,9 +547,7 @@ describe('JBController::distributeReservedTokensOf(...)', function () {
 
     await mockJbTokenStore.mock.totalSupplyOf.withArgs(PROJECT_ID).returns(RESERVED_AMOUNT);
 
-    expect(
-      await jbController.reservedTokenBalanceOf(PROJECT_ID, /*RESERVED_RATE=*/ 10000),
-    ).to.equal(0);
+    expect(await jbController.reservedTokenBalanceOf(PROJECT_ID)).to.equal(0);
 
     await expect(jbController.connect(caller).distributeReservedTokensOf(PROJECT_ID, MEMO)).to.be
       .not.reverted;

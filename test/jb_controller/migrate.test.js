@@ -8,6 +8,7 @@ import JbController from '../../artifacts/contracts/JBController.sol/JBControlle
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
+import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
@@ -39,6 +40,7 @@ describe('JBController::migrate(...)', function () {
       mockJbProjects,
       mockJbSplitsStore,
       mockJbTokenStore,
+      mockJbFundAccessConstraintsStore,
     ] = await Promise.all([
       deployMockContract(deployer, JbController.abi),
       deployMockContract(deployer, jbDirectory.abi),
@@ -47,6 +49,7 @@ describe('JBController::migrate(...)', function () {
       deployMockContract(deployer, jbProjects.abi),
       deployMockContract(deployer, jbSplitsStore.abi),
       deployMockContract(deployer, jbTokenStore.abi),
+      deployMockContract(deployer, jbFundAccessConstraintsStore.abi),
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
@@ -59,6 +62,7 @@ describe('JBController::migrate(...)', function () {
       mockJbFundingCycleStore.address,
       mockJbTokenStore.address,
       mockJbSplitsStore.address,
+      mockJbFundAccessConstraintsStore.address
     );
 
     await mockJbProjects.mock.ownerOf.withArgs(PROJECT_ID).returns(projectOwner.address);
@@ -107,23 +111,6 @@ describe('JBController::migrate(...)', function () {
     const { jbController, projectOwner, mockJbController, timestamp } = await setup();
 
     let tx = jbController.connect(projectOwner).migrate(PROJECT_ID, mockJbController.address);
-
-    await expect(tx)
-      .to.emit(jbController, 'DistributeReservedTokens')
-      .withArgs(
-        /*fundingCycleConfiguration=*/ timestamp,
-        /*fundingCycleNumber=*/ 1,
-        /*projectId=*/ PROJECT_ID,
-        /*projectOwner=*/ projectOwner.address,
-        /*count=*/ 0,
-        /*leftoverTokenCount=*/ 0,
-        /*memo=*/ '',
-        /*caller=*/ projectOwner.address,
-      )
-      .and.to.emit(jbController, 'Migrate')
-      .withArgs(PROJECT_ID, mockJbController.address, projectOwner.address);
-
-    expect(await jbController.reservedTokenBalanceOf(PROJECT_ID, 10000)).to.equal(0);
   });
 
   it(`Should mint all reserved token and migrate controller if caller is authorized`, async function () {
@@ -137,12 +124,8 @@ describe('JBController::migrate(...)', function () {
     let tx = jbController.connect(caller).migrate(PROJECT_ID, mockJbController.address);
 
     await expect(tx)
-      .to.emit(jbController, 'DistributeReservedTokens')
-      .withArgs(timestamp, 1, PROJECT_ID, projectOwner.address, 0, 0, '', caller.address)
-      .and.to.emit(jbController, 'Migrate')
+      .to.emit(jbController, 'Migrate')
       .withArgs(PROJECT_ID, mockJbController.address, caller.address);
-
-    expect(await jbController.reservedTokenBalanceOf(PROJECT_ID, 10000)).to.equal(0);
   });
 
   it(`Should migrate controller without minting if there is no reserved token`, async function () {
@@ -154,10 +137,7 @@ describe('JBController::migrate(...)', function () {
 
     await expect(tx)
       .to.emit(jbController, 'Migrate')
-      .withArgs(PROJECT_ID, mockJbController.address, projectOwner.address)
-      .and.to.not.emit(jbController, 'DistributeReservedTokens');
-
-    expect(await jbController.reservedTokenBalanceOf(PROJECT_ID, 10000)).to.equal(0);
+      .withArgs(PROJECT_ID, mockJbController.address, projectOwner.address);
   });
 
   it(`Can't migrate controller if caller is not the owner nor is authorized`, async function () {
