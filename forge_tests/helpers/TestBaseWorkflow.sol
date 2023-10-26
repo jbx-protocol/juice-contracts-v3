@@ -15,7 +15,7 @@ import {JBETHPaymentTerminal} from '@juicebox/JBETHPaymentTerminal.sol';
 import {JBETHPaymentTerminal3_2} from '@juicebox/JBETHPaymentTerminal3_2.sol';
 import {JBERC20PaymentTerminal} from '@juicebox/JBERC20PaymentTerminal.sol';
 import {JBSingleTokenPaymentTerminalStore3_2} from '@juicebox/JBSingleTokenPaymentTerminalStore3_2.sol';
-import {JBFundAccessConstraintsStore} from '@juicebox/JBFundAccessConstraintsStore.sol';
+import {JBFundAccessConstraintsStore3_1} from '@juicebox/JBFundAccessConstraintsStore3_1.sol';
 import {JBFundingCycleStore} from '@juicebox/JBFundingCycleStore.sol';
 import {JBOperatorStore} from '@juicebox/JBOperatorStore.sol';
 import {JBPrices} from '@juicebox/JBPrices.sol';
@@ -32,11 +32,12 @@ import {JBPayoutRedemptionPaymentTerminal} from '@juicebox/abstract/JBPayoutRede
 import {JBPayoutRedemptionPaymentTerminal3_2} from '@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_2.sol';
 import {JBSingleTokenPaymentTerminal} from '@juicebox/abstract/JBSingleTokenPaymentTerminal.sol';
 
+import {JBCurrencyAmount} from '@juicebox/structs/JBCurrencyAmount.sol';
 import {JBDidPayData3_1_1} from '@juicebox/structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData} from '@juicebox/structs/JBDidRedeemData.sol';
 import {JBFee} from '@juicebox/structs/JBFee.sol';
 import {JBFees} from '@juicebox/libraries/JBFees.sol';
-import {JBFundAccessConstraints} from '@juicebox/structs/JBFundAccessConstraints.sol';
+import {JBFundAccessConstraints3_1} from '@juicebox/structs/JBFundAccessConstraints3_1.sol';
 import {JBFundingCycle} from '@juicebox/structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from '@juicebox/structs/JBFundingCycleData.sol';
 import {JBFundingCycleMetadata3_2} from '@juicebox/structs/JBFundingCycleMetadata3_2.sol';
@@ -128,7 +129,7 @@ contract TestBaseWorkflow is Test {
   // JBController(s)
   JBController internal _jbController;
 
-  JBFundAccessConstraintsStore internal _jbFundAccessConstraintsStore;
+  JBFundAccessConstraintsStore3_1 internal _jbFundAccessConstraintsStore;
 
   // JBETHPaymentTerminalStore
   JBSingleTokenPaymentTerminalStore3_2 internal _jbPaymentTerminalStore3_2;
@@ -182,7 +183,7 @@ contract TestBaseWorkflow is Test {
     return JBController(address(_jbController));
   }
 
-  function jbAccessConstraintStore() internal view returns (JBFundAccessConstraintsStore) {
+  function jbAccessConstraintStore() internal view returns (JBFundAccessConstraintsStore3_1) {
     return _jbFundAccessConstraintsStore;
   }
 
@@ -279,7 +280,7 @@ contract TestBaseWorkflow is Test {
     vm.prank(_multisig);
     _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
-    _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
+    _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore3_1(_jbDirectory);
 
     _jbController = new JBController(
       _jbOperatorStore,
