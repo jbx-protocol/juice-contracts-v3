@@ -3,6 +3,9 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
+import {JBFeeType} from '../contracts/enums/JBFeeType.sol';
+import {IJBFeeGauge3_1} from '../contracts/interfaces/IJBFeeGauge3_1.sol';
+
 contract TestDistributeHeldFee_Local is TestBaseWorkflow {
     JBController private _controller;
     JBETHPaymentTerminal private _terminal;
@@ -10,7 +13,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBFundingCycleMetadata3_2 private _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -25,6 +28,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
 
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
+
         _tokenStore = jbTokenStore();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
@@ -36,7 +40,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        _metadata = JBFundingCycleMetadata3_2({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -44,7 +48,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10000, //100%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -104,11 +108,11 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+        IJBFeeGauge feeGauge = IJBFeeGauge(makeAddr("FeeGauge"));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeCall(IJBFeeGauge3_1.currentDiscountFor, (_projectId, JBFeeType.PAYOUT)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
@@ -154,7 +158,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
                 "lfg"
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(_terminal)).distributePayoutsOf(
                _projectId,
                 payAmountInWei,
                 jbLibraries().ETH(),
@@ -244,11 +248,11 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+        IJBFeeGauge feeGauge = IJBFeeGauge(makeAddr("FeeGauge"));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeCall(IJBFeeGauge3_1.currentDiscountFor, (_projectId, JBFeeType.PAYOUT)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
@@ -288,7 +292,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
                 "lfg"
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_2(address(_terminal)).distributePayoutsOf(
                _projectId,
                 payAmountInWei,
                 jbLibraries().ETH(),
