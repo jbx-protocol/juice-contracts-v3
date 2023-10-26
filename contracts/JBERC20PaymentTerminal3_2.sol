@@ -12,7 +12,7 @@ import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
 
 /// @notice Manages the inflows and outflows of an ERC-20 token.
-contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_2 {
+contract JBERC20PaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   using SafeERC20 for IERC20;
 
   //*********************************************************************//
@@ -75,7 +75,11 @@ contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
+  function _transferFrom(
+    address _from,
+    address payable _to,
+    uint256 _amount
+  ) internal override {
     _from == address(this)
       ? IERC20(token).safeTransfer(_to, _amount)
       : IERC20(token).safeTransferFrom(_from, _to, _amount);

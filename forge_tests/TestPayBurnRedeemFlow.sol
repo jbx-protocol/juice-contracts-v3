@@ -14,7 +14,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -40,7 +40,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        _metadata = JBFundingCycleMetadata3_2({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -48,7 +48,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10000, //100%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -80,14 +80,18 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         _projectId = _controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
+            _cycleConfig,
             _terminals,
             ""
         );

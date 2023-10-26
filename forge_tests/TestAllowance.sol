@@ -7,7 +7,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
     JBController controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata _metadata;
+    JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
@@ -34,7 +34,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        _metadata = JBFundingCycleMetadata3_2({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -42,7 +42,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 5000, //50%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -76,14 +76,18 @@ contract TestAllowance_Local is TestBaseWorkflow {
             })
         );
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         uint256 projectId = controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
+            _cycleConfig,
             _terminals,
             ""
         );
@@ -109,10 +113,11 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 address(0), //token (unused)
                 0, // Min wei out
                 payable(_beneficiary), // Beneficiary
-                "MEMO"
+                "MEMO",
+                bytes('')
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
                 projectId,
                 5 ether,
                 1, // Currency
@@ -130,17 +135,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         // Distribute the funding target ETH -> splits[] is empty -> everything in left-over, to project owner
         vm.prank(_projectOwner);
 
-        if (isUsingJbController3_0())
-            terminal.distributePayoutsOf(
-                projectId,
-                10 ether,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "Foundry payment" // Memo
-            );
-        else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 ether,
                 1, // Currency
@@ -166,8 +161,14 @@ contract TestAllowance_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
+        uint256 tokenBalanceAfter = _tokenStore.balanceOf(_beneficiary, projectId);
+        uint256 tokenDiff = tokenBalanceAfter;
+
+        // Redemption fee share: (tokens received from redeem * 2 b/c 50% redemption rate)
+        uint256 processedFee = JBFees.feeIn(tokenDiff * 2, jbLibraries().MAX_FEE(), 0);
+
         // verify: beneficiary should have a balance of 0 JBTokens
-        assertEq(_tokenStore.balanceOf(_beneficiary, projectId), 0);
+        assertEq(_tokenStore.balanceOf(_beneficiary, projectId), (processedFee));
     }
 
     function testFuzzAllowance(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
@@ -193,14 +194,18 @@ contract TestAllowance_Local is TestBaseWorkflow {
             })
         );
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         uint256 projectId = controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
+            _cycleConfig,
             _terminals,
             ""
         );
@@ -226,19 +231,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
             willRevert = true;
         }
-
-        if (isUsingJbController3_0())
-            terminal.useAllowanceOf(
-                projectId,
-                ALLOWANCE,
-                CURRENCY, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                payable(_beneficiary), // Beneficiary
-                "MEMO"
-            );
-        else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
                 projectId,
                 ALLOWANCE,
                 CURRENCY, // Currency
@@ -276,7 +269,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 TARGET,
                 1, // Currency
