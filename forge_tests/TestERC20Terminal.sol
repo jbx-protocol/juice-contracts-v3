@@ -19,9 +19,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
-    JBFundAccessConstraints[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
     JBTokenStore _tokenStore;
+    MockMaliciousTerminal _badTerminal;
     address _projectOwner;
 
     uint256 WEIGHT = 1000 * 10 ** 18;
@@ -82,22 +82,253 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             _priceFeedJbEth
         );
 
+        _badTerminal = new MockMaliciousTerminal(
+            jbToken(),
+            1, // JBSplitsGroupe
+            jbOperatorStore(),
+            jbProjects(),
+            jbDirectory(),
+            jbSplitsStore(),
+            jbPrices(),
+            jbPaymentTerminalStore(),
+            multisig()
+        );
+
         vm.stopPrank();
+    }
+
+    function launchProjectSTD() public returns (uint256, uint256){
+        JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
+        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
+
+        _splitProjectFundAccessConstraints[0] = JBFundAccessConstraints3_1({
+            terminal: _badTerminal,
+            token: address(jbToken()),
+            distributionLimits: _distributionLimits,
+            overflowAllowances: _overflowAllowances
+        });
+        _splitProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
+
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _allocationSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        JBFundingCycleConfiguration[] memory _cycleConfig2 = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig2[0].mustStartAtOrAfter = 0;
+        _cycleConfig2[0].data = _data;
+        _cycleConfig2[0].metadata = _metadata;
+        _cycleConfig2[0].groupedSplits = _groupedSplits;
+        _cycleConfig2[0].fundAccessConstraints = _splitProjectFundAccessConstraints;
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
+        //project to allocato funds
+        uint256 allocationProjectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _splitProjectTerminals,
+            ""
+        );
+
+        return (projectId, allocationProjectId);
+    }
+
+    function launch2ProjectsSTD() public returns (uint256, uint256) {
+        JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
+        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
+
+        _splitProjectFundAccessConstraints[0] = 
+            JBFundAccessConstraints3_1({
+                terminal: _badTerminal,
+                token: address(jbToken()),
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
+
+        _splitProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
+
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _allocationSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
+        JBFundingCycleConfiguration[] memory _cycleConfig2 = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig2[0].mustStartAtOrAfter = 0;
+        _cycleConfig2[0].data = _data;
+        _cycleConfig2[0].metadata = _metadata;
+        _cycleConfig2[0].groupedSplits = _groupedSplits;
+        _cycleConfig2[0].fundAccessConstraints = _splitProjectFundAccessConstraints;
+
+        //project to allocato funds
+        uint256 allocationProjectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig2,
+            _splitProjectTerminals,
+            ""
+        );
+
+        // setting splits
+        JBSplit[] memory _splits = new JBSplit[](1);
+        _splits[0] = JBSplit({
+            preferClaimed: false,
+            preferAddToBalance: true,
+            projectId: allocationProjectId,
+            beneficiary: payable(makeAddr("user")),
+            lockedUntil: 0,
+            allocator: IJBSplitAllocator(address(0)),
+            percent: JBConstants.SPLITS_TOTAL_PERCENT
+        });
+
+        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+
+        (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
+
+        vm.prank(_projectOwner);
+        jbSplitsStore().set(projectId, _currentFundingCycle.configuration, _allocationSplits);
+
+        return (projectId, allocationProjectId);
+    }
+
+    function launchProjectSTDFuzzed(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public returns (uint256) {
+
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: TARGET,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: ALLOWANCE,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
+                terminal: jbERC20PaymentTerminal(),
+                token: address(jbToken()),
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
+
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
+        return projectId;
     }
 
     function testAllowanceERC20() public {
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 6 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: terminal,
                 token: address(jbToken()),
-                distributionLimit: 6 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
@@ -203,16 +434,27 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: terminal,
                 token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
@@ -289,16 +531,27 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: terminal,
                 token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
@@ -374,16 +627,27 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: terminal,
                 token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
@@ -464,95 +728,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
-
-        MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
-            jbToken(),
-            1, // JBSplitsGroupe
-            jbOperatorStore(),
-            jbProjects(),
-            jbDirectory(),
-            jbSplitsStore(),
-            jbPrices(),
-            jbPaymentTerminalStore(),
-            multisig()
-        );
-        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
-        IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
-        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: terminal,
-                token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
-
-        _splitProjectFundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: _badTerminal,
-            token: address(jbToken()),
-            distributionLimit: 10 * 10 ** 18,
-            overflowAllowance: 5 * 10 ** 18,
-            distributionLimitCurrency: jbLibraries().ETH(),
-            overflowAllowanceCurrency: jbLibraries().ETH()
-        });
-        _splitProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
-
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _allocationSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
-
-        uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
-
-        JBFundingCycleConfiguration[] memory _cycleConfig2 = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig2[0].mustStartAtOrAfter = 0;
-        _cycleConfig2[0].data = _data;
-        _cycleConfig2[0].metadata = _metadata;
-        _cycleConfig2[0].groupedSplits = _groupedSplits;
-        _cycleConfig2[0].fundAccessConstraints = _splitProjectFundAccessConstraints;
-
-        //project to allocato funds
-        uint256 allocationProjectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig2,
-            _splitProjectTerminals,
-            ""
-        );
-
-        // setting splits
-        JBSplit[] memory _splits = new JBSplit[](1);
-        _splits[0] = JBSplit({
-            preferClaimed: false,
-            preferAddToBalance: true,
-            projectId: allocationProjectId,
-            beneficiary: payable(_user),
-            lockedUntil: 0,
-            allocator: IJBSplitAllocator(address(0)),
-            percent: JBConstants.SPLITS_TOTAL_PERCENT
-        });
-
-        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
-
-        (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
-
-        vm.prank(_projectOwner);
-        jbSplitsStore().set(projectId, _currentFundingCycle.configuration, _allocationSplits);
+        (uint256 projectId, uint256 allocationProjectId) = launch2ProjectsSTD();
 
         // fund user
         vm.prank(_projectOwner);
@@ -565,6 +743,18 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
         if (!isUsingJbController3_0()) {
+
+            // setting splits
+            JBSplit[] memory _splits = new JBSplit[](1);
+            _splits[0] = JBSplit({
+                preferClaimed: false,
+                preferAddToBalance: true,
+                projectId: allocationProjectId,
+                beneficiary: payable(makeAddr("user")),
+                lockedUntil: 0,
+                allocator: IJBSplitAllocator(address(0)),
+                percent: JBConstants.SPLITS_TOTAL_PERCENT
+            });
             
             uint256 _projectStoreBalanceBeforeDistribution =
                 jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
@@ -606,76 +796,12 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _revertReason = bound(_revertReason, 0, 3);
 
         address _user = makeAddr("user");
+        (uint256 projectId, uint256 allocationProjectId) = launchProjectSTD();
 
-        MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
-            jbToken(),
-            1, // JBSplitsGroupe
-            jbOperatorStore(),
-            jbProjects(),
-            jbDirectory(),
-            jbSplitsStore(),
-            jbPrices(),
-            jbPaymentTerminalStore(),
-            multisig()
-        );
-        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
+        JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
-
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: terminal,
-                token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
-
-        _splitProjectFundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: _badTerminal,
-            token: address(jbToken()),
-            distributionLimit: 10 * 10 ** 18,
-            overflowAllowance: 5 * 10 ** 18,
-            distributionLimitCurrency: jbLibraries().ETH(),
-            overflowAllowanceCurrency: jbLibraries().ETH()
-        });
-        _splitProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
-
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _allocationSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
-
-        uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
-
-        JBFundingCycleConfiguration[] memory _cycleConfig2 = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig2[0].mustStartAtOrAfter = 0;
-        _cycleConfig2[0].data = _data;
-        _cycleConfig2[0].metadata = _metadata;
-        _cycleConfig2[0].groupedSplits = _groupedSplits;
-        _cycleConfig2[0].fundAccessConstraints = _splitProjectFundAccessConstraints;
-
-        //project to allocato funds
-        uint256 allocationProjectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _splitProjectTerminals,
-            ""
-        );
 
         // setting splits
         JBSplit[] memory _splits = new JBSplit[](1);
@@ -693,18 +819,18 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
 
-        vm.prank(_projectOwner);
+        vm.startPrank(_projectOwner);
         jbSplitsStore().set(projectId, _currentFundingCycle.configuration, _allocationSplits);
 
         // fund user
-        vm.prank(_projectOwner);
         jbToken().transfer(_user, 20 * 10 ** 18);
-
+        vm.stopPrank();
         // pay project
-        vm.prank(_user);
+        vm.startPrank(_user);
         jbToken().approve(address(terminal), 20 * 10 ** 18);
-        vm.prank(_user);
+        
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        vm.stopPrank();
 
         if (!isUsingJbController3_0()) {
             uint256 _projectStoreBalanceBeforeDistribution =
@@ -751,32 +877,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         
         JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: terminal,
-                token: address(jbToken()),
-                distributionLimit: TARGET,
-                overflowAllowance: ALLOWANCE,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
-
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
-
-        uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
+        uint256 projectId = launchProjectSTDFuzzed(ALLOWANCE, TARGET, BALANCE);
 
         address caller = msg.sender;
         vm.label(caller, "caller");

@@ -11,7 +11,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
-    JBFundAccessConstraints[] _fundAccessConstraints;
     MockPriceFeed _priceFeedJbUsd;
 
     IJBPaymentTerminal[] _terminals;
@@ -99,29 +98,50 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](2);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+        JBCurrencyAmount[] memory _distributionLimits2 = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances2 = new JBCurrencyAmount[](1);
+
+        _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().USD()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().USD()
+        });
+
+        _distributionLimits2[0] = JBCurrencyAmount({
+            value: 10 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances2[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
         ETHterminal = jbETHPaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: ERC20terminal,
                 token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().USD(),
-                overflowAllowanceCurrency: jbLibraries().USD()
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        _fundAccessConstraints[1] = 
+            JBFundAccessConstraints3_1({
                 terminal: ETHterminal,
                 token: jbLibraries().ETHToken(),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+                distributionLimits: _distributionLimits2,
+                overflowAllowances: _overflowAllowances2
+            });
 
         _terminals.push(ERC20terminal);
         _terminals.push(ETHterminal);

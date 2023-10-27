@@ -9,7 +9,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
-    JBFundAccessConstraints[] _fundAccessConstraints;
+    JBFundAccessConstraints3_1[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
     JBTokenStore _tokenStore;
 

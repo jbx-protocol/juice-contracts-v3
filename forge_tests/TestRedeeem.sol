@@ -17,7 +17,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
     JBFundingCycleData private _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
-    JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
     uint256 private _projectId;
@@ -80,37 +79,58 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _terminals.push(_terminal);
         _terminals.push(_terminal3_2);
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](2);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+        JBCurrencyAmount[] memory _distributionLimits2 = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances2 = new JBCurrencyAmount[](1);
+
+        _distributionLimits[0] = JBCurrencyAmount({
+            value: 1 ether,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 ether,
+            currency: jbLibraries().ETH()
+        });
+
+        _distributionLimits2[0] = JBCurrencyAmount({
+            value: 0,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances2[0] = JBCurrencyAmount({
+            value: 5 ether,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: _terminal,
                 token: jbLibraries().ETHToken(),
-                distributionLimit: 1 ether, // 10 ETH target
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
-                overflowAllowanceCurrency: 1
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        _fundAccessConstraints[1] = 
+            JBFundAccessConstraints3_1({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
-                distributionLimit: 0, // only overflow
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
-                overflowAllowanceCurrency: 1
-            })
-        );
-
-        _projectOwner = multisig();
+                distributionLimits: _distributionLimits2,
+                overflowAllowances: _overflowAllowances2
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
-        _cycleConfig[0].mustStartAtOrAfter = block.timestamp;
+        _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        _projectOwner = multisig();
 
         // Launch a protocol project first
         _controller.launchProjectFor(

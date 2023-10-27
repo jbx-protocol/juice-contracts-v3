@@ -12,7 +12,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
     JBFundingCycleData private _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
-    JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
+    JBFundAccessConstraints3_1[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
     uint256 private _projectId;

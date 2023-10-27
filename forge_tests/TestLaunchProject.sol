@@ -8,7 +8,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits; // Default empty
-    JBFundAccessConstraints[] _fundAccessConstraints; // Default empty
+    JBFundAccessConstraints3_1[] _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] _terminals; // Default empty
 
     function setUp() public override {

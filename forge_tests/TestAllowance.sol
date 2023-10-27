@@ -9,7 +9,6 @@ contract TestAllowance_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
     JBGroupedSplits[] _groupedSplits;
-    JBFundAccessConstraints[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
     JBTokenStore _tokenStore;
     address _projectOwner;
@@ -65,16 +64,27 @@ contract TestAllowance_Local is TestBaseWorkflow {
     function testAllowance() public {
         JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 10 ether,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 ether,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: terminal,
                 token: jbLibraries().ETHToken(),
-                distributionLimit: 10 ether,
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
@@ -183,16 +193,27 @@ contract TestAllowance_Local is TestBaseWorkflow {
 
         JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: TARGET,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: ALLOWANCE,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
                 terminal: terminal,
                 token: jbLibraries().ETHToken(),
-                distributionLimit: TARGET,
-                distributionLimitCurrency: CURRENCY,
-                overflowAllowance: ALLOWANCE,
-                overflowAllowanceCurrency: CURRENCY
-            })
-        );
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
