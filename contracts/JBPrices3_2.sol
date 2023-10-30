@@ -15,6 +15,7 @@ contract JBPrices3_2 is Ownable, JBOperatable, IJBPrices3_2 {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
+  error INVALID_CURRENCY();
   error PRICE_FEED_ALREADY_EXISTS();
   error PRICE_FEED_NOT_FOUND();
 
@@ -124,6 +125,9 @@ contract JBPrices3_2 is Ownable, JBOperatable, IJBPrices3_2 {
       msg.sender == owner() && _projectId == 0
     )
   {
+    // Make sure the currencies aren't 0.
+    if (_currency == 0 || _base == 0) revert INVALID_CURRENCY();
+
     // Make sure there's no feed stored for the pair as defaults.
     if (
       feedFor[0][_currency][_base] != IJBPriceFeed(address(0)) ||

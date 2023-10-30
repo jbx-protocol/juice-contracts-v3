@@ -671,6 +671,9 @@ contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
       if (_configuration.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE)
         revert INVALID_REDEMPTION_RATE();
 
+      // Make sure the base currency isn't 0.
+      if (_configuration.baseCurrency == 0) revert INVALID_BASE_CURRENCY();
+
       // Make sure the provided base currency is valid.
       if (_configuration.metadata.baseCurrency > type(uint24).max) revert INVALID_BASE_CURRENCY();
 
