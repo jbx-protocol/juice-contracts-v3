@@ -11,6 +11,7 @@ import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSo
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBPrices3_2} from './interfaces/IJBPrices3_2.sol';
+import {IJBPrices3_2} from './interfaces/IJBPrices3_2.sol';
 import {IJBSingleTokenPaymentTerminal} from './interfaces/IJBSingleTokenPaymentTerminal.sol';
 import {IJBSingleTokenPaymentTerminalStore3_2} from './interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
