@@ -8,7 +8,7 @@ import {IJBFeeHoldingTerminal} from './IJBFeeHoldingTerminal.sol';
 import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 import {IJBPayoutTerminal3_1} from './IJBPayoutTerminal3_1.sol';
-import {IJBPrices} from './IJBPrices.sol';
+import {IJBPrices3_2} from './IJBPrices3_2.sol';
 import {IJBProjects} from './IJBProjects.sol';
 import {IJBRedemptionDelegate3_1_1} from './IJBRedemptionDelegate3_1_1.sol';
 import {IJBRedemptionTerminal} from './IJBRedemptionTerminal.sol';
@@ -169,7 +169,7 @@ interface IJBPayoutRedemptionPaymentTerminal3_2 is
 
   function directory() external view returns (IJBDirectory);
 
-  function prices() external view returns (IJBPrices);
+  function prices() external view returns (IJBPrices3_2);
 
   function store() external view returns (address);
 

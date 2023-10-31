@@ -9,7 +9,7 @@ import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSource3_1_1.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
-import {IJBPrices} from './interfaces/IJBPrices.sol';
+import {IJBPrices3_2} from './interfaces/IJBPrices3_2.sol';
 import {IJBSingleTokenPaymentTerminal} from './interfaces/IJBSingleTokenPaymentTerminal.sol';
 import {IJBSingleTokenPaymentTerminalStore3_2} from './interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
@@ -65,7 +65,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
   /// @notice The contract that exposes price feeds.
-  IJBPrices public immutable override prices;
+  IJBPrices3_2 public immutable override prices;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -204,7 +204,11 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   /// @param _directory A contract storing directories of terminals and controllers for each project.
   /// @param _fundingCycleStore A contract storing all funding cycle configurations.
   /// @param _prices A contract that exposes price feeds.
-  constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore, IJBPrices _prices) {
+  constructor(
+    IJBDirectory _directory,
+    IJBFundingCycleStore _fundingCycleStore,
+    IJBPrices3_2 _prices
+  ) {
     directory = _directory;
     fundingCycleStore = _fundingCycleStore;
     prices = _prices;
@@ -328,7 +332,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
     uint256 _weightRatio = _amount.currency == fundingCycle.baseCurrency()
       ? 10 ** _decimals
-      : prices.priceFor(_amount.currency, fundingCycle.baseCurrency(), _decimals);
+      : prices.priceFor(_projectId, _amount.currency, fundingCycle.baseCurrency(), _decimals);
 
     // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
     tokenCount = PRBMath.mulDiv(_amount.value, _weight, _weightRatio);
@@ -533,7 +537,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       : PRBMath.mulDiv(
         _amount,
         10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-        prices.priceFor(_currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
+        prices.priceFor(_projectId, _currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
     // The amount being distributed must be available.
@@ -604,7 +608,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       : PRBMath.mulDiv(
         _amount,
         10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-        prices.priceFor(_currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
+        prices.priceFor(_projectId, _currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
     // The amount being distributed must be available in the overflow.
@@ -743,7 +747,12 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
       _distributionLimitRemaining = PRBMath.mulDiv(
         _distributionLimitRemaining,
         10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-        prices.priceFor(_distributionLimitCurrency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
+        prices.priceFor(
+          _projectId,
+          _distributionLimitCurrency,
+          _balanceCurrency,
+          _MAX_FIXED_POINT_FIDELITY
+        )
       );
 
     // Overflow is the balance of this project minus the amount that can still be distributed.
@@ -781,7 +790,11 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     // Convert the ETH overflow to the specified currency if needed, maintaining a fixed point number with 18 decimals.
     uint256 _totalOverflow18Decimal = _currency == JBCurrencies.ETH
       ? _ethOverflow
-      : PRBMath.mulDiv(_ethOverflow, 10 ** 18, prices.priceFor(JBCurrencies.ETH, _currency, 18));
+      : PRBMath.mulDiv(
+        _ethOverflow,
+        10 ** 18,
+        prices.priceFor(_projectId, JBCurrencies.ETH, _currency, 18)
+      );
 
     // Adjust the decimals of the fixed point number if needed to match the target decimals.
     return

@@ -10,7 +10,7 @@ import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
-import {IJBPrices} from './interfaces/IJBPrices.sol';
+import {IJBPrices3_2} from './interfaces/IJBPrices3_2.sol';
 import {IJBPermit2PaymentTerminal} from './interfaces/IJBPermit2PaymentTerminal.sol';
 import {JBSingleAllowanceData} from './structs/JBSingleAllowanceData.sol';
 
@@ -41,9 +41,13 @@ contract JBERC20PaymentTerminal3_1_2 is
   /// @dev See {IERC165-supportsInterface}.
   /// @param _interfaceId The ID of the interface to check for adherance to.
   /// @return A flag indicating if the provided interface ID is supported.
-  function supportsInterface(
-    bytes4 _interfaceId
-  ) public view virtual override(JBPayoutRedemptionPaymentTerminal3_2, IERC165) returns (bool) {
+  function supportsInterface(bytes4 _interfaceId)
+    public
+    view
+    virtual
+    override(JBPayoutRedemptionPaymentTerminal3_2, IERC165)
+    returns (bool)
+  {
     return
       _interfaceId == type(IJBPermit2PaymentTerminal).interfaceId ||
       super.supportsInterface(_interfaceId);
@@ -79,7 +83,7 @@ contract JBERC20PaymentTerminal3_1_2 is
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
-    IJBPrices _prices,
+    IJBPrices3_2 _prices,
     address _store,
     address _owner,
     IPermit2 _permit2
@@ -201,7 +205,11 @@ contract JBERC20PaymentTerminal3_1_2 is
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
+  function _transferFrom(
+    address _from,
+    address payable _to,
+    uint256 _amount
+  ) internal override {
     _from == address(this)
       ? IERC20(token).safeTransfer(_to, _amount)
       : IERC20(token).safeTransferFrom(_from, _to, _amount);
