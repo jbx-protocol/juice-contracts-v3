@@ -16,7 +16,7 @@ import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
 import {IJBOperatorStore} from './../interfaces/IJBOperatorStore.sol';
 import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
 import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
-import {IJBPrices} from './../interfaces/IJBPrices.sol';
+import {IJBPrices3_2} from './../interfaces/IJBPrices3_2.sol';
 import {IJBProjects} from './../interfaces/IJBProjects.sol';
 import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
 import {IJBSingleTokenPaymentTerminalStore3_2} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
@@ -95,7 +95,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   IJBSplitsStore public immutable override splitsStore;
 
   /// @notice The contract that exposes price feeds.
-  IJBPrices public immutable override prices;
+  IJBPrices3_2 public immutable override prices;
 
   /// @notice The contract that stores and manages the terminal's data.
   address public immutable override store;
@@ -152,7 +152,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
         : PRBMath.mulDiv(
           _adjustedOverflow,
           10**decimals,
-          prices.priceFor(currency, JBCurrencies.ETH, decimals)
+          prices.priceFor(_projectId, currency, JBCurrencies.ETH, decimals)
         );
   }
 
@@ -220,7 +220,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
-    IJBPrices _prices,
+    IJBPrices3_2 _prices,
     address _store,
     address _owner
   )

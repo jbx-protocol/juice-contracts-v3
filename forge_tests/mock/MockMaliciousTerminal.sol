@@ -30,7 +30,7 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal {
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
-    IJBPrices _prices,
+    IJBPrices3_2 _prices,
     IJBSingleTokenPaymentTerminalStore3_2 _store,
     address _owner
   )
