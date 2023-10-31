@@ -15,7 +15,7 @@ import {IJBPermit2PaymentTerminal} from './interfaces/IJBPermit2PaymentTerminal.
 import {JBSingleAllowanceData} from './structs/JBSingleAllowanceData.sol';
 
 /// @notice Manages the inflows and outflows of an ERC-20 token.
-contract JBERC20PaymentTerminal3_1_2 is
+contract JBERC20PaymentTerminal3_2 is
   JBPayoutRedemptionPaymentTerminal3_2,
   IJBPermit2PaymentTerminal
 {
