@@ -25,13 +25,15 @@ interface IJBSingleTokenPaymentTerminalStore3_2 {
   function usedDistributionLimitOf(
     IJBSingleTokenPaymentTerminal terminal,
     uint256 projectId,
-    uint256 fundingCycleNumber
+    uint256 fundingCycleNumber,
+    uint256 currency
   ) external view returns (uint256);
 
   function usedOverflowAllowanceOf(
     IJBSingleTokenPaymentTerminal terminal,
     uint256 projectId,
-    uint256 fundingCycleConfiguration
+    uint256 fundingCycleConfiguration,
+    uint256 currency
   ) external view returns (uint256);
 
   function currentOverflowOf(
