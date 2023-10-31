@@ -14,7 +14,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     MockPriceFeed _priceFeedJbUsd;
 
     IJBPaymentTerminal[] _terminals;
-    JBERC20PaymentTerminal ERC20terminal;
+    JBERC20PaymentTerminal3_2 ERC20terminal;
     JBETHPaymentTerminal ETHterminal;
 
     JBTokenStore _tokenStore;
@@ -84,7 +84,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-            ERC20terminal = JBERC20PaymentTerminal(address(new JBERC20PaymentTerminal(
+            ERC20terminal = new JBERC20PaymentTerminal3_2(
                 jbToken(),
                 1, // JBSplitsGroupe
                 jbOperatorStore(),
@@ -93,8 +93,9 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 jbSplitsStore(),
                 jbPrices(),
                 address(jbPaymentTerminalStore()),
-                multisig()
-            )));
+                multisig(),
+                permit2()
+            );
         
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 

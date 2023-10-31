@@ -89,7 +89,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -174,7 +174,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -333,7 +333,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     }
 
     function testAllowanceERC20() public {
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -472,7 +472,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         _allocator = new MockMaliciousAllocator();
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -582,7 +582,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _allocator = IJBSplitAllocator(address(new GasGussler())); // Whatever other contract with a fallback
 
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -691,7 +691,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         IJBSplitAllocator _randomEOA = IJBSplitAllocator(makeAddr("randomEOA"));
 
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -807,7 +807,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         (uint256 projectId, uint256 allocationProjectId) = launch2ProjectsSTD();
 
@@ -880,7 +880,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         // setting splits
         JBSplit[] memory _splits = new JBSplit[](1);
@@ -950,7 +950,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
         BALANCE = bound(BALANCE, 1e18, jbToken().totalSupply());
         
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         uint256 projectId = launchProjectSTDFuzzed(ALLOWANCE, TARGET, BALANCE);
 
@@ -1050,7 +1050,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         );
 
         uint256 tokenBalanceAfter = _tokenStore.balanceOf(_beneficiary, projectId);
-        uint256 processedFee = JBFees.feeIn(tokenBalanceAfter * 2, jbLibraries().MAX_FEE(), 0);
+        uint256 processedFee = JBFees3_2.feeIn(tokenBalanceAfter * 2, jbLibraries().MAX_FEE());
 
         // verify: beneficiary should have a balance of 0 JBTokens
         assertEq(_tokenStore.balanceOf(msg.sender, projectId), 0);

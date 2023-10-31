@@ -13,7 +13,7 @@ import {JBController} from '@juicebox/JBController.sol';
 import {JBDirectory} from '@juicebox/JBDirectory.sol';
 import {JBETHPaymentTerminal} from '@juicebox/JBETHPaymentTerminal.sol';
 import {JBETHPaymentTerminal3_2} from '@juicebox/JBETHPaymentTerminal3_2.sol';
-import {JBERC20PaymentTerminal} from '@juicebox/JBERC20PaymentTerminal.sol';
+import {JBERC20PaymentTerminal3_2} from '@juicebox/JBERC20PaymentTerminal3_2.sol';
 import {JBSingleTokenPaymentTerminalStore3_2} from '@juicebox/JBSingleTokenPaymentTerminalStore3_2.sol';
 import {JBFundAccessConstraintsStore3_1} from '@juicebox/JBFundAccessConstraintsStore3_1.sol';
 import {JBFundingCycleStore} from '@juicebox/JBFundingCycleStore.sol';
@@ -35,7 +35,7 @@ import {JBCurrencyAmount} from '@juicebox/structs/JBCurrencyAmount.sol';
 import {JBDidPayData3_1_1} from '@juicebox/structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData} from '@juicebox/structs/JBDidRedeemData.sol';
 import {JBFee} from '@juicebox/structs/JBFee.sol';
-import {JBFees} from '@juicebox/libraries/JBFees.sol';
+import {JBFees3_2} from '@juicebox/libraries/JBFees3_2.sol';
 import {JBFundAccessConstraints3_1} from '@juicebox/structs/JBFundAccessConstraints3_1.sol';
 import {JBFundingCycle} from '@juicebox/structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from '@juicebox/structs/JBFundingCycleData.sol';
@@ -90,6 +90,9 @@ import {JBConstants} from '@juicebox/libraries/JBConstants.sol';
 import {JBSplitsGroups} from '@juicebox/libraries/JBSplitsGroups.sol';
 import {JBOperations} from '@juicebox/libraries/JBOperations.sol';
 
+import {IPermit2, IAllowanceTransfer} from 'permit2/src/interfaces/IPermit2.sol';
+import {DeployPermit2} from 'permit2/test/utils/DeployPermit2.sol';
+
 import './AccessJBLib.sol';
 
 import '@paulrberg/contracts/math/PRBMath.sol';
@@ -98,7 +101,7 @@ import '@paulrberg/contracts/math/PRBMathUD60x18.sol';
 // Base contract for Juicebox system tests.
 //
 // Provides common functionality, such as deploying contracts on test setup.
-contract TestBaseWorkflow is Test {
+contract TestBaseWorkflow is Test, DeployPermit2 {
   //*********************************************************************//
   // --------------------- internal stored properties ------------------- //
   //*********************************************************************//
@@ -107,6 +110,8 @@ contract TestBaseWorkflow is Test {
   address internal _multisig = address(123);
 
   address internal _beneficiary = address(69420);
+
+  address internal _permit2;
 
   // JBOperatorStore
   JBOperatorStore internal _jbOperatorStore;
@@ -137,13 +142,17 @@ contract TestBaseWorkflow is Test {
   JBETHPaymentTerminal internal _jbETHPaymentTerminal;
 
   // JBERC20PaymentTerminal
-  JBERC20PaymentTerminal internal _jbERC20PaymentTerminal;
+  JBERC20PaymentTerminal3_2 internal _jbERC20PaymentTerminal;
   // AccessJBLib
   AccessJBLib internal _accessJBLib;
 
   //*********************************************************************//
   // ------------------------- internal views -------------------------- //
   //*********************************************************************//
+
+  function permit2() internal view returns (IPermit2) {
+    return IPermit2(_permit2);
+  }
 
   function multisig() internal view returns (address) {
     return _multisig;
@@ -196,10 +205,10 @@ contract TestBaseWorkflow is Test {
     return JBETHPaymentTerminal(address(_jbETHPaymentTerminal));
   }
 
-  function jbERC20PaymentTerminal() internal returns (JBERC20PaymentTerminal) {
+  function jbERC20PaymentTerminal() internal returns (JBERC20PaymentTerminal3_2) {
     /* if (isUsingJbController3_0()) return _jbERC20PaymentTerminal;
     else  */
-    return JBERC20PaymentTerminal(address(_jbERC20PaymentTerminal));
+    return JBERC20PaymentTerminal3_2(address(_jbERC20PaymentTerminal));
   }
 
   function jbToken() internal view returns (JBToken) {
@@ -324,8 +333,11 @@ contract TestBaseWorkflow is Test {
     vm.prank(_multisig);
     _jbToken.mint(1, _multisig, 100 * 10**18);
 
+    vm.prank(_multisig);
+    _permit2 = deployPermit2();
+
     // JBERC20PaymentTerminal
-    _jbERC20PaymentTerminal = new JBERC20PaymentTerminal(
+    _jbERC20PaymentTerminal = new JBERC20PaymentTerminal3_2(
       _jbToken,
       1, // JBSplitsGroupe
       _jbOperatorStore,
@@ -334,7 +346,8 @@ contract TestBaseWorkflow is Test {
       _jbSplitsStore,
       _jbPrices,
       address(_jbPaymentTerminalStore3_2),
-      _multisig
+      _multisig,
+      IPermit2(_permit2)
     );
 
     vm.label(address(_jbERC20PaymentTerminal), 'JBERC20PaymentTerminal');

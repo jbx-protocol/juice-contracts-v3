@@ -36,7 +36,7 @@ contract TestEIP165_Local is TestBaseWorkflow {
     }
 
     function testJBERC20PaymentTerminal() public {
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         // Should support these interfaces
         assertTrue(terminal.supportsInterface(type(IERC165).interfaceId));
