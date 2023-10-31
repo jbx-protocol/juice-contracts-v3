@@ -28,7 +28,6 @@ import {JBReconfigurationBufferBallot} from '@juicebox/JBReconfigurationBufferBa
 import {JBETHERC20SplitsPayerDeployer} from '@juicebox/JBETHERC20SplitsPayerDeployer.sol';
 import {JBETHERC20SplitsPayer} from '@juicebox/JBETHERC20SplitsPayer.sol';
 
-import {JBPayoutRedemptionPaymentTerminal} from '@juicebox/abstract/JBPayoutRedemptionPaymentTerminal.sol';
 import {JBPayoutRedemptionPaymentTerminal3_2} from '@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_2.sol';
 import {JBSingleTokenPaymentTerminal} from '@juicebox/abstract/JBSingleTokenPaymentTerminal.sol';
 

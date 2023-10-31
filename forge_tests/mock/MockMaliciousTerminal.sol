@@ -59,7 +59,7 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal {
     bool _preferClaimedTokens,
     string calldata _memo,
     bytes calldata _metadata
-  ) external payable override returns (uint256) {
+  ) public payable override returns (uint256) {
       _projectId;
       _amount;
       _token;

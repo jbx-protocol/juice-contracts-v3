@@ -9,7 +9,7 @@ import {JBBallotState} from './enums/JBBallotState.sol';
 import {IJBController3_2} from './interfaces/IJBController3_2.sol';
 import {IJBController} from './interfaces/IJBController.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundAccessConstraintsStore3_1} from './interfaces/IJBFundAccessConstraintsStore3_1.sol';
+import {IJBFundAccessConstraintsStore} from './interfaces/IJBFundAccessConstraintsStore.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBMigratable} from './interfaces/IJBMigratable.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
@@ -32,7 +32,7 @@ import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
 /// @dev This Controller has the same functionality as JBController3_0_1, except it is not backwards compatible with the original IJBController view methods.
-contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
+contract JBController3_2 is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
   using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
 
@@ -92,7 +92,7 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   IJBSplitsStore public immutable override splitsStore;
 
   /// @notice A contract that stores fund access constraints for each project.
-  IJBFundAccessConstraintsStore3_1 public immutable override fundAccessConstraintsStore;
+  IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
 
   /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
@@ -193,7 +193,7 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
     returns (bool)
   {
     return
-      _interfaceId == type(IJBController).interfaceId ||
+      _interfaceId == type(IJBController3_2).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);
@@ -217,7 +217,7 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
     IJBFundingCycleStore _fundingCycleStore,
     IJBTokenStore _tokenStore,
     IJBSplitsStore _splitsStore,
-    IJBFundAccessConstraintsStore3_1 _fundAccessConstraintsStore
+    IJBFundAccessConstraintsStore _fundAccessConstraintsStore
   ) JBOperatable(_operatorStore) {
     projects = _projects;
     directory = _directory;
@@ -664,9 +664,6 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
       // Make sure the provided redemption rate is valid.
       if (_configuration.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE)
         revert INVALID_REDEMPTION_RATE();
-
-      // Make sure the base currency isn't 0.
-      if (_configuration.baseCurrency == 0) revert INVALID_BASE_CURRENCY();
 
       // Make sure the provided base currency is valid.
       if (_configuration.metadata.baseCurrency > type(uint24).max) revert INVALID_BASE_CURRENCY();
