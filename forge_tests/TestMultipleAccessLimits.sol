@@ -127,6 +127,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         vm.label(address(_priceFeedEthUsd), "MockPrice Feed MyToken-ETH");
 
         jbPrices().addFeedFor(
+            _projectId,
             jbLibraries().ETH(), // currency
             jbLibraries().USD(), // base weight currency
             _priceFeedEthUsd
@@ -185,6 +186,18 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             ""
         );
 
+        vm.startPrank(_projectOwner);
+        MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(FAKE_PRICE, 6);
+        vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
+
+        jbPrices().addFeedFor(
+            _projectId,
+            jbLibraries().ETH(), // currency
+            jbLibraries().USD(), // base weight currency
+            _priceFeedEthUsd
+        );
+        vm.stopPrank();
+
         vm.deal(_userWallet, _userPayAmount);
         vm.prank(_userWallet);
 
@@ -227,7 +240,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         uint256 distributableAmount = PRBMath.mulDiv(
             0.5 ether,
             10**18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            jbPrices().priceFor(jbLibraries().ETH(), jbLibraries().USD(), 18)
+            jbPrices().priceFor(1, jbLibraries().ETH(), jbLibraries().USD(), 18)
         );
 
         // Confirm that anything over the distributableAmount (0.5 eth in USD) will fail via paymentterminalstore3_2
@@ -478,7 +491,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         uint256 distributedAmount = PRBMath.mulDiv(
             1800000000,
             10**18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            jbPrices().priceFor(jbLibraries().USD(), jbLibraries().ETH(), 18)
+            jbPrices().priceFor(1, jbLibraries().USD(), jbLibraries().ETH(), 18)
         );
 
         // Funds leaving the ecosystem -> fee taken
@@ -539,7 +552,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         uint256 distributedAmount = PRBMath.mulDiv(
             3000000000,
             10**18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            jbPrices().priceFor(jbLibraries().USD(), jbLibraries().ETH(), 18)
+            jbPrices().priceFor(1, jbLibraries().USD(), jbLibraries().ETH(), 18)
         );
 
         assertEq(
