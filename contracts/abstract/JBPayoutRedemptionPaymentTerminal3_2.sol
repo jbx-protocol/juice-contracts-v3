@@ -122,13 +122,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @dev The current overflow is represented as a fixed point number with 18 decimals.
   /// @param _projectId The ID of the project to get overflow for.
   /// @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
-  function currentEthOverflowOf(uint256 _projectId)
-    external
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function currentEthOverflowOf(
+    uint256 _projectId
+  ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
     uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_2(store).currentOverflowOf(
       this,
@@ -146,7 +142,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
         ? _adjustedOverflow
         : PRBMath.mulDiv(
           _adjustedOverflow,
-          10**decimals,
+          10 ** decimals,
           prices.priceFor(_projectId, currency, JBCurrencies.ETH, decimals)
         );
   }
@@ -166,13 +162,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @dev See {IERC165-supportsInterface}.
   /// @param _interfaceId The ID of the interface to check for adherance to.
   /// @return A flag indicating if the provided interface ID is supported.
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBSingleTokenPaymentTerminal, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_2).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
@@ -349,7 +341,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @param _projectId The ID of the project being migrated.
   /// @param _to The terminal contract that will gain the project's funds.
   /// @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
-  function migrate(uint256 _projectId, IJBPaymentTerminal _to)
+  function migrate(
+    uint256 _projectId,
+    IJBPaymentTerminal _to
+  )
     external
     virtual
     override
@@ -397,7 +392,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @notice Process any fees that are being held for the project.
   /// @dev Only a project owner, an operator, or the contract's owner can process held fees.
   /// @param _projectId The ID of the project whos held fees should be processed.
-  function processFees(uint256 _projectId)
+  function processFees(
+    uint256 _projectId
+  )
     external
     virtual
     override
@@ -563,11 +560,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal virtual {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal virtual {
     _from; // Prevents unused var compiler and natspec complaints.
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
@@ -1219,11 +1212,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @param _amount The fee amount, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platform's tokens for.
   /// @param _from The project ID the fee is being paid from.
-  function _processFee(
-    uint256 _amount,
-    address _beneficiary,
-    uint256 _from
-  ) internal {
+  function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
@@ -1434,10 +1423,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
   /// @param _projectId The project for which fees are being refunded.
   /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
   /// @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
-  function _refundHeldFees(uint256 _projectId, uint256 _amount)
-    internal
-    returns (uint256 refundedFees)
-  {
+  function _refundHeldFees(
+    uint256 _projectId,
+    uint256 _amount
+  ) internal returns (uint256 refundedFees) {
     // Get a reference to the project's held fees.
     JBFee3_2[] memory _heldFees = _heldFeesOf[_projectId];
 
