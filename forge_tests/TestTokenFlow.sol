@@ -178,7 +178,8 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             _beneficiary,
             _projectId,
             /* _amount */
-            1
+            1,
+            _beneficiary
         );
     }
 

@@ -38,6 +38,7 @@ interface IJBTokenStore {
     uint256 indexed projectId,
     uint256 initialUnclaimedBalance,
     uint256 amount,
+    address beneficiary,
     address caller
   );
 
@@ -87,7 +88,12 @@ interface IJBTokenStore {
     bool preferClaimedTokens
   ) external;
 
-  function claimFor(address holder, uint256 projectId, uint256 amount) external;
+  function claimFor(
+    address holder,
+    uint256 projectId,
+    uint256 amount,
+    address benenficiary
+  ) external;
 
   function transferFrom(
     address holder,

@@ -298,10 +298,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   /// @param _holder The owner of the tokens being claimed.
   /// @param _projectId The ID of the project whose tokens are being claimed.
   /// @param _amount The amount of tokens to claim.
+  /// @param _beneficiary The account into which the claimed tokens will go.
   function claimFor(
     address _holder,
     uint256 _projectId,
-    uint256 _amount
+    uint256 _amount,
+    address _beneficiary
   ) external override requirePermission(_holder, _projectId, JBOperations.CLAIM) {
     // Get a reference to the project's current token.
     IJBToken _token = tokenOf[_projectId];
@@ -324,9 +326,9 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     }
 
     // Mint the equivalent amount of the project's token for the holder.
-    _token.mint(_projectId, _holder, _amount);
+    _token.mint(_projectId, _beneficiary, _amount);
 
-    emit Claim(_holder, _projectId, _unclaimedBalance, _amount, msg.sender);
+    emit Claim(_holder, _projectId, _unclaimedBalance, _amount, _beneficiary, msg.sender);
   }
 
   /// @notice Allows a holder to transfer unclaimed tokens to another account.
