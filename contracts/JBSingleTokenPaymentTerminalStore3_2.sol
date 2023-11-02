@@ -111,12 +111,10 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
   /// @param _terminal The terminal for which the overflow is being calculated.
   /// @param _projectId The ID of the project to get overflow for.
   /// @return The current amount of overflow that project has in the specified terminal.
-  function currentOverflowOf(IJBSingleTokenPaymentTerminal _terminal, uint256 _projectId)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function currentOverflowOf(
+    IJBSingleTokenPaymentTerminal _terminal,
+    uint256 _projectId
+  ) external view override returns (uint256) {
     // Return the overflow during the project's current funding cycle.
     return
       _overflowDuring(
@@ -338,7 +336,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
     // If the terminal should base its weight on a different currency from the terminal's currency, determine the factor.
     // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
     uint256 _weightRatio = _amount.currency == fundingCycle.baseCurrency()
-      ? 10**_decimals
+      ? 10 ** _decimals
       : prices.priceFor(_projectId, _amount.currency, fundingCycle.baseCurrency(), _decimals);
 
     // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
@@ -541,7 +539,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
       ? _amount
       : PRBMath.mulDiv(
         _amount,
-        10**_MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+        10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
         prices.priceFor(_projectId, _currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
@@ -610,7 +608,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
       ? _amount
       : PRBMath.mulDiv(
         _amount,
-        10**_MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+        10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
         prices.priceFor(_projectId, _currency, _balanceCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
@@ -651,12 +649,9 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
   /// @dev The msg.sender must be an IJBSingleTokenPaymentTerminal. The amount returned is in terms of the msg.senders tokens.
   /// @param _projectId The ID of the project being migrated.
   /// @return balance The project's migrated balance, as a fixed point number with the same amount of decimals as its relative terminal.
-  function recordMigration(uint256 _projectId)
-    external
-    override
-    nonReentrant
-    returns (uint256 balance)
-  {
+  function recordMigration(
+    uint256 _projectId
+  ) external override nonReentrant returns (uint256 balance) {
     // Get a reference to the project's current funding cycle.
     JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
@@ -770,7 +765,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
         ? _distributionLimitRemaining
         : PRBMath.mulDiv(
           _distributionLimitRemaining,
-          10**_MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+          10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
           prices.priceFor(
             _projectId,
             _distributionLimit.currency,
@@ -823,7 +818,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
       ? _ethOverflow
       : PRBMath.mulDiv(
         _ethOverflow,
-        10**18,
+        10 ** 18,
         prices.priceFor(_projectId, JBCurrencies.ETH, _currency, 18)
       );
 
