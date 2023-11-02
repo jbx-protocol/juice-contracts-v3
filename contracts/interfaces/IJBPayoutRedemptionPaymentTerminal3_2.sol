@@ -5,16 +5,16 @@ import {JBFee3_2} from './../structs/JBFee3_2.sol';
 import {IJBAllowanceTerminal3_1} from './IJBAllowanceTerminal3_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFeeHoldingTerminal} from './IJBFeeHoldingTerminal.sol';
-import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
+import {IJBPayDelegate3_2} from './IJBPayDelegate3_2.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 import {IJBPayoutTerminal3_1} from './IJBPayoutTerminal3_1.sol';
 import {IJBPrices3_2} from './IJBPrices3_2.sol';
 import {IJBProjects} from './IJBProjects.sol';
-import {IJBRedemptionDelegate3_1_1} from './IJBRedemptionDelegate3_1_1.sol';
+import {IJBRedemptionDelegate3_2} from './IJBRedemptionDelegate3_2.sol';
 import {IJBRedemptionTerminal} from './IJBRedemptionTerminal.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
-import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
-import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
+import {JBDidPayData3_2} from './../structs/JBDidPayData3_2.sol';
+import {JBDidRedeemData3_2} from './../structs/JBDidRedeemData3_2.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 
 interface IJBPayoutRedemptionPaymentTerminal3_2 is
@@ -149,16 +149,16 @@ interface IJBPayoutRedemptionPaymentTerminal3_2 is
   );
 
   event DelegateDidRedeem(
-    IJBRedemptionDelegate3_1_1 indexed delegate,
-    JBDidRedeemData3_1_1 data,
+    IJBRedemptionDelegate3_2 indexed delegate,
+    JBDidRedeemData3_2 data,
     uint256 delegatedAmount,
     uint256 fee,
     address caller
   );
 
   event DelegateDidPay(
-    IJBPayDelegate3_1_1 indexed delegate,
-    JBDidPayData3_1_1 data,
+    IJBPayDelegate3_2 indexed delegate,
+    JBDidPayData3_2 data,
     uint256 delegatedAmount,
     address caller
   );
