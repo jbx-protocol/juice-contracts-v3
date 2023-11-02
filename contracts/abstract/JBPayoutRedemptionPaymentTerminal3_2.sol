@@ -634,10 +634,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
           _metadata
         );
 
-        // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
+        // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
         _feePercent = isFeelessAddress[_beneficiary] ||
           _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
-          fee == 0 ||
           directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
           IJBPaymentTerminal(address(0))
           ? 0
@@ -800,9 +799,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
     // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount` and `_leftoverDistributionAmount` only used within scope.
     {
       // Keep a reference to the fee.
-      // If the fee is zero, set the discount to 100% for convenience.
-      uint256 _feePercent = fee == 0 ||
-        directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
+      // The fee is 0 if the fee beneficiary doesn't accept the given token.
+      uint256 _feePercent = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
         IJBPaymentTerminal(address(0))
         ? 0
         : fee;
@@ -909,9 +907,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_2 is
       address _projectOwner = projects.ownerOf(_projectId);
 
       // Keep a reference to the fee.
-      // If the fee is zero or if the fee is being used by an address that doesn't incur fees, set the discount to 100% for convenience.
-      uint256 _feePercent = fee == 0 ||
-        isFeelessAddress[msg.sender] ||
+      // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
+      uint256 _feePercent = isFeelessAddress[msg.sender] ||
         directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
         IJBPaymentTerminal(address(0))
         ? 0
