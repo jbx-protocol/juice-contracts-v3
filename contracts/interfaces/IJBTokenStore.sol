@@ -54,6 +54,8 @@ interface IJBTokenStore {
 
   function tokenOf(uint256 projectId) external view returns (IJBToken);
 
+  function projectIdOf(IJBToken token) external view returns (uint256);
+
   function projects() external view returns (IJBProjects);
 
   function fundingCycleStore() external view returns (IJBFundingCycleStore);
