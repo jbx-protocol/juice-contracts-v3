@@ -6,7 +6,9 @@ import {MockMaliciousAllocator, GasGussler} from "./mock/MockMaliciousAllocator.
 import {MockMaliciousTerminal} from "./mock/MockMaliciousTerminal.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
-contract TestERC20Terminal_Local is TestBaseWorkflow {
+import {PermitSignature} from 'permit2/test/utils/PermitSignature.sol';
+
+contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
     event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     event FeeReverted(
@@ -27,8 +29,17 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     uint256 WEIGHT = 1000 * 10 ** 18;
     uint256 FAKE_PRICE = 18;
 
+    // Permit2 stuffs
+    bytes32 DOMAIN_SEPARATOR;
+
+    address from;
+    uint256 fromPrivateKey;
+
     function setUp() public override {
         super.setUp();
+
+        fromPrivateKey = 0x12341234;
+        from = vm.addr(fromPrivateKey);
 
         _projectOwner = multisig();
 
@@ -83,13 +94,15 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             jbPaymentTerminalStore(),
             multisig()
         );
+
+        DOMAIN_SEPARATOR = permit2().DOMAIN_SEPARATOR();
     }
 
     function launchProjectSTD() public returns (uint256, uint256){
         JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -174,7 +187,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -332,8 +345,214 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         return projectId;
     }
 
+    function testAddToBalanceOfAndSetAllowance() public {
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
+
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 6 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
+
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
+        vm.startPrank(_projectOwner);
+        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE, 18);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed MyToken-ETH");
+
+        jbPrices().addFeedFor(
+            projectId,
+            uint256(uint24(uint160(address(jbToken())))), // currency
+            jbLibraries().ETH(), // base weight currency
+            _priceFeedJbEth
+        );
+
+        vm.stopPrank();
+
+        address caller = msg.sender;
+        vm.label(caller, "caller");
+        vm.prank(_multisig);
+        jbToken().transfer(from, 1e18 + 1);
+
+        IAllowanceTransfer.PermitDetails memory details =
+            IAllowanceTransfer.PermitDetails({token: address(jbToken()), amount: uint160(1e18), expiration: uint48(block.timestamp + 5), nonce: 0});
+
+        IAllowanceTransfer.PermitSingle memory permit =
+            IAllowanceTransfer.PermitSingle({
+            details: details,
+            spender: address(terminal),
+            sigDeadline: block.timestamp + 100
+        });
+
+        bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
+
+        JBSingleAllowanceData memory permitData = 
+            JBSingleAllowanceData({
+                sigDeadline: block.timestamp + 100,
+                amount: uint160(1e18),
+                expiration: uint48(block.timestamp + 5),
+                nonce: uint48(0),
+                signature: sig
+        });
+
+        vm.prank(from);
+        jbToken().approve(address(permit2()), 1e18);
+
+        vm.prank(from);
+        terminal.addToBalanceOfAndSetAllowance(
+            projectId, 
+            1e18,
+            address(0),
+            false,
+            "testing permit2",
+            new bytes(0),
+            permitData
+        );
+
+        /* vm.prank(caller); // back to regular msg.sender (bug?)
+        jbToken().approve(address(terminal), 1e18);
+        vm.prank(caller); // back to regular msg.sender (bug?)
+        terminal.pay(projectId, 1e18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow */
+
+    }
+
+    function testERC20PayAndSetAllowance() public {
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
+
+        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+         _distributionLimits[0] = JBCurrencyAmount({
+            value: 6 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });  
+
+        _overflowAllowances[0] = JBCurrencyAmount({
+            value: 5 * 10 ** 18,
+            currency: jbLibraries().ETH()
+        });
+
+        _fundAccessConstraints[0] =
+            JBFundAccessConstraints3_1({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimits: _distributionLimits,
+                overflowAllowances: _overflowAllowances
+            });
+
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
+        vm.startPrank(_projectOwner);
+        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE, 18);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed MyToken-ETH");
+
+        jbPrices().addFeedFor(
+            projectId,
+            uint256(uint24(uint160(address(jbToken())))), // currency
+            jbLibraries().ETH(), // base weight currency
+            _priceFeedJbEth
+        );
+
+        vm.stopPrank();
+
+        address caller = msg.sender;
+        vm.label(caller, "caller");
+        vm.prank(_multisig);
+        jbToken().transfer(from, 1e18 + 1);
+
+        IAllowanceTransfer.PermitDetails memory details =
+            IAllowanceTransfer.PermitDetails({token: address(jbToken()), amount: uint160(1e18), expiration: uint48(block.timestamp + 5), nonce: 0});
+
+        IAllowanceTransfer.PermitSingle memory permit =
+            IAllowanceTransfer.PermitSingle({
+            details: details,
+            spender: address(terminal),
+            sigDeadline: block.timestamp + 100
+        });
+
+        bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
+
+        /* permit2().permit(from, permit, sig); */
+
+        JBSingleAllowanceData memory permitData = 
+            JBSingleAllowanceData({
+                sigDeadline: block.timestamp + 100,
+                amount: uint160(1e18),
+                expiration: uint48(block.timestamp + 5),
+                nonce: uint48(0),
+                signature: sig
+        });
+
+        vm.prank(from);
+        jbToken().approve(address(permit2()), 1e18);
+
+        vm.prank(from);
+        terminal.payAndSetAllowance(
+            projectId, 
+            1e18,
+            address(0),
+            msg.sender,
+            0,
+            false,
+            "testing permit2",
+            new bytes(0),
+            permitData
+        );
+
+        /* vm.prank(caller); // back to regular msg.sender (bug?)
+        jbToken().approve(address(terminal), 1e18);
+        vm.prank(caller); // back to regular msg.sender (bug?)
+        terminal.pay(projectId, 1e18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow */
+
+    }
+
     function testAllowanceERC20() public {
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -472,7 +691,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         _allocator = new MockMaliciousAllocator();
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -582,7 +801,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _allocator = IJBSplitAllocator(address(new GasGussler())); // Whatever other contract with a fallback
 
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -691,7 +910,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         IJBSplitAllocator _randomEOA = IJBSplitAllocator(makeAddr("randomEOA"));
 
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -807,7 +1026,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         (uint256 projectId, uint256 allocationProjectId) = launch2ProjectsSTD();
 
@@ -880,7 +1099,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints3_1[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints3_1[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         // setting splits
         JBSplit[] memory _splits = new JBSplit[](1);
@@ -950,7 +1169,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
         BALANCE = bound(BALANCE, 1e18, jbToken().totalSupply());
         
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_2 terminal = jbERC20PaymentTerminal();
 
         uint256 projectId = launchProjectSTDFuzzed(ALLOWANCE, TARGET, BALANCE);
 
@@ -1050,7 +1269,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         );
 
         uint256 tokenBalanceAfter = _tokenStore.balanceOf(_beneficiary, projectId);
-        uint256 processedFee = JBFees.feeIn(tokenBalanceAfter * 2, jbLibraries().MAX_FEE(), 0);
+        uint256 processedFee = JBFees3_2.feeIn(tokenBalanceAfter * 2, jbLibraries().MAX_FEE());
 
         // verify: beneficiary should have a balance of 0 JBTokens
         assertEq(_tokenStore.balanceOf(msg.sender, projectId), 0);

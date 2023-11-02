@@ -137,12 +137,21 @@ contract JBERC20PaymentTerminal3_2 is
     if (_amount < _allowance.amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
     // Get allowance to `spend` tokens for the sender
     _permitAllowance(_allowance);
+
+    // Get a reference to the balance before receiving tokens.
+    uint256 _balanceBefore = _balance();
+
+    PERMIT2.transferFrom(msg.sender, address(this), uint160(_amount), address(token));
+
+    // The amount should reflect the change in balance.
+    _amount = _balance() - _balanceBefore;
+
     // Continue with the regular pay flow
     return
-      pay(
-        _projectId,
+      _pay(
         _amount,
-        _token,
+        msg.sender,
+        _projectId,
         _beneficiary,
         _minReturnedTokens,
         _preferClaimedTokens,
@@ -173,8 +182,17 @@ contract JBERC20PaymentTerminal3_2 is
     if (_amount < _allowance.amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
     // Get allowance to `spend` tokens for the user
     _permitAllowance(_allowance);
+
+    // Get a reference to the balance before receiving tokens.
+    uint256 _balanceBefore = _balance();
+
+    PERMIT2.transferFrom(msg.sender, address(this), uint160(_amount), address(token));
+
+    // The amount should reflect the change in balance.
+    _amount = _balance() - _balanceBefore;
+
     // Continue with the regular addToBalanceOf flow
-    return addToBalanceOf(_projectId, _amount, _token, _shouldRefundHeldFees, _memo, _metadata);
+    return _addToBalanceOf(_projectId, _amount, _shouldRefundHeldFees, _memo, _metadata);
   }
 
   //*********************************************************************//

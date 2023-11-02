@@ -175,7 +175,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         uint256 tokenDiff = tokenBalanceAfter;
 
         // Redemption fee share: (tokens received from redeem * 2 b/c 50% redemption rate)
-        uint256 processedFee = JBFees.feeIn(tokenDiff * 2, jbLibraries().MAX_FEE(), 0);
+        uint256 processedFee = JBFees3_2.feeIn(tokenDiff * 2, jbLibraries().MAX_FEE());
 
         // verify: beneficiary should have a balance of 0 JBTokens
         assertEq(_tokenStore.balanceOf(_beneficiary, projectId), (processedFee));
