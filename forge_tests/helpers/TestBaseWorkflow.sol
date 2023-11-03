@@ -194,7 +194,7 @@ contract TestBaseWorkflow is Test {
   }
 
   function jbPaymentTerminalStore() internal view returns (JBSingleTokenPaymentTerminalStore3_1_1) {
-    return JBSingleTokenPaymentTerminalStore3_1_1(address(_jbPaymentTerminalStore3_1_1));
+    return _jbPaymentTerminalStore3_1_1;
   }
 
   function jbETHPaymentTerminal() internal returns (JBETHPaymentTerminal3_1_2) {
