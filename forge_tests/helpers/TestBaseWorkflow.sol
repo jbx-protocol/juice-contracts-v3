@@ -197,11 +197,11 @@ contract TestBaseWorkflow is Test {
     return _jbPaymentTerminalStore3_1_1;
   }
 
-  function jbETHPaymentTerminal() internal returns (JBETHPaymentTerminal3_1_2) {
+  function jbETHPaymentTerminal() internal view returns (JBETHPaymentTerminal3_1_2) {
     return _jbETHPaymentTerminal3_1_2;
   }
 
-  function jbERC20PaymentTerminal() internal returns (JBERC20PaymentTerminal3_1_2) {
+  function jbERC20PaymentTerminal() internal view returns (JBERC20PaymentTerminal3_1_2) {
     return _jbERC20PaymentTerminal3_1_2;
   }
 
