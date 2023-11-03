@@ -6,7 +6,7 @@ import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
-import {IJBController} from './interfaces/IJBController.sol';
+import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore} from './interfaces/IJBFundAccessConstraintsStore.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
@@ -33,7 +33,7 @@ import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
+contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
 
@@ -174,7 +174,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     bytes4 _interfaceId
   ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
-      _interfaceId == type(IJBController).interfaceId ||
+      _interfaceId == type(IJBController3_1).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);

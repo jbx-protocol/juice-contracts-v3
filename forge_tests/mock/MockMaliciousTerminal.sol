@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
-contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
+contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2 {
   error NopeNotGonnaDoIt();
 
   uint256 revertMode;
@@ -35,10 +35,10 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1 {
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBPrices _prices,
-    IJBSingleTokenPaymentTerminalStore _store,
+    IJBSingleTokenPaymentTerminalStore3_1_1 _store,
     address _owner
   )
-    JBERC20PaymentTerminal3_1(
+    JBERC20PaymentTerminal3_1_2(
       _token,
       _currency,
       _baseWeightCurrency,

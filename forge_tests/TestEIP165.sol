@@ -17,8 +17,8 @@ contract TestEIP165_Local is TestBaseWorkflow {
     bool constant splitsPreferAddToBalance = true;
     address constant splitsOwner = address(420);
 
-    function testJBController() public {
-        JBController controller = jbController();
+    function testJBController3_1() public {
+        JBController3_1 controller = jbController();
 
         // Should support these interfaces
         assertTrue(controller.supportsInterface(type(IERC165).interfaceId));
@@ -26,7 +26,7 @@ contract TestEIP165_Local is TestBaseWorkflow {
         assertTrue(controller.supportsInterface(type(IJBOperatable).interfaceId));
 
         /* if (isUsingJbController3_0()) {
-            assertTrue(controller.supportsInterface(type(IJBController).interfaceId));
+            assertTrue(controller.supportsInterface(type(IJBController3_1).interfaceId));
         } else {
             assertTrue(controller.supportsInterface(type(IJBController3_1).interfaceId));
         } */
@@ -36,7 +36,7 @@ contract TestEIP165_Local is TestBaseWorkflow {
     }
 
     function testJBERC20PaymentTerminal() public {
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         // Should support these interfaces
         assertTrue(terminal.supportsInterface(type(IERC165).interfaceId));
@@ -45,22 +45,16 @@ contract TestEIP165_Local is TestBaseWorkflow {
         assertTrue(terminal.supportsInterface(type(IJBSingleTokenPaymentTerminal).interfaceId));
         assertTrue(terminal.supportsInterface(type(IJBOperatable).interfaceId));
 
-        if (isUsingJbController3_0()) {
-            assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal).interfaceId));
-        } else {
-            assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId));
-        }
+        assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
+        assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
+        assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1_1).interfaceId));
 
         // Make sure it doesn't always return true
         assertTrue(!terminal.supportsInterface(notSupportedInterface));
     }
 
     function testJBETHPaymentTerminal() public {
-        JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
+        JBETHPaymentTerminal3_1_2 terminal = jbETHPaymentTerminal();
 
         // Should support these interfaces
         assertTrue(terminal.supportsInterface(type(IERC165).interfaceId));
@@ -69,15 +63,9 @@ contract TestEIP165_Local is TestBaseWorkflow {
         assertTrue(terminal.supportsInterface(type(IJBSingleTokenPaymentTerminal).interfaceId));
         assertTrue(terminal.supportsInterface(type(IJBOperatable).interfaceId));
 
-        if (isUsingJbController3_0()) {
-            assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal).interfaceId));
-        } else {
-            assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
-            assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId));
-        }
+        assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
+        assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
+        assertTrue(terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1_1).interfaceId));
         // Make sure it doesn't always return true
         assertTrue(!terminal.supportsInterface(notSupportedInterface));
     }

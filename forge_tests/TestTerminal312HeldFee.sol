@@ -7,7 +7,7 @@ import {JBETHPaymentTerminal3_1_2} from "../contracts/JBETHPaymentTerminal3_1_2.
 import {IJBFeeGauge3_1, JBFeeType} from "../contracts/interfaces/IJBFeeGauge3_1.sol";
 
 contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBETHPaymentTerminal3_1_2 private _terminal;
     JBTokenStore private _tokenStore;
 
@@ -34,7 +34,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             _jbDirectory,
             _jbSplitsStore,
             _jbPrices,
-            address(_jbPaymentTerminalStore3_1),
+            address(_jbPaymentTerminalStore3_1_1),
             _multisig
         );
 
@@ -117,7 +117,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(makeAddr('FeeGauge'));
+        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(makeAddr('FeeGauge'));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
@@ -155,7 +155,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
+        IJBPayoutRedemptionPaymentTerminal3_1_1(address(_terminal)).distributePayoutsOf(
             _projectId,
             payAmountInWei,
             jbLibraries().ETH(),

@@ -6,7 +6,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 uint256 constant WEIGHT = 1000 * 10 ** 18;
 
 contract TestReconfigureProject_Local is TestBaseWorkflow {
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
     JBFundingCycleData _dataReconfiguration;

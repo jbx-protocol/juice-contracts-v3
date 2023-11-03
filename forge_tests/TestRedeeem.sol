@@ -8,9 +8,8 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
  * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
  */
 contract TestRedeem_Local is TestBaseWorkflow {
-    JBController private _controller;
-    JBETHPaymentTerminal private _terminal;
-    JBETHPaymentTerminal3_1_1 private _terminal3_1_1;
+    JBController3_1 private _controller;
+    JBETHPaymentTerminal3_1_2 private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -30,17 +29,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
-
-        _terminal3_1_1 = new JBETHPaymentTerminal3_1_1(
-            _accessJBLib.ETH(),
-            _jbOperatorStore,
-            _jbProjects,
-            _jbDirectory,
-            _jbSplitsStore,
-            _jbPrices,
-            address(_jbPaymentTerminalStore3_1),
-            _multisig
-        );
 
         _tokenStore = jbTokenStore();
 
@@ -79,7 +67,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         _terminals.push(_terminal);
-        _terminals.push(_terminal3_1_1);
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -94,7 +81,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
-                terminal: _terminal3_1_1,
+                terminal: _terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimit: 0, // only overflow
                 overflowAllowance: 5 ether,
@@ -192,7 +179,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
     }
 
-    function testRedeemTerminal3_1_1(uint256 _tokenAmountToRedeem) external {
+    function testRedeem(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false
         uint96 payAmountInWei = 10 ether;
 
@@ -203,7 +190,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         address _userWallet = address(1234);
 
         // pay terminal
-        _terminal3_1_1.pay{value: payAmountInWei}(
+        _terminal.pay{value: payAmountInWei}(
             _projectId,
             payAmountInWei,
             address(0),
@@ -224,14 +211,14 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // verify: ETH balance in terminal should be up to date
         uint256 _terminalBalanceInWei = payAmountInWei;
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei);
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // Fuzz 1 to full balance redemption
         _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1, _userTokenBalance);
 
         // Test: redeem
         vm.prank(_userWallet);
-        uint256 _reclaimAmtInWei = _terminal3_1_1.redeemTokensOf(
+        uint256 _reclaimAmtInWei = _terminal.redeemTokensOf(
             /* _holder */
             _userWallet,
             /* _projectId */
@@ -281,6 +268,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance - _tokenAmountToRedeem, "incorrect beneficiary balance");
 
         // verify: ETH balance in terminal should be up to date (with 1 wei precision)
-        assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal3_1_1, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
+        assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
     }
 }

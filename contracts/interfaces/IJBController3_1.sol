@@ -7,10 +7,10 @@ import {JBFundAccessConstraints} from './../structs/JBFundAccessConstraints.sol'
 import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from './../structs/JBFundingCycleData.sol';
 import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
+import {JBFundingCycleConfiguration} from './../structs/JBFundingCycleConfiguration.sol';
 import {JBGroupedSplits} from './../structs/JBGroupedSplits.sol';
 import {JBProjectMetadata} from './../structs/JBProjectMetadata.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
-import {IJBController3_0_1} from './IJBController3_0_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore} from './IJBFundAccessConstraintsStore.sol';
 import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';
@@ -20,7 +20,7 @@ import {IJBProjects} from './IJBProjects.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
 import {IJBTokenStore} from './IJBTokenStore.sol';
 
-interface IJBController3_1 is IJBController3_0_1, IERC165 {
+interface IJBController3_1 is IERC165 {
   event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
 
   event LaunchFundingCycles(uint256 configuration, uint256 projectId, string memo, address caller);
@@ -90,31 +90,26 @@ interface IJBController3_1 is IJBController3_0_1, IERC165 {
 
   function totalOutstandingTokensOf(uint256 projectId) external view returns (uint256);
 
-  function getFundingCycleOf(
-    uint256 projectId,
-    uint256 configuration
-  )
+  function getFundingCycleOf(uint256 projectId, uint256 configuration)
     external
     view
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
-  function latestConfiguredFundingCycleOf(
-    uint256 projectId
-  )
+  function latestConfiguredFundingCycleOf(uint256 projectId)
     external
     view
-    returns (JBFundingCycle memory, JBFundingCycleMetadata memory metadata, JBBallotState);
+    returns (
+      JBFundingCycle memory,
+      JBFundingCycleMetadata memory metadata,
+      JBBallotState
+    );
 
-  function currentFundingCycleOf(
-    uint256 projectId
-  )
+  function currentFundingCycleOf(uint256 projectId)
     external
     view
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
-  function queuedFundingCycleOf(
-    uint256 projectId
-  )
+  function queuedFundingCycleOf(uint256 projectId)
     external
     view
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
@@ -122,35 +117,23 @@ interface IJBController3_1 is IJBController3_0_1, IERC165 {
   function launchProjectFor(
     address owner,
     JBProjectMetadata calldata projectMetadata,
-    JBFundingCycleData calldata data,
-    JBFundingCycleMetadata calldata metadata,
-    uint256 mustStartAtOrAfter,
-    JBGroupedSplits[] memory groupedSplits,
-    JBFundAccessConstraints[] memory fundAccessConstraints,
+    JBFundingCycleConfiguration[] calldata configurations,
     IJBPaymentTerminal[] memory terminals,
     string calldata memo
   ) external returns (uint256 projectId);
 
   function launchFundingCyclesFor(
     uint256 projectId,
-    JBFundingCycleData calldata data,
-    JBFundingCycleMetadata calldata metadata,
-    uint256 mustStartAtOrAfter,
-    JBGroupedSplits[] memory groupedSplits,
-    JBFundAccessConstraints[] memory fundAccessConstraints,
+    JBFundingCycleConfiguration[] calldata configurations,
     IJBPaymentTerminal[] memory terminals,
     string calldata memo
-  ) external returns (uint256 configuration);
+  ) external returns (uint256 configured);
 
   function reconfigureFundingCyclesOf(
     uint256 projectId,
-    JBFundingCycleData calldata data,
-    JBFundingCycleMetadata calldata metadata,
-    uint256 mustStartAtOrAfter,
-    JBGroupedSplits[] memory groupedSplits,
-    JBFundAccessConstraints[] memory fundAccessConstraints,
+    JBFundingCycleConfiguration[] calldata configurations,
     string calldata memo
-  ) external returns (uint256);
+  ) external returns (uint256 configured);
 
   function mintTokensOf(
     uint256 projectId,
@@ -169,10 +152,9 @@ interface IJBController3_1 is IJBController3_0_1, IERC165 {
     bool preferClaimedTokens
   ) external;
 
-  function distributeReservedTokensOf(
-    uint256 projectId,
-    string memory memo
-  ) external returns (uint256);
+  function distributeReservedTokensOf(uint256 projectId, string memory memo)
+    external
+    returns (uint256);
 
   function migrate(uint256 projectId, IJBMigratable to) external;
 }

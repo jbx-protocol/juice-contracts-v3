@@ -4,7 +4,7 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDelegates_Local is TestBaseWorkflow {
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
     JBFundingCycleMetadata _metadata;
@@ -84,7 +84,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
     function testPayDelegates(uint256 _numberOfAllocations, uint256 _totalToAllocate) public {
         _numberOfAllocations = bound(_numberOfAllocations, 1, 5);
 
-        JBPayDelegateAllocation[] memory _allocations = new JBPayDelegateAllocation[](_numberOfAllocations);
+        JBPayDelegateAllocation3_1_1[] memory _allocations = new JBPayDelegateAllocation3_1_1[](_numberOfAllocations);
         uint256[] memory payDelegateAmounts = new uint256[](_numberOfAllocations);
 
         _beneficiary = address(bytes20(keccak256("beneficiary")));
@@ -108,9 +108,9 @@ contract TestDelegates_Local is TestBaseWorkflow {
         for (uint256 i = 0; i < payDelegateAmounts.length; i++) {
             address _delegateAddress = address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
 
-            _allocations[i] = JBPayDelegateAllocation(IJBPayDelegate(_delegateAddress), payDelegateAmounts[i]);
+            _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), payDelegateAmounts[i], bytes(''));
 
-            JBDidPayData memory _didPayData = JBDidPayData(
+            JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1(
                 _beneficiary,
                 _projectId,
                 fundingCycle.configuration,
@@ -130,25 +130,26 @@ contract TestDelegates_Local is TestBaseWorkflow {
                 _beneficiary,
                 false,
                 "",
+                new bytes(0), // empty metadata
                 new bytes(0) // empty metadata
             );
 
             // Mock the delegate
-            vm.mockCall(_delegateAddress, abi.encodeWithSelector(IJBPayDelegate.didPay.selector), "");
+            vm.mockCall(_delegateAddress, abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector), "");
 
             // Assert that the delegate gets called with the expected value
             vm.expectCall(
-                _delegateAddress, payDelegateAmounts[i], abi.encodeWithSelector(IJBPayDelegate.didPay.selector, _didPayData)
+                _delegateAddress, payDelegateAmounts[i], abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector, _didPayData)
             );
 
             // Expect an event to be emitted for every delegate
             vm.expectEmit(true, true, true, true);
-            emit DelegateDidPay(IJBPayDelegate(_delegateAddress), _didPayData, payDelegateAmounts[i], _beneficiary);
+            emit DelegateDidPay(IJBPayDelegate3_1_1(_delegateAddress), _didPayData, payDelegateAmounts[i], _beneficiary);
         }
 
         vm.mockCall(
             _datasource,
-            abi.encodeWithSelector(IJBFundingCycleDataSource.payParams.selector),
+            abi.encodeWithSelector(IJBFundingCycleDataSource3_1_1.payParams.selector),
             abi.encode(
                 0, // weight
                 "", // memo
@@ -163,5 +164,5 @@ contract TestDelegates_Local is TestBaseWorkflow {
         );
     }
 
-    event DelegateDidPay(IJBPayDelegate indexed delegate, JBDidPayData data, uint256 delegatedAmount, address caller);
+    event DelegateDidPay(IJBPayDelegate3_1_1 indexed delegate, JBDidPayData3_1_1 data, uint256 delegatedAmount, address caller);
 }
