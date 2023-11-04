@@ -117,68 +117,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             ""
         );
     }
-
-    function testRedeem() external {
-        bool payPreferClaimed = true; //false
-        uint96 payAmountInWei = 2 ether;
-
-        // issue an ERC-20 token for project
-        vm.prank(_projectOwner);
-        _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
-
-        address _userWallet = address(1234);
-
-        // pay terminal
-        _terminal.pay{value: payAmountInWei}(
-            _projectId,
-            payAmountInWei,
-            address(0),
-            _userWallet,
-            /* _minReturnedTokens */
-            0,
-            /* _preferClaimedTokens */
-            payPreferClaimed,
-            /* _memo */
-            "Take my money!",
-            /* _delegateMetadata */
-            new bytes(0)
-        );
-
-        // verify: beneficiary should have a balance of JBTokens
-        uint256 _userTokenBalance = PRBMathUD60x18.mul(payAmountInWei, _weight);
-        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance);
-
-        // verify: ETH balance in terminal should be up to date
-        uint256 _terminalBalanceInWei = payAmountInWei;
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
-
-        vm.prank(_userWallet);
-        uint256 _reclaimAmtInWei = _terminal.redeemTokensOf(
-            /* _holder */
-            _userWallet,
-            /* _projectId */
-            _projectId,
-            /* _tokenCount */
-            _userTokenBalance / 2,
-            /* token (unused) */
-            address(0),
-            /* _minReturnedWei */
-            1,
-            /* _beneficiary */
-            payable(_userWallet),
-            /* _memo */
-            "Refund me now!",
-            /* _delegateMetadata */
-            new bytes(0)
-        );
-
-        // verify: beneficiary has correct amount ok token
-        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance / 2);
-
-        // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
-    }
-
+    
     function testRedeem(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false
         uint96 payAmountInWei = 10 ether;

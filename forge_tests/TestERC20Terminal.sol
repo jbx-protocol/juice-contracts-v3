@@ -423,7 +423,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
-
+    
     function testAllocation_should_emit_event_with_correct_reason_when_reverting(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
