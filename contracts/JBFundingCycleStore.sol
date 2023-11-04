@@ -517,10 +517,8 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
         configuration = _baseFundingCycle.configuration;
         // Prepare the next funding cycle's configuration to check in the next iteration.
         _basedOnConfiguration = _baseFundingCycle.basedOn;
-      } else {
         // Break out of the loop when a started base funding cycle is found.
-        break;
-      }
+      } else break;
     }
 
     // Get the funding cycle for the configuration.
@@ -546,7 +544,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     JBFundingCycle memory _fundingCycle = _getStructFor(_projectId, _configuration);
 
     // Loop through all most recently configured funding cycles until an eligible one is found, or we've proven one can't exist.
-    while (_fundingCycle.number != 0) {
+    do {
       // If the latest is expired, return an empty funding cycle.
       // A duration of 0 cannot be expired.
       if (
@@ -558,7 +556,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       if (block.timestamp >= _fundingCycle.start) return _fundingCycle.configuration;
 
       _fundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
-    }
+    } while (_fundingCycle.number != 0);
 
     return 0;
   }
