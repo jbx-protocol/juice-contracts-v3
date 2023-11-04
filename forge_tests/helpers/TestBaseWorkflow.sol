@@ -264,6 +264,9 @@ contract TestBaseWorkflow is Test {
     _jbSplitsStore = new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory);
     vm.label(address(_jbSplitsStore), 'JBSplitsStore');
 
+    _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
+    vm.label(address(_jbFundAccessConstraintsStore), 'JBFundAccessConstraintsStore');
+
     // JBController3_1
     _jbController = new JBController3_1(
       _jbOperatorStore,
@@ -278,8 +281,6 @@ contract TestBaseWorkflow is Test {
 
     vm.prank(_multisig);
     _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
-
-    _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
 
     // JBETHPaymentTerminalStore
     _jbPaymentTerminalStore3_1_1 = new JBSingleTokenPaymentTerminalStore3_1_1(
