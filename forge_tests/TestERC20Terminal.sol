@@ -241,7 +241,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
         vm.prank(_projectOwner);
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+        terminal.distributePayoutsOf(
             projectId,
             10 * 10 ** 18,
             1, // Currency
@@ -325,7 +325,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         // using controller 3.1
         vm.prank(_projectOwner);
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+        terminal.distributePayoutsOf(
             projectId,
             10 * 10 ** 18,
             1, // Currency
@@ -409,7 +409,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.expectEmit(true, true, true, true);
         emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, abi.encode("IERC165 fail"), address(this));
 
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+        terminal.distributePayoutsOf(
             projectId,
             10 * 10 ** 18,
             1, // Currency
@@ -423,7 +423,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
-    
+
     function testAllocation_should_emit_event_with_correct_reason_when_reverting(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
@@ -493,7 +493,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         MockMaliciousAllocator(address(_allocator)).setRevertMode(_revertReason);
         bytes memory _reason;
 
-        if (_revertReason == 1) {
+        if (_revertReason == 0) {
+            _reason = abi.encode("Allocate fail");
+        } else if (_revertReason == 1) {
             _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
         } else if (_revertReason == 2) {
             _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
@@ -505,7 +507,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.expectEmit(true, true, true, true);
         emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reason, address(this));
 
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+        terminal.distributePayoutsOf(
             projectId,
             1 * 10 ** 18,
             1, // Currency
@@ -776,7 +778,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.expectEmit(true, true, true, true);
         emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
 
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+        terminal.distributePayoutsOf(
             projectId,
             10 * 10 ** 18,
             1, // Currency
@@ -915,7 +917,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.expectEmit(true, true, true, true);
         emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
 
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+        terminal.distributePayoutsOf(
             projectId,
             10 * 10 ** 18,
             1, // Currency
