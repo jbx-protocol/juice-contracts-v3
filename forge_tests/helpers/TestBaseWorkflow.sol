@@ -11,7 +11,6 @@ import {ERC165, IERC165} from '@openzeppelin/contracts/utils/introspection/ERC16
 
 import {JBController3_1} from '@juicebox/JBController3_1.sol';
 import {JBDirectory} from '@juicebox/JBDirectory.sol';
-import {JBETHPaymentTerminal3_1_2} from '@juicebox/JBETHPaymentTerminal3_1_2.sol';
 import {JBERC20PaymentTerminal3_1_2} from '@juicebox/JBERC20PaymentTerminal3_1_2.sol';
 import {JBSingleTokenPaymentTerminalStore3_1_1} from '@juicebox/JBSingleTokenPaymentTerminalStore3_1_1.sol';
 import {JBFundAccessConstraintsStore} from '@juicebox/JBFundAccessConstraintsStore.sol';

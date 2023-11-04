@@ -68,16 +68,16 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         _terminals.push(_terminal);
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: _terminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimit: 1 ether, // 10 ETH target
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
-                overflowAllowanceCurrency: 1
-            })
-        );
+        // _fundAccessConstraints.push(
+        //     JBFundAccessConstraints({
+        //         terminal: _terminal,
+        //         token: jbLibraries().ETHToken(),
+        //         distributionLimit: 1 ether, // 1 ETH target
+        //         overflowAllowance: 5 ether,
+        //         distributionLimitCurrency: 1, // Currency = ETH
+        //         overflowAllowanceCurrency: 1
+        //     })
+        // );
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -117,7 +117,8 @@ contract TestRedeem_Local is TestBaseWorkflow {
             ""
         );
     }
-    
+
+    event K(uint256 q, uint256 w, uint256 e, uint256 j, uint256 k, uint256 l, uint256 n);    
     function testRedeem(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false
         uint96 payAmountInWei = 10 ether;
@@ -176,9 +177,8 @@ contract TestRedeem_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
-        // Check: correct amount returned, 50% redemption rate
         uint256 _grossRedeemed = PRBMath.mulDiv(
-                _tokenAmountToRedeem,
+                PRBMath.mulDiv(_terminalBalanceInWei, _tokenAmountToRedeem, _userTokenBalance),
                 5000 +
                 PRBMath.mulDiv(
                     _tokenAmountToRedeem,
@@ -194,11 +194,8 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Compute the net amount received, still in $project
         uint256 _netReceived = _grossRedeemed - _fee;
 
-        // Convert in actual ETH, based on the weight
-        uint256 _convertedInEth = PRBMath.mulDiv(_netReceived, 1e18, _weight);
-
         // Verify: correct amount returned (2 wei precision)
-        assertApproxEqAbs(_reclaimAmtInWei, _convertedInEth, 2, "incorrect amount returned");
+        assertApproxEqAbs(_reclaimAmtInWei, _netReceived, 2, "incorrect amount returned");
 
         // Verify: beneficiary received correct amount of ETH
         assertEq(payable(_userWallet).balance, _reclaimAmtInWei);
