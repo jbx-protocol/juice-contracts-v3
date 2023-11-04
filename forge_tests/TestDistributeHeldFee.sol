@@ -108,7 +108,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeWithSignature("currentDiscountFor(uint256,uint8)", _projectId, uint8(0)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
@@ -163,7 +163,6 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         // Will get the fee reimbursed:
         uint256 heldFee = payAmountInWei
             - PRBMath.mulDiv(payAmountInWei, jbLibraries().MAX_FEE(), discountedFee + jbLibraries().MAX_FEE()); // no discount
-        uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
 
         _terminal.addToBalanceOf{value: payAmountInWei}(
             _projectId,
@@ -177,7 +176,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         );
 
         // verify: project should get the fee back (plus the addToBalance amount)
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + heldFee + payAmountInWei);
+        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), payAmountInWei + heldFee);
     }
 
     function testFeeGetsHeldSpecialCase() public {
@@ -225,7 +224,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeWithSignature("currentDiscountFor(uint256,uint8)", _projectId, uint8(0)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
