@@ -238,7 +238,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         uint256 callerEthBalanceBefore = caller.balance;
 
         vm.prank(caller);
-        ETHterminal.redeemTokensOf(
+        uint256 _redeemedAmount = ETHterminal.redeemTokensOf(
             caller,
             projectId,
             100_000,
@@ -249,6 +249,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
-        assertEq(caller.balance, callerEthBalanceBefore + ((100_000 * overflow) / totalSupply));
+        assertEq(caller.balance, callerEthBalanceBefore + _redeemedAmount);
     }
 }
