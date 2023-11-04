@@ -84,6 +84,15 @@ contract TestAllowance_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        // dummy project for fee collection
+        controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
         uint256 projectId = controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
