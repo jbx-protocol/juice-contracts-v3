@@ -48,7 +48,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10000, //100%
-            ballotRedemptionRate: 0,
+            ballotRedemptionRate: 10000,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -88,6 +88,15 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        // Make a dummy project that'll receive fees.
+        _controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
         _projectId = _controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
@@ -96,7 +105,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             ""
         );
     }
-
+    
     function testFuzzPayBurnRedeemFlow(
         bool payPreferClaimed, //false
         bool burnPreferClaimed, //false

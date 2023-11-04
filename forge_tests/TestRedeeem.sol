@@ -68,17 +68,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         _terminals.push(_terminal);
 
-        // _fundAccessConstraints.push(
-        //     JBFundAccessConstraints({
-        //         terminal: _terminal,
-        //         token: jbLibraries().ETHToken(),
-        //         distributionLimit: 1 ether, // 1 ETH target
-        //         overflowAllowance: 5 ether,
-        //         distributionLimitCurrency: 1, // Currency = ETH
-        //         overflowAllowanceCurrency: 1
-        //     })
-        // );
-
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
                 terminal: _terminal,
