@@ -7,9 +7,9 @@ describe('JBReconfigurationBufferBallot.stateOf(...)', function () {
   const DURATION = 3000;
   const PROJECT_ID = 69;
 
-  const Active = 0;
-  const Approved = 1;
-  const Failed = 2;
+  const ApprovalExpected = 3;
+  const Approved = 4;
+  const Failed = 5;
 
   async function setup() {
     const blockNum = await ethers.provider.getBlockNumber();
@@ -56,6 +56,14 @@ describe('JBReconfigurationBufferBallot.stateOf(...)', function () {
 
     expect(await jbBallot.stateOf(PROJECT_ID, timestamp - DURATION - 10, timestamp + 10)).to.equals(
       Approved,
+    );
+  });
+
+  it('Should return Approved Expected if during the delay', async function () {
+    const { jbBallot, timestamp } = await setup();
+
+    expect(await jbBallot.stateOf(PROJECT_ID, timestamp - DURATION - 10, timestamp + DURATION + 10)).to.equals(
+      ApprovalExpected,
     );
   });
 });

@@ -401,7 +401,7 @@ describe('JBETHERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
 
     await Promise.all(
       splits.map(async (split) => {
-        await mockJbTerminal.mock.addToBalanceOf
+        await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
           .withArgs(
             split.projectId,
             AMOUNT.mul(split.percent).div(maxSplitsPercent),
@@ -834,7 +834,7 @@ describe('JBETHERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
       .withArgs(PROJECT_ID, ethToken)
       .returns(mockJbTerminal.address);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT.div('2'), ethToken, MEMO, METADATA)
       .returns();
 
@@ -911,7 +911,7 @@ describe('JBETHERC20SplitsPayer with Proxy::addToBalanceOf(...)', function () {
     mockToken.approve.whenCalledWith(mockJbTerminal.address, AMOUNT.div('2')).returns(true);
 
     // Pay the leftover with the default beneficiary
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT.div('2'), mockToken.address, MEMO, METADATA)
       .returns();
 

@@ -92,7 +92,7 @@ describe('JBETHERC20ProjectPayer via Proxy::addToBalanceOf(...)', function () {
     // Eth payments should use 18 decimals.
     await mockJbTerminal.mock.decimalsForToken.withArgs(ethToken).returns(18);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, ethToken, MEMO, METADATA)
       .returns();
 
@@ -132,7 +132,7 @@ describe('JBETHERC20ProjectPayer via Proxy::addToBalanceOf(...)', function () {
     mockToken.allowance.whenCalledWith(jbProjectPayer.address, mockJbTerminal.address).returns(0);
     mockToken.approve.whenCalledWith(mockJbTerminal.address, AMOUNT).returns(true);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 
@@ -168,7 +168,7 @@ describe('JBETHERC20ProjectPayer via Proxy::addToBalanceOf(...)', function () {
     mockToken.allowance.whenCalledWith(jbProjectPayer.address, mockJbTerminal.address).returns(0);
     mockToken.approve.whenCalledWith(mockJbTerminal.address, NET_AMOUNT).returns(true);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, NET_AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 

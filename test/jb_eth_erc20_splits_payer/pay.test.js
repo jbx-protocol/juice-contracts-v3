@@ -363,7 +363,7 @@ describe('JBETHERC20SplitsPayer::pay(...)', function () {
 
     await Promise.all(
       splits.map(async (split) => {
-        await mockJbTerminal.mock.addToBalanceOf
+        await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
           .withArgs(
             split.projectId,
             AMOUNT.mul(split.percent).div(maxSplitsPercent),
