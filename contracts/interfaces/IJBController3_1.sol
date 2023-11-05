@@ -8,7 +8,6 @@ import {JBFundingCycleConfiguration} from './../structs/JBFundingCycleConfigurat
 import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './../structs/JBProjectMetadata.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
-import {IJBController3_0_1} from './IJBController3_0_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore} from './IJBFundAccessConstraintsStore.sol';
 import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';

@@ -62,7 +62,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
     }
 
     function testAllowance() public {
-        JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
+        JBETHPaymentTerminal3_1_2 terminal = jbETHPaymentTerminal();
 
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -94,6 +94,15 @@ contract TestAllowance_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        // dummy project for fee collection
+        controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
         uint256 projectId = controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
@@ -115,28 +124,16 @@ contract TestAllowance_Local is TestBaseWorkflow {
 
         // Discretionary use of overflow allowance by project owner (allowance = 5ETH)
         vm.prank(_projectOwner); // Prank only next call
-        if (isUsingJbController3_0())
-            terminal.useAllowanceOf(
-                projectId,
-                5 ether,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                payable(_beneficiary), // Beneficiary
-                "MEMO",
-                bytes('')
-            );
-        else 
-            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).useAllowanceOf(
-                projectId,
-                5 ether,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                payable(_beneficiary), // Beneficiary
-                "MEMO",
-                bytes('')
-            );
+        terminal.useAllowanceOf(
+            projectId,
+            5 ether,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            payable(_beneficiary), // Beneficiary
+            "MEMO",
+            bytes('')
+        );
         assertEq(
             (_beneficiary).balance,
             PRBMath.mulDiv(5 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee())
@@ -145,14 +142,14 @@ contract TestAllowance_Local is TestBaseWorkflow {
         // Distribute the funding target ETH -> splits[] is empty -> everything in left-over, to project owner
         vm.prank(_projectOwner);
 
-            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 ether,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "" // Memo
-            );
+        terminal.distributePayoutsOf(
+            projectId,
+            10 ether,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "" // Memo
+        );
         assertEq(
             _projectOwner.balance, (10 ether * jbLibraries().MAX_FEE()) / (terminal.fee() + jbLibraries().MAX_FEE())
         );
@@ -191,7 +188,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
 
         uint256 CURRENCY = jbLibraries().ETH(); // Avoid testing revert on this call...
 
-        JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
+        JBETHPaymentTerminal3_1_2 terminal = jbETHPaymentTerminal();
 
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
@@ -252,17 +249,17 @@ contract TestAllowance_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
             willRevert = true;
         }
-            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).useAllowanceOf(
-                projectId,
-                ALLOWANCE,
-                CURRENCY, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                payable(_beneficiary), // Beneficiary
-                "MEMO",
-                bytes('')
-            );
 
+        terminal.useAllowanceOf(
+            projectId,
+            ALLOWANCE,
+            CURRENCY, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            payable(_beneficiary), // Beneficiary
+            "MEMO",
+            bytes('')
+        );
         if (
             !willRevert && BALANCE != 0 // if allowance ==0 or not enough overflow (target>=balance, allowance > overflow) // there is something to transfer
         ) {
@@ -280,25 +277,14 @@ contract TestAllowance_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
         }
 
-        if (isUsingJbController3_0())
-            terminal.distributePayoutsOf(
-                projectId,
-                TARGET,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "Foundry payment" // Memo
-            );
-        else 
-            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                TARGET,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "" // Metadata
-            );
-
+        terminal.distributePayoutsOf(
+            projectId,
+            TARGET,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "" // Metadata
+        );
         if (TARGET <= BALANCE && TARGET > 1) {
             // Avoid rounding error
             assertEq(

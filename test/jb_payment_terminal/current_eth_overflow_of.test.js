@@ -3,7 +3,7 @@ import { ethers } from 'hardhat';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbPrices from '../../artifacts/contracts/interfaces/IJBPrices.sol/IJBPrices.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
@@ -48,11 +48,11 @@ describe('JBPayoutRedemptionPaymentTerminal::currentEthOverflowOf(...)', functio
     ]);
 
     let jbTerminalFactory = await ethers.getContractFactory(
-      'contracts/JBETHPaymentTerminal.sol:JBETHPaymentTerminal',
+      'contracts/JBETHPaymentTerminal3_1_2.sol:JBETHPaymentTerminal',
       deployer,
     );
     let jbErc20TerminalFactory = await ethers.getContractFactory(
-      'contracts/JBERC20PaymentTerminal.sol:JBERC20PaymentTerminal',
+      'contracts/JBERC20PaymentTerminal3_1_2.sol:JBERC20PaymentTerminal',
       deployer,
     );
 

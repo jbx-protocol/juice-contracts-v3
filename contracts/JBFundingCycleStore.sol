@@ -502,18 +502,27 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // If this is the first funding cycle, it is queued.
     if (_fundingCycle.number == 1) return configuration;
 
+    // Get a reference to the base configuration.
+    uint256 _basedOnConfiguration = _fundingCycle.basedOn;
+
     // Get the necessary properties for the base funding cycle.
-    JBFundingCycle memory _baseFundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
+    JBFundingCycle memory _baseFundingCycle;
 
     // Find the base cycle that is not still queued.
-    while (_baseFundingCycle.start > block.timestamp) {
-      // Set the configuration.
-      configuration = _baseFundingCycle.configuration;
-      // Get the funding cycle for the configuration.
-      _fundingCycle = _getStructFor(_projectId, configuration);
-      // Set the new funding cycle.
-      _baseFundingCycle = _getStructFor(_projectId, _baseFundingCycle.basedOn);
+    while (true) {
+      _baseFundingCycle = _getStructFor(_projectId, _basedOnConfiguration);
+
+      if (block.timestamp < _baseFundingCycle.start) {
+        // Set the configuration to the one found.
+        configuration = _baseFundingCycle.configuration;
+        // Prepare the next funding cycle's configuration to check in the next iteration.
+        _basedOnConfiguration = _baseFundingCycle.basedOn;
+        // Break out of the loop when a started base funding cycle is found.
+      } else break;
     }
+
+    // Get the funding cycle for the configuration.
+    _fundingCycle = _getStructFor(_projectId, configuration);
 
     // If the latest configuration doesn't start until after another base cycle, return 0.
     if (
@@ -534,8 +543,8 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     // Get the latest funding cycle.
     JBFundingCycle memory _fundingCycle = _getStructFor(_projectId, _configuration);
 
-    // Loop through all most recently configured funding cycles until an eligible one is found, or we've proven one can't exit.
-    while (_fundingCycle.number != 0) {
+    // Loop through all most recently configured funding cycles until an eligible one is found, or we've proven one can't exist.
+    do {
       // If the latest is expired, return an empty funding cycle.
       // A duration of 0 cannot be expired.
       if (
@@ -547,7 +556,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       if (block.timestamp >= _fundingCycle.start) return _fundingCycle.configuration;
 
       _fundingCycle = _getStructFor(_projectId, _fundingCycle.basedOn);
-    }
+    } while (_fundingCycle.number != 0);
 
     return 0;
   }

@@ -6,7 +6,6 @@ import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
-import {IJBController3_2} from './interfaces/IJBController3_2.sol';
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore} from './interfaces/IJBFundAccessConstraintsStore.sol';
@@ -31,8 +30,7 @@ import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-/// @dev This Controller has the same functionality as JBController3_0_1, except it is not backwards compatible with the original IJBController3_1 view methods.
-contract JBController3_1 is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
+contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
 
@@ -50,30 +48,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_2, IJBMigratabl
   error NO_BURNABLE_TOKENS();
   error NOT_CURRENT_CONTROLLER();
   error ZERO_TOKENS_TO_MINT();
-
-  //*********************************************************************//
-  // --------------------- internal stored properties ------------------ //
-  //*********************************************************************//
-
-  /// @notice Data regarding the distribution limit of a project during a configuration.
-  /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
-  /// @dev bits 232-255: The currency of amount that a project can distribute.
-  /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
-  /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
-  /// @custom:param _terminal The terminal from which distributions are being limited.
-  /// @custom:param _token The token for which distributions are being limited.
-  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
-    internal _packedDistributionLimitDataOf;
-
-  /// @notice Data regarding the overflow allowance of a project during a configuration.
-  /// @dev bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
-  /// @dev bits 232-255: The currency of the amount of overflow that a project is allowed to tap.
-  /// @custom:param _projectId The ID of the project to get the packed overflow allowance data of.
-  /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
-  /// @custom:param _terminal The terminal managing the overflow.
-  /// @custom:param _token The token for which overflow is being allowed.
-  mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256))))
-    internal _packedOverflowAllowanceDataOf;
 
   //*********************************************************************//
   // --------------- public immutable stored properties ---------------- //

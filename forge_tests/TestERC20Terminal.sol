@@ -883,7 +883,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
             uint256 _projectStoreBalanceBeforeDistribution =
                 jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
@@ -902,7 +901,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
 
             assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
             assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
-        }
     }
 
     function testAllocation_to_an_eoa_should_revoke_allowance() public {
@@ -992,7 +990,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
 
             uint256 distributedAmount = PRBMath.mulDiv(
             10 * 10 ** 18,
@@ -1019,7 +1016,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
 
             assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
             assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
-        }
     }
 
 
@@ -1040,8 +1036,6 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
-
             // setting splits
             JBSplit[] memory _splits = new JBSplit[](1);
             _splits[0] = JBSplit({
@@ -1057,39 +1051,37 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
             uint256 _projectStoreBalanceBeforeDistribution =
                 jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            // using controller 3.1
-            _badTerminal.setRevertMode(_revertReason);
-            bytes memory _reason;
+        // using controller 3.1
+        _badTerminal.setRevertMode(_revertReason);
+        bytes memory _reason;
 
-            if (_revertReason == 1) {
-                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
-            } else if (_revertReason == 2) {
-                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
-            } else if (_revertReason == 3) {
-                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
-                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
-            }
-
-            vm.expectEmit(true, true, true, true);
-            // Stack is too deep so I'm hardcoding the distributedAmount - see tests above for calc
-            emit PayoutReverted(projectId, _splits[0], 180, _reason, address(this));
-
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "allocation" // metadata
-            );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
-
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+        if (_revertReason == 1) {
+            _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+        } else if (_revertReason == 2) {
+            _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+        } else if (_revertReason == 3) {
+            bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+            _reason = abi.encodePacked(_panickSelector, uint256(0x11));
         }
-    }
 
+        vm.expectEmit(true, true, true, true);
+        emit PayoutReverted(projectId, _splits[0], 10 * FAKE_PRICE, _reason, address(this));
+
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+    }
+    
     function testDistribution_to_malicious_terminal_by_paying_project(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
 
@@ -1130,40 +1122,37 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
         vm.stopPrank();
 
-        if (!isUsingJbController3_0()) {
-            uint256 _projectStoreBalanceBeforeDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            _badTerminal.setRevertMode(_revertReason);
-            bytes memory _reason;
+        _badTerminal.setRevertMode(_revertReason);
+        bytes memory _reason;
 
-            if (_revertReason == 1) {
-                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
-            } else if (_revertReason == 2) {
-                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
-            } else if (_revertReason == 3) {
-                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
-                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
-            }
-
-            vm.expectEmit(true, true, true, true);
-            // Stack is too deep so I'm hardcoding the distributedAmount - see testAllowanceERC20 above for calc
-            emit PayoutReverted(projectId, _splits[0], 180, _reason, address(this));
-
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "allocation" // metadata
-            );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
-
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+        if (_revertReason == 1) {
+            _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+        } else if (_revertReason == 2) {
+            _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+        } else if (_revertReason == 3) {
+            bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+            _reason = abi.encodePacked(_panickSelector, uint256(0x11));
         }
+
+        vm.expectEmit(true, true, true, true);
+        emit PayoutReverted(projectId, _splits[0], 10 * FAKE_PRICE, _reason, address(this));
+
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
     function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
@@ -1207,7 +1196,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         }
 
         vm.prank(_projectOwner); // Prank only next call
-        IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).useAllowanceOf(
+        terminal.useAllowanceOf(
             projectId,
             ALLOWANCE,
             1, // Currency
@@ -1226,7 +1215,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         // Distribute the funding target ETH -> no split then beneficiary is the project owner
         uint256 initBalance = jbToken().balanceOf(_projectOwner);
 
-        if (targetInTokens != 0 && TARGET >= BALANCE) {
+        if (TARGET != 0 && TARGET >= BALANCE) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
         }
 
@@ -1235,14 +1224,14 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         }
 
         vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
-                projectId,
-                TARGET,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "Foundry payment" // Memo
-            );
+        terminal.distributePayoutsOf(
+            projectId,
+            TARGET,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "Foundry payment" // Memo
+        );
 
         // Funds leaving the ecosystem -> fee taken
         if (TARGET <= BALANCE && TARGET > 1) {

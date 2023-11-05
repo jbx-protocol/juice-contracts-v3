@@ -15,7 +15,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
 
     IJBPaymentTerminal[] _terminals;
     JBERC20PaymentTerminal3_1_2 ERC20terminal;
-    JBETHPaymentTerminal ETHterminal;
+    JBETHPaymentTerminal3_1_2 ETHterminal;
 
     JBTokenStore _tokenStore;
     address _projectOwner;
@@ -221,8 +221,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
 
         // ---- Use allowance ----
         vm.startPrank(_projectOwner);
-
-        IJBPayoutRedemptionPaymentTerminal3_1(address(ERC20terminal)).useAllowanceOf(
+        ERC20terminal.useAllowanceOf(
             projectId,
             5 * 10 ** 18, // amt in ETH (overflow allowance currency is in ETH)
             jbLibraries().USD(), // Currency -> (fake price is 10)
@@ -245,24 +244,14 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         // Distribute the funding target ETH
         uint256 initBalance = caller.balance;
         vm.prank(_projectOwner);
-        if (isUsingJbController3_0())
-            ETHterminal.distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                jbLibraries().ETH(), // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "Foundry payment" // Memo
-            );
-        else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(ETHterminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                jbLibraries().ETH(), // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "" // Memo
-            );
+        ETHterminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            jbLibraries().ETH(), // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "" // Memo
+        );
         
         // Funds leaving the ecosystem -> fee taken
         assertEq(
@@ -273,18 +262,14 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
 
         // redeem eth from the overflow by the token holder:
         uint256 totalSupply;
-        if (isUsingJbController3_0()) {
-            totalSupply = jbController().totalOutstandingTokensOf(projectId);
-        } else {
-            totalSupply = IJBController3_1(address(jbController())).totalOutstandingTokensOf(projectId);
-        }
+        totalSupply = jbController().totalOutstandingTokensOf(projectId);
 
         uint256 overflow = jbPaymentTerminalStore().currentTotalOverflowOf(projectId, 18, 1);
 
         uint256 callerEthBalanceBefore = caller.balance;
 
         vm.prank(caller);
-        ETHterminal.redeemTokensOf(
+        uint256 _redeemedAmount = ETHterminal.redeemTokensOf(
             caller,
             projectId,
             100_000,
@@ -295,6 +280,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
-        assertEq(caller.balance, callerEthBalanceBefore + ((100_000 * overflow) / totalSupply));
+        assertEq(caller.balance, callerEthBalanceBefore + _redeemedAmount);
     }
 }

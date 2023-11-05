@@ -108,7 +108,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         for (uint256 i = 0; i < payDelegateAmounts.length; i++) {
             address _delegateAddress = address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
 
-            _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), payDelegateAmounts[i], "");
+            _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), payDelegateAmounts[i], bytes(''));
 
             JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1(
                 _beneficiary,

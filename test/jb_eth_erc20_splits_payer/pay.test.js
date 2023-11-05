@@ -10,7 +10,7 @@ import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.so
 import jbAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.sol/IJBSplitAllocator.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol/JBPayoutRedemptionPaymentTerminal3_1_2.json';
 
 describe('JBETHERC20SplitsPayer::pay(...)', function () {
   const DEFAULT_PROJECT_ID = 2;
@@ -77,18 +77,18 @@ describe('JBETHERC20SplitsPayer::pay(...)', function () {
 
     await jbSplitsPayer
       .connect(deployer)
-      ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
-        DEFAULT_SPLITS_PROJECT_ID,
-        DEFAULT_SPLITS_DOMAIN,
-        DEFAULT_SPLITS_GROUP,
-        DEFAULT_PROJECT_ID,
-        DEFAULT_BENEFICIARY,
-        DEFAULT_PREFER_CLAIMED_TOKENS,
-        DEFAULT_MEMO,
-        DEFAULT_METADATA,
-        PREFER_ADD_TO_BALANCE,
-        owner.address,
-      );
+    ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
+      DEFAULT_SPLITS_PROJECT_ID,
+      DEFAULT_SPLITS_DOMAIN,
+      DEFAULT_SPLITS_GROUP,
+      DEFAULT_PROJECT_ID,
+      DEFAULT_BENEFICIARY,
+      DEFAULT_PREFER_CLAIMED_TOKENS,
+      DEFAULT_MEMO,
+      DEFAULT_METADATA,
+      PREFER_ADD_TO_BALANCE,
+      owner.address,
+    );
 
     return {
       beneficiaryOne,
@@ -774,18 +774,18 @@ describe('JBETHERC20SplitsPayer::pay(...)', function () {
 
     await jbSplitsPayerWithoutDefaultBeneficiary
       .connect(deployer)
-      ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
-        DEFAULT_SPLITS_PROJECT_ID,
-        DEFAULT_SPLITS_DOMAIN,
-        DEFAULT_SPLITS_GROUP,
-        DEFAULT_PROJECT_ID,
-        ethers.constants.AddressZero,
-        DEFAULT_PREFER_CLAIMED_TOKENS,
-        DEFAULT_MEMO,
-        DEFAULT_METADATA,
-        PREFER_ADD_TO_BALANCE,
-        owner.address,
-      );
+    ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
+      DEFAULT_SPLITS_PROJECT_ID,
+      DEFAULT_SPLITS_DOMAIN,
+      DEFAULT_SPLITS_GROUP,
+      DEFAULT_PROJECT_ID,
+      ethers.constants.AddressZero,
+      DEFAULT_PREFER_CLAIMED_TOKENS,
+      DEFAULT_MEMO,
+      DEFAULT_METADATA,
+      PREFER_ADD_TO_BALANCE,
+      owner.address,
+    );
 
     await mockJbSplitsStore.mock.splitsOf
       .withArgs(DEFAULT_SPLITS_PROJECT_ID, DEFAULT_SPLITS_DOMAIN, DEFAULT_SPLITS_GROUP)
@@ -1194,18 +1194,18 @@ describe('JBETHERC20SplitsPayer::pay(...)', function () {
 
     await jbSplitsPayerWithoutDefaultBeneficiary
       .connect(deployer)
-      ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
-        DEFAULT_SPLITS_PROJECT_ID,
-        DEFAULT_SPLITS_DOMAIN,
-        DEFAULT_SPLITS_GROUP,
-        DEFAULT_PROJECT_ID,
-        ethers.constants.AddressZero,
-        DEFAULT_PREFER_CLAIMED_TOKENS,
-        DEFAULT_MEMO,
-        DEFAULT_METADATA,
-        PREFER_ADD_TO_BALANCE,
-        owner.address,
-      );
+    ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
+      DEFAULT_SPLITS_PROJECT_ID,
+      DEFAULT_SPLITS_DOMAIN,
+      DEFAULT_SPLITS_GROUP,
+      DEFAULT_PROJECT_ID,
+      ethers.constants.AddressZero,
+      DEFAULT_PREFER_CLAIMED_TOKENS,
+      DEFAULT_MEMO,
+      DEFAULT_METADATA,
+      PREFER_ADD_TO_BALANCE,
+      owner.address,
+    );
 
     await mockJbSplitsStore.mock.splitsOf
       .withArgs(DEFAULT_SPLITS_PROJECT_ID, DEFAULT_SPLITS_DOMAIN, DEFAULT_SPLITS_GROUP)
@@ -1285,18 +1285,18 @@ describe('JBETHERC20SplitsPayer::pay(...)', function () {
 
     await jbSplitsPayerWithoutDefaultBeneficiary
       .connect(deployer)
-      ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
-        DEFAULT_SPLITS_PROJECT_ID,
-        DEFAULT_SPLITS_DOMAIN,
-        DEFAULT_SPLITS_GROUP,
-        DEFAULT_PROJECT_ID,
-        ethers.constants.AddressZero,
-        DEFAULT_PREFER_CLAIMED_TOKENS,
-        DEFAULT_MEMO,
-        DEFAULT_METADATA,
-        PREFER_ADD_TO_BALANCE,
-        owner.address,
-      );
+    ['initialize(uint256,uint256,uint256,uint256,address,bool,string,bytes,bool,address)'](
+      DEFAULT_SPLITS_PROJECT_ID,
+      DEFAULT_SPLITS_DOMAIN,
+      DEFAULT_SPLITS_GROUP,
+      DEFAULT_PROJECT_ID,
+      ethers.constants.AddressZero,
+      DEFAULT_PREFER_CLAIMED_TOKENS,
+      DEFAULT_MEMO,
+      DEFAULT_METADATA,
+      PREFER_ADD_TO_BALANCE,
+      owner.address,
+    );
 
     // Transfer to splitsPayer
     mockToken.balanceOf.returnsAtCall(0, 0);
