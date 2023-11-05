@@ -5,7 +5,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /// @notice This file tests JBToken related flows
 contract TestTokenFlow_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;

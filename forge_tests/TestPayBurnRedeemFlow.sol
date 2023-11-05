@@ -8,8 +8,8 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
  * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
  */
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
-    JBController private _controller;
-    JBETHPaymentTerminal private _terminal;
+    JBController3_1 private _controller;
+    JBETHPaymentTerminal3_1_2 private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -88,6 +88,15 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        // Make a dummy project that'll receive fees.
+        _controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
         _projectId = _controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
@@ -96,7 +105,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             ""
         );
     }
-
+    
     function testFuzzPayBurnRedeemFlow(
         bool payPreferClaimed, //false
         bool burnPreferClaimed, //false
@@ -137,8 +146,6 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // burn tokens from beneficiary addr
         if (burnTokenAmount == 0) {
             vm.expectRevert(abi.encodeWithSignature("NO_BURNABLE_TOKENS()"));
-        } else if (burnTokenAmount > uint256(type(int256).max) && isUsingJbController3_0()) {
-            vm.expectRevert("SafeCast: value doesn't fit in an int256");
         } else if (burnTokenAmount > _userTokenBalance) {
             vm.expectRevert(abi.encodeWithSignature("INSUFFICIENT_FUNDS()"));
         } else {

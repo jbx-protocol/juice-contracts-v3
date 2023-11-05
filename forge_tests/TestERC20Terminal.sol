@@ -14,7 +14,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     );
 
     IJBSplitAllocator _allocator;
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
@@ -86,7 +86,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     }
 
     function testAllowanceERC20() public {
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -136,8 +136,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         // Discretionary use of overflow allowance by project owner (allowance = 5ETH)
         vm.prank(_projectOwner); // Prank only next call
-        
-        IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
+        terminal.useAllowanceOf(
             projectId,
             5 * 10 ** 18,
             1, // Currency
@@ -163,14 +162,14 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         );
         vm.prank(_projectOwner);
 
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                6 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "" // metadata
-            );
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "" // metadata
+        );
 
         // Funds leaving the ecosystem -> fee taken
         assertEq(
@@ -201,7 +200,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         _allocator = new MockMaliciousAllocator();
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -260,25 +259,23 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
         // using controller 3.1
-        if (!isUsingJbController3_0()) {
-            uint256 _projectStoreBalanceBeforeDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "allocation" // metadata
-            );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        vm.prank(_projectOwner);
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
-        }
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
     function testAllocation_to_non_allocator_contract_should_revoke_allowance() public {
@@ -287,7 +284,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _allocator = IJBSplitAllocator(address(new GasGussler())); // Whatever other contract with a fallback
 
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -345,26 +342,24 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
-            uint256 _projectStoreBalanceBeforeDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            // using controller 3.1
-            vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "allocation" // metadata
-            );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        // using controller 3.1
+        vm.prank(_projectOwner);
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
-        }
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
     function testAllocation_to_an_eoa_should_revoke_allowance() public {
@@ -372,7 +367,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         IJBSplitAllocator _randomEOA = IJBSplitAllocator(makeAddr("randomEOA"));
 
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -430,36 +425,256 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
+        uint256 _projectStoreBalanceBeforeDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            uint256 distributedAmount = PRBMath.mulDiv(
+        vm.expectEmit(true, true, true, true);
+        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, abi.encode("IERC165 fail"), address(this));
+
+        terminal.distributePayoutsOf(
+            projectId,
             10 * 10 ** 18,
-            10**18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            jbPrices().priceFor(jbLibraries().ETH(), uint256(uint24(uint160(address(jbToken())))), 18)
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+    }
+
+    function testAllocation_should_emit_event_with_correct_reason_when_reverting(uint256 _revertReason) public {
+        _revertReason = bound(_revertReason, 0, 3);
+        address _user = makeAddr("user");
+
+        _allocator = new MockMaliciousAllocator();
+
+        JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
+
+        _fundAccessConstraints.push(
+            JBFundAccessConstraints({
+                terminal: terminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            })
         );
 
-            uint256 _projectStoreBalanceBeforeDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _allocationSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        uint256 projectId = controller.launchProjectFor(
+            _projectOwner,
+            _projectMetadata,
+            _cycleConfig,
+            _terminals,
+            ""
+        );
+
+        // setting splits
+        JBSplit[] memory _splits = new JBSplit[](1);
+        _splits[0] = JBSplit({
+            preferClaimed: false,
+            preferAddToBalance: true,
+            projectId: 0,
+            beneficiary: payable(_user),
+            lockedUntil: 0,
+            allocator: _allocator,
+            percent: JBConstants.SPLITS_TOTAL_PERCENT
+        });
+
+        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+
+        (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
+
+        vm.prank(_projectOwner);
+        jbSplitsStore().set(projectId, _currentFundingCycle.configuration, _allocationSplits);
+
+        // fund user
+        vm.prank(_projectOwner);
+        jbToken().transfer(_user, 20 * 10 ** 18);
+
+        // pay project
+        vm.prank(_user);
+        jbToken().approve(address(terminal), 20 * 10 ** 18);
+
+        vm.prank(_user);
+        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+
+        MockMaliciousAllocator(address(_allocator)).setRevertMode(_revertReason);
+        bytes memory _reason;
+
+        if (_revertReason == 0) {
+            _reason = abi.encode("Allocate fail");
+        } else if (_revertReason == 1) {
+            _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+        } else if (_revertReason == 2) {
+            _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+        } else if (_revertReason == 3) {
+            bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+            _reason = abi.encodePacked(_panickSelector, uint256(0x11)); // eg underflow, panick code 0x11
+        }
+
+        vm.expectEmit(true, true, true, true);
+        emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reason, address(this));
+
+        terminal.distributePayoutsOf(
+            projectId,
+            1 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+    }
+
+    /* function testFeeDistribution_to_malicious_terminal(uint256 _revertReason) public {
+        // Test only for v3.1
+        if (!isUsingJbController3_0()) {
+            _revertReason = bound(_revertReason, 0, 3);
+
+            address _user = makeAddr("user");
+            address _beneficiary = makeAddr("beneficiary");
+
+            MockMaliciousTerminal _badTerminal = new MockMaliciousTerminal(
+              jbToken(),
+              jbLibraries().ETH(), // currency
+              jbLibraries().ETH(), // base weight currency
+              1, // JBSplitsGroupe
+              jbOperatorStore(),
+              jbProjects(),
+              jbDirectory(),
+              jbSplitsStore(),
+              jbPrices(),
+              jbPaymentTerminalStore(),
+               multisig()
+            );
+
+            JBFundAccessConstraints[] memory _feeBeneficiaryProjectFundAccessConstraints =
+                new JBFundAccessConstraints[](1);
+            IJBPaymentTerminal[] memory _feeBeneficiaryProjectTerminals = new IJBPaymentTerminal[](1);
+            JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
+            JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
+
+            _fundAccessConstraints.push(
+                JBFundAccessConstraints({
+                    terminal: terminal,
+                    token: address(jbToken()),
+                    distributionLimit: 10 * 10 ** 18,
+                    overflowAllowance: 5 * 10 ** 18,
+                    distributionLimitCurrency: jbLibraries().ETH(),
+                    overflowAllowanceCurrency: jbLibraries().ETH()
+                })
+            );
+
+            _feeBeneficiaryProjectFundAccessConstraints[0] = JBFundAccessConstraints({
+                terminal: _badTerminal,
+                token: address(jbToken()),
+                distributionLimit: 10 * 10 ** 18,
+                overflowAllowance: 5 * 10 ** 18,
+                distributionLimitCurrency: jbLibraries().ETH(),
+                overflowAllowanceCurrency: jbLibraries().ETH()
+            });
+            _feeBeneficiaryProjectTerminals[0] = IJBPaymentTerminal(address(_badTerminal));
+
+            uint256 feeBeneficiaryProjectId = controller.launchProjectFor(
+                _projectOwner,
+                _projectMetadata,
+                _data,
+                _metadata,
+                block.timestamp,
+                _allocationSplits,
+                _feeBeneficiaryProjectFundAccessConstraints,
+                _feeBeneficiaryProjectTerminals,
+                ""
+            );
+
+            uint256 distributionProjectId = controller.launchProjectFor(
+                _projectOwner,
+                _projectMetadata,
+                _data,
+                _metadata,
+                block.timestamp,
+                _groupedSplits,
+                _fundAccessConstraints,
+                _terminals,
+                ""
+            );
+
+            // setting splits
+            JBSplit[] memory _splits = new JBSplit[](1);
+            _splits[0] = JBSplit({
+                preferClaimed: false,
+                preferAddToBalance: false,
+                projectId: 0,
+                beneficiary: payable(_beneficiary),
+                lockedUntil: 0,
+                allocator: IJBSplitAllocator(address(0)),
+                percent: JBConstants.SPLITS_TOTAL_PERCENT
+            });
+
+            _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+
+            (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(distributionProjectId);
+
+            vm.prank(_projectOwner);
+            jbSplitsStore().set(distributionProjectId, _currentFundingCycle.configuration, _allocationSplits);
+
+            // fund user
+            vm.prank(_projectOwner);
+            jbToken().transfer(_user, 20 * 10 ** 18);
+
+            // pay project
+            vm.prank(_user);
+            jbToken().approve(address(terminal), 20 * 10 ** 18);
+            vm.prank(_user);
+            terminal.pay(
+                distributionProjectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+            ); // funding target met and 10 token are now in the overflow
+
+            uint256 _distributionAmount = 10 * 10 ** 18;
+            // calculating fee
+            uint256 _feeCollected = _distributionAmount
+                - (PRBMath.mulDiv(_distributionAmount, JBConstants.MAX_FEE, terminal.fee() + JBConstants.MAX_FEE));
+
+            // fee distribution
+            _badTerminal.setRevertMode(_revertReason);
+            bytes memory _reason;
+
+            if (_revertReason == 1) {
+                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+            } else if (_revertReason == 2) {
+                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+            } else if (_revertReason == 3) {
+                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
+            }
 
             vm.expectEmit(true, true, true, true);
-            emit PayoutReverted(projectId, _splits[0], distributedAmount, abi.encode("IERC165 fail"), address(this));
+            emit FeeReverted(distributionProjectId, feeBeneficiaryProjectId, _feeCollected, _reason, _projectOwner);
 
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
+            vm.prank(_projectOwner);
+            IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+                distributionProjectId,
+                _distributionAmount,
                 1, // Currency
                 address(0), //token (unused)
                 0, // Min wei out
-                "allocation" // metadata
+                "distribution" // metadata
             );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
-
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
         }
-    }
-
+    } */
 
     function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
@@ -479,7 +694,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -564,42 +779,38 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
-            
-            uint256 _projectStoreBalanceBeforeDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            // using controller 3.1
-            _badTerminal.setRevertMode(_revertReason);
-            bytes memory _reason;
+        // using controller 3.1
+        _badTerminal.setRevertMode(_revertReason);
+        bytes memory _reason;
 
-            if (_revertReason == 1) {
-                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
-            } else if (_revertReason == 2) {
-                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
-            } else if (_revertReason == 3) {
-                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
-                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
-            }
-
-            vm.expectEmit(true, true, true, true);
-            // Stack is too deep so I'm hardcoding the distributedAmount - see tests above for calc
-            emit PayoutReverted(projectId, _splits[0], 180, _reason, address(this));
-
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "allocation" // metadata
-            );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
-
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+        if (_revertReason == 1) {
+            _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+        } else if (_revertReason == 2) {
+            _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+        } else if (_revertReason == 3) {
+            bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+            _reason = abi.encodePacked(_panickSelector, uint256(0x11));
         }
+
+        vm.expectEmit(true, true, true, true);
+        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
+
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
     function testDistribution_to_malicious_terminal_by_paying_project(uint256 _revertReason) public {
@@ -621,7 +832,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -706,40 +917,37 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
-        if (!isUsingJbController3_0()) {
-            uint256 _projectStoreBalanceBeforeDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
-            _badTerminal.setRevertMode(_revertReason);
-            bytes memory _reason;
+        _badTerminal.setRevertMode(_revertReason);
+        bytes memory _reason;
 
-            if (_revertReason == 1) {
-                _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
-            } else if (_revertReason == 2) {
-                _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
-            } else if (_revertReason == 3) {
-                bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
-                _reason = abi.encodePacked(_panickSelector, uint256(0x11));
-            }
-
-            vm.expectEmit(true, true, true, true);
-            // Stack is too deep so I'm hardcoding the distributedAmount - see testAllowanceERC20 above for calc
-            emit PayoutReverted(projectId, _splits[0], 180, _reason, address(this));
-
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                10 * 10 ** 18,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "allocation" // metadata
-            );
-            uint256 _projectStoreBalanceAfterDistribution =
-                jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
-
-            assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
-            assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
+        if (_revertReason == 1) {
+            _reason = abi.encodeWithSignature("NopeNotGonnaDoIt()");
+        } else if (_revertReason == 2) {
+            _reason = abi.encodeWithSignature("Error(string)", "thanks no thanks");
+        } else if (_revertReason == 3) {
+            bytes4 _panickSelector = bytes4(keccak256("Panic(uint256)"));
+            _reason = abi.encodePacked(_panickSelector, uint256(0x11));
         }
+
+        vm.expectEmit(true, true, true, true);
+        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
+
+        terminal.distributePayoutsOf(
+            projectId,
+            10 * 10 ** 18,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "allocation" // metadata
+        );
+        uint256 _projectStoreBalanceAfterDistribution =
+            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+
+        assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
+        assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
     function testFuzzedAllowanceERC20(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {
@@ -749,7 +957,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         uint256 allowanceInTokens = PRBMath.mulDiv(ALLOWANCE, 10**18, jbPrices().priceFor(1, 13787699, 18));
         uint256 targetInTokens = PRBMath.mulDiv(TARGET, 10**18, jbPrices().priceFor(1, 13787699, 18));
         
-        JBERC20PaymentTerminal terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
 
         _fundAccessConstraints.push(
             JBFundAccessConstraints({
@@ -808,7 +1016,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.prank(_projectOwner); // Prank only next call
-        IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
+        terminal.useAllowanceOf(
             projectId,
             ALLOWANCE,
             1, // Currency
@@ -836,14 +1044,14 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
-                projectId,
-                TARGET,
-                1, // Currency
-                address(0), //token (unused)
-                0, // Min wei out
-                "Foundry payment" // Memo
-            );
+        terminal.distributePayoutsOf(
+            projectId,
+            TARGET,
+            1, // Currency
+            address(0), //token (unused)
+            0, // Min wei out
+            "Foundry payment" // Memo
+        );
 
         // Funds leaving the ecosystem -> fee taken
         if (TARGET <= BALANCE && TARGET > 1) {

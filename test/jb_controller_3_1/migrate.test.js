@@ -4,7 +4,7 @@ import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { packFundingCycleMetadata } from '../helpers/utils';
 import errors from '../helpers/errors.json';
 
-import JbController from '../../artifacts/contracts/JBController.sol/JBController.json';
+import JbController from '../../artifacts/contracts/JBController3_1.sol/JBController3_1.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbFundingCycleStore from '../../artifacts/contracts/JBFundingCycleStore.sol/JBFundingCycleStore.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
@@ -13,7 +13,7 @@ import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
-describe('JBController::migrate(...)', function () {
+describe('JBController3_1::migrate(...)', function () {
   const PROJECT_ID = 1;
   const TOTAL_SUPPLY = 20000;
   let MIGRATE_CONTROLLER_INDEX;
@@ -53,7 +53,7 @@ describe('JBController::migrate(...)', function () {
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
-      'contracts/JBController.sol:JBController',
+      'contracts/JBController3_1.sol:JBController3_1',
     );
     let jbController = await jbControllerFactory.deploy(
       mockJbOperatorStore.address,

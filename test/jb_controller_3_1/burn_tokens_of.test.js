@@ -10,11 +10,11 @@ import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOp
 import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
+import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_2.sol/JBETHPaymentTerminal3_1_2.json';
 import jbToken from '../../artifacts/contracts/JBToken.sol/JBToken.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
-describe('JBController::burnTokenOf(...)', function () {
+describe('JBController3_1::burnTokenOf(...)', function () {
   const PROJECT_ID = 1;
   const MEMO = 'Test Memo';
   const TOTAL_SUPPLY = 100000;
@@ -60,7 +60,7 @@ describe('JBController::burnTokenOf(...)', function () {
     ]);
 
     let jbControllerFactory = await ethers.getContractFactory(
-      'contracts/JBController.sol:JBController',
+      'contracts/JBController3_1.sol:JBController3_1',
     );
     let jbController = await jbControllerFactory.deploy(
       mockJbOperatorStore.address,

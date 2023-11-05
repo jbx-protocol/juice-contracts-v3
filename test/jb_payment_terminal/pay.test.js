@@ -8,8 +8,8 @@ import errors from '../helpers/errors.json';
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import jbController from '../../artifacts/contracts/interfaces/IJBController.sol/IJBController.json';
-import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore.sol/JBSingleTokenPaymentTerminalStore.json';
+import jbController from '../../artifacts/contracts/interfaces/IJBController3_1.sol/IJBController3_1.json';
+import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
@@ -68,11 +68,11 @@ describe('JBPayoutRedemptionPaymentTerminal::pay(...)', function () {
     const NON_ETH_TOKEN = mockToken.address;
 
     let jbEthTerminalFactory = await ethers.getContractFactory(
-      'contracts/JBETHPaymentTerminal.sol:JBETHPaymentTerminal',
+      'contracts/JBETHPaymentTerminal3_1_2.sol:JBETHPaymentTerminal',
       deployer,
     );
     let jbErc20TerminalFactory = await ethers.getContractFactory(
-      'contracts/JBERC20PaymentTerminal.sol:JBERC20PaymentTerminal',
+      'contracts/JBERC20PaymentTerminal3_1_2.sol:JBERC20PaymentTerminal',
       deployer,
     );
 

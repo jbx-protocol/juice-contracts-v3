@@ -19,7 +19,7 @@ import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBTokenStore} from './interfaces/IJBTokenStore.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
-import {JBFundingCycleMetadataResolver3_2} from './libraries/JBFundingCycleMetadataResolver3_2.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
@@ -32,7 +32,7 @@ import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
 contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
-  using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBFundingCycle;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -93,7 +93,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     external
     view
     override
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata)
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
     fundingCycle = fundingCycleStore.get(_projectId, _configuration);
     metadata = fundingCycle.expandMetadata();
@@ -112,7 +112,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     override
     returns (
       JBFundingCycle memory fundingCycle,
-      JBFundingCycleMetadata3_2 memory metadata,
+      JBFundingCycleMetadata memory metadata,
       JBBallotState ballotState
     )
   {
@@ -130,7 +130,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     external
     view
     override
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata)
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
     fundingCycle = fundingCycleStore.currentOf(_projectId);
     metadata = fundingCycle.expandMetadata();
@@ -146,7 +146,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     external
     view
     override
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata)
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
     fundingCycle = fundingCycleStore.queuedOf(_projectId);
     metadata = fundingCycle.expandMetadata();
@@ -172,7 +172,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     bytes4 _interfaceId
   ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
-      _interfaceId == type(IJBController).interfaceId ||
+      _interfaceId == type(IJBController3_1).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);
@@ -652,7 +652,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
       JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(
         _projectId,
         _configuration.data,
-        JBFundingCycleMetadataResolver3_2.packFundingCycleMetadata(_configuration.metadata),
+        JBFundingCycleMetadataResolver.packFundingCycleMetadata(_configuration.metadata),
         _configuration.mustStartAtOrAfter
       );
 

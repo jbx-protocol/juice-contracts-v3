@@ -100,7 +100,7 @@ interface IJBController3_1 is IERC165 {
   )
     external
     view
-    returns (JBFundingCycle memory, JBFundingCycleMetadata3_2 memory metadata, JBBallotState);
+    returns (JBFundingCycle memory, JBFundingCycleMetadata memory metadata, JBBallotState);
 
   function currentFundingCycleOf(
     uint256 projectId

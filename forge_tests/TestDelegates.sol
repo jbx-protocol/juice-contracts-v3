@@ -4,7 +4,7 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDelegates_Local is TestBaseWorkflow {
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
     JBFundingCycleMetadata3_2 _metadata;
@@ -108,7 +108,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         for (uint256 i = 0; i < payDelegateAmounts.length; i++) {
             address _delegateAddress = address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
 
-            _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), payDelegateAmounts[i], "");
+            _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), payDelegateAmounts[i], bytes(''));
 
             JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1(
                 _beneficiary,
