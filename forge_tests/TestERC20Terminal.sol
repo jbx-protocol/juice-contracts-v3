@@ -164,7 +164,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         terminal.distributePayoutsOf(
             projectId,
-            10 * 10 ** 18,
+            6 * 10 ** 18,
             1, // Currency
             address(0), //token (unused)
             0, // Min wei out
@@ -429,7 +429,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
 
         vm.expectEmit(true, true, true, true);
-        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, abi.encode("IERC165 fail"), address(this));
+        emit PayoutReverted(projectId, _splits[0], 10 * FAKE_PRICE, abi.encode("IERC165 fail"), address(this));
 
         terminal.distributePayoutsOf(
             projectId,
@@ -527,7 +527,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.expectEmit(true, true, true, true);
-        emit PayoutReverted(projectId, _splits[0], 1 * 10 ** 18, _reason, address(this));
+        emit PayoutReverted(projectId, _splits[0], FAKE_PRICE, _reason, address(this));
 
         terminal.distributePayoutsOf(
             projectId,
@@ -796,7 +796,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.expectEmit(true, true, true, true);
-        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
+        emit PayoutReverted(projectId, _splits[0], 10 * FAKE_PRICE, _reason, address(this));
 
         terminal.distributePayoutsOf(
             projectId,
@@ -812,7 +812,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
-
+    
     function testDistribution_to_malicious_terminal_by_paying_project(uint256 _revertReason) public {
         _revertReason = bound(_revertReason, 0, 3);
 
@@ -883,7 +883,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         uint256 allocationProjectId = controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
-            _cycleConfig,
+            _cycleConfig2,
             _splitProjectTerminals,
             ""
         );
@@ -933,7 +933,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
 
         vm.expectEmit(true, true, true, true);
-        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, _reason, address(this));
+        emit PayoutReverted(projectId, _splits[0], 10 * FAKE_PRICE, _reason, address(this));
 
         terminal.distributePayoutsOf(
             projectId,
@@ -1035,7 +1035,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         // Distribute the funding target ETH -> no split then beneficiary is the project owner
         uint256 initBalance = jbToken().balanceOf(_projectOwner);
 
-        if (targetInTokens != 0 && TARGET >= BALANCE) {
+        if (TARGET != 0 && TARGET >= BALANCE) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
         }
 
