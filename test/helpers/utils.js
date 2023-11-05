@@ -127,7 +127,7 @@ export function packFundingCycleMetadata({
   },
   reservedRate = 0, // percentage
   redemptionRate = 10000, // percentage
-  ballotRedemptionRate = 10000, // percentage
+  baseCurrency = 1, // ETH
   pausePay = 0, // boolean
   pauseDistributions = 0, // boolean
   pauseRedeem = 0, // boolean
@@ -149,9 +149,9 @@ export function packFundingCycleMetadata({
   if (allowSetTerminals) packed = packed.or(one.shl(8));
   if (allowSetController) packed = packed.or(one.shl(9));
   if (pauseTransfer) packed = packed.or(one.shl(10));
-  packed = packed.or(ethers.BigNumber.from(reservedRate).shl(24));
-  packed = packed.or(ethers.BigNumber.from(10000 - redemptionRate).shl(40));
-  packed = packed.or(ethers.BigNumber.from(10000 - ballotRedemptionRate).shl(56));
+  packed = packed.or(ethers.BigNumber.from(reservedRate).shl(16));
+  packed = packed.or(ethers.BigNumber.from(redemptionRate).shl(32));
+  packed = packed.or(ethers.BigNumber.from(baseCurrency).shl(48));
   if (pausePay) packed = packed.or(one.shl(72));
   if (pauseDistributions) packed = packed.or(one.shl(73));
   if (pauseRedeem) packed = packed.or(one.shl(74));

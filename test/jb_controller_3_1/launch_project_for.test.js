@@ -127,7 +127,7 @@ describe('JBController3_1::launchProjectFor(...)', function () {
   function makeFundingCycleMetadata({
     reservedRate = 0,
     redemptionRate = 10000,
-    ballotRedemptionRate = 10000,
+    baseCurrency = 1, // ETH
     pausePay = false,
     pauseDistributions = false,
     pauseRedeem = false,
@@ -155,7 +155,7 @@ describe('JBController3_1::launchProjectFor(...)', function () {
       },
       reservedRate,
       redemptionRate,
-      ballotRedemptionRate,
+      baseCurrency,
       pausePay,
       pauseDistributions,
       pauseRedeem,
@@ -473,41 +473,5 @@ describe('JBController3_1::launchProjectFor(...)', function () {
       );
 
     await expect(tx).to.be.revertedWith(errors.INVALID_REDEMPTION_RATE);
-  });
-
-  it(`Can't launch a project with a ballot redemption rate superior to 10000`, async function () {
-    const {
-      jbController,
-      projectOwner,
-      fundingCycleData,
-      fundingCycleMetadata,
-      splits,
-      mockJbTerminal1,
-      mockJbTerminal2,
-    } = await setup();
-
-    const groupedSplits = [{ group: 1, splits }];
-    const terminals = [mockJbTerminal1.address, mockJbTerminal2.address];
-    const fundAccessConstraints = makeFundingAccessConstraints({ terminals });
-
-    fundingCycleMetadata.unpacked.ballotRedemptionRate = 10001; //not possible in packed metadata (shl of a negative value)
-
-    let tx = jbController
-      .connect(projectOwner)
-      .launchProjectFor(
-        projectOwner.address,
-        [METADATA_CID, METADATA_DOMAIN],
-        [{
-          mustStartAtOrAfter: PROJECT_START,
-          data: fundingCycleData,
-          metadata: fundingCycleMetadata.unpacked,
-          groupedSplits: groupedSplits,
-          fundAccessConstraints: fundAccessConstraints
-        }],
-        terminals,
-        MEMO,
-      );
-
-    await expect(tx).to.be.revertedWith(errors.INVALID_BALLOT_REDEMPTION_RATE);
   });
 });

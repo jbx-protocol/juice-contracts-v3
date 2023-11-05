@@ -460,13 +460,11 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
 
     const reservedRate = 0;
     const redemptionRate = 10000;
-    const ballotRedemptionRate = 10000;
 
     const packedMetadata = packFundingCycleMetadata({
       pauseRedeem: 0,
       reservedRate: reservedRate,
       redemptionRate: redemptionRate,
-      ballotRedemptionRate: ballotRedemptionRate,
       useDataSourceForRedeem: 1,
       dataSource: mockJbFundingCycleDataSource.address,
     });
@@ -574,12 +572,10 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
 
     const reservedRate = 0;
     const redemptionRate = 10000;
-    const ballotRedemptionRate = 10000;
     const packedMetadata = packFundingCycleMetadata({
       pauseRedeem: 1, // Redemptions paused
       reservedRate: reservedRate,
       redemptionRate: redemptionRate,
-      ballotRedemptionRate: ballotRedemptionRate,
       useDataSourceForRedeem: 1,
       dataSource: mockJbFundingCycleDataSource.address,
     });
@@ -632,12 +628,10 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
 
     const reservedRate = 0;
     const redemptionRate = 10000;
-    const ballotRedemptionRate = 10000;
     const packedMetadata = packFundingCycleMetadata({
       pauseRedeem: 0,
       reservedRate: reservedRate,
       redemptionRate: redemptionRate,
-      ballotRedemptionRate: ballotRedemptionRate,
       useDataSourceForRedeem: 1,
       dataSource: mockJbFundingCycleDataSource.address,
     });
@@ -720,12 +714,10 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
 
     const reservedRate = 0;
     const redemptionRate = 10000;
-    const ballotRedemptionRate = 10000;
     const packedMetadata = packFundingCycleMetadata({
       pauseRedeem: 0,
       reservedRate: reservedRate,
       redemptionRate: redemptionRate,
-      ballotRedemptionRate: ballotRedemptionRate,
       useDataSourceForRedeem: 1,
       dataSource: mockJbFundingCycleDataSource.address,
     });

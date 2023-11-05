@@ -33,6 +33,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
   const PREFER_CLAIMED_TOKENS = true;
   const CURRENCY_ETH = 1;
   const DECIMALS = 1;
+  let NON_ETH_TOKEN;
 
   let ethToken;
 
@@ -67,7 +68,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     ]);
 
     let mockToken = await smock.fake(ierc20.abi);
-    const NON_ETH_TOKEN = mockToken.address;
+    NON_ETH_TOKEN = mockToken.address;
 
     let jbEthTerminalFactory = await ethers.getContractFactory(
       'contracts/JBETHPaymentTerminal3_1_2.sol:JBETHPaymentTerminal3_1_2',
@@ -81,7 +82,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     let jbEthPaymentTerminal = await jbEthTerminalFactory
       .connect(deployer)
       .deploy(
-        CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -99,8 +99,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
       .connect(deployer)
       .deploy(
         NON_ETH_TOKEN,
-        CURRENCY_ETH,
-        CURRENCY_ETH,
         SPLITS_GROUP,
         mockJbOperatorStore.address,
         mockJbProjects.address,
@@ -129,7 +127,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           CURRENCY_ETH,
         ],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
@@ -259,7 +256,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           CURRENCY_ETH,
         ],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
@@ -400,7 +396,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           CURRENCY_ETH,
         ],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
@@ -611,7 +606,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           CURRENCY_ETH,
         ],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
@@ -686,9 +680,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     await mockJBPaymentTerminalStore.mock.recordPaymentFrom
       .withArgs(
         caller.address,
-        [/*token*/ tokenAddress, /*amount paid*/ ETH_TO_PAY, /*decimal*/ DECIMALS, CURRENCY_ETH],
+        [/*token*/ tokenAddress, /*amount paid*/ ETH_TO_PAY, /*decimal*/ DECIMALS, ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber()],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
@@ -763,9 +756,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     await mockJBPaymentTerminalStore.mock.recordPaymentFrom
       .withArgs(
         caller.address,
-        [/*token*/ tokenAddress, /*amount paid*/ NET_AMOUNT, /*decimal*/ DECIMALS, CURRENCY_ETH],
+        [/*token*/ tokenAddress, /*amount paid*/ NET_AMOUNT, /*decimal*/ DECIMALS, ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber()],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
@@ -868,7 +860,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           CURRENCY_ETH,
         ],
         PROJECT_ID,
-        CURRENCY_ETH,
         beneficiary.address,
         MEMO,
         METADATA1,
