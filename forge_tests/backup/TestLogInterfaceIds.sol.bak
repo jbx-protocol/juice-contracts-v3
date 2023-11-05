@@ -29,8 +29,8 @@ contract TestLogInterfaceIds_Local is TestBaseWorkflow {
     console.logBytes4(type(IJBController3_0_1).interfaceId);
     console.logString("IJBController3_1:");
     console.logBytes4(type(IJBController3_1).interfaceId);
-    console.logString("IJBController:");
-    console.logBytes4(type(IJBController).interfaceId);
+    console.logString("IJBController3_1:");
+    console.logBytes4(type(IJBController3_1).interfaceId);
     console.logString("IJBControllerUtility:");
     console.logBytes4(type(IJBControllerUtility).interfaceId);
     console.logString("IJBDirectory:");

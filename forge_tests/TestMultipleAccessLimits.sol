@@ -6,14 +6,14 @@ import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 /*  */
 contract TestMultipleDistLimits_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBETHPaymentTerminal private _terminal;
-    JBETHPaymentTerminal3_2 private _terminal3_2;
+    JBETHPaymentTerminal3_1_2 private _terminal3_2;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
@@ -29,7 +29,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         _controller = jbController();
 
-        _terminal3_2 = new JBETHPaymentTerminal3_2(
+        _terminal3_2 = new JBETHPaymentTerminal3_1_2(
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
@@ -50,7 +50,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -77,7 +77,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         _terminals.push(_terminal3_2);
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -97,7 +97,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -139,7 +139,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         address _userWallet = address(1234);
         uint256 _userPayAmount = 1.5 ether;
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -159,7 +159,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -294,7 +294,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
     }
 
     function testFuzzedInvalidAllowanceCurrencyOrdering(uint24 ALLOWCURRENCY) external {
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](2);
 
@@ -314,7 +314,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -345,7 +345,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
     }
 
     function testFuzzedInvalidDistCurrencyOrdering(uint24 DISTCURRENCY) external {
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -365,7 +365,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -399,7 +399,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         DISTCURRENCY = bound(uint256(DISTCURRENCY), uint256(0), type(uint24).max - 1);
         ALLOWCURRENCY = bound(uint256(ALLOWCURRENCY), uint256(0), type(uint24).max - 1);
         
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](2);
 
@@ -424,7 +424,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,

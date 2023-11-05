@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
-contract MockMaliciousTerminal is JBERC20PaymentTerminal3_2, DeployPermit2 {
+contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2, DeployPermit2 {
   error NopeNotGonnaDoIt();
 
   uint256 revertMode;
@@ -30,11 +30,11 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_2, DeployPermit2 {
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
-    IJBPrices3_2 _prices,
-    IJBSingleTokenPaymentTerminalStore3_2 _store,
+    IJBPrices _prices,
+    IJBSingleTokenPaymentTerminalStore3_1_1 _store,
     address _owner
   )
-    JBERC20PaymentTerminal3_2(
+    JBERC20PaymentTerminal3_1_2(
       _token,
       _payoutSplitsGroup,
       _operatorStore,
@@ -60,7 +60,7 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_2, DeployPermit2 {
     bool _preferClaimedTokens,
     string calldata _memo,
     bytes calldata _metadata
-  ) public payable override(IJBPaymentTerminal, JBPayoutRedemptionPaymentTerminal3_2) returns (uint256) {
+  ) public payable override(IJBPaymentTerminal, JBPayoutRedemptionPaymentTerminal3_1_2) returns (uint256) {
       _projectId;
       _amount;
       _token;
@@ -90,7 +90,7 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_2, DeployPermit2 {
     address _token,
     string calldata _memo,
     bytes calldata _metadata
-  ) external payable override(IJBPaymentTerminal, JBPayoutRedemptionPaymentTerminal3_2) {
+  ) external payable override(IJBPaymentTerminal, JBPayoutRedemptionPaymentTerminal3_1_2) {
       _projectId;
       _amount;
       _token;

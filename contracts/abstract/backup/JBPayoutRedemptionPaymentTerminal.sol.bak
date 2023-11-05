@@ -7,25 +7,25 @@ import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBFeeType} from './../enums/JBFeeType.sol';
 import {IJBAllowanceTerminal3_1} from './../interfaces/IJBAllowanceTerminal3_1.sol';
-import {IJBController} from './../interfaces/IJBController.sol';
+import {IJBController3_1} from './../interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
-import {IJBPayoutRedemptionPaymentTerminal3_2} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_2.sol';
+import {IJBPayoutRedemptionPaymentTerminal3_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import {IJBSplitsStore} from './../interfaces/IJBSplitsStore.sol';
 import {IJBFeeGauge3_1} from './../interfaces/IJBFeeGauge3_1.sol';
 import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
 import {IJBOperatorStore} from './../interfaces/IJBOperatorStore.sol';
 import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
 import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
-import {IJBPrices3_2} from './../interfaces/IJBPrices3_2.sol';
+import {IJBPrices} from './../interfaces/IJBPrices.sol';
 import {IJBProjects} from './../interfaces/IJBProjects.sol';
 import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
-import {IJBSingleTokenPaymentTerminalStore3_2} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
+import {IJBSingleTokenPaymentTerminalStore3_1_1} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
 import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './../libraries/JBConstants.sol';
 import {JBCurrencies} from './../libraries/JBCurrencies.sol';
 import {JBFees} from './../libraries/JBFees.sol';
 import {JBFixedPointNumber} from './../libraries/JBFixedPointNumber.sol';
-import {JBFundingCycleMetadataResolver3_2} from './../libraries/JBFundingCycleMetadataResolver3_2.sol';
+import {JBFundingCycleMetadataResolver} from './../libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './../libraries/JBOperations.sol';
 import {JBTokens} from './../libraries/JBTokens.sol';
 import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
@@ -45,10 +45,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   JBSingleTokenPaymentTerminal,
   JBOperatable,
   Ownable,
-  IJBPayoutRedemptionPaymentTerminal3_2
+  IJBPayoutRedemptionPaymentTerminal3_1
 {
   // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBFundingCycle;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -95,7 +95,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   IJBSplitsStore public immutable override splitsStore;
 
   /// @notice The contract that exposes price feeds.
-  IJBPrices3_2 public immutable override prices;
+  IJBPrices public immutable override prices;
 
   /// @notice The contract that stores and manages the terminal's data.
   address public immutable override store;
@@ -135,7 +135,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     returns (uint256)
   {
     // Get this terminal's current overflow.
-    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_2(store).currentOverflowOf(
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
       this,
       _projectId
     );
@@ -179,7 +179,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     returns (bool)
   {
     return
-      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_2).interfaceId ||
+      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
       _interfaceId == type(IJBAllowanceTerminal3_1).interfaceId ||
       _interfaceId == type(IJBRedemptionTerminal).interfaceId ||
@@ -220,7 +220,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
-    IJBPrices3_2 _prices,
+    IJBPrices _prices,
     address _store,
     address _owner
   )
@@ -416,7 +416,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = IJBSingleTokenPaymentTerminalStore3_2(store).recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance != 0) {
@@ -653,7 +653,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
           reclaimAmount,
           _delegateAllocations,
           _memo
-        ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordRedemptionFor(
+        ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
           _holder,
           _projectId,
           _tokenCount,
@@ -673,7 +673,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
         // Burn the project tokens.
         if (_tokenCount != 0)
-          IJBController(directory.controllerOf(_projectId)).burnTokensOf(
+          IJBController3_1(directory.controllerOf(_projectId)).burnTokensOf(
             _holder,
             _projectId,
             _tokenCount,
@@ -812,7 +812,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordDistributionFor(
+    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordDistributionFor(
         _projectId,
         _amount,
         _currency
@@ -930,7 +930,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordUsedAllowanceOf(
+    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
         _projectId,
         _amount,
         _currency
@@ -1318,7 +1318,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
-    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(_projectId, _depositAmount);
+    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(_projectId, _depositAmount);
   }
 
   /// @notice Contribute tokens to a project.
@@ -1362,7 +1362,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
         _tokenCount,
         _delegateAllocations,
         _memo
-      ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordPaymentFrom(
+      ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1374,7 +1374,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
       // Mint the tokens if needed.
       if (_tokenCount != 0)
         // Set token count to be the number of tokens minted for the beneficiary instead of the total amount.
-        beneficiaryTokenCount = IJBController(directory.controllerOf(_projectId)).mintTokensOf(
+        beneficiaryTokenCount = IJBController3_1(directory.controllerOf(_projectId)).mintTokensOf(
           _projectId,
           _tokenCount,
           _beneficiary,
@@ -1470,7 +1470,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(
+    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
       _projectId,
       _amount + _refundedFees
     );

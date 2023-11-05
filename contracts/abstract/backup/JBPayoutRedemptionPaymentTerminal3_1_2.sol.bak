@@ -7,7 +7,7 @@ import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBFeeType} from './../enums/JBFeeType.sol';
 import {IJBAllowanceTerminal3_1} from './../interfaces/IJBAllowanceTerminal3_1.sol';
-import {IJBController} from './../interfaces/IJBController.sol';
+import {IJBController3_1} from './../interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
 import {IJBPayoutRedemptionPaymentTerminal3_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import {IJBPayoutRedemptionPaymentTerminal3_1_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol';
@@ -677,7 +677,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
 
         // Burn the project tokens.
         if (_tokenCount != 0)
-          IJBController(directory.controllerOf(_projectId)).burnTokensOf(
+          IJBController3_1(directory.controllerOf(_projectId)).burnTokensOf(
             _holder,
             _projectId,
             _tokenCount,
@@ -1378,7 +1378,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       // Mint the tokens if needed.
       if (_tokenCount != 0)
         // Set token count to be the number of tokens minted for the beneficiary instead of the total amount.
-        beneficiaryTokenCount = IJBController(directory.controllerOf(_projectId)).mintTokensOf(
+        beneficiaryTokenCount = IJBController3_1(directory.controllerOf(_projectId)).mintTokensOf(
           _projectId,
           _tokenCount,
           _beneficiary,

@@ -16,7 +16,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 contract TestMigrationOperator_Local is TestBaseWorkflow {
     uint256 projectId;
 
-    JBController controller;
+    JBController3_1 controller;
     JBFundingCycleData data;
     JBProjectMetadata projectMetadata;
     JBFundingCycleMetadata metadata;
@@ -275,7 +275,7 @@ contract TestMigrationOperator_Fork is Test {
     using JBFundingCycleMetadataResolver for JBFundingCycle;
 
     // Contracts needed
-    IJBController oldJbController;
+    IJBController3_1 oldJbController;
     IJBMigratable newJbController;
     IJBDirectory jbDirectory;
     IJBFundingCycleStore jbFundingCycleStore;
@@ -315,8 +315,8 @@ contract TestMigrationOperator_Fork is Test {
         );
         vm.label(address(jbEthPaymentTerminal3_1), "jbEthPaymentTerminal3_1");
 
-        oldJbController = IJBController(
-            stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), ".address")
+        oldJbController = IJBController3_1(
+            stdJson.readAddress(vm.readFile("deployments/mainnet/JBController3_1.json"), ".address")
         );
 
         newJbController = IJBMigratable(
@@ -355,7 +355,7 @@ contract TestMigrationOperator_Fork is Test {
         vm.assume(jbDirectory.controllerOf(_projectId) != address(0));
 
         // JuiceboxDAO is already using Controller 3.0.1 at that block height
-        if (_projectId == 1) oldJbController = IJBController(jbDirectory.controllerOf(1));
+        if (_projectId == 1) oldJbController = IJBController3_1(jbDirectory.controllerOf(1));
 
         _prepareAuthorizations(_projectId);
 

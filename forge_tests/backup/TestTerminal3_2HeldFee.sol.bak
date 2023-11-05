@@ -3,17 +3,17 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-import {JBETHPaymentTerminal3_2} from "../contracts/JBETHPaymentTerminal3_2.sol";
+import {JBETHPaymentTerminal3_1_2} from "../contracts/JBETHPaymentTerminal3_1_2.sol";
 import {IJBFeeGauge3_1, JBFeeType} from "../contracts/interfaces/IJBFeeGauge3_1.sol";
 
 contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBETHPaymentTerminal private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
@@ -47,7 +47,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -74,7 +74,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
 
         _terminals.push(_terminal);
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -89,7 +89,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] =
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -164,7 +164,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        IJBPayoutRedemptionPaymentTerminal3_2(address(_terminal)).distributePayoutsOf(
+        IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
             _projectId,
             payAmountInWei,
             jbLibraries().ETH(),

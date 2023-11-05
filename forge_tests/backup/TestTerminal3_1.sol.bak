@@ -27,7 +27,7 @@ contract TestTerminal31_Fork is Test {
     JBFundAccessConstraintsStore jbFundsAccessConstraintsStore;
 
     // Contracts needed
-    IJBController oldJbController;
+    IJBController3_1 oldJbController;
     IJBDirectory jbDirectory;
     IJBFundingCycleStore jbFundingCycleStore;
     IJBOperatorStore jbOperatorStore;
@@ -62,8 +62,8 @@ contract TestTerminal31_Fork is Test {
             )
         );
 
-        oldJbController = IJBController(
-            stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), ".address")
+        oldJbController = IJBController3_1(
+            stdJson.readAddress(vm.readFile("deployments/mainnet/JBController3_1.json"), ".address")
         );
 
         jbOperatorStore = IJBOperatorStore(

@@ -7,33 +7,33 @@ import {JBBallotState} from './enums/JBBallotState.sol';
 import {IJBController3_2} from './interfaces/IJBController3_2.sol';
 import {IJBController3_2} from './interfaces/IJBController3_2.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundingCycleDataSource3_2} from './interfaces/IJBFundingCycleDataSource3_2.sol';
+import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSource3_1_1.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
-import {IJBPrices3_2} from './interfaces/IJBPrices3_2.sol';
-import {IJBPrices3_2} from './interfaces/IJBPrices3_2.sol';
+import {IJBPrices} from './interfaces/IJBPrices.sol';
+import {IJBPrices} from './interfaces/IJBPrices.sol';
 import {IJBSingleTokenPaymentTerminal} from './interfaces/IJBSingleTokenPaymentTerminal.sol';
-import {IJBSingleTokenPaymentTerminalStore3_2} from './interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
+import {IJBSingleTokenPaymentTerminalStore3_1_1} from './interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
 import {JBCurrencies} from './libraries/JBCurrencies.sol';
 import {JBFixedPointNumber} from './libraries/JBFixedPointNumber.sol';
 import {JBCurrencyAmount} from './structs/JBCurrencyAmount.sol';
-import {JBFundingCycleMetadataResolver3_2} from './libraries/JBFundingCycleMetadataResolver3_2.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
-import {JBPayDelegateAllocation3_2} from './structs/JBPayDelegateAllocation3_2.sol';
+import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1_1.sol';
 import {JBPayParamsData} from './structs/JBPayParamsData.sol';
 import {JBRedeemParamsData} from './structs/JBRedeemParamsData.sol';
-import {JBRedemptionDelegateAllocation3_2} from './structs/JBRedemptionDelegateAllocation3_2.sol';
+import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
 import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 
 /// @notice Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
 /// @dev This Store expects a project's controller to be an IJBController3_2.
-contract JBSingleTokenPaymentTerminalStore3_2 is
+contract JBSingleTokenPaymentTerminalStore3_1_1 is
   ReentrancyGuard,
-  IJBSingleTokenPaymentTerminalStore3_2
+  IJBSingleTokenPaymentTerminalStore3_1_1
 {
   // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBFundingCycle;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -68,7 +68,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
   IJBFundingCycleStore public immutable override fundingCycleStore;
 
   /// @notice The contract that exposes price feeds.
-  IJBPrices3_2 public immutable override prices;
+  IJBPrices public immutable override prices;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -209,11 +209,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
   /// @param _directory A contract storing directories of terminals and controllers for each project.
   /// @param _fundingCycleStore A contract storing all funding cycle configurations.
   /// @param _prices A contract that exposes price feeds.
-  constructor(
-    IJBDirectory _directory,
-    IJBFundingCycleStore _fundingCycleStore,
-    IJBPrices3_2 _prices
-  ) {
+  constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore, IJBPrices _prices) {
     directory = _directory;
     fundingCycleStore = _fundingCycleStore;
     prices = _prices;
@@ -250,7 +246,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 tokenCount,
-      JBPayDelegateAllocation3_2[] memory delegateAllocations,
+      JBPayDelegateAllocation3_1_1[] memory delegateAllocations,
       string memory memo
     )
   {
@@ -281,8 +277,9 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
         _memo,
         _metadata
       );
-      (_weight, memo, delegateAllocations) = IJBFundingCycleDataSource3_2(fundingCycle.dataSource())
-        .payParams(_data);
+      (_weight, memo, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
+        fundingCycle.dataSource()
+      ).payParams(_data);
     }
     // Otherwise use the funding cycle's weight
     else {
@@ -367,7 +364,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 reclaimAmount,
-      JBRedemptionDelegateAllocation3_2[] memory delegateAllocations,
+      JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations,
       string memory memo
     )
   {
@@ -444,7 +441,7 @@ contract JBSingleTokenPaymentTerminalStore3_2 is
             _memo,
             _metadata
           );
-          (reclaimAmount, memo, delegateAllocations) = IJBFundingCycleDataSource3_2(
+          (reclaimAmount, memo, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
             fundingCycle.dataSource()
           ).redeemParams(_data);
         }

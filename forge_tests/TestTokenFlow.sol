@@ -5,14 +5,14 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /// @notice This file tests JBToken related flows
 contract TestTokenFlow_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
-    JBFundAccessConstraints3_1[] private _fundAccessConstraints; // Default empty
+    JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
     uint256 private _projectId;
@@ -34,7 +34,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,

@@ -7,9 +7,9 @@ import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
 import {IJBController3_2} from './interfaces/IJBController3_2.sol';
-import {IJBController} from './interfaces/IJBController.sol';
+import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundAccessConstraintsStore3_1} from './interfaces/IJBFundAccessConstraintsStore3_1.sol';
+import {IJBFundAccessConstraintsStore} from './interfaces/IJBFundAccessConstraintsStore.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {IJBMigratable} from './interfaces/IJBMigratable.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
@@ -20,21 +20,21 @@ import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBTokenStore} from './interfaces/IJBTokenStore.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
-import {JBFundingCycleMetadataResolver3_2} from './libraries/JBFundingCycleMetadataResolver3_2.sol';
+import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
-import {JBFundingCycleMetadata3_2} from './structs/JBFundingCycleMetadata3_2.sol';
+import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-/// @dev This Controller has the same functionality as JBController3_0_1, except it is not backwards compatible with the original IJBController view methods.
-contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
+/// @dev This Controller has the same functionality as JBController3_0_1, except it is not backwards compatible with the original IJBController3_1 view methods.
+contract JBController3_1 is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   // A library that parses the packed funding cycle metadata into a more friendly format.
-  using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBFundingCycle;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -92,7 +92,7 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   IJBSplitsStore public immutable override splitsStore;
 
   /// @notice A contract that stores fund access constraints for each project.
-  IJBFundAccessConstraintsStore3_1 public immutable override fundAccessConstraintsStore;
+  IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
 
   /// @notice The directory of terminals and controllers for projects.
   IJBDirectory public immutable override directory;
@@ -112,11 +112,14 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @return fundingCycle The funding cycle.
   /// @return metadata The funding cycle's metadata.
-  function getFundingCycleOf(uint256 _projectId, uint256 _configuration)
+  function getFundingCycleOf(
+    uint256 _projectId,
+    uint256 _configuration
+  )
     external
     view
     override
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata)
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
     fundingCycle = fundingCycleStore.get(_projectId, _configuration);
     metadata = fundingCycle.expandMetadata();
@@ -127,13 +130,15 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @return fundingCycle The latest configured funding cycle.
   /// @return metadata The latest configured funding cycle's metadata.
   /// @return ballotState The state of the configuration.
-  function latestConfiguredFundingCycleOf(uint256 _projectId)
+  function latestConfiguredFundingCycleOf(
+    uint256 _projectId
+  )
     external
     view
     override
     returns (
       JBFundingCycle memory fundingCycle,
-      JBFundingCycleMetadata3_2 memory metadata,
+      JBFundingCycleMetadata memory metadata,
       JBBallotState ballotState
     )
   {
@@ -145,11 +150,13 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @return fundingCycle The current funding cycle.
   /// @return metadata The current funding cycle's metadata.
-  function currentFundingCycleOf(uint256 _projectId)
+  function currentFundingCycleOf(
+    uint256 _projectId
+  )
     external
     view
     override
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata)
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
     fundingCycle = fundingCycleStore.currentOf(_projectId);
     metadata = fundingCycle.expandMetadata();
@@ -159,11 +166,13 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @param _projectId The ID of the project to which the funding cycle belongs.
   /// @return fundingCycle The queued funding cycle.
   /// @return metadata The queued funding cycle's metadata.
-  function queuedFundingCycleOf(uint256 _projectId)
+  function queuedFundingCycleOf(
+    uint256 _projectId
+  )
     external
     view
     override
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata)
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
     fundingCycle = fundingCycleStore.queuedOf(_projectId);
     metadata = fundingCycle.expandMetadata();
@@ -185,15 +194,11 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @dev See {IERC165-supportsInterface}.
   /// @param _interfaceId The ID of the interface to check for adherance to.
   /// @return A flag indicating if the provided interface ID is supported.
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(ERC165, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
-      _interfaceId == type(IJBController).interfaceId ||
+      _interfaceId == type(IJBController3_1).interfaceId ||
       _interfaceId == type(IJBMigratable).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       super.supportsInterface(_interfaceId);
@@ -217,7 +222,7 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
     IJBFundingCycleStore _fundingCycleStore,
     IJBTokenStore _tokenStore,
     IJBSplitsStore _splitsStore,
-    IJBFundAccessConstraintsStore3_1 _fundAccessConstraintsStore
+    IJBFundAccessConstraintsStore _fundAccessConstraintsStore
   ) JBOperatable(_operatorStore) {
     projects = _projects;
     directory = _directory;
@@ -451,12 +456,10 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @param _projectId The ID of the project to which the reserved tokens belong.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return The amount of minted reserved tokens.
-  function distributeReservedTokensOf(uint256 _projectId, string calldata _memo)
-    external
-    virtual
-    override
-    returns (uint256)
-  {
+  function distributeReservedTokensOf(
+    uint256 _projectId,
+    string calldata _memo
+  ) external virtual override returns (uint256) {
     return _distributeReservedTokensOf(_projectId, _memo);
   }
 
@@ -473,7 +476,10 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @dev Only a project's owner or a designated operator can migrate it.
   /// @param _projectId The ID of the project that will be migrated from this controller.
   /// @param _to The controller to which the project is migrating.
-  function migrate(uint256 _projectId, IJBMigratable _to)
+  function migrate(
+    uint256 _projectId,
+    IJBMigratable _to
+  )
     external
     virtual
     override
@@ -511,10 +517,10 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @param _projectId The ID of the project to which the reserved tokens belong.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return tokenCount The amount of minted reserved tokens.
-  function _distributeReservedTokensOf(uint256 _projectId, string memory _memo)
-    internal
-    returns (uint256 tokenCount)
-  {
+  function _distributeReservedTokensOf(
+    uint256 _projectId,
+    string memory _memo
+  ) internal returns (uint256 tokenCount) {
     // Keep a reference to the token store.
     IJBTokenStore _tokenStore = tokenStore;
 
@@ -643,10 +649,10 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
   /// @param _configurations The funding cycle configurations to schedule.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
-  function _configure(uint256 _projectId, JBFundingCycleConfiguration[] calldata _configurations)
-    internal
-    returns (uint256 configured)
-  {
+  function _configure(
+    uint256 _projectId,
+    JBFundingCycleConfiguration[] calldata _configurations
+  ) internal returns (uint256 configured) {
     // Keep a reference to the configuration being iterated on.
     JBFundingCycleConfiguration memory _configuration;
 
@@ -672,7 +678,7 @@ contract JBController is JBOperatable, ERC165, IJBController3_2, IJBMigratable {
       JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(
         _projectId,
         _configuration.data,
-        JBFundingCycleMetadataResolver3_2.packFundingCycleMetadata(_configuration.metadata),
+        JBFundingCycleMetadataResolver.packFundingCycleMetadata(_configuration.metadata),
         _configuration.mustStartAtOrAfter
       );
 

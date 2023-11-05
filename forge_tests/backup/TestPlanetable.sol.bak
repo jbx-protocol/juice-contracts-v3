@@ -9,7 +9,7 @@ pragma solidity ^0.8.6;
 import "@juicebox/JBController3_1.sol";
 import "@juicebox/JBFundAccessConstraintsStore.sol";
 
-import "@juicebox/interfaces/IJBController.sol";
+import "@juicebox/interfaces/IJBController3_1.sol";
 import "@juicebox/interfaces/IJBMigratable.sol";
 import "@juicebox/interfaces/IJBOperatorStore.sol";
 import "@juicebox/interfaces/IJBPaymentTerminal.sol";

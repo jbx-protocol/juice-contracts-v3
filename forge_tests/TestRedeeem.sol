@@ -8,14 +8,14 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
  * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
  */
 contract TestRedeem_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBETHPaymentTerminal private _terminal;
-    JBETHPaymentTerminal3_2 private _terminal3_2;
+    JBETHPaymentTerminal3_1_2 private _terminal3_2;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
@@ -30,7 +30,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
 
-        _terminal3_2 = new JBETHPaymentTerminal3_2(
+        _terminal3_2 = new JBETHPaymentTerminal3_1_2(
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
@@ -51,7 +51,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -79,7 +79,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _terminals.push(_terminal);
         _terminals.push(_terminal3_2);
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](2);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](2);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -107,7 +107,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] =
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -115,7 +115,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             });
 
         _fundAccessConstraints[1] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal3_2,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits2,

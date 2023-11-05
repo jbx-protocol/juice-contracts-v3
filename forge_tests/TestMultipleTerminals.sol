@@ -6,15 +6,15 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestMultipleTerminals_Local is TestBaseWorkflow {
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] _groupedSplits;
     MockPriceFeed _priceFeedJbUsd;
 
     IJBPaymentTerminal[] _terminals;
-    JBERC20PaymentTerminal3_2 ERC20terminal;
+    JBERC20PaymentTerminal3_1_2 ERC20terminal;
     JBETHPaymentTerminal ETHterminal;
 
     JBTokenStore _tokenStore;
@@ -59,7 +59,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -84,7 +84,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-            ERC20terminal = new JBERC20PaymentTerminal3_2(
+            ERC20terminal = new JBERC20PaymentTerminal3_1_2(
                 jbToken(),
                 1, // JBSplitsGroupe
                 jbOperatorStore(),
@@ -99,7 +99,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](2);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](2);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -129,7 +129,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         ETHterminal = jbETHPaymentTerminal();
 
         _fundAccessConstraints[0] =
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: ERC20terminal,
                 token: address(jbToken()),
                 distributionLimits: _distributionLimits,
@@ -137,7 +137,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             });
 
         _fundAccessConstraints[1] = 
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: ETHterminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits2,
@@ -222,7 +222,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         // ---- Use allowance ----
         vm.startPrank(_projectOwner);
 
-        IJBPayoutRedemptionPaymentTerminal3_2(address(ERC20terminal)).useAllowanceOf(
+        IJBPayoutRedemptionPaymentTerminal3_1(address(ERC20terminal)).useAllowanceOf(
             projectId,
             5 * 10 ** 18, // amt in ETH (overflow allowance currency is in ETH)
             jbLibraries().USD(), // Currency -> (fake price is 10)
@@ -255,7 +255,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            IJBPayoutRedemptionPaymentTerminal3_2(address(ETHterminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_1(address(ETHterminal)).distributePayoutsOf(
                 projectId,
                 10 * 10 ** 18,
                 jbLibraries().ETH(), // Currency
@@ -276,7 +276,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         if (isUsingJbController3_0()) {
             totalSupply = jbController().totalOutstandingTokensOf(projectId);
         } else {
-            totalSupply = IJBController(address(jbController())).totalOutstandingTokensOf(projectId);
+            totalSupply = IJBController3_1(address(jbController())).totalOutstandingTokensOf(projectId);
         }
 
         uint256 overflow = jbPaymentTerminalStore().currentTotalOverflowOf(projectId, 18, 1);

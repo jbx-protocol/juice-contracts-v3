@@ -6,7 +6,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import "forge-std/Test.sol";
 
 /**
- *  @title JBController v3.1 mainnet fork test
+ *  @title JBController3_1 v3.1 mainnet fork test
  *
  *  @notice
  *  This test run on a mainnet fork and test the new controller (v3.1) as well as migration scenarios
@@ -26,7 +26,7 @@ contract TestController31_Fork is Test {
     using JBFundingCycleMetadataResolver for JBFundingCycle;
 
     // Contracts needed
-    IJBController oldJbController;
+    IJBController3_1 oldJbController;
     IJBDirectory jbDirectory;
     IJBFundingCycleStore jbFundingCycleStore;
     IJBOperatorStore jbOperatorStore;
@@ -57,7 +57,7 @@ contract TestController31_Fork is Test {
         );
  
         oldJbController =
-            IJBController(stdJson.readAddress(vm.readFile("deployments/mainnet/JBController.json"), ".address"));
+            IJBController3_1(stdJson.readAddress(vm.readFile("deployments/mainnet/JBController3_1.json"), ".address"));
 
         jbOperatorStore =
             IJBOperatorStore(stdJson.readAddress(vm.readFile("deployments/mainnet/JBOperatorStore.json"), ".address"));

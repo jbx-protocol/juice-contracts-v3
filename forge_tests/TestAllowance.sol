@@ -4,10 +4,10 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestAllowance_Local is TestBaseWorkflow {
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] _groupedSplits;
     IJBPaymentTerminal[] _terminals;
     JBTokenStore _tokenStore;
@@ -33,7 +33,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -64,7 +64,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
     function testAllowance() public {
         JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -79,7 +79,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] =
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -127,7 +127,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 bytes('')
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).useAllowanceOf(
                 projectId,
                 5 ether,
                 1, // Currency
@@ -145,7 +145,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         // Distribute the funding target ETH -> splits[] is empty -> everything in left-over, to project owner
         vm.prank(_projectOwner);
 
-            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 10 ether,
                 1, // Currency
@@ -175,7 +175,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         uint256 tokenDiff = tokenBalanceAfter;
 
         // Redemption fee share: (tokens received from redeem * 2 b/c 50% redemption rate)
-        uint256 processedFee = JBFees3_2.feeIn(tokenDiff * 2, jbLibraries().MAX_FEE());
+        uint256 processedFee = JBFees.feeIn(tokenDiff * 2, jbLibraries().MAX_FEE());
 
         // verify: beneficiary should have a balance of 0 JBTokens
         assertEq(_tokenStore.balanceOf(_beneficiary, projectId), (processedFee));
@@ -193,7 +193,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
 
         JBETHPaymentTerminal terminal = jbETHPaymentTerminal();
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -208,7 +208,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] =
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
@@ -252,7 +252,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
             willRevert = true;
         }
-            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).useAllowanceOf(
+            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).useAllowanceOf(
                 projectId,
                 ALLOWANCE,
                 CURRENCY, // Currency
@@ -290,7 +290,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
                 "Foundry payment" // Memo
             );
         else 
-            JBPayoutRedemptionPaymentTerminal3_2(address(terminal)).distributePayoutsOf(
+            JBPayoutRedemptionPaymentTerminal3_1_2(address(terminal)).distributePayoutsOf(
                 projectId,
                 TARGET,
                 1, // Currency

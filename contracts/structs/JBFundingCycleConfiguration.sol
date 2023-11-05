@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import {JBFundingCycleData} from './JBFundingCycleData.sol';
-import {JBFundingCycleMetadata3_2} from './JBFundingCycleMetadata3_2.sol';
+import {JBFundingCycleMetadata} from './JBFundingCycleMetadata.sol';
 import {JBGroupedSplits} from './JBGroupedSplits.sol';
-import {JBFundAccessConstraints3_1} from './JBFundAccessConstraints3_1.sol';
+import {JBFundAccessConstraints} from './JBFundAccessConstraints.sol';
 
 /// @custom:member mustStartAtOrAfter The time before which the configured funding cycle cannot start.
 /// @custom:member data Data that defines the project's funding cycle. These properties will remain fixed for the duration of the funding cycle.
@@ -14,7 +14,7 @@ import {JBFundAccessConstraints3_1} from './JBFundAccessConstraints3_1.sol';
 struct JBFundingCycleConfiguration {
   uint256 mustStartAtOrAfter;
   JBFundingCycleData data;
-  JBFundingCycleMetadata3_2 metadata;
+  JBFundingCycleMetadata metadata;
   JBGroupedSplits[] groupedSplits;
-  JBFundAccessConstraints3_1[] fundAccessConstraints;
+  JBFundAccessConstraints[] fundAccessConstraints;
 }

@@ -6,15 +6,15 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 uint256 constant WEIGHT = 1000 * 10 ** 18;
 
 contract TestReconfigureProject_Local is TestBaseWorkflow {
-    JBController controller;
+    JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
     JBFundingCycleData _dataReconfiguration;
     JBFundingCycleData _dataWithoutBallot;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBReconfigurationBufferBallot _ballot;
     JBGroupedSplits[] _groupedSplits; // Default empty
-    JBFundAccessConstraints3_1[] _fundAccessConstraints; // Default empty
+    JBFundAccessConstraints[] _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] _terminals; // Default empty
 
     uint256 BALLOT_DURATION = 3 days;
@@ -44,7 +44,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             ballot: JBReconfigurationBufferBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,

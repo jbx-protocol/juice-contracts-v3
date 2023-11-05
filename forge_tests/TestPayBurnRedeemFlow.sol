@@ -8,13 +8,13 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
  * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
  */
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBETHPaymentTerminal private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
 
@@ -39,7 +39,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -68,7 +68,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
-        JBFundAccessConstraints3_1[] memory _fundAccessConstraints = new JBFundAccessConstraints3_1[](1);
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
@@ -83,7 +83,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         _fundAccessConstraints[0] =
-            JBFundAccessConstraints3_1({
+            JBFundAccessConstraints({
                 terminal: _terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
