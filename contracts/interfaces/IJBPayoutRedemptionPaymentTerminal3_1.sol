@@ -104,13 +104,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     address caller
   );
 
-  event DelegateDidPay(
-    IJBPayDelegate indexed delegate,
-    JBDidPayData data,
-    uint256 delegatedAmount,
-    address caller
-  );
-
   event RedeemTokens(
     uint256 indexed fundingCycleConfiguration,
     uint256 indexed fundingCycleNumber,
@@ -121,13 +114,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     uint256 reclaimedAmount,
     string memo,
     bytes metadata,
-    address caller
-  );
-
-  event DelegateDidRedeem(
-    IJBRedemptionDelegate indexed delegate,
-    JBDidRedeemData data,
-    uint256 delegatedAmount,
     address caller
   );
 
