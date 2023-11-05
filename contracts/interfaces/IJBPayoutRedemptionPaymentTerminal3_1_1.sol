@@ -17,7 +17,7 @@ import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 
-interface IJBPayoutRedemptionPaymentTerminal3_1 is
+interface IJBPayoutRedemptionPaymentTerminal3_1_1 is
   IJBPaymentTerminal,
   IJBPayoutTerminal3_1,
   IJBAllowanceTerminal3_1,

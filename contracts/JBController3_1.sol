@@ -24,7 +24,7 @@ import {JBOperations} from './libraries/JBOperations.sol';
 import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
-import {JBFundingCycleMetadata3_2} from './structs/JBFundingCycleMetadata3_2.sol';
+import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';

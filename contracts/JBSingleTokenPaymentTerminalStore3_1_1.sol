@@ -4,7 +4,7 @@ pragma solidity ^0.8.16;
 import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
-import {IJBController3_2} from './interfaces/IJBController3_2.sol';
+import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSource3_1_1.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
@@ -24,7 +24,7 @@ import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegat
 import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 
 /// @notice Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
-/// @dev This Store expects a project's controller to be an IJBController3_2.
+/// @dev This Store expects a project's controller to be an IJBController3_1.
 contract JBSingleTokenPaymentTerminalStore3_1_1 is
   ReentrancyGuard,
   IJBSingleTokenPaymentTerminalStore3_1_1
@@ -161,7 +161,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     if (_currentOverflow == 0) return 0;
 
     // Get the number of outstanding tokens the project has.
-    uint256 _totalSupply = IJBController3_2(directory.controllerOf(_projectId))
+    uint256 _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
       .totalOutstandingTokensOf(_projectId);
 
     // Can't redeem more tokens that is in the supply.
@@ -399,7 +399,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
           );
 
         // Get the number of outstanding tokens the project has.
-        _totalSupply = IJBController3_2(directory.controllerOf(_projectId))
+        _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
           .totalOutstandingTokensOf(_projectId);
 
         // Can't redeem more tokens that is in the supply.
@@ -508,7 +508,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     ][_projectId][fundingCycle.number] + _amount;
 
     // Amount must be within what is still distributable.
-    (uint256 _distributionLimitOf, uint256 _distributionLimitCurrencyOf) = IJBController3_2(
+    (uint256 _distributionLimitOf, uint256 _distributionLimitCurrencyOf) = IJBController3_1(
       directory.controllerOf(_projectId)
     ).fundAccessConstraintsStore().distributionLimitOf(
         _projectId,
@@ -579,7 +579,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     ][_projectId][fundingCycle.configuration] + _amount;
 
     // There must be sufficient allowance available.
-    (uint256 _overflowAllowanceOf, uint256 _overflowAllowanceCurrency) = IJBController3_2(
+    (uint256 _overflowAllowanceOf, uint256 _overflowAllowanceCurrency) = IJBController3_1(
       directory.controllerOf(_projectId)
     ).fundAccessConstraintsStore().overflowAllowanceOf(
         _projectId,
@@ -725,7 +725,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     if (_balanceOf == 0) return 0;
 
     // Get a reference to the distribution limit during the funding cycle.
-    (uint256 _distributionLimit, uint256 _distributionLimitCurrency) = IJBController3_2(
+    (uint256 _distributionLimit, uint256 _distributionLimitCurrency) = IJBController3_1(
       directory.controllerOf(_projectId)
     ).fundAccessConstraintsStore().distributionLimitOf(
         _projectId,

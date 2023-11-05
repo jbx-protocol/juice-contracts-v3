@@ -9,7 +9,7 @@ import {JBFeeType} from './../enums/JBFeeType.sol';
 import {IJBAllowanceTerminal3_1} from './../interfaces/IJBAllowanceTerminal3_1.sol';
 import {IJBController3_1} from './../interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
-import {IJBPayoutRedemptionPaymentTerminal3_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
+import {IJBPayoutRedemptionPaymentTerminal3_1_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol';
 import {IJBSplitsStore} from './../interfaces/IJBSplitsStore.sol';
 import {IJBFeeGauge3_1} from './../interfaces/IJBFeeGauge3_1.sol';
 import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
@@ -45,7 +45,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   JBSingleTokenPaymentTerminal,
   JBOperatable,
   Ownable,
-  IJBPayoutRedemptionPaymentTerminal3_1
+  IJBPayoutRedemptionPaymentTerminal3_1_1
 {
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
@@ -171,7 +171,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     bytes4 _interfaceId
   ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
     return
-      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_2).interfaceId ||
+      _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1_1).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
       _interfaceId == type(IJBAllowanceTerminal3_1).interfaceId ||
       _interfaceId == type(IJBRedemptionTerminal).interfaceId ||

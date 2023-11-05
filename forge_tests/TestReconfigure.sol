@@ -11,7 +11,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleData _dataReconfiguration;
     JBFundingCycleData _dataWithoutBallot;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBReconfigurationBufferBallot _ballot;
     JBGroupedSplits[] _groupedSplits; // Default empty
     JBFundAccessConstraints[] _fundAccessConstraints; // Default empty
@@ -44,7 +44,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             ballot: JBReconfigurationBufferBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,

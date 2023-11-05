@@ -93,7 +93,7 @@ interface IJBController3_1 is IERC165 {
   )
     external
     view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata);
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
   function latestConfiguredFundingCycleOf(
     uint256 projectId
@@ -107,14 +107,14 @@ interface IJBController3_1 is IERC165 {
   )
     external
     view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata);
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
   function queuedFundingCycleOf(
     uint256 projectId
   )
     external
     view
-    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata3_2 memory metadata);
+    returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
 
   function launchProjectFor(
     address owner,

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {JBFundingCycleData} from './JBFundingCycleData.sol';
-import {JBFundingCycleMetadata3_2} from './JBFundingCycleMetadata3_2.sol';
+import {JBFundingCycleMetadata} from './JBFundingCycleMetadata.sol';
 import {JBGroupedSplits} from './JBGroupedSplits.sol';
 import {JBFundAccessConstraints} from './JBFundAccessConstraints.sol';
 
@@ -14,7 +14,7 @@ import {JBFundAccessConstraints} from './JBFundAccessConstraints.sol';
 struct JBFundingCycleConfiguration {
   uint256 mustStartAtOrAfter;
   JBFundingCycleData data;
-  JBFundingCycleMetadata3_2 metadata;
+  JBFundingCycleMetadata metadata;
   JBGroupedSplits[] groupedSplits;
   JBFundAccessConstraints[] fundAccessConstraints;
 }

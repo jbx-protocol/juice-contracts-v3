@@ -36,7 +36,7 @@ import {JBFees} from '@juicebox/libraries/JBFees.sol';
 import {JBFundAccessConstraints} from '@juicebox/structs/JBFundAccessConstraints.sol';
 import {JBFundingCycle} from '@juicebox/structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from '@juicebox/structs/JBFundingCycleData.sol';
-import {JBFundingCycleMetadata3_2} from '@juicebox/structs/JBFundingCycleMetadata3_2.sol';
+import {JBFundingCycleMetadata} from '@juicebox/structs/JBFundingCycleMetadata.sol';
 import {JBFundingCycleConfiguration} from '@juicebox/structs/JBFundingCycleConfiguration.sol';
 import {JBGroupedSplits} from '@juicebox/structs/JBGroupedSplits.sol';
 import {JBOperatorData} from '@juicebox/structs/JBOperatorData.sol';
@@ -202,12 +202,6 @@ contract TestBaseWorkflow is Test {
     return _accessJBLib;
   }
 
-  function getDefaultCycleConfig(
-    uint256 index
-  ) internal view returns (JBFundingCycleConfiguration memory) {
-    return defaultCycles[index];
-  }
-
   //*********************************************************************//
   // --------------------------- test setup ---------------------------- //
   //*********************************************************************//
@@ -284,7 +278,6 @@ contract TestBaseWorkflow is Test {
 
     // JBETHPaymentTerminal3_1_2
     _jbETHPaymentTerminal3_1_2 = new JBETHPaymentTerminal3_1_2(
-      _accessJBLib.ETH(),
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,

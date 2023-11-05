@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-import {JBETHPaymentTerminal3_2} from "../contracts/JBETHPaymentTerminal3_2.sol";
+import {JBETHPaymentTerminal3_1_2} from "../contracts/JBETHPaymentTerminal3_1_2.sol";
 import {IJBFeeGauge3_1, JBFeeType} from "../contracts/interfaces/IJBFeeGauge3_1.sol";
 
 contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
@@ -13,7 +13,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -27,7 +27,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         super.setUp();
 
         _controller = jbController();
-        _terminal = new JBETHPaymentTerminal(
+        _terminal = new JBETHPaymentTerminal3_1_2(
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
@@ -48,7 +48,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,

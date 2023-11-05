@@ -17,7 +17,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
     JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
-    JBFundingCycleMetadata3_2 _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
     IJBPaymentTerminal[] _terminals;
@@ -45,7 +45,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata3_2({
+        _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
