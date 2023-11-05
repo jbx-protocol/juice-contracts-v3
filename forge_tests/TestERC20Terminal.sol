@@ -665,7 +665,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             emit FeeReverted(distributionProjectId, feeBeneficiaryProjectId, _feeCollected, _reason, _projectOwner);
 
             vm.prank(_projectOwner);
-            IJBPayoutRedemptionPaymentTerminal3_1_1(address(terminal)).distributePayoutsOf(
+            IJBPayoutRedemptionPaymentTerminal3_1(address(terminal)).distributePayoutsOf(
                 distributionProjectId,
                 _distributionAmount,
                 1, // Currency

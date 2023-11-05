@@ -154,7 +154,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(_terminal)).distributePayoutsOf(
+        IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
             _projectId,
             payAmountInWei,
             jbLibraries().ETH(),
