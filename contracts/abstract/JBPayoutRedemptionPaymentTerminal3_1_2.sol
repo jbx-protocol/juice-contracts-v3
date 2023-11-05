@@ -7,9 +7,9 @@ import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {JBFeeType} from './../enums/JBFeeType.sol';
 import {IJBAllowanceTerminal3_1} from './../interfaces/IJBAllowanceTerminal3_1.sol';
-import {IJBController} from './../interfaces/IJBController.sol';
+import {IJBController3_1} from './../interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './../interfaces/IJBDirectory.sol';
-import {IJBPayoutRedemptionPaymentTerminal3_2} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_2.sol';
+import {IJBPayoutRedemptionPaymentTerminal3_1} from './../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol';
 import {IJBSplitsStore} from './../interfaces/IJBSplitsStore.sol';
 import {IJBFeeGauge3_1} from './../interfaces/IJBFeeGauge3_1.sol';
 import {IJBOperatable} from './../interfaces/IJBOperatable.sol';
@@ -19,13 +19,13 @@ import {IJBPayoutTerminal3_1} from './../interfaces/IJBPayoutTerminal3_1.sol';
 import {IJBPrices} from './../interfaces/IJBPrices.sol';
 import {IJBProjects} from './../interfaces/IJBProjects.sol';
 import {IJBRedemptionTerminal} from './../interfaces/IJBRedemptionTerminal.sol';
-import {IJBSingleTokenPaymentTerminalStore3_2} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_2.sol';
+import {IJBSingleTokenPaymentTerminalStore3_1_1} from './../interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
 import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './../libraries/JBConstants.sol';
 import {JBCurrencies} from './../libraries/JBCurrencies.sol';
 import {JBFees} from './../libraries/JBFees.sol';
 import {JBFixedPointNumber} from './../libraries/JBFixedPointNumber.sol';
-import {JBFundingCycleMetadataResolver3_2} from './../libraries/JBFundingCycleMetadataResolver3_2.sol';
+import {JBFundingCycleMetadataResolver} from './../libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './../libraries/JBOperations.sol';
 import {JBTokens} from './../libraries/JBTokens.sol';
 import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
@@ -41,14 +41,14 @@ import {JBOperatable} from './JBOperatable.sol';
 import {JBSingleTokenPaymentTerminal} from './JBSingleTokenPaymentTerminal.sol';
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
-abstract contract JBPayoutRedemptionPaymentTerminal is
+abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   JBSingleTokenPaymentTerminal,
   JBOperatable,
   Ownable,
-  IJBPayoutRedemptionPaymentTerminal3_2
+  IJBPayoutRedemptionPaymentTerminal3_1
 {
   // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver3_2 for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBFundingCycle;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -127,15 +127,11 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @dev The current overflow is represented as a fixed point number with 18 decimals.
   /// @param _projectId The ID of the project to get overflow for.
   /// @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
-  function currentEthOverflowOf(uint256 _projectId)
-    external
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function currentEthOverflowOf(
+    uint256 _projectId
+  ) external view virtual override returns (uint256) {
     // Get this terminal's current overflow.
-    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_2(store).currentOverflowOf(
+    uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
       this,
       _projectId
     );
@@ -151,7 +147,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
         ? _adjustedOverflow
         : PRBMath.mulDiv(
           _adjustedOverflow,
-          10**decimals,
+          10 ** decimals,
           prices.priceFor(currency, JBCurrencies.ETH, decimals)
         );
   }
@@ -171,13 +167,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @dev See {IERC165-supportsInterface}.
   /// @param _interfaceId The ID of the interface to check for adherance to.
   /// @return A flag indicating if the provided interface ID is supported.
-  function supportsInterface(bytes4 _interfaceId)
-    public
-    view
-    virtual
-    override(JBSingleTokenPaymentTerminal, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 _interfaceId
+  ) public view virtual override(JBSingleTokenPaymentTerminal, IERC165) returns (bool) {
     return
       _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_2).interfaceId ||
       _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
@@ -405,7 +397,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @param _projectId The ID of the project being migrated.
   /// @param _to The terminal contract that will gain the project's funds.
   /// @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
-  function migrate(uint256 _projectId, IJBPaymentTerminal _to)
+  function migrate(
+    uint256 _projectId,
+    IJBPaymentTerminal _to
+  )
     external
     virtual
     override
@@ -416,7 +411,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = IJBSingleTokenPaymentTerminalStore3_2(store).recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId);
 
     // Transfer the balance if needed.
     if (balance != 0) {
@@ -453,7 +448,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @notice Process any fees that are being held for the project.
   /// @dev Only a project owner, an operator, or the contract's owner can process held fees.
   /// @param _projectId The ID of the project whos held fees should be processed.
-  function processFees(uint256 _projectId)
+  function processFees(
+    uint256 _projectId
+  )
     external
     virtual
     override
@@ -580,11 +577,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal virtual {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal virtual {
     _from; // Prevents unused var compiler and natspec complaints.
     _to; // Prevents unused var compiler and natspec complaints.
     _amount; // Prevents unused var compiler and natspec complaints.
@@ -653,7 +646,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
           reclaimAmount,
           _delegateAllocations,
           _memo
-        ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordRedemptionFor(
+        ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
           _holder,
           _projectId,
           _tokenCount,
@@ -673,7 +666,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
 
         // Burn the project tokens.
         if (_tokenCount != 0)
-          IJBController(directory.controllerOf(_projectId)).burnTokensOf(
+          IJBController3_1(directory.controllerOf(_projectId)).burnTokensOf(
             _holder,
             _projectId,
             _tokenCount,
@@ -812,7 +805,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordDistributionFor(
+    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordDistributionFor(
         _projectId,
         _amount,
         _currency
@@ -930,7 +923,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     (
       JBFundingCycle memory _fundingCycle,
       uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordUsedAllowanceOf(
+    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
         _projectId,
         _amount,
         _currency
@@ -1267,11 +1260,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @param _amount The fee amount, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platform's tokens for.
   /// @param _from The project ID the fee is being paid from.
-  function _processFee(
-    uint256 _amount,
-    address _beneficiary,
-    uint256 _from
-  ) internal {
+  function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
@@ -1318,7 +1307,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
-    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(_projectId, _depositAmount);
+    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
+      _projectId,
+      _depositAmount
+    );
   }
 
   /// @notice Contribute tokens to a project.
@@ -1362,7 +1354,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
         _tokenCount,
         _delegateAllocations,
         _memo
-      ) = IJBSingleTokenPaymentTerminalStore3_2(store).recordPaymentFrom(
+      ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordPaymentFrom(
         _payer,
         _bundledAmount,
         _projectId,
@@ -1374,7 +1366,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
       // Mint the tokens if needed.
       if (_tokenCount != 0)
         // Set token count to be the number of tokens minted for the beneficiary instead of the total amount.
-        beneficiaryTokenCount = IJBController(directory.controllerOf(_projectId)).mintTokensOf(
+        beneficiaryTokenCount = IJBController3_1(directory.controllerOf(_projectId)).mintTokensOf(
           _projectId,
           _tokenCount,
           _beneficiary,
@@ -1470,7 +1462,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
     uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
     // Record the added funds with any refunded fees.
-    IJBSingleTokenPaymentTerminalStore3_2(store).recordAddedBalanceFor(
+    IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
       _projectId,
       _amount + _refundedFees
     );
@@ -1482,10 +1474,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @param _projectId The project for which fees are being refunded.
   /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
   /// @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
-  function _refundHeldFees(uint256 _projectId, uint256 _amount)
-    internal
-    returns (uint256 refundedFees)
-  {
+  function _refundHeldFees(
+    uint256 _projectId,
+    uint256 _amount
+  ) internal returns (uint256 refundedFees) {
     // Get a reference to the project's held fees.
     JBFee[] memory _heldFees = _heldFeesOf[_projectId];
 
@@ -1550,11 +1542,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal is
   /// @param _projectId The ID of the project to get a fee discount for.
   /// @param _feeType The type of fee the discount is being applied to.
   /// @return feeDiscount The fee discount, which should be interpreted as a percentage out MAX_FEE_DISCOUNT.
-  function _currentFeeDiscount(uint256 _projectId, JBFeeType _feeType)
-    internal
-    view
-    returns (uint256)
-  {
+  function _currentFeeDiscount(
+    uint256 _projectId,
+    JBFeeType _feeType
+  ) internal view returns (uint256) {
     // Can't take a fee if the protocol project doesn't have a terminal that accepts the token.
     if (
       directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==

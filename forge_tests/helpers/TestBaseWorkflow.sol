@@ -322,7 +322,7 @@ contract TestBaseWorkflow is Test {
     _jbToken = new JBToken('MyToken', 'MT', 1);
 
     vm.prank(_multisig);
-    _jbToken.mint(1, _multisig, 100 * 10**18);
+    _jbToken.mint(1, _multisig, 100 * 10 ** 18);
 
     // JBERC20PaymentTerminal
     _jbERC20PaymentTerminal = new JBERC20PaymentTerminal(

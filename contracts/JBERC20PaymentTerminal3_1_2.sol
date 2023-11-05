@@ -4,7 +4,7 @@ pragma solidity ^0.8.16;
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import {JBPayoutRedemptionPaymentTerminal3_2} from './abstract/JBPayoutRedemptionPaymentTerminal3_2.sol';
+import {JBPayoutRedemptionPaymentTerminal3_1_2} from './abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
@@ -12,7 +12,7 @@ import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
 
 /// @notice Manages the inflows and outflows of an ERC-20 token.
-contract JBERC20PaymentTerminal is JBPayoutRedemptionPaymentTerminal3_2 {
+contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_1_2 {
   using SafeERC20 for IERC20;
 
   //*********************************************************************//
@@ -49,7 +49,7 @@ contract JBERC20PaymentTerminal is JBPayoutRedemptionPaymentTerminal3_2 {
     address _store,
     address _owner
   )
-    JBPayoutRedemptionPaymentTerminal3_2(
+    JBPayoutRedemptionPaymentTerminal3_1_2(
       address(_token),
       _token.decimals(),
       uint256(uint24(uint160(address(_token)))), // first 24 bits used for currency.
@@ -75,11 +75,7 @@ contract JBERC20PaymentTerminal is JBPayoutRedemptionPaymentTerminal3_2 {
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal override {
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
     _from == address(this)
       ? IERC20(token).safeTransfer(_to, _amount)
       : IERC20(token).safeTransferFrom(_from, _to, _amount);

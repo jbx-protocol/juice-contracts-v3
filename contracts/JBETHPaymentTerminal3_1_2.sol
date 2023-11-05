@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import {JBPayoutRedemptionPaymentTerminal3_2} from './abstract/JBPayoutRedemptionPaymentTerminal3_2.sol';
+import {Address} from '@openzeppelin/contracts/utils/Address.sol';
+import {JBPayoutRedemptionPaymentTerminal3_1_2} from './abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
+import {JBCurrencies} from './libraries/JBCurrencies.sol';
+import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
+import {JBTokens} from './libraries/JBTokens.sol';
 
-/// @notice Manages the inflows and outflows of an ERC-20 token.
-contract JBERC20PaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
-  using SafeERC20 for IERC20;
-
+/// @notice Manages all inflows and outflows of ETH funds into the protocol ecosystem.
+contract JBETHPaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_1_2 {
   //*********************************************************************//
   // -------------------------- internal views ------------------------- //
   //*********************************************************************//
@@ -22,15 +21,13 @@ contract JBERC20PaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   /// @notice Checks the balance of tokens in this contract.
   /// @return The contract's balance, as a fixed point number with the same amount of decimals as this terminal.
   function _balance() internal view override returns (uint256) {
-    return IERC20(token).balanceOf(address(this));
+    return address(this).balance;
   }
 
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /// @param _token The token that this terminal manages.
-  /// @param _payoutSplitsGroup The group that denotes payout splits from this terminal in the splits store.
   /// @param _operatorStore A contract storing operator assignments.
   /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
   /// @param _directory A contract storing directories of terminals and controllers for each project.
@@ -39,8 +36,6 @@ contract JBERC20PaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   /// @param _store A contract that stores the terminal's data.
   /// @param _owner The address that will own this contract.
   constructor(
-    IERC20Metadata _token,
-    uint256 _payoutSplitsGroup,
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
     IJBDirectory _directory,
@@ -49,11 +44,11 @@ contract JBERC20PaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
     address _store,
     address _owner
   )
-    JBPayoutRedemptionPaymentTerminal3_2(
-      address(_token),
-      _token.decimals(),
-      uint256(uint24(uint160(address(_token)))), // first 24 bits used for currency.
-      _payoutSplitsGroup,
+    JBPayoutRedemptionPaymentTerminal3_1_2(
+      JBTokens.ETH,
+      18, // 18 decimals.
+      JBCurrencies.ETH,
+      JBSplitsGroups.ETH_PAYOUT,
       _operatorStore,
       _projects,
       _directory,
@@ -75,27 +70,9 @@ contract JBERC20PaymentTerminal3_2 is JBPayoutRedemptionPaymentTerminal3_2 {
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(
-    address _from,
-    address payable _to,
-    uint256 _amount
-  ) internal override {
-    _from == address(this)
-      ? IERC20(token).safeTransfer(_to, _amount)
-      : IERC20(token).safeTransferFrom(_from, _to, _amount);
-  }
+  function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
+    _from; // Prevents unused var compiler and natspec complaints.
 
-  /// @notice Logic to be triggered before transferring tokens from this terminal.
-  /// @param _to The address to which the transfer is going.
-  /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _beforeTransferTo(address _to, uint256 _amount) internal override {
-    IERC20(token).safeIncreaseAllowance(_to, _amount);
-  }
-
-  /// @notice Logic to be triggered if a transfer should be undone
-  /// @param _to The address to which the transfer went.
-  /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _cancelTransferTo(address _to, uint256 _amount) internal override {
-    IERC20(token).safeDecreaseAllowance(_to, _amount);
+    Address.sendValue(_to, _amount);
   }
 }
