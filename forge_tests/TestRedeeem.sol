@@ -94,17 +94,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
             currency: jbLibraries().ETH()
         });
 
-        _fundAccessConstraints[0] =
-            JBFundAccessConstraints({
-                terminal: _terminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimit: 0, // only overflow
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
-                overflowAllowanceCurrency: 1
-            })
-        );
-
         _projectOwner = multisig();
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);

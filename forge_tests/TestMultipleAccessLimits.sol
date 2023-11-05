@@ -7,7 +7,6 @@ import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 /*  */
 contract TestMultipleDistLimits_Local is TestBaseWorkflow {
     JBController3_1 private _controller;
-    JBETHPaymentTerminal private _terminal;
     JBETHPaymentTerminal3_1_2 private _terminal3_2;
     JBTokenStore private _tokenStore;
 
@@ -35,7 +34,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             _jbDirectory,
             _jbSplitsStore,
             _jbPrices,
-            address(_jbPaymentTerminalStore3_2),
+            address(_jbPaymentTerminalStore3_1_1),
             _multisig
         );
 
@@ -247,7 +246,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         // This doesn't work when expecting & calling distributePayoutsOf bc of chained calls
         vm.prank(address(_terminal3_2));
         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
-        _jbPaymentTerminalStore3_2.recordDistributionFor(2, distributableAmount + 1, 2);
+        _jbPaymentTerminalStore3_1_1.recordDistributionFor(2, distributableAmount + 1, 2);
 
         // Should succeed with distributableAmount
         vm.prank(_projectOwner);
@@ -278,7 +277,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
         vm.prank(address(_terminal3_2));
         vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
-        _jbPaymentTerminalStore3_2.recordDistributionFor(2, 0.5 ether, 1);
+        _jbPaymentTerminalStore3_1_1.recordDistributionFor(2, 0.5 ether, 1);
 
         // But distribution via USD limit will succeed 
         vm.prank(_projectOwner);

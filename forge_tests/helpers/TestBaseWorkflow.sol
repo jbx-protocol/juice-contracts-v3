@@ -316,7 +316,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbDirectory,
       _jbSplitsStore,
       _jbPrices,
-      address(_jbPaymentTerminalStore3_2),
+      address(_jbPaymentTerminalStore3_1_1),
       _multisig,
       IPermit2(_permit2)
     );
