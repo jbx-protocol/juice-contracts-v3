@@ -107,8 +107,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
-    const CURRENCY_ETH = await jbCurrencies.ETH();
-    const CURRENCY_USD = await jbCurrencies.USD();
 
     let jbEthTerminalFactory = await ethers.getContractFactory(
       'contracts/JBETHPaymentTerminal3_1_2.sol:JBETHPaymentTerminal3_1_2',
@@ -122,7 +120,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
     let jbEthPaymentTerminal = await jbEthTerminalFactory
       .connect(deployer)
       .deploy(
-        CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -138,9 +135,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .connect(deployer)
       .deploy(
         fakeToken.address,
-        CURRENCY_USD,
-        CURRENCY_USD,
-        1,
+        ETH_PAYOUT_INDEX,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -208,7 +203,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       mockJbProjects,
       mockJbSplitsStore,
       timestamp,
-      CURRENCY_USD,
       fakeToken,
     };
   }
@@ -240,7 +234,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -330,7 +324,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
               CURRENCY,
             ],
             split.projectId,
-            CURRENCY,
             split.beneficiary,
             '',
             ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
@@ -344,7 +337,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -449,7 +442,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
               CURRENCY,
             ],
             split.projectId,
-            CURRENCY,
             split.beneficiary,
             '',
             ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
@@ -463,7 +455,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -568,7 +560,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -667,7 +659,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -760,7 +752,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -868,7 +860,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -968,7 +960,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1063,7 +1055,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1166,7 +1158,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1251,7 +1243,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
           CURRENCY,
         ],
         PLATFORM_PROJECT_ID,
-        /*CURRENCY*/ CURRENCY,
         projectOwner.address,
         '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
@@ -1272,7 +1263,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
               CURRENCY,
             ],
             split.projectId,
-            CURRENCY,
             split.beneficiary,
             '',
             '0x',
@@ -1286,7 +1276,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1418,7 +1408,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1535,7 +1525,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1652,7 +1642,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1739,7 +1729,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1856,7 +1846,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -1966,7 +1956,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2063,7 +2053,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2135,7 +2125,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2239,7 +2229,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2359,7 +2349,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2417,8 +2407,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       mockJbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
       mockJbSplitsStore,
-      fakeToken,
-      CURRENCY_USD,
+      fakeToken
     } = await setup();
 
     const FEE_AMOUNT =
@@ -2505,7 +2494,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2596,7 +2585,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
               CURRENCY,
             ],
             split.projectId,
-            CURRENCY,
             split.beneficiary,
             '',
             ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
@@ -2610,7 +2598,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2716,7 +2704,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2801,7 +2789,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         MIN_TOKEN_REQUESTED,
         METADATA,
@@ -2921,7 +2909,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
           CURRENCY,
         ],
         1,
-        CURRENCY,
         projectOwner.address,
         '',
         ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
@@ -2933,7 +2920,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         AMOUNT_TO_DISTRIBUTE,
         METADATA,
@@ -3023,7 +3010,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         0,
         METADATA,
@@ -3073,7 +3060,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
     const {
       projectOwner,
       caller,
-      CURRENCY_USD,
       beneficiaryOne,
       beneficiaryTwo,
       fakeToken,
@@ -3115,7 +3101,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       .distributePayoutsOf(
         PROJECT_ID,
         AMOUNT_TO_DISTRIBUTE,
-        ETH_PAYOUT_INDEX,
+        CURRENCY,
         ethers.constants.AddressZero,
         AMOUNT_TO_DISTRIBUTE,
         METADATA,
@@ -3246,7 +3232,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
         .distributePayoutsOf(
           PROJECT_ID,
           AMOUNT_TO_DISTRIBUTE,
-          ETH_PAYOUT_INDEX,
+          CURRENCY,
           ethers.constants.AddressZero,
           AMOUNT_DISTRIBUTED + 1,
           METADATA,

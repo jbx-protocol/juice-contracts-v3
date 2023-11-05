@@ -107,7 +107,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 6500, // 65% redemption rate
+      redemptionRate: 6500, // 65% redemption rate
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -143,7 +143,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(0);
 
     // Use active ballot
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(0);
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2);
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));
@@ -190,7 +190,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 6500, // 65% redemption rate
+      redemptionRate: 6500, // 65% redemption rate
       useTotalOverflowForRedemptions: true,
     });
 
@@ -234,7 +234,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(0);
 
     // Use active ballot
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(0);
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2);
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));
@@ -282,7 +282,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 6500, // 65% redemption rate
+      redemptionRate: 6500, // 65% redemption rate
       useTotalOverflowForRedemptions: true,
     });
 
@@ -332,7 +332,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(0);
 
     // Use active ballot
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(0);
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2);
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));
@@ -368,7 +368,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 6500, // 65% redemption rate
+      redemptionRate: 6500, // 65% redemption rate
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -422,7 +422,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 0, // 0% redemption rate
+      redemptionRate: 0, // 0% redemption rate
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -520,7 +520,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 0, // 0% redemption rate
+      redemptionRate: 0, // 0% redemption rate
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -556,7 +556,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(0);
 
     // Use active ballot
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(0);
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2);
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));
@@ -634,7 +634,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(ethers.FixedNumber.from(50)); // added to tokenSupply
 
     // Use regular redemption rate
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(0);
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2);
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));
@@ -684,7 +684,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      ballotRedemptionRate: 6500, // 65% redemption rate
+      redemptionRate: 6500, // 65% redemption rate
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -720,7 +720,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(0);
 
     // Use active ballot
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(0);
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2);
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));
@@ -770,8 +770,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     const reservedRate = 0;
     const fundingCycleMetadata = packFundingCycleMetadata({
       reservedRate: reservedRate,
-      redemptionRate: 6500,
-      ballotRedemptionRate: 0,
+      redemptionRate: 6500
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -807,7 +806,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
       .returns(0);
 
     // Do not use active ballot
-    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(2); // Failed
+    await mockJbFundingCycleStore.mock.currentBallotStateOf.withArgs(PROJECT_ID).returns(5); // Failed
 
     // Add to balance beforehand to have an overflow of exactly 100
     const startingBalance = overflowAmt.mulUnsafe(ethers.FixedNumber.from(2));

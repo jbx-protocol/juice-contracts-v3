@@ -93,7 +93,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     const jbEthPaymentTerminal = await jbTerminalFactory
       .connect(deployer)
       .deploy(
-        CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -126,7 +125,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       weight: WEIGHT,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: 0,
+      metadata: packFundingCycleMetadata(),
     };
 
     return {

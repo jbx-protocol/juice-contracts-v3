@@ -18,9 +18,6 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
   const INITIAL_PREFER_ADD_TO_BALANCE = false;
   const PROJECT_ID = 7;
   const AMOUNT = ethers.utils.parseEther('1.0');
-  const BENEFICIARY = ethers.Wallet.createRandom().address;
-  const PREFER_CLAIMED_TOKENS = true;
-  const MIN_RETURNED_TOKENS = 1;
   const MEMO = 'hi world';
   const METADATA = '0x69';
   const DECIMALS = 1;
@@ -79,7 +76,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     // Eth payments should use 18 decimals.
     await mockJbTerminal.mock.decimalsForToken.withArgs(ethToken).returns(18);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, ethToken, MEMO, METADATA)
       .returns();
 
@@ -119,7 +116,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     mockToken.allowance.whenCalledWith(jbProjectPayer.address, mockJbTerminal.address).returns(0);
     mockToken.approve.whenCalledWith(mockJbTerminal.address, AMOUNT).returns(true);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 
@@ -155,7 +152,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     mockToken.allowance.whenCalledWith(jbProjectPayer.address, mockJbTerminal.address).returns(0);
     mockToken.approve.whenCalledWith(mockJbTerminal.address, NET_AMOUNT).returns(true);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, NET_AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 

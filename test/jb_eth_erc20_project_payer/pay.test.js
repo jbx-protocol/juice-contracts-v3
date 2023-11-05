@@ -330,7 +330,7 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
     // Eth payments should use 18 decimals.
     await mockJbTerminal.mock.decimalsForToken.withArgs(ethToken).returns(18);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, ethToken, MEMO, METADATA)
       .returns();
 
@@ -350,7 +350,7 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
       .withArgs(PROJECT_ID, mockToken.address)
       .returns(mockJbTerminal.address);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 
@@ -474,7 +474,7 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
       true, // prefer add to balance
     );
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(INITIAL_PROJECT_ID, AMOUNT, ethToken, INITIAL_MEMO, INITIAL_METADATA)
       .returns();
 

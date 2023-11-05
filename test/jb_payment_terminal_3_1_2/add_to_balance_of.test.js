@@ -88,7 +88,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     let jbEthPaymentTerminal = await jbTerminalFactory
       .connect(deployer)
       .deploy(
-        /*base weight currency*/ CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -106,8 +105,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
       .connect(deployer)
       .deploy(
         NON_ETH_TOKEN,
-        CURRENCY_ETH,
-        CURRENCY_ETH,
         SPLITS_GROUP,
         mockJbOperatorStore.address,
         mockJbProjects.address,
@@ -127,7 +124,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
       weight: 0,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ holdFees: 1 }),
+      metadata: packFundingCycleMetadata({ holdFees: 1, baseCurrency: CURRENCY_ETH }),
     };
 
     await mockJbDirectory.mock.isTerminalOf

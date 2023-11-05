@@ -75,7 +75,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::migrate(...)', function () {
     let jbEthPaymentTerminal = await jbEthTerminalFactory
       .connect(deployer)
       .deploy(
-        CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -93,8 +92,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::migrate(...)', function () {
       .connect(deployer)
       .deploy(
         NON_ETH_TOKEN,
-        CURRENCY_ETH,
-        CURRENCY_ETH,
         SPLITS_GROUP,
         mockJbOperatorStore.address,
         mockJbProjects.address,

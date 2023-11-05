@@ -57,8 +57,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
 
     /* Common mocks */
 
-    // await mockJbTerminal.mock.currency.returns(CURRENCY);
-    // await mockJbTerminal.mock.baseWeightCurrency.returns(BASE_CURRENCY);
+    await mockJbTerminal.mock.currency.returns(CURRENCY);
 
     const mockJbTerminalSigner = await impersonateAccount(mockJbTerminal.address);
 
@@ -102,7 +101,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       weight: WEIGHT,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate }),
+      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate, baseCurrency: BASE_CURRENCY }),
     });
 
     expect(
@@ -114,7 +113,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       payer.address,
       ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
       PROJECT_ID,
-      BASE_CURRENCY,
       beneficiary.address,
       /* memo */ 'test',
       METADATA1,
@@ -148,7 +146,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       weight: 0,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate }),
+      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate, baseCurrency: BASE_CURRENCY }),
     });
 
     expect(
@@ -160,7 +158,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       /* payer */ payer.address,
       ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
       PROJECT_ID,
-      BASE_CURRENCY,
       beneficiary.address,
       /* memo */ 'test',
       METADATA1,
@@ -191,6 +188,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       reservedRate: reservedRate,
       useDataSourceForPay: 1,
       dataSource: mockJbFundingCycleDataSource.address,
+      baseCurreny: BASE_CURRENCY
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -237,7 +235,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       /* amount */
       ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
       /* projectId */ PROJECT_ID,
-      BASE_CURRENCY,
       beneficiary.address,
       /* memo */ 'test',
       METADATA1,
@@ -271,7 +268,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       weight: 0,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate }),
+      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate, baseCurrency: BASE_CURRENCY }),
     });
 
     expect(
@@ -283,7 +280,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       /* payer */ payer.address,
       ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
       PROJECT_ID,
-      BASE_CURRENCY,
       beneficiary.address,
       /* memo */ 'test',
       METADATA1,
@@ -310,7 +306,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
     const reservedRate = 0;
     const otherBaseCurrency = 2;
     const conversionPrice = ethers.BigNumber.from(2);
-    await mockJbTerminal.mock.baseWeightCurrency.returns(otherBaseCurrency);
 
     await mockJbPrices.mock.priceFor
       .withArgs(CURRENCY, otherBaseCurrency, _FIXED_POINT_MAX_FIDELITY)
@@ -326,7 +321,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       weight: WEIGHT,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate }),
+      metadata: packFundingCycleMetadata({ pausePay: 0, reservedRate: reservedRate, baseCurrency: otherBaseCurrency }),
     });
 
     expect(
@@ -338,7 +333,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       /* payer */ payer.address,
       ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
       PROJECT_ID,
-      otherBaseCurrency,
       beneficiary.address,
       /* memo */ 'test',
       METADATA1,
@@ -369,6 +363,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       reservedRate: reservedRate,
       useDataSourceForPay: 1,
       dataSource: mockJbFundingCycleDataSource.address,
+      baseCurrency: BASE_CURRENCY
     });
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
@@ -413,7 +408,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       /* payer */ payer.address,
       ['0x1230000000000000000000000000000000000000', 0, 18, CURRENCY],
       /* projectId */ PROJECT_ID,
-      BASE_CURRENCY,
       beneficiary.address,
       /* memo */ memo,
       METADATA1,
@@ -423,7 +417,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       /* payer */ payer.address,
       ['0x1230000000000000000000000000000000000000', 0, 18, CURRENCY],
       /* projectId */ PROJECT_ID,
-      BASE_CURRENCY,
       beneficiary.address,
       /* memo */ memo,
       METADATA1,
@@ -457,7 +450,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       weight: 0,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: 0,
+      metadata: packFundingCycleMetadata({ baseCurrency: BASE_CURRENCY }),
     });
 
     // Record the payment
@@ -466,7 +459,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
         /* payer */ payer.address,
         ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
         PROJECT_ID,
-        BASE_CURRENCY,
         beneficiary.address,
         /* memo */ 'test',
         METADATA1,
@@ -493,7 +485,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
       weight: 0,
       discountRate: 0,
       ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ pausePay: 1 }), // Payments paused
+      metadata: packFundingCycleMetadata({ pausePay: 1, baseCurrency: BASE_CURRENCY }), // Payments paused
     });
 
     // Record the payment
@@ -502,7 +494,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
         /* payer */ payer.address,
         ['0x1230000000000000000000000000000000000000', AMOUNT, 18, CURRENCY],
         PROJECT_ID,
-        BASE_CURRENCY,
         beneficiary.address,
         /* memo */ 'test',
         METADATA1,

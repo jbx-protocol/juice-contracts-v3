@@ -55,7 +55,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
     /* Common mocks */
 
     await mockJbTerminal.mock.currency.returns(CURRENCY_USD);
-    await mockJbTerminal.mock.baseWeightCurrency.returns(CURRENCY_ETH);
 
     // Set controller address
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);

@@ -114,8 +114,8 @@ library JBFundingCycleMetadataResolver {
     pure
     returns (uint256 packed)
   {
-    // version 2 in the bits 0-7 (8 bits).
-    packed = 2;
+    // version 1 in the bits 0-7 (8 bits).
+    packed = 1;
     // global metadata in bits 8-15 (8 bits).
     packed |=
       JBGlobalFundingCycleMetadataResolver.packFundingCycleGlobalMetadata(_metadata.global) <<
