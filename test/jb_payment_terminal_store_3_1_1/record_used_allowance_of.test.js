@@ -113,13 +113,13 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
     );
 
     // Both limit and allowance in USD
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(0, CURRENCY_USD);
+      .returns([{ value: 0, currency: CURRENCY_ETH }]);
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_USD);
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(AMOUNT);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -133,6 +133,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
         mockJbTerminalSigner.address,
         PROJECT_ID,
         timestamp,
+        CURRENCY_USD
       ),
     ).to.equal(0);
     expect(
@@ -152,6 +153,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
         mockJbTerminalSigner.address,
         PROJECT_ID,
         timestamp,
+        CURRENCY_USD
       ),
     ).to.equal(AMOUNT);
     expect(
@@ -183,13 +185,13 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
     const distributionLimit = AMOUNT - 1;
 
     // Both limit and allowance in USD
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(distributionLimit, CURRENCY_USD);
+      .returns([{ value: distributionLimit, currency: CURRENCY_USD }]);
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_USD);
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(AMOUNT);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -203,6 +205,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
         mockJbTerminalSigner.address,
         PROJECT_ID,
         timestamp,
+        CURRENCY_USD
       ),
     ).to.equal(0);
     expect(
@@ -222,6 +225,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
         mockJbTerminalSigner.address,
         PROJECT_ID,
         timestamp,
+        CURRENCY_USD
       ),
     ).to.equal(AMOUNT - distributionLimit);
     expect(
@@ -258,20 +262,20 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
       distributionLimit.add(amountToUseInDollar),
     );
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(distributionLimit, CURRENCY_USD); // in usd
+      .returns([{ value: distributionLimit, currency: CURRENCY_USD }]); // in usd
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(amountToUse, CURRENCY_ETH); // in eth
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_ETH)
+      .returns(amountToUse); // in eth
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
       .returns(mockJbFundAccessConstraintsStore.address);
 
     await mockJbPrices.mock.priceFor
-      .withArgs(CURRENCY_ETH, CURRENCY_USD, _FIXED_POINT_MAX_FIDELITY)
+      .withArgs(PROJECT_ID, CURRENCY_ETH, CURRENCY_USD, _FIXED_POINT_MAX_FIDELITY)
       .returns(ethToUsdPrice);
 
     await mockJbTerminal.mock.currency.returns(CURRENCY_USD);
@@ -282,6 +286,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
         mockJbTerminalSigner.address,
         PROJECT_ID,
         timestamp,
+        CURRENCY_ETH
       ),
     ).to.equal(0);
     expect(
@@ -301,6 +306,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
         mockJbTerminalSigner.address,
         PROJECT_ID,
         timestamp,
+        CURRENCY_ETH
       ),
     ).to.equal(amountToUse); // in usd
 
@@ -310,39 +316,6 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
   });
 
   /* Sad path tests */
-
-  it(`Can't record allowance if currency param doesn't match controller's currency`, async function () {
-    const {
-      mockJbController,
-      mockJbTerminal,
-      mockJbTerminalSigner,
-      mockJbFundAccessConstraintsStore,
-      JBSingleTokenPaymentTerminalStore,
-      timestamp,
-      token,
-      CURRENCY_ETH,
-      CURRENCY_USD,
-    } = await setup();
-
-    await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_USD);
-
-    await mockJbController.mock.fundAccessConstraintsStore
-      .withArgs()
-      .returns(mockJbFundAccessConstraintsStore.address);
-
-    await mockJbTerminal.mock.currency.returns(CURRENCY_ETH);
-
-    // Record the used allowance
-    await expect(
-      JBSingleTokenPaymentTerminalStore.connect(mockJbTerminalSigner).recordUsedAllowanceOf(
-        PROJECT_ID,
-        AMOUNT,
-        CURRENCY_ETH,
-      ),
-    ).to.be.revertedWith(errors.CURRENCY_MISMATCH);
-  });
 
   it(`Can't record allowance if controller's overflowAllowanceOf is exceeded`, async function () {
     const {
@@ -364,8 +337,8 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
 
     const smallTotalAllowance = AMOUNT.sub(ethers.BigNumber.from(1));
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(smallTotalAllowance, CURRENCY_USD); // Set the controller's overflowAllowance to something small
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(smallTotalAllowance); // Set the controller's overflowAllowance to something small
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -402,8 +375,8 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
     );
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(0, CURRENCY_USD); // Set the controller's overflowAllowance to something small
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(0); // Set the controller's overflowAllowance to something small
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -435,12 +408,12 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
 
     // Create a big overflow
     await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_USD);
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(AMOUNT);
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_USD);
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(AMOUNT);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -482,20 +455,20 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
     );
 
     // Leave a small overflow
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(smallBalance, CURRENCY_ETH);
+      .returns([{ value: smallBalance, currency: CURRENCY_ETH }]);
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_ETH);
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_ETH)
+      .returns(AMOUNT);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
       .returns(mockJbFundAccessConstraintsStore.address);
 
     await mockJbPrices.mock.priceFor
-      .withArgs(CURRENCY_ETH, CURRENCY_USD, _FIXED_POINT_MAX_FIDELITY)
+      .withArgs(PROJECT_ID, CURRENCY_ETH, CURRENCY_USD, _FIXED_POINT_MAX_FIDELITY)
       .returns(ethers.BigNumber.from(1));
 
     await mockJbTerminal.mock.currency.returns(CURRENCY_USD);
@@ -509,6 +482,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
       ),
     ).to.be.revertedWith(errors.INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE);
   });
+
   it(`Can't record used allowance with > 0 distribution limit and not enough balance outside of this limit`, async function () {
     const {
       mockJbController,
@@ -534,20 +508,20 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordUsedAllowanceOf(...)', f
     const distributionLimit = AMOUNT;
 
     // Both limit and allowance in USD
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(distributionLimit, CURRENCY_USD);
+      .returns([{ value: distributionLimit, currency: CURRENCY_USD }]);
 
     await mockJbFundAccessConstraintsStore.mock.overflowAllowanceOf
-      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_USD);
+      .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token, CURRENCY_USD)
+      .returns(AMOUNT);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
       .returns(mockJbFundAccessConstraintsStore.address);
 
     await mockJbPrices.mock.priceFor
-      .withArgs(CURRENCY_USD, CURRENCY_ETH, _FIXED_POINT_MAX_FIDELITY)
+      .withArgs(PROJECT_ID, CURRENCY_USD, CURRENCY_ETH, _FIXED_POINT_MAX_FIDELITY)
       .returns(usdToEthPrice);
 
     await mockJbTerminal.mock.currency.returns(CURRENCY_USD);

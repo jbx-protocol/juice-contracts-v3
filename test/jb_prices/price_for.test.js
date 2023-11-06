@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import jbChainlinkPriceFeed from '../../artifacts/contracts/JBChainlinkV3PriceFeed.sol/JBChainlinkV3PriceFeed.json';
+import jbProjects from '../../artifacts/contracts/interfaces/IJBProjects.sol/IJBProjects.json';
+import jbOperatorStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { BigNumber } from '@ethersproject/bignumber';
 import errors from '../helpers/errors.json';
@@ -21,8 +23,11 @@ describe('JBPrices::priceFor(...)', function () {
 
     priceFeed = await deployMockContract(deployer, jbChainlinkPriceFeed.abi);
 
+    const mockJbProjects = await deployMockContract(deployer, jbProjects.abi);
+    const mockJbOperatorStore = await deployMockContract(deployer, jbOperatorStore.abi);
+    await mockJbProjects.mock.ownerOf.withArgs(0).returns(deployer.address);
     jbPricesFactory = await ethers.getContractFactory('JBPrices');
-    jbPrices = await jbPricesFactory.deploy(deployer.address);
+    jbPrices = await jbPricesFactory.deploy(mockJbOperatorStore.address, mockJbProjects.address, deployer.address);
   });
 
   /**
@@ -31,8 +36,8 @@ describe('JBPrices::priceFor(...)', function () {
   async function addFeedAndFetchPrice(price, currency, base) {
     await priceFeed.mock.currentPrice.withArgs(DECIMALS).returns(price);
 
-    await jbPrices.connect(deployer).addFeedFor(currency, base, priceFeed.address);
-    return await jbPrices.connect(deployer).priceFor(currency, base, DECIMALS);
+    await jbPrices.connect(deployer).addFeedFor(0, currency, base, priceFeed.address);
+    return await jbPrices.connect(deployer).priceFor(0, currency, base, DECIMALS);
   }
 
   it('Should return 1 for the same base and currency, with correct decimals', async function () {
@@ -55,16 +60,16 @@ describe('JBPrices::priceFor(...)', function () {
       .withArgs(DECIMALS)
       .returns(price.mul(ethers.BigNumber.from(10).pow(DECIMALS)));
 
-    await jbPrices.connect(deployer).addFeedFor(/*currency=*/ 1, /*base=*/ 2, priceFeed.address);
+    await jbPrices.connect(deployer).addFeedFor(0, /*currency=*/ 1, /*base=*/ 2, priceFeed.address);
 
-    expect(await jbPrices.priceFor(/*base=*/ 2, /*currency=*/ 1, DECIMALS)).to.equal(
+    expect(await jbPrices.priceFor(0, /*base=*/ 2, /*currency=*/ 1, DECIMALS)).to.equal(
       ethers.BigNumber.from(10).pow(DECIMALS).div(price),
     );
   });
 
   it('Feed not found', async function () {
     await expect(
-      jbPrices.connect(deployer).priceFor(/*currency=*/ 1, /*base=*/ 7, DECIMALS),
+      jbPrices.connect(deployer).priceFor(0, /*currency=*/ 1, /*base=*/ 7, DECIMALS),
     ).to.be.revertedWith(errors.PRICE_FEED_NOT_FOUND);
   });
 });

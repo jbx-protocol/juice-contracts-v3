@@ -125,9 +125,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
     /* Mocks for _reclaimableOverflowOf private method */
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_ETH);
+      .returns([{ value: AMOUNT, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -218,9 +218,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
     await mockJbTerminal.mock.currentEthOverflowOf.withArgs(PROJECT_ID).returns(AMOUNT);
 
     /* Mocks for _reclaimableOverflowOf private method */
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_ETH);
+      .returns([{ value: AMOUNT, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -307,9 +307,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
     /* Mocks for _claimableOverflowOf private method */
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_ETH);
+      .returns([{ value: AMOUNT, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -391,9 +391,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
     });
 
     /* Mocks for _reclaimableOverflowOf private method */
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(AMOUNT, CURRENCY_ETH);
+      .returns([{ value: AMOUNT, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -513,9 +513,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordRedemptionFor(...)', fun
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminalSigner.address, token)
-      .returns(AMOUNT, CURRENCY_ETH);
+      .returns([{ value: AMOUNT, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()

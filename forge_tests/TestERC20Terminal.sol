@@ -616,12 +616,10 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         terminal.pay(projectId, 1e18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
 
         // verify: beneficiary should have a balance of JBTokens (Price = 18, divided by 2 -> reserved rate = 50%)
-        emit log_string("user Token balance check");
         uint256 _userTokenBalance = PRBMath.mulDiv(1e18 / 2, WEIGHT, 18);
         assertEq(_tokenStore.balanceOf(msg.sender, projectId), _userTokenBalance);
 
         // verify: balance in terminal should be up to date
-        emit log_string("Terminal Token balance check");
         assertEq(jbPaymentTerminalStore().balanceOf(terminal, projectId), 1e18);
 
         // Discretionary use of overflow allowance by project owner (allowance = 5ETH)

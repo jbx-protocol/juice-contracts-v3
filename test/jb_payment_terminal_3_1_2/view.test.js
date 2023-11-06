@@ -25,7 +25,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::getters', function () {
   });
 
   async function setup() {
-    let [deployer, terminalOwner] = await ethers.getSigners();
+    let [deployer, terminalOwner, ...addrs] = await ethers.getSigners();
 
     const SPLITS_GROUP = 1;
 
@@ -87,6 +87,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::getters', function () {
         mockJbPrices.address,
         mockJBPaymentTerminalStore.address,
         terminalOwner.address,
+        addrs[5].address //random
       );
 
     return {

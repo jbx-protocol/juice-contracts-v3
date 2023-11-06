@@ -9,7 +9,6 @@ import jbController from '../../artifacts/contracts/interfaces/IJBController3_1.
 import jbDirectory from '../../artifacts/contracts/interfaces/IJBDirectory.sol/IJBDirectory.json';
 import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_2.sol/JBETHPaymentTerminal3_1_2.json';
 import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
-import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge3_1.sol/IJBFeeGauge3_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/interfaces/IJBOperatorStore.sol/IJBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/interfaces/IJBProjects.sol/IJBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/interfaces/IJBSplitsStore.sol/IJBSplitsStore.json';
@@ -31,11 +30,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
   const DECIMALS = 10;
   const DECIMALS_ETH = 18;
   const DEFAULT_FEE = 25000000; // 2.5%
-  const FEE_DISCOUNT = 500000000; // 50%
 
   let CURRENCY_ETH;
   let MAX_FEE;
-  let MAX_FEE_DISCOUNT;
   let ETH_ADDRESS;
   let token;
 
@@ -45,7 +42,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     let jbConstants = await jbConstantsFactory.deploy();
     let jbToken = await jbTokenFactory.deploy();
     MAX_FEE = (await jbConstants.MAX_FEE()).toNumber();
-    MAX_FEE_DISCOUNT = await jbConstants.MAX_FEE_DISCOUNT();
     ETH_ADDRESS = await jbToken.ETH();
   })
   async function setup() {
@@ -66,7 +62,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       mockJbRedemptionDelegate,
       mockJbRedemptionDelegate2,
       mockJbController,
-      mockJbFeeGauge
     ] = await Promise.all([
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, jbPaymentTerminalStore.abi),
@@ -77,8 +72,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       deployMockContract(deployer, jbPrices.abi),
       deployMockContract(deployer, jbRedemptionDelegate.abi),
       deployMockContract(deployer, jbRedemptionDelegate.abi),
-      deployMockContract(deployer, jbController.abi),
-      deployMockContract(deployer, jbFeeGauge.abi),
+      deployMockContract(deployer, jbController.abi)
     ]);
 
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
@@ -141,7 +135,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       mockJbRedemptionDelegate2,
       mockJbController,
       mockJbDirectory,
-      mockJbFeeGauge,
       otherCaller,
       timestamp,
     };
@@ -328,6 +321,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 10000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA2,
@@ -356,7 +350,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
         METADATA1,
       );
 
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string, bytes, bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,string, bytes, bytes),uint256,uint256,address)');
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
 
     // .withArgs(
@@ -464,6 +458,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 10000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA2,
@@ -490,6 +485,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 10000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA3,
@@ -521,7 +517,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -646,6 +642,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA2,
@@ -672,6 +669,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA3,
@@ -721,7 +719,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -776,7 +774,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     );
   });
 
-  it('Should redeem tokens, call multiple delegate and send the appropriate amount to them, with a sub-100% redemption rate that incurrs fees with gauge', async function () {
+  it('Should redeem tokens, call multiple delegate and send the appropriate amount to them, with a sub-100% redemption rate that incurrs', async function () {
     const {
       beneficiary,
       fundingCycle,
@@ -789,7 +787,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       mockJbRedemptionDelegate2,
       mockJbDirectory,
       mockJbController,
-      mockJbFeeGauge,
       timestamp,
     } = await setup();
 
@@ -801,18 +798,12 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     const delegate2Amount = RECLAIM_AMOUNT / 4;
     const redeemedAmount = RECLAIM_AMOUNT - delegate1Amount - delegate2Amount;
 
-    const DISCOUNTED_FEE =
-      DEFAULT_FEE - Math.floor((DEFAULT_FEE * FEE_DISCOUNT) / MAX_FEE_DISCOUNT);
-
     let DELEGATE_1_FEE =
-      delegate1Amount - Math.floor((delegate1Amount * MAX_FEE) / (DISCOUNTED_FEE + MAX_FEE));
+      delegate1Amount - Math.floor((delegate1Amount * MAX_FEE) / (DEFAULT_FEE + MAX_FEE));
     let DELEGATE_2_FEE =
-      delegate2Amount - Math.floor((delegate2Amount * MAX_FEE) / (DISCOUNTED_FEE + MAX_FEE));
+      delegate2Amount - Math.floor((delegate2Amount * MAX_FEE) / (DEFAULT_FEE + MAX_FEE));
     let REDEEM_FEE =
-      redeemedAmount - Math.floor((redeemedAmount * MAX_FEE) / (DISCOUNTED_FEE + MAX_FEE));
-
-    await jbEthPaymentTerminal.connect(terminalOwner).setFeeGauge(mockJbFeeGauge.address);
-    await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID, 2).returns(FEE_DISCOUNT);
+      redeemedAmount - Math.floor((redeemedAmount * MAX_FEE) / (DEFAULT_FEE + MAX_FEE));
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
     await mockJbController.mock.burnTokensOf
@@ -854,6 +845,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA2,
@@ -880,6 +872,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA3,
@@ -916,7 +909,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -1039,6 +1032,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA2,
@@ -1065,6 +1059,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA3,
@@ -1100,7 +1095,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [
@@ -1223,6 +1218,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA2,
@@ -1249,6 +1245,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
           decimals: DECIMALS_ETH,
           currency: CURRENCY_ETH,
         },
+        redemptionRate: 9000,
         beneficiary: beneficiary.address,
         memo: ADJUSTED_MEMO,
         dataSourceMetadata: METADATA3,
@@ -1282,7 +1279,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       );
 
     // Uncaught AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),address,string,bytes,bytes),uint256,uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidRedeem(address,(address,uint256,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,string,bytes,bytes),uint256,uint256,address)');
     // .withArgs(
     //   mockJbRedemptionDelegate.address,
     //   [

@@ -54,7 +54,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
       mockJbPayDelegate,
       mockJbPayDelegate2,
       mockJbPrices,
-      mockJbController,
+      mockJbController
     ] = await Promise.all([
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, jbPaymentTerminalStore.abi),
@@ -64,7 +64,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
       deployMockContract(deployer, jbPayDelegate.abi),
       deployMockContract(deployer, jbPayDelegate.abi),
       deployMockContract(deployer, jbPrices.abi),
-      deployMockContract(deployer, jbController.abi),
+      deployMockContract(deployer, jbController.abi)
     ]);
 
     let mockToken = await smock.fake(ierc20.abi);
@@ -107,6 +107,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
         mockJbPrices.address,
         mockJBPaymentTerminalStore.address,
         terminalOwner.address,
+        addrs[5].address
       );
 
     await mockJbDirectory.mock.isTerminalOf
@@ -296,6 +297,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           decimals: 18,
           currency: CURRENCY_ETH,
         },
+        weight: 0,
         projectTokenCount: TOKEN_RECEIVED,
         beneficiary: beneficiary.address,
         preferClaimedTokens: PREFER_CLAIMED_TOKENS,
@@ -320,7 +322,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
       );
 
     // AssertionError: expected [ Array(4) ] to equal [ Array(4) ]
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,bool,string,bytes,bytes),uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,uint256,address,bool,string,bytes,bytes),uint256,address)');
     // .withArgs(
     //   mockJbPayDelegate.address,
     //   [
@@ -439,6 +441,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           decimals: 18,
           currency: CURRENCY_ETH,
         },
+        weight: 0,
         projectTokenCount: TOKEN_RECEIVED,
         beneficiary: beneficiary.address,
         preferClaimedTokens: PREFER_CLAIMED_TOKENS,
@@ -466,6 +469,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
           decimals: 18,
           currency: CURRENCY_ETH,
         },
+        weight: 0,
         projectTokenCount: TOKEN_RECEIVED,
         beneficiary: beneficiary.address,
         preferClaimedTokens: PREFER_CLAIMED_TOKENS,
@@ -490,7 +494,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
       );
 
     // AssertionError: expected [ …(9), …(9) ] to equal { …(9) }
-    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,address,bool,string,bytes,bytes),uint256,address)');
+    await expect(tx).to.emit(jbEthPaymentTerminal, 'DelegateDidPay(address,(address,uint256,uint256,(address,uint256,uint256,uint256),(address,uint256,uint256,uint256),uint256,uint256,address,bool,string,bytes,bytes),uint256,address)');
     // .withArgs(
     //   mockJbPayDelegate.address,
     //   {

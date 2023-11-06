@@ -308,7 +308,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::recordPaymentFrom(...)', funct
     const conversionPrice = ethers.BigNumber.from(2);
 
     await mockJbPrices.mock.priceFor
-      .withArgs(CURRENCY, otherBaseCurrency, _FIXED_POINT_MAX_FIDELITY)
+      .withArgs(PROJECT_ID, CURRENCY, otherBaseCurrency, _FIXED_POINT_MAX_FIDELITY)
       .returns(conversionPrice.mul(ethers.BigNumber.from(10).pow(18)));
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({

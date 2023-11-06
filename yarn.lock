@@ -1207,6 +1207,10 @@
   dependencies:
     prb-math "^2.4.1"
 
+"@permit2/src@https://github.com/Uniswap/permit2":
+  version "1.0.0"
+  resolved "https://github.com/Uniswap/permit2#cc56ad0f3439c502c246fc5cfcc3db92bb8b7219"
+
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@resolver-engine/core/-/core-0.3.3.tgz#590f77d85d45bc7ecc4e06c654f41345db6ca967"
@@ -8692,10 +8696,6 @@ performance-now@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
-
-"permit2@https://github.com/Uniswap/permit2":
-  version "0.0.0"
-  resolved "https://github.com/Uniswap/permit2#576f549a7351814f112edcc42f3f8472d1712673"
 
 picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.2.3:
   version "2.3.1"

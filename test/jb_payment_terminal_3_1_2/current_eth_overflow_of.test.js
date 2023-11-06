@@ -23,7 +23,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
   });
 
   async function setup() {
-    let [deployer, terminalOwner, caller] = await ethers.getSigners();
+    let [deployer, terminalOwner, caller, ...addrs] = await ethers.getSigners();
 
     const SPLITS_GROUP = 1;
 
@@ -84,6 +84,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
         mockJbPrices.address,
         mockJBPaymentTerminalStore.address,
         terminalOwner.address,
+        addrs[5].address
       );
 
     await mockJBPaymentTerminalStore.mock.currentOverflowOf
@@ -115,7 +116,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
     const { mockJbPrices, JBERC20PaymentTerminal, NON_ETH_TOKEN } = await setup();
 
     await mockJbPrices.mock.priceFor
-      .withArgs(ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber(), CURRENCY_ETH, 16) // 16-decimal
+      .withArgs(PROJECT_ID, ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber(), CURRENCY_ETH, 16) // 16-decimal
       .returns(100);
 
     expect(await JBERC20PaymentTerminal.currentEthOverflowOf(PROJECT_ID)).to.equal(

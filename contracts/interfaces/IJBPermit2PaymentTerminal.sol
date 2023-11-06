@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import {IPermit2} from 'permit2/src/interfaces/IPermit2.sol';
+import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBSingleAllowanceData} from '../structs/JBSingleAllowanceData.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 

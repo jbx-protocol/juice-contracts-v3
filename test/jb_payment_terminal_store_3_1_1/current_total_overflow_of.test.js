@@ -184,7 +184,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentTotalOverflowOf(...)', 
     await mockJbTerminalB.mock.currentEthOverflowOf.withArgs(PROJECT_ID).returns(ETH_OVERFLOW_B);
 
     await mockJbPrices.mock.priceFor
-      .withArgs(CURRENCY_ETH, CURRENCY_USD, 18) // 18-decimal
+      .withArgs(PROJECT_ID, CURRENCY_ETH, CURRENCY_USD, 18) // 18-decimal
       .returns(100);
 
     // Get total overflow across both terminals, in a different currency; should equal to the sum of the overflow / price
