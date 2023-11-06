@@ -1198,7 +1198,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, msg.sender);
     } else {
       // Process the fee.
-      _processFee(feeAmount, _beneficiary, _projectId); // Take the fee.
+      feeAmount = _processFee(feeAmount, _beneficiary, _projectId); // Take the fee.
 
       emit ProcessFee(_projectId, feeAmount, false, _beneficiary, msg.sender);
     }
@@ -1208,7 +1208,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   /// @param _amount The fee amount, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platform's tokens for.
   /// @param _from The project ID the fee is being paid from.
-  function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
+  /// @return amount The amount of fees that were paid.
+  function _processFee(
+    uint256 _amount,
+    address _beneficiary,
+    uint256 _from
+  ) internal returns (uint256 amount) {
     // Get the terminal for the protocol project.
     IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
@@ -1229,7 +1234,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // Send the projectId in the metadata.
         bytes(abi.encodePacked(_from))
       )
-    {} catch (bytes memory _reason) {
+    {
+      return _amount;
+    } catch (bytes memory _reason) {
       _revertTransferFrom(
         _from,
         address(_terminal) != address(this) ? address(_terminal) : address(0),
@@ -1237,6 +1244,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         _amount
       );
       emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
+      return 0;
     }
   }
 
