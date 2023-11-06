@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestAllowance_Local is TestBaseWorkflow {
+contract TestAccessToFunds_Local is TestBaseWorkflow {
     uint256 private constant _FEE_PROJECT_ID = 1; 
     uint256 private _ethCurrency; 
     IJBController3_1 private _controller;
@@ -360,10 +360,12 @@ contract TestAllowance_Local is TestBaseWorkflow {
             metadata: bytes('')
         });
 
+        uint256 _projectOwnerBalance;  
+
         // Check the collected distribution if one is expected.
         if (_ethDistributionLimit <= _ethPayAmount && _ethDistributionLimit != 0) {
             // Make sure the project owner received the distributed funds.
-            uint256 _projectOwnerBalance = (_ethDistributionLimit * jbLibraries().MAX_FEE()) / (_terminal.fee() + jbLibraries().MAX_FEE());
+            _projectOwnerBalance = (_ethDistributionLimit * jbLibraries().MAX_FEE()) / (_terminal.fee() + jbLibraries().MAX_FEE());
             assertEq(_projectOwner.balance, _projectOwnerBalance);
 
             // Make sure the fee was paid correctly.
@@ -389,5 +391,30 @@ contract TestAllowance_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary doesn't have tokens left.
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), 0);
+
+        // Check for a new beneficiary balance if one is expected.
+        if (_ethPayAmount > _ethOverflowAllowance + _ethDistributionLimit) {
+            // Get the expected amount reclaimed.
+            uint256 _reclaimAmount = (PRBMath.mulDiv(
+                PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)),
+                _metadata.redemptionRate +
+                PRBMath.mulDiv(
+                    _beneficiaryTokenBalance,
+                    jbLibraries().MAX_REDEMPTION_RATE() - _metadata.redemptionRate,
+                    PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)
+                ),
+                jbLibraries().MAX_REDEMPTION_RATE()
+            ));
+            // Calculate the fee from the redemption.
+            uint256 _feeAmount = _reclaimAmount - _reclaimAmount * jbLibraries().MAX_FEE() / (_terminal.fee() + jbLibraries().MAX_FEE());
+            assertEq(_beneficiary.balance, _beneficiaryBalance + _reclaimAmount - _feeAmount);
+            
+            // // Make sure the fee was paid correctly.
+            assertEq(jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(_terminal)), _FEE_PROJECT_ID), (_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance) + _feeAmount);
+            assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
+
+            // Make sure the project owner got the expected number of tokens from the fee.
+            assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / jbLibraries().MAX_RESERVED_RATE());
+        }
     }
 }
