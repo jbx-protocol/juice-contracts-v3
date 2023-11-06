@@ -88,7 +88,7 @@ import {JBSplitsGroups} from '@juicebox/libraries/JBSplitsGroups.sol';
 import {JBOperations} from '@juicebox/libraries/JBOperations.sol';
 
 import {IPermit2, IAllowanceTransfer} from '@permit2/src/src/interfaces/IPermit2.sol';
-import {DeployPermit2} from 'permit2/test/utils/DeployPermit2.sol';
+import {DeployPermit2} from '@permit2/src/test/utils/DeployPermit2.sol';
 
 import './AccessJBLib.sol';
 

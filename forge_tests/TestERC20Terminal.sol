@@ -6,7 +6,7 @@ import {MockMaliciousAllocator, GasGussler} from "./mock/MockMaliciousAllocator.
 import {MockMaliciousTerminal} from "./mock/MockMaliciousTerminal.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
-import {PermitSignature} from 'permit2/test/utils/PermitSignature.sol';
+import {PermitSignature} from '@permit2/src/test/utils/PermitSignature.sol';
 
 contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
     event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
