@@ -25,6 +25,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
     JBTokenStore _tokenStore;
     MockMaliciousTerminal _badTerminal;
     address _projectOwner;
+    address _beneficiary;
 
     uint256 WEIGHT = 1000 * 10 ** 18;
     uint256 FAKE_PRICE = 18;
@@ -42,6 +43,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
         from = vm.addr(fromPrivateKey);
 
         _projectOwner = multisig();
+        _beneficiary = beneficiary();
 
         _tokenStore = jbTokenStore();
 
@@ -401,7 +403,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         address caller = msg.sender;
         vm.label(caller, "caller");
-        vm.prank(_multisig);
+        vm.prank(_projectOwner);
         jbToken().transfer(from, 1e18 + 1);
 
         IAllowanceTransfer.PermitDetails memory details =
@@ -502,7 +504,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         address caller = msg.sender;
         vm.label(caller, "caller");
-        vm.prank(_multisig);
+        vm.prank(_projectOwner);
         jbToken().transfer(from, 1e18 + 1);
 
         IAllowanceTransfer.PermitDetails memory details =

@@ -9,6 +9,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
     JBController3_1 private _controller;
     JBETHPaymentTerminal3_1_2 private _terminal3_2;
     JBTokenStore private _tokenStore;
+    JBSingleTokenPaymentTerminalStore3_1_1 private _jbPaymentTerminalStore3_1_1;
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
@@ -27,15 +28,16 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         super.setUp();
 
         _controller = jbController();
-
+        _projectOwner = multisig();
+        _jbPaymentTerminalStore3_1_1 = jbPaymentTerminalStore();
         _terminal3_2 = new JBETHPaymentTerminal3_1_2(
-            _jbOperatorStore,
-            _jbProjects,
-            _jbDirectory,
-            _jbSplitsStore,
-            _jbPrices,
+            jbOperatorStore(),
+            jbProjects(),
+            jbDirectory(),
+            jbSplitsStore(),
+            jbPrices(),
             address(_jbPaymentTerminalStore3_1_1),
-            _multisig
+            _projectOwner
         );
 
         _tokenStore = jbTokenStore();

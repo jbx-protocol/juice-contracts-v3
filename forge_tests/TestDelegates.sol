@@ -4,6 +4,7 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDelegates_Local is TestBaseWorkflow {
+    address private _beneficiary;
     JBController3_1 controller;
     JBProjectMetadata _projectMetadata;
     JBFundingCycleData _data;
@@ -24,6 +25,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
+        _beneficiary = beneficiary();
 
         _tokenStore = jbTokenStore();
 
@@ -88,7 +90,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
         uint256[] memory payDelegateAmounts = new uint256[](_numberOfAllocations);
 
         _beneficiary = address(bytes20(keccak256("beneficiary")));
-
 
         // Check that we are not going to overflow uint256 and calculate the total pay amount
         _totalToAllocate = bound(_totalToAllocate, payDelegateAmounts.length, type(uint256).max - 1);
