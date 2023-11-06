@@ -235,6 +235,15 @@ contract TestAllowance_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        // Dummy first project for fee collection
+        _controller.launchProjectFor({
+            owner: address(420), // random
+            projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+            configurations: new JBFundingCycleConfiguration[](0),
+            terminals: _terminals, // set terminals where fees will be received
+            memo: ""
+        });
+
         // Create the project to test.
         uint256 projectId = _controller.launchProjectFor({
             owner: _projectOwner,
@@ -258,22 +267,17 @@ contract TestAllowance_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary got the expected number of tokens.
         uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / jbLibraries().MAX_RESERVED_RATE();
-        if (_ethPayAmount != 0) assertEq(_tokenStore.balanceOf(_beneficiary, projectId), _beneficiaryTokenBalance);
+        assertEq(_tokenStore.balanceOf(_beneficiary, projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
         assertEq(jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId), _ethPayAmount);
 
-        // Keep a reference to a flag indiciating an expected revert.
-        bool willRevert;
-
         // Revert if there's no allowance.
         if (_ethOverflowAllowance == 0) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
-            willRevert = true;
         // Revert if there's no overflow, or if too much is being withdrawn.
-        } else if (_ethDistributionLimit >= _ethPayAmount || _ethOverflowAllowance > (_ethPayAmount - _ethDistributionLimit)) {
+        } else if (_ethOverflowAllowance + _ethDistributionLimit > _ethPayAmount) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
-            willRevert = true;
         }
 
         // Use the full discretionary allowance of overflow.
@@ -290,7 +294,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
         });
 
         // Check the collected balance if one is expected.
-        if (!willRevert && _ethPayAmount != 0 ) {
+        if (_ethOverflowAllowance + _ethDistributionLimit <= _ethPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             uint256 _beneficiaryBalance = PRBMath.mulDiv(_ethOverflowAllowance, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee());
             assertEq((_beneficiary).balance, _beneficiaryBalance);
@@ -317,11 +321,26 @@ contract TestAllowance_Local is TestBaseWorkflow {
         });
 
         // Check the collected distribution if one is expected.
-        if (_ethDistributionLimit <= _ethPayAmount && _ethDistributionLimit > 1) {
-            // Avoid rounding error
+        if (_ethDistributionLimit <= _ethPayAmount) {
             assertEq(
                 _projectOwner.balance, (_ethDistributionLimit * jbLibraries().MAX_FEE()) / (terminal.fee() + jbLibraries().MAX_FEE())
             );
         }
+
+        // Redeem ETH from the overflow using all of the _beneficiary's tokens.
+        vm.prank(_beneficiary);
+        terminal.redeemTokensOf({
+            holder: _beneficiary,
+            projectId: projectId,
+            tokenCount: _beneficiaryTokenBalance,
+            token: address(0), // unused
+            minReturnedTokens: 0,
+            beneficiary: payable(_beneficiary),
+            memo: "gimme my money back",
+            metadata: new bytes(0)
+        });
+
+        // Make sure the beneficiary doesn't have tokens left.
+        assertEq(_tokenStore.balanceOf(_beneficiary, projectId), 0);
     }
 }
