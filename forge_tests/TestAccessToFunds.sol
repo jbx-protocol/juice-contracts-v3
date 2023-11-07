@@ -3,6 +3,11 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
+/// Funds can be accessed in three ways:
+/// 1. project owners set a distribution limit to prioritize spending to pre-determined destinations. funds being removed from the protocol incurs fees.
+/// 2. project owners set an overflow allowance to allow spending funds from the treasury in excess of the distribution limit. incurs fees.
+/// 3. token holders can redeem tokens to access funds in excess of the distribution limit. incurs fees if the redemption rate != 100%.
+/// Each of these incurs protocol fees if the project with ID #1 accepts the token being accessed.
 contract TestAccessToFunds_Local is TestBaseWorkflow {
     uint256 private constant _FEE_PROJECT_ID = 1; 
     uint256 private _ethCurrency; 
@@ -37,8 +42,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 allowSetController: false,
                 pauseTransfers: false
             }),
-            reservedRate: 5000, //50%
-            redemptionRate: 5000, //50%
+            reservedRate:  jbLibraries().MAX_RESERVED_RATE() / 2, //50%
+            redemptionRate:  jbLibraries().MAX_REDEMPTION_RATE() / 2, //50%
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,

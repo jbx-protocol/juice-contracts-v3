@@ -268,7 +268,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
             percent: JBConstants.SPLITS_TOTAL_PERCENT
         });
 
-        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+        _allocationSplits[0] = JBGroupedSplits({group: 3, splits: _splits});
 
         (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
 
@@ -743,7 +743,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
             percent: JBConstants.SPLITS_TOTAL_PERCENT
         });
 
-        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+        _allocationSplits[0] = JBGroupedSplits({group: 3, splits: _splits});
 
         (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
 
@@ -851,7 +851,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
             percent: JBConstants.SPLITS_TOTAL_PERCENT
         });
 
-        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+        _allocationSplits[0] = JBGroupedSplits({group: 3, splits: _splits});
 
         (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
 
@@ -958,7 +958,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
             percent: JBConstants.SPLITS_TOTAL_PERCENT
         });
 
-        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+        _allocationSplits[0] = JBGroupedSplits({group: 3, splits: _splits});
 
         (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
 
@@ -1103,7 +1103,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow, PermitSignature {
             percent: JBConstants.SPLITS_TOTAL_PERCENT
         });
 
-        _allocationSplits[0] = JBGroupedSplits({group: 1, splits: _splits});
+        _allocationSplits[0] = JBGroupedSplits({group: 3, splits: _splits});
 
         (JBFundingCycle memory _currentFundingCycle,) = controller.currentFundingCycleOf(projectId);
 

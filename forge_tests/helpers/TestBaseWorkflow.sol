@@ -266,7 +266,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     _jbERC20PaymentTerminal3_1_2 = new JBERC20PaymentTerminal3_1_2(
       _jbToken,
-      1, // UNIQUE SPLITS GROUP
+      3, // UNIQUE SPLITS GROUP
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,
