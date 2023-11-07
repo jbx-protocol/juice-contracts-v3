@@ -120,30 +120,30 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), _payDelegateAmounts[i], _someData);
 
             // Keep a reference to the data expected to be sent to the delegate being iterated on.
-            JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1(
-                _beneficiary,
-                _projectId,
-                _fundingCycle.configuration,
-                JBTokenAmount(
+            JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1({
+                payer: _beneficiary,
+                projectId: _projectId,
+                currentFundingCycleConfiguration: _fundingCycle.configuration,
+                amount: JBTokenAmount(
                     JBTokens.ETH,
                     _ethPayAmount,
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
                 ),
-                JBTokenAmount(
+                forwardedAmount: JBTokenAmount(
                     JBTokens.ETH,
                     _payDelegateAmounts[i],
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
                 ),
-                _fundingCycle.weight,
-                0,
-                _beneficiary,
-                false,
-                "",
-                _someData, // empty metadata
-                _somePayerMetadata // empty metadata
-            );
+                weight: _fundingCycle.weight,
+                projectTokenCount: 0,
+                beneficiary: _beneficiary,
+                preferClaimedTokens: false,
+                memo: "",
+                dataSourceMetadata: _someData, // empty metadata
+                payerMetadata: _somePayerMetadata // empty metadata
+            });
 
             // Mock the delegate's didPay.
             vm.mockCall(_delegateAddress, abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector), "");
@@ -155,7 +155,12 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
 
             // Expect an event to be emitted for every delegate
             vm.expectEmit(true, true, true, true);
-            emit DelegateDidPay(IJBPayDelegate3_1_1(_delegateAddress), _didPayData, _payDelegateAmounts[i], _beneficiary);
+            emit DelegateDidPay({
+                delegate: IJBPayDelegate3_1_1(_delegateAddress), 
+                data: _didPayData, 
+                delegatedAmount: _payDelegateAmounts[i], 
+                caller: _beneficiary
+            });
         }
 
         // Mock the dataSource's payParams to return the allocations.
