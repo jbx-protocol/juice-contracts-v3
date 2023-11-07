@@ -417,6 +417,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     // Keep a reference to the amount.
     uint256 _amount;
 
+    // Get the terminal for the protocol project.
+    IJBPaymentTerminal _feeTerminal = directory.primaryTerminalOf(
+      _FEE_BENEFICIARY_PROJECT_ID,
+      token
+    );
+
     // Process each fee.
     for (uint256 _i; _i < _heldFeeLength; ) {
       // Get the fee amount.
@@ -425,7 +431,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       );
 
       // Process the fee.
-      _processFee(_amount, _heldFees[_i].beneficiary, _projectId);
+      _processFee(_amount, _heldFees[_i].beneficiary, _projectId, _feeTerminal);
 
       emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, msg.sender);
 
@@ -616,6 +622,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       // Keep a reference to the fee.
       uint256 _feePercent;
 
+      // Get the terminal for the protocol project.
+      IJBPaymentTerminal _feeTerminal = directory.primaryTerminalOf(
+        _FEE_BENEFICIARY_PROJECT_ID,
+        token
+      );
+
       // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
       {
         JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
@@ -637,8 +649,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
         _feePercent = isFeelessAddress[_beneficiary] ||
           _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
-          directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
-          IJBPaymentTerminal(address(0))
+          _feeTerminal == IJBPaymentTerminal(address(0))
           ? 0
           : fee;
 
@@ -739,7 +750,14 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
 
       // Take the fee from all outbound reclaimations.
       _feeEligibleDistributionAmount != 0
-        ? _takeFeeFrom(_projectId, false, _feeEligibleDistributionAmount, _feePercent, _beneficiary)
+        ? _takeFeeFrom(
+          _projectId,
+          false,
+          _feeEligibleDistributionAmount,
+          _feePercent,
+          _beneficiary,
+          _feeTerminal
+        )
         : 0;
     }
 
@@ -795,58 +813,65 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     // Keep a reference to the fee amount that was paid.
     uint256 _feeTaken;
 
-    // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount` and `_leftoverDistributionAmount` only used within scope.
+    // Scoped section prevents stack too deep. `_feeTerminal` only used within scope.
     {
-      // Keep a reference to the fee.
-      // The fee is 0 if the fee beneficiary doesn't accept the given token.
-      uint256 _feePercent = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
-        IJBPaymentTerminal(address(0))
-        ? 0
-        : fee;
-
-      // The amount distributed that is eligible for incurring fees.
-      uint256 _feeEligibleDistributionAmount;
-
-      // The amount leftover after distributing to the splits.
-      uint256 _leftoverDistributionAmount;
-
-      // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
-      // Also get a reference to the amount that was distributed to splits from which fees should be taken.
-      (_leftoverDistributionAmount, _feeEligibleDistributionAmount) = _distributeToPayoutSplitsOf(
-        _projectId,
-        _fundingCycle.configuration,
-        payoutSplitsGroup,
-        _distributedAmount,
-        _feePercent
+      // Get the terminal for the protocol project.
+      IJBPaymentTerminal _feeTerminal = directory.primaryTerminalOf(
+        _FEE_BENEFICIARY_PROJECT_ID,
+        token
       );
 
-      if (_feePercent != 0) {
-        // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
-        unchecked {
-          _feeEligibleDistributionAmount += _leftoverDistributionAmount;
-        }
-      }
+      // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount` and `_leftoverDistributionAmount` only used within scope.
+      {
+        // Keep a reference to the fee.
+        // The fee is 0 if the fee beneficiary doesn't accept the given token.
+        uint256 _feePercent = _feeTerminal == IJBPaymentTerminal(address(0)) ? 0 : fee;
 
-      // Take the fee.
-      _feeTaken = _feeEligibleDistributionAmount != 0
-        ? _takeFeeFrom(
+        // The amount distributed that is eligible for incurring fees.
+        uint256 _feeEligibleDistributionAmount;
+
+        // The amount leftover after distributing to the splits.
+        uint256 _leftoverDistributionAmount;
+
+        // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
+        // Also get a reference to the amount that was distributed to splits from which fees should be taken.
+        (_leftoverDistributionAmount, _feeEligibleDistributionAmount) = _distributeToPayoutSplitsOf(
           _projectId,
-          _fundingCycle.shouldHoldFees(),
-          _feeEligibleDistributionAmount,
-          _feePercent,
-          _projectOwner
-        )
-        : 0;
+          _fundingCycle.configuration,
+          payoutSplitsGroup,
+          _distributedAmount,
+          _feePercent
+        );
 
-      // Transfer any remaining balance to the project owner and update returned leftover accordingly.
-      if (_leftoverDistributionAmount != 0) {
-        // Subtract the fee from the net leftover amount.
-        netLeftoverDistributionAmount =
-          _leftoverDistributionAmount -
-          (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, _feePercent));
+        if (_feePercent != 0) {
+          // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
+          unchecked {
+            _feeEligibleDistributionAmount += _leftoverDistributionAmount;
+          }
+        }
 
-        // Transfer the amount to the project owner.
-        _transferFrom(address(this), _projectOwner, netLeftoverDistributionAmount);
+        // Take the fee.
+        _feeTaken = _feeEligibleDistributionAmount != 0
+          ? _takeFeeFrom(
+            _projectId,
+            _fundingCycle.shouldHoldFees(),
+            _feeEligibleDistributionAmount,
+            _feePercent,
+            _projectOwner,
+            _feeTerminal
+          )
+          : 0;
+
+        // Transfer any remaining balance to the project owner and update returned leftover accordingly.
+        if (_leftoverDistributionAmount != 0) {
+          // Subtract the fee from the net leftover amount.
+          netLeftoverDistributionAmount =
+            _leftoverDistributionAmount -
+            (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, _feePercent));
+
+          // Transfer the amount to the project owner.
+          _transferFrom(address(this), _projectOwner, netLeftoverDistributionAmount);
+        }
       }
     }
 
@@ -897,6 +922,12 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     // The amount being withdrawn must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
 
+    // Get the terminal for the protocol project.
+    IJBPaymentTerminal _feeTerminal = directory.primaryTerminalOf(
+      _FEE_BENEFICIARY_PROJECT_ID,
+      token
+    );
+
     // Scoped section prevents stack too deep. `_fee`, `_projectOwner` and `_netAmount` only used within scope.
     {
       // Keep a reference to the fee amount that was paid.
@@ -908,8 +939,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       // Keep a reference to the fee.
       // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
       uint256 _feePercent = isFeelessAddress[msg.sender] ||
-        directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token) ==
-        IJBPaymentTerminal(address(0))
+        _feeTerminal == IJBPaymentTerminal(address(0))
         ? 0
         : fee;
 
@@ -921,7 +951,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
           _fundingCycle.shouldHoldFees(),
           _distributedAmount,
           _feePercent,
-          _projectOwner
+          _projectOwner,
+          _feeTerminal
         );
 
       unchecked {
@@ -1181,13 +1212,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   /// @param _feePercent The percent of fees to take, out of MAX_FEE.
   /// @param _amount The amount of the fee to take, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platforms tokens for.
+  /// @param _feeTerminal The terminal the fee should be taken into.
   /// @return feeAmount The amount of the fee taken.
   function _takeFeeFrom(
     uint256 _projectId,
     bool _shouldHoldFees,
     uint256 _amount,
     uint256 _feePercent,
-    address _beneficiary
+    address _beneficiary,
+    IJBPaymentTerminal _feeTerminal
   ) internal returns (uint256 feeAmount) {
     feeAmount = JBFees.feeIn(_amount, _feePercent);
 
@@ -1198,7 +1231,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, msg.sender);
     } else {
       // Process the fee.
-      _processFee(feeAmount, _beneficiary, _projectId); // Take the fee.
+      _processFee(feeAmount, _beneficiary, _projectId, _feeTerminal); // Take the fee.
 
       emit ProcessFee(_projectId, feeAmount, false, _beneficiary, msg.sender);
     }
@@ -1208,17 +1241,20 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   /// @param _amount The fee amount, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platform's tokens for.
   /// @param _from The project ID the fee is being paid from.
-  function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
-    // Get the terminal for the protocol project.
-    IJBPaymentTerminal _terminal = directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
-
+  /// @param _feeTerminal The terminal the fee should be taken into.
+  function _processFee(
+    uint256 _amount,
+    address _beneficiary,
+    uint256 _from,
+    IJBPaymentTerminal _feeTerminal
+  ) internal {
     // Trigger any inherited pre-transfer logic if funds will be transferred.
-    if (address(_terminal) != address(this)) _beforeTransferTo(address(_terminal), _amount);
+    if (address(_feeTerminal) != address(this)) _beforeTransferTo(address(_feeTerminal), _amount);
 
     try
       // Send the fee.
       // If this terminal's token is ETH, send it in msg.value.
-      _terminal.pay{value: token == JBTokens.ETH ? _amount : 0}(
+      _feeTerminal.pay{value: token == JBTokens.ETH ? _amount : 0}(
         _FEE_BENEFICIARY_PROJECT_ID,
         _amount,
         token,
@@ -1232,8 +1268,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     {} catch (bytes memory _reason) {
       _revertTransferFrom(
         _from,
-        address(_terminal) != address(this) ? address(_terminal) : address(0),
-        address(_terminal) != address(this) ? _amount : 0,
+        address(_feeTerminal) != address(this) ? address(_feeTerminal) : address(0),
+        address(_feeTerminal) != address(this) ? _amount : 0,
         _amount
       );
       emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
