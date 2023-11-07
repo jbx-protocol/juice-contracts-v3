@@ -28,7 +28,7 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 0,
-            weight: 1000 * 10 ** 18,
+            weight: 0,
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
@@ -38,8 +38,8 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
                 allowSetController: false,
                 pauseTransfers: false
             }),
-            reservedRate: 5000, //50%
-            redemptionRate: 5000, //50%
+            reservedRate: 0, 
+            redemptionRate: 0,
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
@@ -75,8 +75,8 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
     }
 
     function testPayDelegates(uint256 _numberOfAllocations, uint256 _ethPayAmount) public {
-        // Make sure the number of allocations is bounded.
-        _numberOfAllocations = bound(_numberOfAllocations, 1, 5);
+        // Bound the number of allocations to a reasonable number.
+        _numberOfAllocations = bound(_numberOfAllocations, 1, 100);
 
         // Make sure there's enough ETH paid to allocate for each delegate.
         _ethPayAmount = bound(_ethPayAmount, _numberOfAllocations, type(uint256).max - 1);
