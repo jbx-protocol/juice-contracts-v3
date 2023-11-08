@@ -5,6 +5,8 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // Payments can be forwarded to any number of pay delegates.
 contract TestPayDelegates_Local is TestBaseWorkflow {
+    event DelegateDidPay(IJBPayDelegate3_1_1 indexed delegate, JBDidPayData3_1_1 data, uint256 delegatedAmount, address caller);
+
     JBController3_1 private _controller;
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
@@ -181,6 +183,4 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             _projectId, _ethPayAmount, address(0), _beneficiary, 0, false, "Forge test", _somePayerMetadata
         );
     }
-
-    event DelegateDidPay(IJBPayDelegate3_1_1 indexed delegate, JBDidPayData3_1_1 data, uint256 delegatedAmount, address caller);
 }
