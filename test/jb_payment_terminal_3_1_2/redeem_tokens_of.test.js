@@ -147,6 +147,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       holder,
       jbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
+      mockJbEthPaymentTerminal,
       mockJbController,
       mockJbDirectory,
       timestamp,
@@ -166,6 +167,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
         /* delegateAllocation */[],
         ADJUSTED_MEMO,
       );
+
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await setBalance(jbEthPaymentTerminal.address, RECLAIM_AMOUNT);
 
@@ -215,6 +221,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       holder,
       jbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
+      mockJbEthPaymentTerminal,
+      mockJbDirectory,
       timestamp,
     } = await setup();
 
@@ -227,6 +235,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
         /* delegateAllocation */[],
         ADJUSTED_MEMO,
       );
+
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await setBalance(jbEthPaymentTerminal.address, RECLAIM_AMOUNT);
 
@@ -278,6 +290,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       mockJBPaymentTerminalStore,
       mockJbRedemptionDelegate,
       mockJbDirectory,
+      mockJbEthPaymentTerminal,
       mockJbController,
       timestamp,
     } = await setup();
@@ -289,6 +302,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     await mockJbController.mock.burnTokensOf
       .withArgs(holder.address, PROJECT_ID, AMOUNT, /* memo */ '', /* preferClaimedTokens */ false)
       .returns();
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
       .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
@@ -411,6 +428,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       mockJBPaymentTerminalStore,
       mockJbRedemptionDelegate,
       mockJbRedemptionDelegate2,
+      mockJbEthPaymentTerminal,
       mockJbDirectory,
       mockJbController,
       timestamp,
@@ -437,6 +455,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
         ],
         ADJUSTED_MEMO,
       );
+
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
 
     let tokenAddress = await jbEthPaymentTerminal.token();
     await mockJbRedemptionDelegate.mock.didRedeem
@@ -1341,6 +1364,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       holder,
       jbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
+      mockJbEthPaymentTerminal,
       mockJbDirectory,
       mockJbController,
       timestamp,
@@ -1355,6 +1379,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
       .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(fundingCycle, /* reclaimAmount */ 0, /* delegateAllocation */[], ADJUSTED_MEMO); // Set reclaimAmount to 0
+
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await setBalance(jbEthPaymentTerminal.address, AMOUNT);
 
@@ -1444,6 +1472,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
       holder,
       jbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
+      mockJbEthPaymentTerminal,
       mockJbDirectory,
       mockJbController,
       timestamp,
@@ -1458,6 +1487,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::redeemTokensOf(...)', function
     await mockJBPaymentTerminalStore.mock.recordRedemptionFor
       .withArgs(holder.address, PROJECT_ID, /* tokenCount */ AMOUNT, MEMO, METADATA1)
       .returns(fundingCycle, /* reclaimAmount */ 0, /* delegateAllocation */[], ADJUSTED_MEMO); // Set reclaimAmount to 0
+
+    // Used with hardcoded one to get JBDao terminal
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, ETH_ADDRESS)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await expect(
       jbEthPaymentTerminal
