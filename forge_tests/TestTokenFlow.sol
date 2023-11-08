@@ -3,45 +3,42 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-/// @notice This file tests JBToken related flows
+// launch project, issue token or sets the token, mint token, burn token
 contract TestTokenFlow_Local is TestBaseWorkflow {
-    JBController3_1 private _controller;
-    JBTokenStore private _tokenStore;
-
+    IJBController3_1 private _controller;
+    IJBTokenStore private _tokenStore;
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
-    JBGroupedSplits[] private _groupedSplits; // Default empty
-    JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
-    IJBPaymentTerminal[] private _terminals; // Default empty
-
+    JBGroupedSplits[] private _groupedSplits;
+    JBFundAccessConstraints[] private _fundAccessConstraints;
+    IJBPaymentTerminal[] private _terminals;
     uint256 private _projectId;
     address private _projectOwner;
-    uint256 private _reservedRate = 5000;
+    address private _beneficiary;
 
     function setUp() public override {
         super.setUp();
 
+        _projectOwner = multisig();
+        _beneficiary = beneficiary();
         _controller = jbController();
         _tokenStore = jbTokenStore();
-
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-
         _data = JBFundingCycleData({
-            duration: 14,
+            duration: 0,
             weight: 1000 * 10 ** 18,
-            discountRate: 450000000,
+            discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
-
         _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
-            reservedRate: _reservedRate,
-            redemptionRate: 5000, //50%
+            reservedRate: jbLibraries().MAX_RESERVED_RATE() / 2,
+            redemptionRate: 0,
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
@@ -59,16 +56,12 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        _projectOwner = multisig();
-
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-
         _cycleConfig[0].mustStartAtOrAfter = block.timestamp;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
-
         _projectId = _controller.launchProjectFor(
             _projectOwner,
             _projectMetadata,
@@ -78,108 +71,120 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         );
     }
 
-    /**
-     * @notice tests the following flow with fuzzed values:
-     * launch project → issue token or sets the token → mint token → burn token
-     */
     function testFuzzTokenFlow(
-        uint224 mintAmount,
-        uint256 burnAmount,
+        uint224 _mintAmount,
+        uint256 _burnAmount,
         bool _issueToken,
-        bool mintPreferClaimed,
-        bool burnPreferClaimed
+        bool _mintPreferClaimed,
+        bool _burnPreferClaimed
     ) public {
-        // Might overflow in processed token tracker if burn amount >= max int256 (ie (2**256)/2 -1 )
-        burnAmount = bound(burnAmount, 0, ((2 ** 256) / 2) - 1);
-
-        // calls will originate from projectOwner addr
         vm.startPrank(_projectOwner);
 
         if (_issueToken) {
-            // issue an ERC-20 token for project
-            _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+            // Issue an ERC-20 token for project
+            _tokenStore.issueFor({
+                projectId: _projectId, 
+                name: "TestName", 
+                symbol: "TestSymbol"
+            });
         } else {
-            // create a new IJBToken and change it's owner to the tokenStore
-            IJBToken _newToken = new JBToken('NewTestName', 'NewTestSymbol', _projectId);
+            // Create a new IJBToken and change it's owner to the tokenStore
+            IJBToken _newToken = new JBToken({
+                _name: 'NewTestName', 
+                _symbol: 'NewTestSymbol', 
+                _projectId: _projectId
+            });
+
             Ownable(address(_newToken)).transferOwnership(address(_tokenStore));
 
-            // change the projects token to _newToken
+            // Set the projects token to _newToken
             _tokenStore.setFor(_projectId, _newToken);
 
-            // confirm the project's new JBToken
+            // Make sure the project's new JBToken is set.
             assertEq(address(_tokenStore.tokenOf(_projectId)), address(_newToken));
         }
+  
+        // Expect revert if there are no tokens being minted.
+        if (_mintAmount == 0) vm.expectRevert(abi.encodeWithSignature("ZERO_TOKENS_TO_MINT()"));
 
-        address _beneficiary = address(1234);
-        uint256 _expectedTokenBalance = 0;
-        uint256 _beneficiaryTokenAmount = mintAmount / 2; // 50% reserved rate results in half the mintAmount
-
-        if (mintAmount == 0) vm.expectRevert(abi.encodeWithSignature("ZERO_TOKENS_TO_MINT()"));
-        else _expectedTokenBalance = _beneficiaryTokenAmount;
-
-        // mint tokens to beneficiary addr
-        _controller.mintTokensOf(
-            _projectId, mintAmount, _beneficiary, "Mint memo", mintPreferClaimed, true /*use reserved rate*/
+        // Mint tokens to beneficiary.
+        _controller.mintTokensOf({
+            projectId: _projectId, 
+            tokenCount: _mintAmount, 
+            beneficiary: _beneficiary, 
+            memo: "Mint memo", 
+            preferClaimedTokens: _mintPreferClaimed, 
+            useReservedRate: true 
+        }
         );
 
-        // total token balance should be half of token count due to 50% reserved rate
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance);
+        uint256 _expectedTokenBalance = _mintAmount * _metadata.reservedRate / jbLibraries().MAX_RESERVED_RATE();
 
-        if (burnAmount == 0) {
+        // Make sure the beneficiary has the correct amount of tokens.
+        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance );
+
+        if (_burnAmount == 0) {
             vm.expectRevert(abi.encodeWithSignature("NO_BURNABLE_TOKENS()"));
-        } else if (burnAmount > _expectedTokenBalance) {
+        } else if (_burnAmount > _expectedTokenBalance) {
             vm.expectRevert(abi.encodeWithSignature("INSUFFICIENT_FUNDS()"));
         } else {
-            _expectedTokenBalance = _expectedTokenBalance - burnAmount;
+            _expectedTokenBalance = _expectedTokenBalance - _burnAmount;
         }
 
-        // burn tokens from beneficiary addr
-        // next call will originate from holder addr
+        // Burn tokens from beneficiary.
         vm.stopPrank();
         vm.prank(_beneficiary);
-        _controller.burnTokensOf(
-            _beneficiary,
-            _projectId,
-            /* _tokenCount */
-            burnAmount,
-            "Burn memo",
-            burnPreferClaimed
-        );
+        _controller.burnTokensOf({
+            holder: _beneficiary,
+            projectId: _projectId,
+            tokenCount: _burnAmount,
+            memo: "Burn memo",
+            preferClaimedTokens: _burnPreferClaimed
+        });
 
-        // total balance of tokens should be updated
+        // Make sure the total balance of tokens is updated.
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance);
     }
 
-    /**
-     * @notice tests the following corner case:
-     * launch project → issue token → mint max claimed tokens → mint max unclaimed tokens → try to claim unclaimed tokens
-     */
     function testLargeTokenClaimFlow() public {
-        // calls will originate from projectOwner addr
+        // Calls will originate from project
         vm.startPrank(_projectOwner);
 
-        // issue an ERC-20 token for project
-        _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        // Issue an ERC-20 token for project,
+        _tokenStore.issueFor({
+            projectId: _projectId, 
+            name: "TestName", 
+            symbol: "TestSymbol"
+        });
 
-        address _beneficiary = address(1234);
+        // Mint claimed tokens to beneficiary.
+        _controller.mintTokensOf({
+            projectId: _projectId, 
+            tokenCount: type(uint224).max / 2, 
+            beneficiary: _beneficiary, 
+            memo: "Mint memo", 
+            preferClaimedTokens: true, 
+            useReservedRate: false 
+        });
 
-        // mint claimed tokens to beneficiary addr
-        _controller.mintTokensOf(
-            _projectId, type(uint224).max / 2, _beneficiary, "Mint memo", true, false /*use reserved rate*/
-        );
+        // Mint unclaimed tokens to beneficiary
+        _controller.mintTokensOf({
+            projectId: _projectId, 
+            tokenCount: type(uint224).max / 2, 
+            beneficiary: _beneficiary, 
+            memo: "Mint memo", 
+            preferClaimedTokens: false, 
+            useReservedRate: false
+        });
 
-        // mint unclaimed tokens to beneficiary addr
-        _controller.mintTokensOf(_projectId, type(uint224).max / 2, _beneficiary, "Mint memo", false, false);
-
-        // try to claim the unclaimed tokens
+        // Try to claim the unclaimed tokens
         vm.stopPrank();
         vm.prank(_beneficiary);
-        _tokenStore.claimFor(
-            _beneficiary,
-            _projectId,
-            /* _amount */
-            1,
-            _beneficiary
-        );
+        _tokenStore.claimFor({
+            holder: _beneficiary,
+            projectId: _projectId,
+            amount: 1,
+            beneficiary: _beneficiary
+        });
     }
 }

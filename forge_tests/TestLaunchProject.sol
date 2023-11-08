@@ -5,21 +5,23 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // Projects can be launched.
 contract TestLaunchProject_Local is TestBaseWorkflow {
-    JBProjectMetadata _projectMetadata;
-    JBFundingCycleData _data;
-    JBFundingCycleMetadata _metadata;
-    JBGroupedSplits[] _groupedSplits; // Default empty
-    JBFundAccessConstraints[] _fundAccessConstraints; // Default empty
-    IJBPaymentTerminal[] _terminals; // Default empty
+    IJBController3_1 private _controller;
+    JBProjectMetadata private _projectMetadata;
+    JBFundingCycleData private _data;
+    JBFundingCycleMetadata private _metadata;
+    JBGroupedSplits[] private _groupedSplits; 
+    JBFundAccessConstraints[] private _fundAccessConstraints;
+    IJBPaymentTerminal[] private _terminals; 
 
     function setUp() public override {
         super.setUp();
-
+        
+        _controller = jbController();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
-            duration: 14,
+            duration: 0,
             weight: 1000 * 10 ** 18,
-            discountRate: 450000000,
+            discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
         _metadata = JBFundingCycleMetadata({
@@ -58,7 +60,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch a project.
-        uint256 projectId = jbController().launchProjectFor(
+        uint256 projectId = _controller.launchProjectFor(
             msg.sender,
             _projectMetadata,
             _cycleConfig,
@@ -95,21 +97,21 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         if (_weight > type(uint88).max) {
             vm.expectRevert(abi.encodeWithSignature("INVALID_WEIGHT()"));
 
-            _projectId = jbController().launchProjectFor(
-                msg.sender,
-                _projectMetadata,
-                _cycleConfig,
-                _terminals,
-                ""
-            );
+            _projectId = _controller.launchProjectFor({
+                owner: msg.sender,
+                projectMetadata: _projectMetadata,
+                configurations: _cycleConfig,
+                terminals: _terminals,
+                memo: ""
+            });
         } else {
-            _projectId = jbController().launchProjectFor(
-                msg.sender,
-                _projectMetadata,
-                _cycleConfig,
-                _terminals,
-                ""
-            );
+            _projectId = _controller.launchProjectFor({
+                owner: msg.sender,
+                projectMetadata: _projectMetadata,
+                configurations: _cycleConfig,
+                terminals: _terminals,
+                memo: ""
+            });
 
             JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(_projectId);
 

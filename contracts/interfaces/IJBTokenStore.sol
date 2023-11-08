@@ -94,7 +94,7 @@ interface IJBTokenStore {
     address holder,
     uint256 projectId,
     uint256 amount,
-    address benenficiary
+    address beneficiary
   ) external;
 
   function transferFrom(
