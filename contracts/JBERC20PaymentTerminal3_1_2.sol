@@ -134,21 +134,12 @@ contract JBERC20PaymentTerminal3_1_2 is
     if (_amount < _allowance.amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
     // Get allowance to `spend` tokens for the sender
     _permitAllowance(_allowance);
-
-    // Get a reference to the balance before receiving tokens.
-    uint256 _balanceBefore = _balance();
-
-    PERMIT2.transferFrom(msg.sender, address(this), uint160(_amount), address(token));
-
-    // The amount should reflect the change in balance.
-    _amount = _balance() - _balanceBefore;
-
     // Continue with the regular pay flow
     return
-      _pay(
-        _amount,
-        msg.sender,
+      pay(
         _projectId,
+        _amount,
+        _token,
         _beneficiary,
         _minReturnedTokens,
         _preferClaimedTokens,
@@ -179,25 +170,18 @@ contract JBERC20PaymentTerminal3_1_2 is
     if (_amount < _allowance.amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
     // Get allowance to `spend` tokens for the user
     _permitAllowance(_allowance);
-
-    // Get a reference to the balance before receiving tokens.
-    uint256 _balanceBefore = _balance();
-
-    PERMIT2.transferFrom(msg.sender, address(this), uint160(_amount), address(token));
-
-    // The amount should reflect the change in balance.
-    _amount = _balance() - _balanceBefore;
-
     // Continue with the regular addToBalanceOf flow
-    return _addToBalanceOf(_projectId, _amount, _shouldRefundHeldFees, _memo, _metadata);
+    return addToBalanceOf(_projectId, _amount, _token, _shouldRefundHeldFees, _memo, _metadata);
   }
 
   //*********************************************************************//
   // ---------------------- internal transactions ---------------------- //
   //*********************************************************************//
 
-  /// @notice Gets allowance
-  /// @param _allowance the allowance to get using permit2
+  /**
+   * @notice Gets allowance
+   * @param _allowance the allowance to get using permit2
+   */
   function _permitAllowance(JBSingleAllowanceData calldata _allowance) internal {
     // Use Permit2 to set the allowance
     PERMIT2.permit(
@@ -221,9 +205,17 @@ contract JBERC20PaymentTerminal3_1_2 is
   /// @param _to The address to which the transfer should go.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   function _transferFrom(address _from, address payable _to, uint256 _amount) internal override {
-    _from == address(this)
-      ? IERC20(token).safeTransfer(_to, _amount)
-      : IERC20(token).safeTransferFrom(_from, _to, _amount);
+    // If this terminal is the sender we send the tokens directly
+    if (_from == address(this)) return IERC20(token).safeTransfer(_to, _amount);
+
+    // Get the approval that the `_from` has given us
+    // If we have enough direct approval we use this method
+    uint256 _approvalAmount = IERC20(token).allowance(address(_from), address(this));
+    if (_approvalAmount >= _amount) return IERC20(token).safeTransferFrom(_from, _to, _amount);
+
+    // Otherwise we attempt to use the PERMIT2 method
+    // TODO: Should we add safeCast for casting 256 to 160?
+    PERMIT2.transferFrom(_from, _to, uint160(_amount), address(token));
   }
 
   /// @notice Logic to be triggered before transferring tokens from this terminal.
