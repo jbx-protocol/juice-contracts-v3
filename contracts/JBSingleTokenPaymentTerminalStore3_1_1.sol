@@ -736,26 +736,43 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   /// @param _projectId The ID of the project to get overflow for.
   /// @param _tokens The tokens whose balances should contribute to the overflow being reclaimed from.
   /// @param _fundingCycle The ID of the funding cycle to base the overflow on.
-  /// @param _balanceCurrency The currency that the stored balance is expected to be in terms of.
+  /// @param _currency The currency that the reported overflow is expected to be in terms of.
   /// @return overflow The overflow of funds, as a fixed point number with 18 decimals.
   function _overflowDuring(
     IJBPaymentTerminal _terminal,
     uint256 _projectId,
     address[] memory _tokens,
     JBFundingCycle memory _fundingCycle,
-    uint256 _balanceCurrency
-  ) private view returns (uint256) {
-    // Get a reference to the number of tokens being checked for overflow.
-    uint256 _numberOfTokens = _tokens.length;
-
+    uint256 _currency
+  ) private view returns (uint256 overflow) {
     // Keep a reference to the distribution limit remaining normalized to the balance currency.
     uint256 _normalizedDistributionLimitsRemaining;
 
-    // Get the current balance of the project.
-    uint256 _balanceOf;
+    // Keep a reference to the token being iterated on.
+    address _token;
 
     // Add distribution limits from each token.
-    for (uint256 _i; _i < _numberOfTokens; ) {
+    for (uint256 _i; _i < _tokens.length; ) {
+      // Set the token being iterated on.
+      _token = _tokens[_i];
+
+      {
+        // Keep a reference to the currency that the balance is in terms of.
+        uint256 _balanceCurrency = _terminal.currencyForToken(_token);
+
+        // Keep a reference to the balance.
+        uint256 _balance = balanceOf[_terminal][_projectId][_token];
+
+        // Add up all the balances.
+        overflow += (_balance == 0 || _balanceCurrency == _currency)
+          ? _balance
+          : PRBMath.mulDiv(
+            _balance,
+            10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
+            prices.priceFor(_projectId, _balanceCurrency, _currency, _MAX_FIXED_POINT_FIDELITY)
+          );
+      }
+
       // Get a reference to the distribution limit during the funding cycle for the token.
       JBCurrencyAmount[] memory _distributionLimits = IJBController3_1(
         directory.controllerOf(_projectId)
@@ -763,50 +780,43 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
           _projectId,
           _fundingCycle.configuration,
           _terminal,
-          _tokens[_i]
+          _token
         );
 
-      {
-        // Keep a reference to the number of distribution limits.
-        uint256 _numberOfDistributionLimits = _distributionLimits.length;
+      // Keep a reference to the distribution limit being iterated on.
+      JBCurrencyAmount memory _distributionLimit;
 
-        // Keep a reference to the distribution limit being iterated on.
-        JBCurrencyAmount memory _distributionLimit;
+      // Loop through each distribution limit to determine the cumulative normalized distribution limit remaining.
+      for (uint256 _j; _j < _distributionLimits.length; ) {
+        // Set the distribution limit being iterated on.
+        _distributionLimit = _distributionLimits[_j];
 
-        // Loop through each distribution limit to determine the cumulative normalized distribution limit remaining.
-        for (uint256 _j; _j < _numberOfDistributionLimits; ) {
-          // Set the distribution limit being iterated on.
-          _distributionLimit = _distributionLimits[_j];
+        // Set the distribution limit value to the amount still distributable during the funding cycle.
+        _distributionLimit.value =
+          _distributionLimit.value -
+          usedDistributionLimitOf[_terminal][_projectId][_token][_fundingCycle.number][
+            _distributionLimit.currency
+          ];
 
-          // Get a reference to the amount still distributable during the funding cycle.
-          uint256 _distributionLimitRemaining = _distributionLimit.value -
-            usedDistributionLimitOf[_terminal][_projectId][_tokens[_i]][_fundingCycle.number][
-              _distributionLimit.currency
-            ];
+        // Convert the _distributionRemaining to be in terms of the provided currency.
+        _normalizedDistributionLimitsRemaining += (_distributionLimit.value == 0 ||
+          _distributionLimit.currency == _currency)
+          ? _distributionLimit.value
+          : PRBMath.mulDiv(
+            _distributionLimit.value,
+            10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
+            prices.priceFor(
+              _projectId,
+              _distributionLimit.currency,
+              _currency,
+              _MAX_FIXED_POINT_FIDELITY
+            )
+          );
 
-          // Convert the _distributionRemaining to be in terms of the provided currency.
-          _normalizedDistributionLimitsRemaining += (_distributionLimitRemaining == 0 ||
-            _distributionLimit.currency == _balanceCurrency)
-            ? _distributionLimitRemaining
-            : PRBMath.mulDiv(
-              _distributionLimitRemaining,
-              10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-              prices.priceFor(
-                _projectId,
-                _distributionLimit.currency,
-                _balanceCurrency,
-                _MAX_FIXED_POINT_FIDELITY
-              )
-            );
-
-          unchecked {
-            ++_j;
-          }
+        unchecked {
+          ++_j;
         }
       }
-
-      // Increment the total balance of tokens.
-      _balanceOf += balanceOf[_terminal][_projectId][_tokens[_i]];
 
       unchecked {
         ++_i;
@@ -816,8 +826,8 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     // Overflow is the balance of this project minus the amount that can still be distributed.
     unchecked {
       return
-        _balanceOf > _normalizedDistributionLimitsRemaining
-          ? _balanceOf - _normalizedDistributionLimitsRemaining
+        overflow > _normalizedDistributionLimitsRemaining
+          ? overflow - _normalizedDistributionLimitsRemaining
           : 0;
     }
   }

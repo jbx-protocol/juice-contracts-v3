@@ -627,147 +627,152 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       // Keep a reference to the fee.
       uint256 _feePercent;
 
-      // Get the terminal for the protocol project.
-      IJBPaymentTerminal _feeTerminal = directory.primaryTerminalOf(
-        _FEE_BENEFICIARY_PROJECT_ID,
-        token
-      );
-
-      // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
       {
         JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
+        // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
+        {
+          address[] memory _tokens = new address[](1);
+          _tokens[0] = token;
 
-        address[] memory _tokens = new address[](1);
-        _tokens[0] = token;
-
-        // Record the redemption.
-        (
-          _fundingCycle,
-          reclaimAmount,
-          _delegateAllocations,
-          _memo
-        ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
-          _holder,
-          _projectId,
-          _tokens,
-          _tokenCount,
-          _memo,
-          _metadata
-        );
-
-        // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
-        _feePercent = isFeelessAddress[_beneficiary] ||
-          _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
-          _feeTerminal == IJBPaymentTerminal(address(0))
-          ? 0
-          : fee;
-
-        // The amount being reclaimed must be at least as much as was expected.
-        if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
-
-        // Burn the project tokens.
-        if (_tokenCount != 0)
-          IJBController3_1(directory.controllerOf(_projectId)).burnTokensOf(
+          // Record the redemption.
+          (
+            _fundingCycle,
+            reclaimAmount,
+            _delegateAllocations,
+            _memo
+          ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
             _holder,
             _projectId,
+            _tokens,
             _tokenCount,
-            '',
-            false
-          );
-
-        // If delegate allocations were specified by the data source, fulfill them.
-        if (_delegateAllocations.length != 0) {
-          JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
-            _holder,
-            _projectId,
-            _fundingCycle.configuration,
-            _tokenCount,
-            JBTokenAmount(token, reclaimAmount, decimals, currency),
-            JBTokenAmount(token, 0, decimals, currency),
-            _fundingCycle.redemptionRate(),
-            _beneficiary,
             _memo,
-            bytes(''),
             _metadata
           );
+        }
 
-          // Keep a reference to the allocation.
-          JBRedemptionDelegateAllocation3_1_1 memory _delegateAllocation;
+        // Get the terminal for the protocol project.
+        IJBPaymentTerminal _feeTerminal = directory.primaryTerminalOf(
+          _FEE_BENEFICIARY_PROJECT_ID,
+          token
+        );
 
-          // Keep a reference to the fee.
-          uint256 _delegatedAmountFee;
+        {
+          // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
+          _feePercent = isFeelessAddress[_beneficiary] ||
+            _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ||
+            _feeTerminal == IJBPaymentTerminal(address(0))
+            ? 0
+            : fee;
 
-          // Keep a reference to the number of allocations.
-          uint256 _numDelegates = _delegateAllocations.length;
+          // The amount being reclaimed must be at least as much as was expected.
+          if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
 
-          for (uint256 _i; _i < _numDelegates; ) {
-            // Get a reference to the delegate being iterated on.
-            _delegateAllocation = _delegateAllocations[_i];
-
-            // Get the fee for the delegated amount.
-            _delegatedAmountFee = _feePercent == 0
-              ? 0
-              : JBFees.feeIn(_delegateAllocation.amount, _feePercent);
-
-            // Add the delegated amount to the amount eligible for having a fee taken.
-            if (_delegatedAmountFee != 0) {
-              _feeEligibleDistributionAmount += _delegateAllocation.amount;
-              _delegateAllocation.amount -= _delegatedAmountFee;
-            }
-
-            // Trigger any inherited pre-transfer logic.
-            _beforeTransferTo(address(_delegateAllocation.delegate), _delegateAllocation.amount);
-
-            // Pass the correct token forwardedAmount to the delegate
-            _data.forwardedAmount.value = _delegateAllocation.amount;
-
-            // Pass the correct metadata from the data source.
-            _data.dataSourceMetadata = _delegateAllocation.metadata;
-
-            _delegateAllocation.delegate.didRedeem{
-              value: token == JBTokens.ETH ? _delegateAllocation.amount : 0
-            }(_data);
-
-            emit DelegateDidRedeem(
-              _delegateAllocation.delegate,
-              _data,
-              _delegateAllocation.amount,
-              _delegatedAmountFee,
-              msg.sender
+          // Burn the project tokens.
+          if (_tokenCount != 0)
+            IJBController3_1(directory.controllerOf(_projectId)).burnTokensOf(
+              _holder,
+              _projectId,
+              _tokenCount,
+              '',
+              false
             );
 
-            unchecked {
-              ++_i;
+          // If delegate allocations were specified by the data source, fulfill them.
+          if (_delegateAllocations.length != 0) {
+            JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
+              _holder,
+              _projectId,
+              _fundingCycle.configuration,
+              _tokenCount,
+              JBTokenAmount(token, reclaimAmount, decimals, currency),
+              JBTokenAmount(token, 0, decimals, currency),
+              _fundingCycle.redemptionRate(),
+              _beneficiary,
+              _memo,
+              bytes(''),
+              _metadata
+            );
+
+            // Keep a reference to the allocation.
+            JBRedemptionDelegateAllocation3_1_1 memory _delegateAllocation;
+
+            // Keep a reference to the fee.
+            uint256 _delegatedAmountFee;
+
+            // Keep a reference to the number of allocations.
+            uint256 _numDelegates = _delegateAllocations.length;
+
+            for (uint256 _i; _i < _numDelegates; ) {
+              // Get a reference to the delegate being iterated on.
+              _delegateAllocation = _delegateAllocations[_i];
+
+              // Get the fee for the delegated amount.
+              _delegatedAmountFee = _feePercent == 0
+                ? 0
+                : JBFees.feeIn(_delegateAllocation.amount, _feePercent);
+
+              // Add the delegated amount to the amount eligible for having a fee taken.
+              if (_delegatedAmountFee != 0) {
+                _feeEligibleDistributionAmount += _delegateAllocation.amount;
+                _delegateAllocation.amount -= _delegatedAmountFee;
+              }
+
+              // Trigger any inherited pre-transfer logic.
+              _beforeTransferTo(address(_delegateAllocation.delegate), _delegateAllocation.amount);
+
+              // Pass the correct token forwardedAmount to the delegate
+              _data.forwardedAmount.value = _delegateAllocation.amount;
+
+              // Pass the correct metadata from the data source.
+              _data.dataSourceMetadata = _delegateAllocation.metadata;
+
+              _delegateAllocation.delegate.didRedeem{
+                value: token == JBTokens.ETH ? _delegateAllocation.amount : 0
+              }(_data);
+
+              emit DelegateDidRedeem(
+                _delegateAllocation.delegate,
+                _data,
+                _delegateAllocation.amount,
+                _delegatedAmountFee,
+                msg.sender
+              );
+
+              unchecked {
+                ++_i;
+              }
             }
           }
         }
-      }
 
-      // Send the reclaimed funds to the beneficiary.
-      if (reclaimAmount != 0) {
-        // Get the fee for the reclaimed amount.
-        uint256 _reclaimAmountFee = _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
+        // Send the reclaimed funds to the beneficiary.
+        if (reclaimAmount != 0) {
+          // Get the fee for the reclaimed amount.
+          uint256 _reclaimAmountFee = _feePercent == 0
+            ? 0
+            : JBFees.feeIn(reclaimAmount, _feePercent);
 
-        if (_reclaimAmountFee != 0) {
-          _feeEligibleDistributionAmount += reclaimAmount;
-          reclaimAmount -= _reclaimAmountFee;
+          if (_reclaimAmountFee != 0) {
+            _feeEligibleDistributionAmount += reclaimAmount;
+            reclaimAmount -= _reclaimAmountFee;
+          }
+
+          // Subtract the fee from the reclaim amount.
+          if (reclaimAmount != 0) _transferFrom(address(this), _beneficiary, reclaimAmount);
         }
 
-        // Subtract the fee from the reclaim amount.
-        if (reclaimAmount != 0) _transferFrom(address(this), _beneficiary, reclaimAmount);
+        // Take the fee from all outbound reclaimations.
+        _feeEligibleDistributionAmount != 0
+          ? _takeFeeFrom(
+            _projectId,
+            false,
+            _feeEligibleDistributionAmount,
+            _feePercent,
+            _beneficiary,
+            _feeTerminal
+          )
+          : 0;
       }
-
-      // Take the fee from all outbound reclaimations.
-      _feeEligibleDistributionAmount != 0
-        ? _takeFeeFrom(
-          _projectId,
-          false,
-          _feeEligibleDistributionAmount,
-          _feePercent,
-          _beneficiary,
-          _feeTerminal
-        )
-        : 0;
     }
 
     emit RedeemTokens(
