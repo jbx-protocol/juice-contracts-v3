@@ -30,7 +30,7 @@ interface IJBPrices {
   ) external view returns (uint256);
 
   function addFeedFor(
-    uint256 _projectId,
+    uint256 projectId,
     uint256 currency,
     uint256 base,
     IJBPriceFeed priceFeed
