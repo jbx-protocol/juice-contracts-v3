@@ -79,6 +79,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
   /// @custom:param _terminal The terminal to which the balance applies.
   /// @custom:param _projectId The ID of the project to get the balance of.
   /// @custom:param _token The token to which the balance applies.
+  /// @custom:param _token The token to which the balance applies.
   mapping(IJBPaymentTerminal => mapping(uint256 => mapping(address => uint256)))
     public
     override balanceOf;
