@@ -125,11 +125,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
   function currentEthOverflowOf(
     uint256 _projectId
   ) external view virtual override returns (uint256) {
+    address[] memory _tokens = new address[](1);
+    _tokens[0] = token;
+
     // Get this terminal's current overflow.
     uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
       this,
       _projectId,
-      token
+      _tokens,
+      currency
     );
 
     // Adjust the decimals of the fixed point number if needed to have 18 decimals.
@@ -356,7 +360,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     if (!_to.acceptsToken(token, _projectId)) revert TERMINAL_TOKENS_INCOMPATIBLE();
 
     // Record the migration in the store.
-    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId);
+    balance = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordMigration(_projectId, token);
 
     // Transfer the balance if needed.
     if (balance != 0) {
@@ -633,6 +637,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       {
         JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
 
+        address[] memory _tokens = new address[](1);
+        _tokens[0] = token;
+
         // Record the redemption.
         (
           _fundingCycle,
@@ -642,7 +649,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
           _holder,
           _projectId,
-          token,
+          _tokens,
           _tokenCount,
           _memo,
           _metadata
@@ -912,16 +919,15 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     string memory _memo,
     bytes calldata _metadata
   ) internal returns (uint256 netDistributedAmount) {
-    // Record the use of the allowance.
-    (
-      JBFundingCycle memory _fundingCycle,
-      uint256 _distributedAmount
-    ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
-        _projectId,
-        token,
-        _amount,
-        _currency
-      );
+    JBFundingCycle memory _fundingCycle;
+    uint256 _distributedAmount;
+    {
+      address[] memory _tokens = new address[](1);
+      _tokens[0] = token;
+      // Record the use of the allowance.
+      (_fundingCycle, _distributedAmount) = IJBSingleTokenPaymentTerminalStore3_1_1(store)
+        .recordUsedAllowanceOf(_projectId, _tokens, _amount, _currency);
+    }
 
     // The amount being withdrawn must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
@@ -1297,6 +1303,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     // Add undistributed amount back to project's balance.
     IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
       _projectId,
+      token,
       _depositAmount
     );
   }
@@ -1453,6 +1460,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     // Record the added funds with any refunded fees.
     IJBSingleTokenPaymentTerminalStore3_1_1(store).recordAddedBalanceFor(
       _projectId,
+      token,
       _amount + _refundedFees
     );
 

@@ -19,12 +19,14 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
 
   function balanceOf(
     IJBPaymentTerminal terminal,
-    uint256 projectId
+    uint256 projectId,
+    address token
   ) external view returns (uint256);
 
   function usedDistributionLimitOf(
     IJBPaymentTerminal terminal,
     uint256 projectId,
+    address token,
     uint256 fundingCycleNumber,
     uint256 currency
   ) external view returns (uint256);
@@ -32,6 +34,7 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function usedOverflowAllowanceOf(
     IJBPaymentTerminal terminal,
     uint256 projectId,
+    address token,
     uint256 fundingCycleConfiguration,
     uint256 currency
   ) external view returns (uint256);
@@ -39,7 +42,8 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function currentOverflowOf(
     IJBPaymentTerminal terminal,
     uint256 projectId,
-    address token
+    address[] calldata tokens,
+    uint256 currency
   ) external view returns (uint256);
 
   function currentTotalOverflowOf(
@@ -51,7 +55,9 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function currentReclaimableOverflowOf(
     IJBPaymentTerminal terminal,
     uint256 projectId,
-    address token,
+    address[] calldata tokens,
+    uint256 _decimals,
+    uint256 _currency,
     uint256 tokenCount,
     bool useTotalOverflow
   ) external view returns (uint256);
@@ -82,7 +88,7 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function recordRedemptionFor(
     address holder,
     uint256 projectId,
-    address token,
+    address[] memory _tokens,
     uint256 tokenCount,
     string calldata inputMemo,
     bytes calldata metadata
@@ -104,12 +110,12 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
 
   function recordUsedAllowanceOf(
     uint256 projectId,
-    address token,
+    address[] calldata tokens,
     uint256 amount,
     uint256 currency
   ) external returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);
 
-  function recordAddedBalanceFor(uint256 projectId, uint256 amount) external;
+  function recordAddedBalanceFor(uint256 projectId, address token, uint256 amount) external;
 
-  function recordMigration(uint256 projectId) external returns (uint256 balance);
+  function recordMigration(uint256 projectId, address token) external returns (uint256 balance);
 }
