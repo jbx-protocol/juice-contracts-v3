@@ -8,7 +8,7 @@ import {JBTokenAmount} from './../structs/JBTokenAmount.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';
 import {IJBPrices} from './IJBPrices.sol';
-import {IJBSingleTokenPaymentTerminal} from './IJBSingleTokenPaymentTerminal.sol';
+import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 
 interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function fundingCycleStore() external view returns (IJBFundingCycleStore);
@@ -18,27 +18,28 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function prices() external view returns (IJBPrices);
 
   function balanceOf(
-    IJBSingleTokenPaymentTerminal terminal,
+    IJBPaymentTerminal terminal,
     uint256 projectId
   ) external view returns (uint256);
 
   function usedDistributionLimitOf(
-    IJBSingleTokenPaymentTerminal terminal,
+    IJBPaymentTerminal terminal,
     uint256 projectId,
     uint256 fundingCycleNumber,
     uint256 currency
   ) external view returns (uint256);
 
   function usedOverflowAllowanceOf(
-    IJBSingleTokenPaymentTerminal terminal,
+    IJBPaymentTerminal terminal,
     uint256 projectId,
     uint256 fundingCycleConfiguration,
     uint256 currency
   ) external view returns (uint256);
 
   function currentOverflowOf(
-    IJBSingleTokenPaymentTerminal terminal,
-    uint256 projectId
+    IJBPaymentTerminal terminal,
+    uint256 projectId,
+    address token
   ) external view returns (uint256);
 
   function currentTotalOverflowOf(
@@ -48,8 +49,9 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   ) external view returns (uint256);
 
   function currentReclaimableOverflowOf(
-    IJBSingleTokenPaymentTerminal terminal,
+    IJBPaymentTerminal terminal,
     uint256 projectId,
+    address token,
     uint256 tokenCount,
     bool useTotalOverflow
   ) external view returns (uint256);
@@ -80,6 +82,7 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
   function recordRedemptionFor(
     address holder,
     uint256 projectId,
+    address token,
     uint256 tokenCount,
     string calldata inputMemo,
     bytes calldata metadata
@@ -94,12 +97,14 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
 
   function recordDistributionFor(
     uint256 projectId,
+    address token,
     uint256 amount,
     uint256 currency
   ) external returns (JBFundingCycle memory fundingCycle, uint256 distributedAmount);
 
   function recordUsedAllowanceOf(
     uint256 projectId,
+    address token,
     uint256 amount,
     uint256 currency
   ) external returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);

@@ -128,7 +128,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     // Get this terminal's current overflow.
     uint256 _overflow = IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(
       this,
-      _projectId
+      _projectId,
+      token
     );
 
     // Adjust the decimals of the fixed point number if needed to have 18 decimals.
@@ -641,6 +642,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordRedemptionFor(
           _holder,
           _projectId,
+          token,
           _tokenCount,
           _memo,
           _metadata
@@ -798,6 +800,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       uint256 _distributedAmount
     ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordDistributionFor(
         _projectId,
+        token,
         _amount,
         _currency
       );
@@ -915,6 +918,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
       uint256 _distributedAmount
     ) = IJBSingleTokenPaymentTerminalStore3_1_1(store).recordUsedAllowanceOf(
         _projectId,
+        token,
         _amount,
         _currency
       );

@@ -194,7 +194,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         vm.prank(address(_terminal3_2));
         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
         // add 10000 to make up for the fidelity difference in prices. (0.0005/1)
-        _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, _usdDistributableAmount + 10000, _usdCurrency);
+        _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, IJBSingleTokenPaymentTerminal(address(_terminal3_2)).token(), _usdDistributableAmount + 10000, _usdCurrency);
 
         // Should succeed with _distributableAmount
         _terminal3_2.distributePayoutsOf({
@@ -224,7 +224,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
         vm.prank(address(_terminal3_2));
         vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
-        _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, 1, _ethCurrency);
+        _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, IJBSingleTokenPaymentTerminal(address(_terminal3_2)).token(), 1, _ethCurrency);
 
         // But distribution via USD limit will succeed 
         _terminal3_2.distributePayoutsOf({
