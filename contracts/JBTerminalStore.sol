@@ -335,14 +335,16 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // If there's no weight, token count must be 0 so there's nothing left to do.
     if (_weight == 0) return (fundingCycle, 0, delegateAllocations);
 
-    // Get a reference to the number of decimals in the amount. (prevents stack too deep).
-    uint256 _decimals = _amount.decimals;
-
     // If the terminal should base its weight on a different currency from the terminal's currency, determine the factor.
     // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
     uint256 _weightRatio = _amount.currency == fundingCycle.baseCurrency()
-      ? 10 ** _decimals
-      : prices.priceFor(_projectId, _amount.currency, fundingCycle.baseCurrency(), _decimals);
+      ? 10 ** _amount.decimals
+      : prices.priceFor(
+        _projectId,
+        _amount.currency,
+        fundingCycle.baseCurrency(),
+        _amount.decimals
+      );
 
     // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
     tokenCount = PRBMath.mulDiv(_amount.value, _weight, _weightRatio);

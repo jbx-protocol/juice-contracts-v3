@@ -11,11 +11,11 @@ import {MockPriceFeed} from './mock/MockPriceFeed.sol';
 /// Each of these incurs protocol fees if the project with ID #1 accepts the token being accessed.
 contract TestAccessToFunds_Local is TestBaseWorkflow {
     uint256 private constant _FEE_PROJECT_ID = 1; 
-    uint8 private constant _WEIGHT_DECIMALS = 18; 
-    uint8 private constant _ETH_DECIMALS = 18; 
+    uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED 
+    uint8 private constant _ETH_DECIMALS = 17;
     uint8 private constant _USDC_DECIMALS = 6; 
     uint8 private constant _PRICE_FEED_DECIMALS = 10; 
-    uint256 private constant _USDC_PRICE_PER_ETH = 2000 * 10**18; // 2000 USDC == 1 ETH
+    uint256 private constant _USDC_PRICE_PER_ETH = 2000 * 10**_PRICE_FEED_DECIMALS; // 2000 USDC == 1 ETH
     
     IJBController3_1 private _controller;
     IJBPrices private _prices;
@@ -170,7 +170,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }); 
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
@@ -198,7 +198,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance);
 
         // Make sure the project owner got the expected number of tokens.
-        assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv(_ethOverflowAllowance - _beneficiaryBalance, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+        assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv(_ethOverflowAllowance - _beneficiaryBalance, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
         _terminal.distributePayoutsOf({
@@ -220,7 +220,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
 
         // Make sure the project owner got the expected number of tokens.
-        assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv((_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance), _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+        assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv((_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance), _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
 
         // Redeem ETH from the overflow using all of the _beneficiary's tokens.
         vm.prank(_beneficiary);
@@ -239,12 +239,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Get the expected amount reclaimed.
         uint256 _reclaimAmount = (PRBMath.mulDiv(
-            PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS)),
+            PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS)),
             _metadata.redemptionRate +
             PRBMath.mulDiv(
                 _beneficiaryTokenBalance,
                 JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS)
+                PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS)
             ),
             JBConstants.MAX_REDEMPTION_RATE
         ));
@@ -258,7 +258,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
 
         // Make sure the project owner got the expected number of tokens from the fee.
-        assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+        assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
     }
 
     function testFuzzETHAllowance(uint232 _ethOverflowAllowance, uint232 _ethDistributionLimit, uint256 _ethPayAmount) public {
@@ -354,7 +354,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
@@ -395,7 +395,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance);
 
             // Make sure the beneficiary got the expected number of tokens.
-            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv(_ethOverflowAllowance - _beneficiaryBalance, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv(_ethOverflowAllowance - _beneficiaryBalance, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
         } else {
             // Set the eth overflow allowance value to 0 if it wasnt used.
             _ethOverflowAllowance = 0;
@@ -433,7 +433,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
 
             // Make sure the project owner got the expected number of tokens.
-            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv((_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance), _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv((_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance), _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
         }
 
         // Redeem ETH from the overflow using all of the _beneficiary's tokens.
@@ -455,7 +455,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         if (_ethPayAmount > _ethOverflowAllowance + _ethDistributionLimit) {
             // Get the expected amount reclaimed.
             uint256 _reclaimAmount = (PRBMath.mulDiv(
-                PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)),
+                PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS)),
                 _metadata.redemptionRate +
                 PRBMath.mulDiv(
                     _beneficiaryTokenBalance,
@@ -473,7 +473,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
 
             // Make sure the project owner got the expected number of tokens from the fee.
-            assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
         }
     }
 
@@ -571,7 +571,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
@@ -674,12 +674,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         if (_ethPayAmount > _ethOverflowAllowance + _ethDistributionLimit) {
             // Get the expected amount reclaimed.
             uint256 _reclaimAmount = (PRBMath.mulDiv(
-                PRBMath.mulDiv(_ethPayAmount - _beneficiaryBalance - _projectOwnerBalance, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS)),
+                PRBMath.mulDiv(_ethPayAmount - _beneficiaryBalance - _projectOwnerBalance, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS)),
                 _metadata.redemptionRate +
                 PRBMath.mulDiv(
                     _beneficiaryTokenBalance,
                     JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                    PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS)
+                    PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS)
                 ),
                 JBConstants.MAX_REDEMPTION_RATE
             ));
@@ -774,7 +774,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
@@ -812,7 +812,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance);
 
             // Make sure the beneficiary got the expected number of tokens.
-            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv(_ethOverflowAllowance - _beneficiaryBalance, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv(_ethOverflowAllowance - _beneficiaryBalance, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
         } else {
             // Set the eth overflow allowance value to 0 if it wasnt used.
             _ethOverflowAllowance = 0;
@@ -847,7 +847,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
 
             // Make sure the project owner got the expected number of tokens.
-            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv((_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance), _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), PRBMath.mulDiv((_ethOverflowAllowance - _beneficiaryBalance) + (_ethDistributionLimit - _projectOwnerBalance), _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
         }
 
         // Redeem ETH from the overflow using all of the _beneficiary's tokens.
@@ -870,12 +870,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Get the expected amount reclaimed.
             uint256 _reclaimAmount = (PRBMath.mulDiv(
-                PRBMath.mulDiv(_ethPayAmount - _beneficiaryBalance - _projectOwnerBalance, _beneficiaryTokenBalance, PRBMath.mulDiv(_totalPaid, _data.weight, 10 ** _WEIGHT_DECIMALS)),
+                PRBMath.mulDiv(_ethPayAmount - _beneficiaryBalance - _projectOwnerBalance, _beneficiaryTokenBalance, PRBMath.mulDiv(_totalPaid, _data.weight, 10 ** _ETH_DECIMALS)),
                 _metadata.redemptionRate +
                 PRBMath.mulDiv(
                     _beneficiaryTokenBalance,
                     JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                    PRBMath.mulDiv(_totalPaid, _data.weight, 10 ** _WEIGHT_DECIMALS)
+                    PRBMath.mulDiv(_totalPaid, _data.weight, 10 ** _ETH_DECIMALS)
                 ),
                 JBConstants.MAX_REDEMPTION_RATE
             ));
@@ -883,7 +883,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             uint256 _feeAmount = _reclaimAmount - _reclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
 
             // Make sure the beneficiary has token from the fee just paid.
-            assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** _WEIGHT_DECIMALS ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** _ETH_DECIMALS ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
 
             // Make sure the beneficiary received the funds.
             assertEq(_beneficiary.balance, _beneficiaryBalance + _reclaimAmount - _feeAmount);
@@ -1034,6 +1034,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             metadata: new bytes(0)
         });
 
+        // Make sure the beneficiary got the expected number of tokens from the ETH payment.
+        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _ETH_DECIMALS), JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate, JBConstants.MAX_RESERVED_RATE);
+        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+
         // Deal usdc to this contract.
         _usdcToken.mint(address(this), _usdcPayAmount);
 
@@ -1050,9 +1054,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             metadata: new bytes(0)
         });
 
-        // // Make sure the beneficiary got the expected number of tokens.
-        // uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _WEIGHT_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
-        // assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+        {
+            // Convert the usd amount to an eth amount, byway of the current weight used for issuance.
+            uint256 _usdWeightedPayAmountConvertedToEth = PRBMath.mulDiv(_usdcPayAmount, _data.weight, PRBMath.mulDiv(_USDC_PRICE_PER_ETH, 10**_USDC_DECIMALS, 10**_PRICE_FEED_DECIMALS));
+
+            // Make sure the beneficiary got the expected number of tokens from the USDC payment.
+            _beneficiaryTokenBalance += PRBMath.mulDiv(_usdWeightedPayAmountConvertedToEth, JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate, JBConstants.MAX_RESERVED_RATE);
+            assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+        }
 
         // // Make sure the terminal holds the full ETH balance.
         // assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount);
@@ -1152,7 +1161,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // if (_ethPayAmount > _ethOverflowAllowance + _ethDistributionLimit) {
         //     // Get the expected amount reclaimed.
         //     uint256 _reclaimAmount = (PRBMath.mulDiv(
-        //         PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)),
+        //         PRBMath.mulDiv(_ethPayAmount - _ethOverflowAllowance - _ethDistributionLimit, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** _DATA_WEIGHT)),
         //         _metadata.redemptionRate +
         //         PRBMath.mulDiv(
         //             _beneficiaryTokenBalance,
