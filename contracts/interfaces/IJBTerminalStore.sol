@@ -10,7 +10,7 @@ import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';
 import {IJBPrices} from './IJBPrices.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 
-interface IJBSingleTokenPaymentTerminalStore3_1_1 {
+interface IJBTerminalStore {
   function fundingCycleStore() external view returns (IJBFundingCycleStore);
 
   function directory() external view returns (IJBDirectory);

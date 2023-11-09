@@ -14,8 +14,8 @@ interface IJBPaymentTerminal is IERC165 {
 
   function pay(
     uint256 projectId,
-    uint256 amount,
     address token,
+    uint256 amount,
     address beneficiary,
     uint256 minReturnedTokens,
     bytes calldata metadata
@@ -23,8 +23,8 @@ interface IJBPaymentTerminal is IERC165 {
 
   function addToBalanceOf(
     uint256 projectId,
-    uint256 amount,
     address token,
+    uint256 amount,
     bool shouldRefundHeldFees,
     bytes calldata metadata
   ) external payable;

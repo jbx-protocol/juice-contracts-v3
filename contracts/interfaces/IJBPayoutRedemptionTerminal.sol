@@ -12,11 +12,12 @@ import {IJBProjects} from './IJBProjects.sol';
 import {IJBRedemptionDelegate3_1_1} from './IJBRedemptionDelegate3_1_1.sol';
 import {IJBRedemptionTerminal} from './IJBRedemptionTerminal.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
+import {IJBTerminalStore} from './IJBTerminalStore.sol';
 import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 
-interface IJBPayoutRedemptionPaymentTerminal3_1 is
+interface IJBPayoutRedemptionTerminal is
   IJBPaymentTerminal,
   IJBPayoutTerminal3_1,
   IJBAllowanceTerminal3_1,
@@ -154,17 +155,13 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     address caller
   );
 
-  function projects() external view returns (IJBProjects);
+  function PROJECTS() external view returns (IJBProjects);
 
-  function splitsStore() external view returns (IJBSplitsStore);
+  function SPLITS() external view returns (IJBSplitsStore);
 
-  function directory() external view returns (IJBDirectory);
+  function DIRECTORY() external view returns (IJBDirectory);
 
-  function prices() external view returns (IJBPrices);
-
-  function store() external view returns (address);
-
-  function payoutSplitsGroup() external view returns (uint256);
+  function STORE() external view returns (IJBTerminalStore);
 
   function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
 

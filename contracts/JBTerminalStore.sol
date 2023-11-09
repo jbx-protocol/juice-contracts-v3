@@ -13,7 +13,7 @@ import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
-import {IJBSingleTokenPaymentTerminalStore3_1_1} from './interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol';
+import {IJBTerminalStore} from './interfaces/IJBTerminalStore.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
 import {JBCurrencies} from './libraries/JBCurrencies.sol';
 import {JBFixedPointNumber} from './libraries/JBFixedPointNumber.sol';
@@ -29,10 +29,7 @@ import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 
 /// @notice Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
 /// @dev This Store expects a project's controller to be an IJBController3_1.
-contract JBSingleTokenPaymentTerminalStore3_1_1 is
-  ReentrancyGuard,
-  IJBSingleTokenPaymentTerminalStore3_1_1
-{
+contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
 
