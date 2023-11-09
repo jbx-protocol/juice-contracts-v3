@@ -60,6 +60,7 @@ import {IJBSplitAllocator} from '@juicebox/interfaces/IJBSplitAllocator.sol';
 import {IJBPayDelegate3_1_1} from '@juicebox/interfaces/IJBPayDelegate3_1_1.sol';
 import {IJBFundingCycleDataSource3_1_1} from '@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol';
 import {IJBPayoutRedemptionTerminal} from '@juicebox/interfaces/IJBPayoutRedemptionTerminal.sol';
+import {IJBPriceFeed} from '@juicebox/interfaces/IJBPriceFeed.sol';
 import {IJBProjectPayer} from '@juicebox/interfaces/IJBProjectPayer.sol';
 import {IJBOperatable} from '@juicebox/interfaces/IJBOperatable.sol';
 import {IJBAllowanceTerminal3_1} from '@juicebox/interfaces/IJBAllowanceTerminal3_1.sol';
@@ -67,7 +68,6 @@ import {IJBPayoutTerminal3_1} from '@juicebox/interfaces/IJBPayoutTerminal3_1.so
 import {IJBRedemptionTerminal} from '@juicebox/interfaces/IJBRedemptionTerminal.sol';
 import {IJBFundingCycleBallot} from '@juicebox/interfaces/IJBFundingCycleBallot.sol';
 import {IJBPrices} from '@juicebox/interfaces/IJBPrices.sol';
-import {IJBPriceFeed} from '@juicebox/interfaces/IJBPriceFeed.sol';
 import {IJBSplitsPayer} from '@juicebox/interfaces/IJBSplitsPayer.sol';
 
 import {JBTokens} from '@juicebox/libraries/JBTokens.sol';
@@ -80,6 +80,7 @@ import {JBOperations} from '@juicebox/libraries/JBOperations.sol';
 import {IPermit2, IAllowanceTransfer} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {DeployPermit2} from '@permit2/src/test/utils/DeployPermit2.sol';
 
+import {MockERC20} from './../mock/MockERC20.sol';
 // import './AccessJBLib.sol';
 
 import '@paulrberg/contracts/math/PRBMath.sol';
@@ -91,7 +92,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   // Multisig address used for testing.
   address private _multisig = address(123);
   address private _beneficiary = address(69420);
-
+  MockERC20 private _usdcToken;
   //   address private _permit2;
   JBOperatorStore private _jbOperatorStore;
   JBProjects private _jbProjects;
@@ -112,6 +113,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
   function beneficiary() internal view returns (address) {
     return _beneficiary;
+  }
+
+  function usdcToken() internal view returns (MockERC20) {
+    return _usdcToken;
   }
 
   function jbOperatorStore() internal view returns (JBOperatorStore) {
@@ -168,11 +173,13 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     vm.label(_beneficiary, 'beneficiary');
     _jbOperatorStore = new JBOperatorStore();
     vm.label(address(_jbOperatorStore), 'JBOperatorStore');
+    _usdcToken = new MockERC20('USDC', 'USDC');
+    vm.label(address(_usdcToken), 'ERC20');
     _jbProjects = new JBProjects(_jbOperatorStore);
     vm.label(address(_jbProjects), 'JBProjects');
     _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
     vm.label(address(_jbPrices), 'JBPrices');
-    address contractAtNoncePlusOne = addressFrom(address(this), 5);
+    address contractAtNoncePlusOne = addressFrom(address(this), 6);
     _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(contractAtNoncePlusOne));
     vm.label(address(_jbFundingCycleStore), 'JBFundingCycleStore');
     _jbDirectory = new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
