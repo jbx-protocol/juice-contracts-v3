@@ -10,7 +10,6 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member reclaimedAmount The amount reclaimed from the treasury. Includes the token being reclaimed, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member forwardedAmount The amount of the payment that is being sent to the delegate. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member beneficiary The address to which the reclaimed amount will be sent.
-/// @custom:member memo The memo that is being emitted alongside the redemption.
 /// @custom:member metadata Extra data to send to the delegate.
 struct JBDidRedeemData {
   address holder;
@@ -20,6 +19,5 @@ struct JBDidRedeemData {
   JBTokenAmount reclaimedAmount;
   JBTokenAmount forwardedAmount;
   address payable beneficiary;
-  string memo;
   bytes metadata;
 }

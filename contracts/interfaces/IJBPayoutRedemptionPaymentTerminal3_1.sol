@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {JBFee} from './../structs/JBFee.sol';
 import {IJBAllowanceTerminal3_1} from './IJBAllowanceTerminal3_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
-import {IJBFeeHoldingTerminal} from './IJBFeeHoldingTerminal.sol';
 import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 import {IJBPayoutTerminal3_1} from './IJBPayoutTerminal3_1.sol';
@@ -21,14 +20,12 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
   IJBPaymentTerminal,
   IJBPayoutTerminal3_1,
   IJBAllowanceTerminal3_1,
-  IJBRedemptionTerminal,
-  IJBFeeHoldingTerminal
+  IJBRedemptionTerminal
 {
   event AddToBalance(
     uint256 indexed projectId,
     uint256 amount,
     uint256 refundedFees,
-    string memo,
     bytes metadata,
     address caller
   );
@@ -49,7 +46,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     uint256 distributedAmount,
     uint256 fee,
     uint256 beneficiaryDistributionAmount,
-    bytes metadata,
     address caller
   );
 
@@ -62,7 +58,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     uint256 distributedAmount,
     uint256 netDistributedamount,
     string memo,
-    bytes metadata,
     address caller
   );
 
@@ -98,7 +93,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     address beneficiary,
     uint256 amount,
     uint256 beneficiaryTokenCount,
-    string memo,
     bytes metadata,
     address caller
   );
@@ -111,7 +105,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     address beneficiary,
     uint256 tokenCount,
     uint256 reclaimedAmount,
-    string memo,
     bytes metadata,
     address caller
   );
@@ -127,8 +120,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
   );
 
   event SetFee(uint256 fee, address caller);
-
-  // event SetFeeGauge(address indexed feeGauge, address caller);
 
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
@@ -181,9 +172,13 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
   function isFeelessAddress(address account) external view returns (bool);
 
-  function migrate(uint256 projectId, IJBPaymentTerminal to) external returns (uint256 balance);
+  function migrate(
+    uint256 projectId,
+    address token,
+    IJBPaymentTerminal to
+  ) external returns (uint256 balance);
 
-  function processFees(uint256 projectId) external;
+  function processFees(uint256 projectId, address token) external;
 
   function setFee(uint256 fee) external;
 

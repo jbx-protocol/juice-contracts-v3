@@ -57,8 +57,6 @@ interface IJBProjectPayer is IERC165 {
     uint256 decimals,
     address beneficiary,
     uint256 minReturnedTokens,
-    bool preferClaimedTokens,
-    string memory memo,
     bytes memory metadata
   ) external payable;
 
@@ -67,7 +65,7 @@ interface IJBProjectPayer is IERC165 {
     address token,
     uint256 amount,
     uint256 decimals,
-    string memory memo,
+    bool shouldRefundHeldFees,
     bytes memory metadata
   ) external payable;
 

@@ -134,7 +134,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
           JBTokens.ETH,
           _leftoverAmount,
           18, // decimals.
-          defaultMemo,
+          false,
           defaultMetadata
         );
         // Otherwise, issue a payment to the project.
@@ -146,8 +146,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
           18, // decimals.
           defaultBeneficiary != address(0) ? defaultBeneficiary : tx.origin,
           0, // min returned tokens.
-          defaultPreferClaimedTokens,
-          defaultMemo,
           defaultMetadata
         );
     // If no project was specified, send the funds directly to the beneficiary or the tx.origin.
@@ -212,8 +210,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
   /// @param _beneficiary The address who will receive tokens from the payment made with leftover funds.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with 18 decimals.
-  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate. A data source can alter the memo before emitting in the event and forwarding to the delegate.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
   function pay(
     uint256 _projectId,
@@ -222,8 +218,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
     uint256 _decimals,
     address _beneficiary,
     uint256 _minReturnedTokens,
-    bool _preferClaimedTokens,
-    string calldata _memo,
     bytes calldata _metadata
   ) public payable virtual override nonReentrant {
     // ETH shouldn't be sent if the token isn't ETH.
@@ -268,8 +262,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
             ? defaultBeneficiary
             : tx.origin,
           _minReturnedTokens,
-          _preferClaimedTokens,
-          _memo,
           _metadata
         );
       }
@@ -306,8 +298,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
       _decimals,
       _leftoverAmount,
       _minReturnedTokens,
-      _preferClaimedTokens,
-      _memo,
       _metadata,
       msg.sender
     );
@@ -318,14 +308,14 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
   /// @param _token The token being paid in.
   /// @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
   /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
-  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
   /// @param _metadata Extra data to pass along to the terminal.
   function addToBalanceOf(
     uint256 _projectId,
     address _token,
     uint256 _amount,
     uint256 _decimals,
-    string calldata _memo,
+    bool _shouldRefundHeldFees,
     bytes calldata _metadata
   ) public payable virtual override nonReentrant {
     // ETH shouldn't be sent if this terminal's token isn't ETH.
@@ -362,7 +352,14 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
       // If there's a default project ID, try to add to its balance.
       if (_projectId != 0)
         // Add to the project's balance.
-        _addToBalanceOf(_projectId, _token, _leftoverAmount, _decimals, _memo, _metadata);
+        _addToBalanceOf(
+          _projectId,
+          _token,
+          _leftoverAmount,
+          _decimals,
+          _shouldRefundHeldFees,
+          _metadata
+        );
 
         // Otherwise, send a payment to the beneficiary.
       else {
@@ -390,7 +387,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
       _amount,
       _decimals,
       _leftoverAmount,
-      _memo,
       _metadata,
       msg.sender
     );
@@ -490,7 +486,7 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
               _token,
               _splitAmount,
               _decimals,
-              defaultMemo,
+              false,
               defaultMetadata
             );
           else
@@ -501,8 +497,6 @@ contract JBETHERC20SplitsPayer is JBETHERC20ProjectPayer, ReentrancyGuard, IJBSp
               _decimals,
               _split.beneficiary != address(0) ? _split.beneficiary : _defaultBeneficiary,
               0,
-              _split.preferClaimed,
-              defaultMemo,
               defaultMetadata
             );
         } else {

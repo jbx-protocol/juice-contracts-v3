@@ -12,7 +12,6 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member beneficiary The specified address that should be the beneficiary of anything that results from the payment.
 /// @custom:member weight The weight of the funding cycle during which the payment is being made.
 /// @custom:member reservedRate The reserved rate of the funding cycle during which the payment is being made.
-/// @custom:member memo The memo that was sent alongside the payment.
 /// @custom:member metadata Extra data provided by the payer.
 struct JBPayParamsData {
   IJBPaymentTerminal terminal;
@@ -23,6 +22,5 @@ struct JBPayParamsData {
   address beneficiary;
   uint256 weight;
   uint256 reservedRate;
-  string memo;
   bytes metadata;
 }

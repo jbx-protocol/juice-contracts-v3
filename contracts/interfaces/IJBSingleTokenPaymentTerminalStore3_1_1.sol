@@ -43,6 +43,7 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
     IJBPaymentTerminal terminal,
     uint256 projectId,
     address[] calldata tokens,
+    uint256 decimals,
     uint256 currency
   ) external view returns (uint256);
 
@@ -74,15 +75,13 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
     JBTokenAmount memory amount,
     uint256 projectId,
     address beneficiary,
-    string calldata inputMemo,
     bytes calldata metadata
   )
     external
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 tokenCount,
-      JBPayDelegateAllocation3_1_1[] memory delegateAllocations,
-      string memory outputMemo
+      JBPayDelegateAllocation3_1_1[] memory delegateAllocations
     );
 
   function recordRedemptionFor(
@@ -90,15 +89,13 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
     uint256 projectId,
     address[] memory _tokens,
     uint256 tokenCount,
-    string calldata inputMemo,
     bytes calldata metadata
   )
     external
     returns (
       JBFundingCycle memory fundingCycle,
       uint256 reclaimAmount,
-      JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations,
-      string memory outputMemo
+      JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
     );
 
   function recordDistributionFor(

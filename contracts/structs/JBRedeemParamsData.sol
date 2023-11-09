@@ -14,7 +14,6 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member reclaimAmount The amount that should be reclaimed by the redeemer using the protocol's standard bonding curve redemption formula. Includes the token being reclaimed, the reclaim value, the number of decimals included, and the currency of the reclaim amount.
 /// @custom:member useTotalOverflow If overflow across all of a project's terminals is being used when making redemptions.
 /// @custom:member redemptionRate The redemption rate of the funding cycle during which the redemption is being made.
-/// @custom:member memo The proposed memo that is being emitted alongside the redemption.
 /// @custom:member metadata Extra data provided by the redeemer.
 struct JBRedeemParamsData {
   IJBPaymentTerminal terminal;
@@ -27,6 +26,5 @@ struct JBRedeemParamsData {
   JBTokenAmount reclaimAmount;
   bool useTotalOverflow;
   uint256 redemptionRate;
-  string memo;
   bytes metadata;
 }

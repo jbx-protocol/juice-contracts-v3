@@ -11,8 +11,6 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member weight The current funding cycle's weight used to determine how many tokens are being minted.
 /// @custom:member projectTokenCount The number of project tokens minted for the beneficiary.
 /// @custom:member beneficiary The address to which the tokens were minted.
-/// @custom:member preferClaimedTokens A flag indicating whether the request prefered to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract.
-/// @custom:member memo The memo that is being emitted alongside the payment.
 /// @custom:member dataSourceMetadata Extra data to send to the delegate sent by the data source.
 /// @custom:member payerMetadata Extra data to send to the delegate sent by the payer.
 struct JBDidPayData3_1_1 {
@@ -24,8 +22,6 @@ struct JBDidPayData3_1_1 {
   uint256 weight;
   uint256 projectTokenCount;
   address beneficiary;
-  bool preferClaimedTokens;
-  string memo;
   bytes dataSourceMetadata;
   bytes payerMetadata;
 }

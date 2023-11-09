@@ -21,8 +21,6 @@ interface IJBSplitsPayer is IERC165 {
     uint256 decimals,
     uint256 leftoverAmount,
     uint256 minReturnedTokens,
-    bool preferClaimedTokens,
-    string memo,
     bytes metadata,
     address caller
   );
@@ -34,7 +32,6 @@ interface IJBSplitsPayer is IERC165 {
     uint256 amount,
     uint256 decimals,
     uint256 leftoverAmount,
-    string memo,
     bytes metadata,
     address caller
   );

@@ -123,7 +123,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
         JBTokens.ETH,
         address(this).balance,
         18, // balance is a fixed point number with 18 decimals.
-        defaultMemo,
+        false,
         defaultMetadata
       );
     else
@@ -134,8 +134,6 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
         18, // balance is a fixed point number with 18 decimals.
         defaultBeneficiary == address(0) ? tx.origin : defaultBeneficiary,
         0, // Can't determine expectation of returned tokens ahead of time.
-        defaultPreferClaimedTokens,
-        defaultMemo,
         defaultMetadata
       );
   }
@@ -203,8 +201,6 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
   /// @param _beneficiary The address who will receive tokens from the payment.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with 18 decimals.
-  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate. A data source can alter the memo before emitting in the event and forwarding to the delegate.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
   function pay(
     uint256 _projectId,
@@ -213,8 +209,6 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     uint256 _decimals,
     address _beneficiary,
     uint256 _minReturnedTokens,
-    bool _preferClaimedTokens,
-    string calldata _memo,
     bytes calldata _metadata
   ) public payable virtual override {
     // ETH shouldn't be sent if the token isn't ETH.
@@ -235,17 +229,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
       _decimals = 18;
     }
 
-    _pay(
-      _projectId,
-      _token,
-      _amount,
-      _decimals,
-      _beneficiary,
-      _minReturnedTokens,
-      _preferClaimedTokens,
-      _memo,
-      _metadata
-    );
+    _pay(_projectId, _token, _amount, _decimals, _beneficiary, _minReturnedTokens, _metadata);
   }
 
   /// @notice Add to the balance of the specified project.
@@ -253,14 +237,14 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   /// @param _token The token being paid in.
   /// @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
   /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
-  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
   /// @param _metadata Extra data to pass along to the terminal.
   function addToBalanceOf(
     uint256 _projectId,
     address _token,
     uint256 _amount,
     uint256 _decimals,
-    string calldata _memo,
+    bool _shouldRefundHeldFees,
     bytes calldata _metadata
   ) public payable virtual override {
     // ETH shouldn't be sent if the token isn't ETH.
@@ -281,7 +265,7 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
       _decimals = 18;
     }
 
-    _addToBalanceOf(_projectId, _token, _amount, _decimals, _memo, _metadata);
+    _addToBalanceOf(_projectId, _token, _amount, _decimals, _shouldRefundHeldFees, _metadata);
   }
 
   //*********************************************************************//
@@ -295,8 +279,6 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   /// @param _decimals The number of decimals in the `_amount` fixed point number.
   /// @param _beneficiary The address who will receive tokens from the payment.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with 18 decimals.
-  /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-  /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
   /// @param _metadata Bytes to send along to the data source and delegate, if provided.
   function _pay(
     uint256 _projectId,
@@ -305,8 +287,6 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     uint256 _decimals,
     address _beneficiary,
     uint256 _minReturnedTokens,
-    bool _preferClaimedTokens,
-    string memory _memo,
     bytes memory _metadata
   ) internal virtual {
     // Find the terminal for the specified project.
@@ -316,7 +296,8 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_NOT_FOUND();
 
     // The amount's decimals must match the terminal's expected decimals.
-    if (_terminal.decimalsForToken(_token) != _decimals) revert INCORRECT_DECIMAL_AMOUNT();
+    if (_terminal.accountingContextForTokenOf(_projectId, _token).decimals != _decimals)
+      revert INCORRECT_DECIMAL_AMOUNT();
 
     // Approve the `_amount` of tokens from the destination terminal to transfer tokens from this contract.
     if (_token != JBTokens.ETH) IERC20(_token).safeApprove(address(_terminal), _amount);
@@ -334,8 +315,6 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
         ? defaultBeneficiary
         : tx.origin,
       _minReturnedTokens,
-      _preferClaimedTokens,
-      _memo,
       _metadata
     );
   }
@@ -345,14 +324,14 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
   /// @param _token The token being paid in.
   /// @param _amount The amount of tokens being paid, as a fixed point number. If the token is ETH, this is ignored and msg.value is used in its place.
   /// @param _decimals The number of decimals in the `_amount` fixed point number. If the token is ETH, this is ignored and 18 is used in its place, which corresponds to the amount of decimals expected in msg.value.
-  /// @param _memo A memo to pass along to the emitted event.
+  /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
   /// @param _metadata Extra data to pass along to the terminal.
   function _addToBalanceOf(
     uint256 _projectId,
     address _token,
     uint256 _amount,
     uint256 _decimals,
-    string memory _memo,
+    bool _shouldRefundHeldFees,
     bytes memory _metadata
   ) internal virtual {
     // Find the terminal for the specified project.
@@ -362,7 +341,8 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     if (_terminal == IJBPaymentTerminal(address(0))) revert TERMINAL_NOT_FOUND();
 
     // The amount's decimals must match the terminal's expected decimals.
-    if (_terminal.decimalsForToken(_token) != _decimals) revert INCORRECT_DECIMAL_AMOUNT();
+    if (_terminal.accountingContextForTokenOf(_projectId, _token).decimals != _decimals)
+      revert INCORRECT_DECIMAL_AMOUNT();
 
     // Approve the `_amount` of tokens from the destination terminal to transfer tokens from this contract.
     if (_token != JBTokens.ETH) IERC20(_token).safeApprove(address(_terminal), _amount);
@@ -371,6 +351,12 @@ contract JBETHERC20ProjectPayer is Ownable, ERC165, IJBProjectPayer {
     uint256 _payableValue = _token == JBTokens.ETH ? _amount : 0;
 
     // Add to balance so tokens don't get issued.
-    _terminal.addToBalanceOf{value: _payableValue}(_projectId, _amount, _token, _memo, _metadata);
+    _terminal.addToBalanceOf{value: _payableValue}(
+      _projectId,
+      _amount,
+      _token,
+      _shouldRefundHeldFees,
+      _metadata
+    );
   }
 }

@@ -2,15 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {JBTokenAccountingContext} from '../structs/JBTokenAccountingContext.sol';
 
 interface IJBPaymentTerminal is IERC165 {
-  function acceptsToken(address token, uint256 projectId) external view returns (bool);
+  function accountingContextForTokenOf(
+    uint256 projectId,
+    address token
+  ) external view returns (JBTokenAccountingContext memory);
 
-  function currencyForToken(address token) external view returns (uint256);
-
-  function decimalsForToken(address token) external view returns (uint256);
-
-  // Return value must be a fixed point number with 18 decimals.
   function currentEthOverflowOf(uint256 projectId) external view returns (uint256);
 
   function pay(
@@ -19,8 +18,6 @@ interface IJBPaymentTerminal is IERC165 {
     address token,
     address beneficiary,
     uint256 minReturnedTokens,
-    bool preferClaimedTokens,
-    string calldata memo,
     bytes calldata metadata
   ) external payable returns (uint256 beneficiaryTokenCount);
 
@@ -28,7 +25,7 @@ interface IJBPaymentTerminal is IERC165 {
     uint256 projectId,
     uint256 amount,
     address token,
-    string calldata memo,
+    bool shouldRefundHeldFees,
     bytes calldata metadata
   ) external payable;
 }
