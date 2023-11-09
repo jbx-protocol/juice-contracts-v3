@@ -465,216 +465,225 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
 
-    // function testFuzzETHAllowanceWithRevertingFeeProject(uint232 _ethOverflowAllowance, uint232 _ethDistributionLimit, uint256 _ethPayAmount) public {
-    //     // Make sure the amount of eth to pay is bounded. 
-    //     _ethPayAmount = bound(_ethPayAmount, 0, 1000000 ether);
+    function testFuzzETHAllowanceWithRevertingFeeProject(uint232 _ethOverflowAllowance, uint232 _ethDistributionLimit, uint256 _ethPayAmount, bool _feeProjectAcceptsToken) public {
+        // Make sure the amount of eth to pay is bounded. 
+        _ethPayAmount = bound(_ethPayAmount, 0, 1000000 ether);
 
-    //     // Make sure the values don't overflow the registry.
-    //     unchecked {
-    //         vm.assume(_ethOverflowAllowance + _ethDistributionLimit >= _ethOverflowAllowance && _ethOverflowAllowance + _ethDistributionLimit >= _ethDistributionLimit);
-    //     }
+        // Make sure the values don't overflow the registry.
+        unchecked {
+            vm.assume(_ethOverflowAllowance + _ethDistributionLimit >= _ethOverflowAllowance && _ethOverflowAllowance + _ethDistributionLimit >= _ethDistributionLimit);
+        }
 
-    //     // Get a reference to an ETH terminal.
-    //     IJBPayoutRedemptionPaymentTerminal3_1 _terminal = jbETHPaymentTerminal();
+        // Package up the constraints for the given terminal.
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
+        {
+            // Specify a distribution limit.
+            JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+            _distributionLimits[0] = JBCurrencyAmount({
+                value: _ethDistributionLimit,
+                currency: JBCurrencies.ETH
+            });  
 
-    //     // Package up the constraints for the given terminal.
-    //     JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-    //     {
-    //         // Specify a distribution limit.
-    //         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
-    //         _distributionLimits[0] = JBCurrencyAmount({
-    //             value: _ethDistributionLimit,
-    //             currency: _ethCurrency
-    //         });  
+            // Specify an overflow allowance.
+            JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+            _overflowAllowances[0] = JBCurrencyAmount({
+                value: _ethOverflowAllowance,
+                currency: JBCurrencies.ETH
+            });
 
-    //         // Specify an overflow allowance.
-    //         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
-    //         _overflowAllowances[0] = JBCurrencyAmount({
-    //             value: _ethOverflowAllowance,
-    //             currency: _ethCurrency
-    //         });
+            _fundAccessConstraints[0] =
+                JBFundAccessConstraints({
+                    terminal: _terminal,
+                    token: JBTokens.ETH,
+                    distributionLimits: _distributionLimits,
+                    overflowAllowances: _overflowAllowances
+                });
+        }
 
-    //         _fundAccessConstraints[0] =
-    //             JBFundAccessConstraints({
-    //                 terminal: _terminal,
-    //                 token: _terminal.token(),
-    //                 distributionLimits: _distributionLimits,
-    //                 overflowAllowances: _overflowAllowances
-    //             });
-    //     }
+        // Keep references to the projects.
+        uint256 _projectId;
 
-    //     // Keep references to the projects.
-    //     uint256 _projectId;
+        {
+            // First project for fee collection
+            _controller.launchProjectFor({
+                owner: address(420), // random
+                projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+                configurations: new JBFundingCycleConfiguration[](0), // No cycle config will force revert when paid.
+                terminals: _terminals, // set terminals where fees will be received
+                memo: ""
+            });
 
-    //     {
-    //         // First project for fee collection
-    //         _controller.launchProjectFor({
-    //             owner: address(420), // random
-    //             projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-    //             configurations: new JBFundingCycleConfiguration[](0), // No cycle config will force revert when paid.
-    //             terminals: _terminals, // set terminals where fees will be received
-    //             memo: ""
-    //         });
+            // Package up the configuration info.
+            JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+            _cycleConfig[0].mustStartAtOrAfter = 0;
+            _cycleConfig[0].data = _data;
+            _cycleConfig[0].metadata = _metadata;
+            _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
-    //         // Package up the configuration info.
-    //         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-    //         _cycleConfig[0].mustStartAtOrAfter = 0;
-    //         _cycleConfig[0].data = _data;
-    //         _cycleConfig[0].metadata = _metadata;
-    //         _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-    //         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+            // Create the project to test.
+            _projectId = _controller.launchProjectFor({
+                owner: _projectOwner,
+                projectMetadata: _projectMetadata,
+                configurations: _cycleConfig,
+                terminals: _terminals,
+                memo: ""
+            });
+        }
 
-    //         // Create the project to test.
-    //         _projectId = _controller.launchProjectFor({
-    //             owner: _projectOwner,
-    //             projectMetadata: _projectMetadata,
-    //             configurations: _cycleConfig,
-    //             terminals: _terminals,
-    //             memo: ""
-    //         });
-    //     }
+        // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
+        if (_feeProjectAcceptsToken)
+            _terminal.setTokenAccountingContextFor({
+                projectId: _FEE_PROJECT_ID,
+                token: JBTokens.ETH,
+                decimals: 18,
+                currency: uint32(JBCurrencies.ETH)
+            });
 
-    //     // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
-    //     _terminal.pay{value: _ethPayAmount}({
-    //         projectId: _projectId, 
-    //         amount: _ethPayAmount, 
-    //         token: address(0), //unused 
-    //         beneficiary: _beneficiary, 
-    //         minReturnedTokens: 0, 
-    //         preferClaimedTokens: false, 
-    //         memo: "Forge test", 
-    //         metadata: new bytes(0)
-    //     });
+        // Set the test project's terminal's ETH accounting context.
+        _terminal.setTokenAccountingContextFor({
+            projectId: _projectId,
+            token: JBTokens.ETH,
+            decimals: 18,
+            currency: uint32(JBCurrencies.ETH)
+        });
 
-    //     // Make sure the beneficiary got the expected number of tokens.
-    //     uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
-    //     assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+        // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
+        _terminal.pay{value: _ethPayAmount}({
+            projectId: _projectId, 
+            amount: _ethPayAmount, 
+            token: JBTokens.ETH, 
+            beneficiary: _beneficiary, 
+            minReturnedTokens: 0, 
+            metadata: new bytes(0)
+        });
 
-    //     // Make sure the terminal holds the full ETH balance.
-    //     assertEq(jbTerminalStore().balanceOf(_terminal, _projectId), _ethPayAmount);
+        // Make sure the beneficiary got the expected number of tokens.
+        uint256 _beneficiaryTokenBalance = PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
-    //     // Revert if there's no allowance.
-    //     if (_ethOverflowAllowance == 0) {
-    //         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
-    //     // Revert if there's no overflow, or if too much is being withdrawn.
-    //     } else if (_ethOverflowAllowance + _ethDistributionLimit > _ethPayAmount) {
-    //         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
-    //     }
+        // Make sure the terminal holds the full ETH balance.
+        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount);
 
-    //     // Use the full discretionary allowance of overflow.
-    //     vm.prank(_projectOwner);
-    //     _terminal.useAllowanceOf({
-    //         projectId: _projectId,
-    //         amount: _ethOverflowAllowance,
-    //         currency: _ethCurrency,
-    //         token: address(0), // unused
-    //         minReturnedTokens: 0,
-    //         beneficiary: payable(_beneficiary), // Beneficiary
-    //         memo: "MEMO",
-    //         metadata: bytes('')
-    //     });
+        // Revert if there's no allowance.
+        if (_ethOverflowAllowance == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
+        // Revert if there's no overflow, or if too much is being withdrawn.
+        } else if (_ethOverflowAllowance + _ethDistributionLimit > _ethPayAmount) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+        }
 
-    //     // Keep a reference to the beneficiary's balance;
-    //     uint256 _beneficiaryBalance;
+        // Use the full discretionary allowance of overflow.
+        vm.prank(_projectOwner);
+        _terminal.useAllowanceOf({
+            projectId: _projectId,
+            amount: _ethOverflowAllowance,
+            currency: JBCurrencies.ETH,
+            token: JBTokens.ETH,
+            minReturnedTokens: 0,
+            beneficiary: payable(_beneficiary), // Beneficiary
+            memo: "MEMO"
+        });
 
-    //     // Check the collected balance if one is expected.
-    //     if (_ethOverflowAllowance + _ethDistributionLimit <= _ethPayAmount) {
-    //         // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-    //         _beneficiaryBalance = PRBMath.mulDiv(_ethOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
-    //         assertEq(_beneficiary.balance, _beneficiaryBalance);
-    //         // Make sure the fee stays in the treasury.
-    //         assertEq(jbTerminalStore().balanceOf(_terminal, _projectId), _ethPayAmount - _beneficiaryBalance);
+        // Keep a reference to the beneficiary's balance;
+        uint256 _beneficiaryBalance;
 
-    //         // Make sure the fee was not taken.
-    //         assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID), 0);
-    //         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance);
+        // Check the collected balance if one is expected.
+        if (_ethOverflowAllowance + _ethDistributionLimit <= _ethPayAmount) {
+            // Make sure the beneficiary received the funds and that they are no longer in the terminal.
+            _beneficiaryBalance = PRBMath.mulDiv(_ethOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+            assertEq(_beneficiary.balance, _beneficiaryBalance);
+            // Make sure the fee stays in the treasury.
+            assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryBalance);
 
-    //         // Make sure the beneficiary got no tokens.
-    //         assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), 0);
-    //     } else {
-    //         // Set the eth overflow allowance value to 0 if it wasnt used.
-    //         _ethOverflowAllowance = 0;
-    //     }
+            // Make sure the fee was not taken.
+            assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokens.ETH), 0);
+            assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance);
 
-    //     // Revert if the distribution limit is greater than the balance.
-    //     if (_ethDistributionLimit > _ethPayAmount) {
-    //         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            // Make sure the beneficiary got no tokens.
+            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), 0);
+        } else {
+            // Set the eth overflow allowance value to 0 if it wasnt used.
+            _ethOverflowAllowance = 0;
+        }
 
-    //     // Revert if there's no distribution limit.
-    //     } else if (_ethDistributionLimit == 0) {
-    //         vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
-    //     }
+        // Revert if the distribution limit is greater than the balance.
+        if (_ethDistributionLimit > _ethPayAmount) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
 
-    //     // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-    //     _terminal.distributePayoutsOf({
-    //         projectId: _projectId,
-    //         amount: _ethDistributionLimit,
-    //         currency: _ethCurrency,
-    //         token: address(0), // unused.
-    //         minReturnedTokens: 0,
-    //         metadata: bytes('')
-    //     });
+        // Revert if there's no distribution limit.
+        } else if (_ethDistributionLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+        }
 
-    //     uint256 _projectOwnerBalance;  
+        // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
+        _terminal.distributePayoutsOf({
+            projectId: _projectId,
+            amount: _ethDistributionLimit,
+            currency: JBCurrencies.ETH,
+            token: JBTokens.ETH, 
+            minReturnedTokens: 0
+        });
 
-    //     // Check the collected distribution if one is expected.
-    //     if (_ethDistributionLimit <= _ethPayAmount && _ethDistributionLimit != 0) {
-    //         // Make sure the project owner received the distributed funds.
-    //         _projectOwnerBalance = (_ethDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
-    //         assertEq(_projectOwner.balance, _projectOwnerBalance);
-    //         // Make sure the fee stays in the treasury.
-    //         assertEq(jbTerminalStore().balanceOf(_terminal, _projectId), _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
+        uint256 _projectOwnerBalance;  
 
-    //         // Make sure the fee was paid correctly.
-    //         assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID), 0);
-    //         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
+        // Check the collected distribution if one is expected.
+        if (_ethDistributionLimit <= _ethPayAmount && _ethDistributionLimit != 0) {
+            // Make sure the project owner received the distributed funds.
+            _projectOwnerBalance = (_ethDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+            assertEq(_projectOwner.balance, _projectOwnerBalance);
+            // Make sure the fee stays in the treasury.
+            assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
 
-    //         // Make sure the project owner got the expected number of tokens.
-    //         assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), 0);
-    //     }
+            // Make sure the fee was paid correctly.
+            assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokens.ETH), 0);
+            assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance);
 
-    //     // Redeem ETH from the overflow using all of the _beneficiary's tokens.
-    //     vm.prank(_beneficiary);
-    //     _terminal.redeemTokensOf({
-    //         holder: _beneficiary,
-    //         projectId: _projectId,
-    //         tokenCount: _beneficiaryTokenBalance,
-    //         token: address(0), // unused
-    //         minReturnedTokens: 0,
-    //         beneficiary: payable(_beneficiary),
-    //         memo: "gimme my money back",
-    //         metadata: new bytes(0)
-    //     });
+            // Make sure the project owner got the expected number of tokens.
+            assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), 0);
+        }
 
-    //     // Make sure the beneficiary doesn't have tokens left.
-    //     assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), 0);
+        // Redeem ETH from the overflow using all of the _beneficiary's tokens.
+        vm.prank(_beneficiary);
+        _terminal.redeemTokensOf({
+            holder: _beneficiary,
+            projectId: _projectId,
+            tokenCount: _beneficiaryTokenBalance,
+            token: JBTokens.ETH,
+            minReturnedTokens: 0,
+            beneficiary: payable(_beneficiary),
+            metadata: new bytes(0)
+        });
 
-    //     // Check for a new beneficiary balance if one is expected.
-    //     if (_ethPayAmount > _ethOverflowAllowance + _ethDistributionLimit) {
-    //         // Get the expected amount reclaimed.
-    //         uint256 _reclaimAmount = (PRBMath.mulDiv(
-    //             PRBMath.mulDiv(_ethPayAmount - _beneficiaryBalance - _projectOwnerBalance, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)),
-    //             _metadata.redemptionRate +
-    //             PRBMath.mulDiv(
-    //                 _beneficiaryTokenBalance,
-    //                 JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-    //                 PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)
-    //             ),
-    //             JBConstants.MAX_REDEMPTION_RATE
-    //         ));
+        // Make sure the beneficiary doesn't have tokens left.
+        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), 0);
 
-    //         // Calculate the fee from the redemption.
-    //         uint256 _feeAmount = _reclaimAmount - _reclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
-    //         assertEq(_beneficiary.balance, _beneficiaryBalance + _reclaimAmount - _feeAmount);
-    //         // Make sure the fee stays in the treasury.
-    //         assertEq(jbTerminalStore().balanceOf(_terminal, _projectId), _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
+        // Check for a new beneficiary balance if one is expected.
+        if (_ethPayAmount > _ethOverflowAllowance + _ethDistributionLimit) {
+            // Get the expected amount reclaimed.
+            uint256 _reclaimAmount = (PRBMath.mulDiv(
+                PRBMath.mulDiv(_ethPayAmount - _beneficiaryBalance - _projectOwnerBalance, _beneficiaryTokenBalance, PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)),
+                _metadata.redemptionRate +
+                PRBMath.mulDiv(
+                    _beneficiaryTokenBalance,
+                    JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
+                    PRBMath.mulDiv(_ethPayAmount, _data.weight, 10 ** 18)
+                ),
+                JBConstants.MAX_REDEMPTION_RATE
+            ));
+
+            // Calculate the fee from the redemption.
+            uint256 _feeAmount = _reclaimAmount - _reclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+            assertEq(_beneficiary.balance, _beneficiaryBalance + _reclaimAmount - _feeAmount);
+            // Make sure the fee stays in the treasury.
+            assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
             
-    //         // Make sure the fee was paid correctly.
-    //         assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID), 0);
-    //         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
+            // Make sure the fee was paid correctly.
+            assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokens.ETH), 0);
+            assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryBalance - _projectOwnerBalance - (_reclaimAmount - _feeAmount));
 
-    //         // Make sure the project owner got the expected number of tokens from the fee.
-    //         assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), 0);
-    //     }
-    // }
+            // Make sure the project owner got the expected number of tokens from the fee.
+            assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), 0);
+        }
+    }
 }
