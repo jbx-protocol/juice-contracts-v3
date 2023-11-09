@@ -445,7 +445,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       );
 
       // Process the fee.
-      _processFee(_token, _amount, _heldFees[_i].beneficiary, _projectId, _feeTerminal);
+      _processFee(_projectId, _token, _amount, _heldFees[_i].beneficiary, _feeTerminal);
 
       emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, msg.sender);
 
@@ -484,14 +484,12 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _token The token that this terminal manages.
   /// @param _decimals The number of decimals the token fixed point amounts are expected to have.
   /// @param _currency The currency that this terminal's token adheres to for price feeds.
-  /// @param _payoutSplitsGroup The splits group under which payouts of this token are referenced.
   function setTokenAccountingContextFor(
     uint256 _projectId,
     address _token,
     uint8 _decimals,
-    uint32 _currency,
-    uint216 _payoutSplitsGroup
-  ) external {
+    uint32 _currency
+  ) external override {
     // Make sure the token accounting isn't already set.
     if (_accountingContextForTokenOf[_projectId][_token].decimals != 0) revert();
 
@@ -501,8 +499,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Store the value.
     _accountingContextForTokenOf[_projectId][_token] = JBTokenAccountingContext({
       decimals: _decimals,
-      currency: _currency,
-      payoutSplitsGroup: _payoutSplitsGroup
+      currency: _currency
     });
   }
 
@@ -820,21 +817,16 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // The amount leftover after distributing to the splits.
     uint256 _leftoverDistributionAmount;
 
-    {
-      // Get a reference to the token's accounting context.
-      JBTokenAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
-
-      // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
-      // Also get a reference to the amount that was distributed to splits from which fees should be taken.
-      (_leftoverDistributionAmount, _feeEligibleDistributionAmount) = _distributeToPayoutSplitsOf(
-        _projectId,
-        _token,
-        _fundingCycle.configuration,
-        _context.payoutSplitsGroup,
-        _distributedAmount,
-        _feePercent
-      );
-    }
+    // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
+    // Also get a reference to the amount that was distributed to splits from which fees should be taken.
+    (_leftoverDistributionAmount, _feeEligibleDistributionAmount) = _distributeToPayoutSplitsOf(
+      _projectId,
+      _token,
+      _fundingCycle.configuration,
+      uint256(uint160(_token)),
+      _distributedAmount,
+      _feePercent
+    );
 
     if (_feePercent != 0) {
       // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
@@ -1398,25 +1390,38 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, msg.sender);
     } else {
       // Process the fee.
-      _processFee(_token, feeAmount, _beneficiary, _projectId, _feeTerminal); // Take the fee.
+      _processFee(_projectId, _token, feeAmount, _beneficiary, _feeTerminal); // Take the fee.
 
       emit ProcessFee(_projectId, feeAmount, false, _beneficiary, msg.sender);
     }
   }
 
-  /// @notice Process a fee of the specified amount.
+  /// @notice Process a fee of the specified amount from a project.
+  /// @param _projectId The project ID the fee is being paid from.
   /// @param _token The token the fee is being paid in.
   /// @param _amount The fee amount, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platform's tokens for.
-  /// @param _from The project ID the fee is being paid from.
   /// @param _feeTerminal The terminal the fee should be taken into.
   function _processFee(
+    uint256 _projectId,
     address _token,
     uint256 _amount,
     address _beneficiary,
-    uint256 _from,
     IJBPaymentTerminal _feeTerminal
   ) internal {
+    // If
+    if (address(_feeTerminal) == address(0)) {
+      _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
+      emit FeeReverted(
+        _projectId,
+        _FEE_BENEFICIARY_PROJECT_ID,
+        _amount,
+        bytes('FEE NOT ACCEPTED'),
+        msg.sender
+      );
+      return;
+    }
+
     // Trigger any inherited pre-transfer logic if funds will be transferred.
     if (address(_feeTerminal) != address(this))
       _beforeTransferTo(address(_feeTerminal), _token, _amount);
@@ -1431,17 +1436,17 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         _beneficiary,
         0,
         // Send the projectId in the metadata.
-        bytes(abi.encodePacked(_from))
+        bytes(abi.encodePacked(_projectId))
       )
     {} catch (bytes memory _reason) {
       _revertTransferFrom(
-        _from,
+        _projectId,
         _token,
         address(_feeTerminal) != address(this) ? address(_feeTerminal) : address(0),
         address(_feeTerminal) != address(this) ? _amount : 0,
         _amount
       );
-      emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
+      emit FeeReverted(_projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
     }
   }
 
@@ -1538,7 +1543,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     address _token,
     uint256 _amount
   ) internal virtual {
-    if (_token == JBTokens.ETH) Address.sendValue(_to, _amount);
+    if (_token == JBTokens.ETH) return Address.sendValue(_to, _amount);
     _from == address(this)
       ? IERC20(_token).safeTransfer(_to, _amount)
       : IERC20(_token).safeTransferFrom(_from, _to, _amount);

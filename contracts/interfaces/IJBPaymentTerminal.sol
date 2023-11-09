@@ -28,4 +28,11 @@ interface IJBPaymentTerminal is IERC165 {
     bool shouldRefundHeldFees,
     bytes calldata metadata
   ) external payable;
+
+  function setTokenAccountingContextFor(
+    uint256 projectId,
+    address token,
+    uint8 decimals,
+    uint32 currency
+  ) external;
 }
