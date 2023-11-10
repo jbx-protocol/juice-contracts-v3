@@ -57,13 +57,13 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   //*********************************************************************//
 
   /// @notice The directory of terminals and controllers for projects.
-  IJBDirectory public immutable override directory;
+  IJBDirectory public immutable override DIRECTORY;
 
   /// @notice The contract storing all funding cycle configurations.
-  IJBFundingCycleStore public immutable override fundingCycleStore;
+  IJBFundingCycleStore public immutable override FUNDING_CYCLE_STORE;
 
   /// @notice The contract that exposes price feeds.
-  IJBPrices public immutable override prices;
+  IJBPrices public immutable override PRICES;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -128,7 +128,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         _terminal,
         _projectId,
         _tokens,
-        fundingCycleStore.currentOf(_projectId),
+        FUNDING_CYCLE_STORE.currentOf(_projectId),
         _decimals,
         _currency
       );
@@ -168,7 +168,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     bool _useTotalOverflow
   ) external view override returns (uint256) {
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // Get the amount of current overflow.
     // Use the project's total overflow across all of its terminals if the flag species specifies so. Otherwise, use the overflow local to the specified terminal.
@@ -180,7 +180,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     if (_currentOverflow == 0) return 0;
 
     // Get the number of outstanding tokens the project has.
-    uint256 _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
+    uint256 _totalSupply = IJBController3_1(DIRECTORY.controllerOf(_projectId))
       .totalOutstandingTokensOf(_projectId);
 
     // Can't redeem more tokens that is in the supply.
@@ -209,7 +209,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     if (_tokenCount > _totalSupply) return 0;
 
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // Return the reclaimable overflow amount.
     return _reclaimableOverflowDuring(_fundingCycle, _tokenCount, _totalSupply, _overflow);
@@ -223,9 +223,9 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   /// @param _fundingCycleStore A contract storing all funding cycle configurations.
   /// @param _prices A contract that exposes price feeds.
   constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore, IJBPrices _prices) {
-    directory = _directory;
-    fundingCycleStore = _fundingCycleStore;
-    prices = _prices;
+    DIRECTORY = _directory;
+    FUNDING_CYCLE_STORE = _fundingCycleStore;
+    PRICES = _prices;
   }
 
   //*********************************************************************//
@@ -260,7 +260,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     )
   {
     // Get a reference to the current funding cycle for the project.
-    fundingCycle = fundingCycleStore.currentOf(_projectId);
+    fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // The project must have a funding cycle configured.
     if (fundingCycle.number == 0) revert INVALID_FUNDING_CYCLE();
@@ -336,7 +336,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
     uint256 _weightRatio = _amount.currency == fundingCycle.baseCurrency()
       ? 10 ** _amount.decimals
-      : prices.priceFor(
+      : PRICES.priceFor(
         _projectId,
         _amount.currency,
         fundingCycle.baseCurrency(),
@@ -377,7 +377,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     )
   {
     // Get a reference to the project's current funding cycle.
-    fundingCycle = fundingCycleStore.currentOf(_projectId);
+    fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // The current funding cycle must not be paused.
     if (fundingCycle.redeemPaused()) revert FUNDING_CYCLE_REDEEM_PAUSED();
@@ -400,7 +400,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
       );
 
     // Get the number of outstanding tokens the project has.
-    uint256 _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
+    uint256 _totalSupply = IJBController3_1(DIRECTORY.controllerOf(_projectId))
       .totalOutstandingTokensOf(_projectId);
 
     // Can't redeem more tokens that is in the supply.
@@ -501,7 +501,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     returns (JBFundingCycle memory fundingCycle, uint256 distributedAmount)
   {
     // Get a reference to the project's current funding cycle.
-    fundingCycle = fundingCycleStore.currentOf(_projectId);
+    fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // The funding cycle must not be configured to have distributions paused.
     if (fundingCycle.distributionsPaused()) revert FUNDING_CYCLE_DISTRIBUTION_PAUSED();
@@ -512,7 +512,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     ][_token][fundingCycle.number][_currency] + _amount;
 
     // Amount must be within what is still distributable.
-    uint256 _distributionLimit = IJBController3_1(directory.controllerOf(_projectId))
+    uint256 _distributionLimit = IJBController3_1(DIRECTORY.controllerOf(_projectId))
       .fundAccessConstraintsStore()
       .distributionLimitOf(
         _projectId,
@@ -536,7 +536,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
       : PRBMath.mulDiv(
         _amount,
         10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
-        prices.priceFor(_projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY)
+        PRICES.priceFor(_projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY)
       );
 
     // The amount being distributed must be available.
@@ -576,7 +576,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     returns (JBFundingCycle memory fundingCycle, uint256 usedAmount)
   {
     // Get a reference to the project's current funding cycle.
-    fundingCycle = fundingCycleStore.currentOf(_projectId);
+    fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // Get a reference to the new used overflow allowance for this funding cycle configuration.
     uint256 _newUsedOverflowAllowanceOf = usedOverflowAllowanceOf[IJBPaymentTerminal(msg.sender)][
@@ -584,7 +584,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     ][_token][fundingCycle.configuration][_currency] + _amount;
 
     // There must be sufficient allowance available.
-    uint256 _overflowAllowance = IJBController3_1(directory.controllerOf(_projectId))
+    uint256 _overflowAllowance = IJBController3_1(DIRECTORY.controllerOf(_projectId))
       .fundAccessConstraintsStore()
       .overflowAllowanceOf(
         _projectId,
@@ -608,7 +608,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
       : PRBMath.mulDiv(
         _amount,
         10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
-        prices.priceFor(_projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY)
+        PRICES.priceFor(_projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY)
       );
 
     // Set the token being used as the only one to look for overflow within.
@@ -665,7 +665,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     address _token
   ) external override nonReentrant returns (uint256 balance) {
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
     // Migration must be allowed.
     if (!_fundingCycle.terminalMigrationAllowed()) revert PAYMENT_TERMINAL_MIGRATION_NOT_ALLOWED();
@@ -795,12 +795,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
       : PRBMath.mulDiv(
         overflow,
         10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-        prices.priceFor(_projectId, _context.currency, _targetCurrency, _MAX_FIXED_POINT_FIDELITY)
+        PRICES.priceFor(_projectId, _context.currency, _targetCurrency, _MAX_FIXED_POINT_FIDELITY)
       );
 
     // Get a reference to the distribution limit during the funding cycle for the token.
     JBCurrencyAmount[] memory _distributionLimits = IJBController3_1(
-      directory.controllerOf(_projectId)
+      DIRECTORY.controllerOf(_projectId)
     ).fundAccessConstraintsStore().distributionLimitsOf(
         _projectId,
         _fundingCycle.configuration,
@@ -841,7 +841,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         : PRBMath.mulDiv(
           _distributionLimit.value,
           10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-          prices.priceFor(
+          PRICES.priceFor(
             _projectId,
             _distributionLimit.currency,
             _targetCurrency,
@@ -871,7 +871,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     uint256 _currency
   ) private view returns (uint256 overflow) {
     // Get a reference to the project's terminals.
-    IJBPaymentTerminal[] memory _terminals = directory.terminalsOf(_projectId);
+    IJBPaymentTerminal[] memory _terminals = DIRECTORY.terminalsOf(_projectId);
 
     // Keep a reference to the number of termainls.
     uint256 _numberOfTerminals = _terminals.length;

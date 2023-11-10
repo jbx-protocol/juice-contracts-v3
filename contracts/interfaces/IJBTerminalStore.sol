@@ -11,11 +11,11 @@ import {IJBPrices} from './IJBPrices.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 
 interface IJBTerminalStore {
-  function fundingCycleStore() external view returns (IJBFundingCycleStore);
+  function FUNDING_CYCLE_STORE() external view returns (IJBFundingCycleStore);
 
-  function directory() external view returns (IJBDirectory);
+  function DIRECTORY() external view returns (IJBDirectory);
 
-  function prices() external view returns (IJBPrices);
+  function PRICES() external view returns (IJBPrices);
 
   function balanceOf(
     IJBPaymentTerminal terminal,
