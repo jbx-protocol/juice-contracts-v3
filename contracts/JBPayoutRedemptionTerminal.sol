@@ -26,6 +26,7 @@ import {JBConstants} from './libraries/JBConstants.sol';
 import {JBFees} from './libraries/JBFees.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
+import {JBOperations2} from './libraries/JBOperations2.sol';
 import {JBTokens} from './libraries/JBTokens.sol';
 import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
 import {JBDidRedeemData3_1_1} from './structs/JBDidRedeemData3_1_1.sol';
@@ -52,6 +53,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
 
+  error ACCOUNTING_CONTEXT_ALREADY_SET();
   error FEE_TOO_HIGH();
   error INADEQUATE_DISTRIBUTION_AMOUNT();
   error INADEQUATE_RECLAIM_AMOUNT();
@@ -61,6 +63,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   error REDEEM_TO_ZERO_ADDRESS();
   error TERMINAL_TOKENS_INCOMPATIBLE();
   error TOKEN_NOT_ACCEPTED();
+  error UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
+  error UNEXPECTED_ACCOUNTING_CONTEXT_CURRENCY();
 
   //*********************************************************************//
   // --------------------- internal stored constants ------------------- //
@@ -509,15 +513,23 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     emit SetFeelessAddress(_address, _flag, msg.sender);
   }
 
-  error K(address m);
-
   /// @notice Sets accounting context for a token so that a project can begin accepting it.
+  /// @dev Only a project owner, a designated operator, or a project's controller can set its accounting context.
   /// @param _projectId The ID of the project having its token accounting context set.
   /// @param _accountingContexts The accounting contexts to set.
   function setAccountingContextsFor(
     uint256 _projectId,
     JBAccountingContext[] calldata _accountingContexts
-  ) external override {
+  )
+    external
+    override
+    requirePermissionAllowingOverride(
+      PROJECTS.ownerOf(_projectId),
+      _projectId,
+      JBOperations2.SET_ACCOUNTING_CONTEXT,
+      msg.sender == DIRECTORY.controllerOf(_projectId)
+    )
+  {
     // Keep a reference to the number of accounting contexts.
     uint256 _numberOfAccountingContexts = _accountingContexts.length;
 
@@ -531,7 +543,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
       // Make sure the token accounting isn't already set.
       if (_accountingContextForTokenOf[_projectId][_accountingContext.token].token != address(0))
-        revert K(_accountingContextForTokenOf[_projectId][_accountingContext.token].token);
+        revert ACCOUNTING_CONTEXT_ALREADY_SET();
 
       // Make sure decimals are correct.
       if (
@@ -539,11 +551,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
           _accountingContext.decimals != 18) ||
         (_accountingContext.standard == JBTokenStandards.ERC20 &&
           _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals())
-      ) revert('2');
+      ) revert UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
 
       // Make sure currency is correct.
       if (_accountingContext.currency != uint24(uint160(address(_accountingContext.token))))
-        revert('3');
+        revert UNEXPECTED_ACCOUNTING_CONTEXT_CURRENCY();
 
       // Set the context.
       _accountingContextForTokenOf[_projectId][_accountingContext.token] = _accountingContext;
