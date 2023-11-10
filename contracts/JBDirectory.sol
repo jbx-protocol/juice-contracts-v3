@@ -106,7 +106,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
       IJBPaymentTerminal _terminal = _terminalsOf[_projectId][_i];
 
       // If the terminal accepts the specified token, return it.
-      if (_terminal.accountingContextForTokenOf(_projectId, _token).decimals != 0) return _terminal;
+      if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0)) return _terminal;
 
       unchecked {
         ++_i;
@@ -273,7 +273,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PRIMARY_TERMINAL)
   {
     // Can't set the primary terminal for a token if it doesn't accept the token.
-    if (_terminal.accountingContextForTokenOf(_projectId, _token).decimals == 0) revert TOKEN_NOT_ACCEPTED();
+    if (_terminal.accountingContextForTokenOf(_projectId, _token).token == address(0)) revert TOKEN_NOT_ACCEPTED();
 
     // Add the terminal to the project if it hasn't been already.
     _addTerminalIfNeeded(_projectId, _terminal);
