@@ -234,10 +234,13 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     // Set the stored terminals for the project.
     _terminalsOf[_projectId] = _terminals;
 
+    // Keep a reference to the number of terminals being iterated on.
+    uint256 _numberOfTerminals = _terminals.length;
+
     // Make sure duplicates were not added.
-    if (_terminals.length > 1) {
-      for (uint256 _i; _i < _terminals.length; ) {
-        for (uint256 _j = _i + 1; _j < _terminals.length; ) {
+    if (_numberOfTerminals > 1) {
+      for (uint256 _i; _i < _numberOfTerminals; ) {
+        for (uint256 _j = _i + 1; _j < _numberOfTerminals; ) {
           if (_terminals[_i] == _terminals[_j]) revert DUPLICATE_TERMINALS();
 
           unchecked {

@@ -17,15 +17,12 @@ import {IJBOperatable} from './interfaces/IJBOperatable.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBPayoutTerminal3_1} from './interfaces/IJBPayoutTerminal3_1.sol';
-import {IJBPrices} from './interfaces/IJBPrices.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBRedemptionTerminal} from './interfaces/IJBRedemptionTerminal.sol';
 import {IJBTerminalStore} from './interfaces/IJBTerminalStore.sol';
 import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
-import {JBCurrencies} from './libraries/JBCurrencies.sol';
 import {JBFees} from './libraries/JBFees.sol';
-import {JBFixedPointNumber} from './libraries/JBFixedPointNumber.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBTokens} from './libraries/JBTokens.sol';
@@ -429,9 +426,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Delete the held fees.
     delete _heldFeesOf[_projectId];
 
-    // Push array length in stack
-    uint256 _heldFeeLength = _heldFees.length;
-
     // Keep a reference to the amount.
     uint256 _amount;
 
@@ -441,8 +435,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _token
     );
 
+    // Keep a reference to the number of held fees.
+    uint256 _numberOfHeldFees = _heldFees.length;
+
     // Process each fee.
-    for (uint256 _i; _i < _heldFeeLength; ) {
+    for (uint256 _i; _i < _numberOfHeldFees; ) {
       // Get the fee amount.
       _amount = (
         _heldFees[_i].fee == 0 ? 0 : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee)
@@ -516,25 +513,23 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _amount The amount of tokens being accepted.
   /// @return The amount of tokens that have been accepted.
   function _acceptToken(address _token, uint256 _amount) internal returns (uint256) {
-    // If this terminal's token isn't ETH, make sure no msg.value was sent, then transfer the tokens in from msg.sender.
-    if (_token != JBTokens.ETH) {
-      // Amount must be greater than 0.
-      if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
-
-      // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
-      if (msg.sender == address(this)) return _amount;
-
-      // Get a reference to the balance before receiving tokens.
-      uint256 _balanceBefore = _balance(_token);
-
-      // Transfer tokens to this terminal from the msg sender.
-      _transferFrom(msg.sender, payable(address(this)), _token, _amount);
-
-      // The amount should reflect the change in balance.
-      return _balance(_token) - _balanceBefore;
-    }
     // If the terminal's token is ETH, override `_amount` with msg.value.
-    else return msg.value;
+    if (_token == JBTokens.ETH) return msg.value;
+
+    // Amount must be greater than 0.
+    if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
+
+    // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
+    if (msg.sender == address(this)) return _amount;
+
+    // Get a reference to the balance before receiving tokens.
+    uint256 _balanceBefore = _balance(_token);
+
+    // Transfer tokens to this terminal from the msg sender.
+    _transferFrom(msg.sender, payable(address(this)), _token, _amount);
+
+    // The amount should reflect the change in balance.
+    return _balance(_token) - _balanceBefore;
   }
 
   /// @notice Contribute tokens to a project.
@@ -569,13 +564,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
       uint256 _tokenCount;
 
-      {
-        // Get a reference to the token's accounting context.
-        JBTokenAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
+      // Get a reference to the token's accounting context.
+      JBTokenAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
 
-        // Bundle the amount info into a JBTokenAmount struct.
-        _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
-      }
+      // Bundle the amount info into a JBTokenAmount struct.
+      _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
 
       // Record the payment.
       (_fundingCycle, _tokenCount, _delegateAllocations) = STORE.recordPaymentFrom(
@@ -676,7 +669,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Keep a reference to the funding cycle during which the redemption is being made.
     JBFundingCycle memory _fundingCycle;
 
-    // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount` and `_feePercent` only used within scope.
+    // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount`, `_feePercent`, and  `_delegateAllocations` only used within scope.
     {
       // Keep a reference to the amount being reclaimed that should have fees withheld from.
       uint256 _feeEligibleDistributionAmount;
@@ -685,8 +678,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       uint256 _feePercent;
 
       JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
-      // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
 
+      // Scoped section prevents stack too deep. `_tokens` only used within scope.
       {
         // Keep a reference to the tokens accepted by the project.
         address[] memory _tokens = _tokensAcceptedBy[_projectId];
@@ -835,7 +828,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _projectId,
       _token,
       _fundingCycle.configuration,
-      uint256(uint160(_token)),
       _distributedAmount,
       _feePercent
     );
@@ -921,7 +913,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = STORE.recordUsedAllowanceOf(
       _projectId,
       _token,
-      // _tokensAcceptedBy[_projectId],
       _amount,
       _currency
     );
@@ -929,7 +920,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // The amount being withdrawn must be at least as much as was expected.
     if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
 
-    // Scoped section prevents stack too deep. `_fee`, `_projectOwner` and `_netAmount` only used within scope.
+    // Scoped section prevents stack too deep. `_projectOwner`, `_feePercent`, `_feeTerminal` and `_feeTaken` only used within scope.
     {
       // Get a reference to the project owner, which will receive tokens from paying the platform fee.
       address _projectOwner = PROJECTS.ownerOf(_projectId);
@@ -984,7 +975,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _projectId The ID of the project for which payout splits are being distributed.
   /// @param _token The address of the token being distributed.
   /// @param _domain The domain of the splits to distribute the payout between.
-  /// @param _group The group of the splits to distribute the payout between.
   /// @param _amount The total amount being distributed, as a fixed point number with the same number of decimals as this terminal.
   /// @param _feePercent The percent of fees to take, out of MAX_FEE.
   /// @return If the leftover amount if the splits don't add up to 100%.
@@ -993,7 +983,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _projectId,
     address _token,
     uint256 _domain,
-    uint256 _group,
     uint256 _amount,
     uint256 _feePercent
   ) internal returns (uint256, uint256 feeEligibleDistributionAmount) {
@@ -1001,13 +990,16 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
 
     // Get a reference to the project's payout splits.
-    JBSplit[] memory _splits = SPLITS.splitsOf(_projectId, _domain, _group);
+    JBSplit[] memory _splits = SPLITS.splitsOf(_projectId, _domain, uint256(uint160(_token)));
 
     // Keep a reference to the split being iterated on.
     JBSplit memory _split;
 
+    // Keep a reference to the number of splits being iterated on.
+    uint256 _numberOfSplits = _splits.length;
+
     // Transfer between all splits.
-    for (uint256 _i; _i < _splits.length; ) {
+    for (uint256 _i; _i < _numberOfSplits; ) {
       // Get a reference to the split being iterated on.
       _split = _splits[_i];
 
@@ -1019,7 +1011,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         _split,
         _projectId,
         _token,
-        _group,
         _payoutAmount,
         _feePercent
       );
@@ -1043,7 +1034,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       emit DistributeToPayoutSplit(
         _projectId,
         _domain,
-        _group,
+        uint256(uint160(_token)),
         _split,
         _payoutAmount,
         _netPayoutAmount,
@@ -1062,7 +1053,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _split The split to distribute payouts to.
   /// @param _projectId The ID of the project to which the split is originating.
   /// @param _token The address of the token being paid out.
-  /// @param _group The group to which the split belongs.
   /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
   /// @param _feePercent The percent of fees to take, out of MAX_FEE.
   /// @return netPayoutAmount The amount sent to the split after subtracting fees.
@@ -1070,7 +1060,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     JBSplit memory _split,
     uint256 _projectId,
     address _token,
-    uint256 _group,
     uint256 _amount,
     uint256 _feePercent
   ) internal returns (uint256 netPayoutAmount) {
@@ -1098,7 +1087,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         netPayoutAmount,
         _context.decimals,
         _projectId,
-        _group,
+        uint256(uint160(_token)),
         _split
       );
 
@@ -1480,11 +1469,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Get a reference to the leftover amount once all fees have been settled.
     uint256 leftoverAmount = _amount;
 
-    // Push length in stack
-    uint256 _heldFeesLength = _heldFees.length;
+    // Keep a reference to the number of held fees.
+    uint256 _numberOfHeldFees = _heldFees.length;
 
     // Process each fee.
-    for (uint256 _i; _i < _heldFeesLength; ) {
+    for (uint256 _i; _i < _numberOfHeldFees; ) {
       if (leftoverAmount == 0) _heldFeesOf[_projectId].push(_heldFees[_i]);
       else {
         // Notice here we take feeIn the stored .amount

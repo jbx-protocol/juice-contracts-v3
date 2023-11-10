@@ -57,7 +57,10 @@ contract JBOperatorStore is IJBOperatorStore {
     uint256 _domain,
     uint256[] calldata _permissionIndexes
   ) external view override returns (bool) {
-    for (uint256 _i; _i < _permissionIndexes.length; ) {
+    // Keep a reference to the number of permissions being iterated on.
+    uint256 _numberOfPermissions = _permissionIndexes.length;
+
+    for (uint256 _i; _i < _numberOfPermissions; ) {
       uint256 _permissionIndex = _permissionIndexes[_i];
 
       if (_permissionIndex > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();
@@ -99,7 +102,10 @@ contract JBOperatorStore is IJBOperatorStore {
   /// @dev Only an address can set its own operators.
   /// @param _operatorData The data that specify the params for each operator being set.
   function setOperators(JBOperatorData[] calldata _operatorData) external override {
-    for (uint256 _i; _i < _operatorData.length; ) {
+    // Keep a reference to the number of operators being iterated on.
+    uint256 _numberOfOperators = _operatorData.length;
+
+    for (uint256 _i; _i < _numberOfOperators; ) {
       // Pack the indexes into a uint256.
       uint256 _packed = _packedPermissions(_operatorData[_i].permissionIndexes);
 
@@ -128,7 +134,10 @@ contract JBOperatorStore is IJBOperatorStore {
   /// @param _indexes The indexes of the permissions to pack.
   /// @return packed The packed value.
   function _packedPermissions(uint256[] calldata _indexes) private pure returns (uint256 packed) {
-    for (uint256 _i; _i < _indexes.length; ) {
+    // Keep a reference to the number of indexes being iterated on.
+    uint256 _numberOfIndexes = _indexes.length;
+
+    for (uint256 _i; _i < _numberOfIndexes; ) {
       uint256 _index = _indexes[_i];
 
       if (_index > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();

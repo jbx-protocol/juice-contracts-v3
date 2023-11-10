@@ -557,8 +557,11 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     // Get a reference to the project's reserved token splits.
     JBSplit[] memory _splits = splitsStore.splitsOf(_projectId, _domain, _group);
 
+    // Keep a reference to the number of splits being iterated on.
+    uint256 _numberOfSplits = _splits.length;
+
     //Transfer between all splits.
-    for (uint256 _i; _i < _splits.length; ) {
+    for (uint256 _i; _i < _numberOfSplits; ) {
       // Get a reference to the split being iterated on.
       JBSplit memory _split = _splits[_i];
 
@@ -588,17 +591,15 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         );
 
         // If there's an allocator set, trigger its `allocate` function.
-        if (_split.allocator != IJBSplitAllocator(address(0)))
+        if (_split.allocator != IJBSplitAllocator(address(0))) {
+          // Get a reference to the project's token.
+          address _token = address(_tokenStore.tokenOf(_projectId));
+
+          // Allocate.
           _split.allocator.allocate(
-            JBSplitAllocationData(
-              address(_tokenStore.tokenOf(_projectId)),
-              _tokenCount,
-              18,
-              _projectId,
-              _group,
-              _split
-            )
+            JBSplitAllocationData(_token, _tokenCount, 18, _projectId, _group, _split)
           );
+        }
 
         // Subtract from the amount to be sent to the beneficiary.
         leftoverAmount = leftoverAmount - _tokenCount;

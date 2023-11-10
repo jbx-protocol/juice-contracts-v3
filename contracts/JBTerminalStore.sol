@@ -3,8 +3,6 @@ pragma solidity ^0.8.16;
 
 import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
-import {JBBallotState} from './enums/JBBallotState.sol';
-import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBFundingCycleDataSource3_1_1} from './interfaces/IJBFundingCycleDataSource3_1_1.sol';
@@ -15,7 +13,6 @@ import {IJBPrices} from './interfaces/IJBPrices.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBTerminalStore} from './interfaces/IJBTerminalStore.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
-import {JBCurrencies} from './libraries/JBCurrencies.sol';
 import {JBFixedPointNumber} from './libraries/JBFixedPointNumber.sol';
 import {JBCurrencyAmount} from './structs/JBCurrencyAmount.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
@@ -47,7 +44,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   error INSUFFICIENT_TOKENS();
   error INVALID_FUNDING_CYCLE();
   error PAYMENT_TERMINAL_MIGRATION_NOT_ALLOWED();
-  error BAD();
 
   //*********************************************************************//
   // -------------------------- private constants ---------------------- //
@@ -55,9 +51,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
   /// @notice Ensures a maximum number of decimal points of persisted fidelity on mulDiv operations of fixed point numbers.
   uint256 private constant _MAX_FIXED_POINT_FIDELITY = 18;
-
-  /// @notice The number of decimals expected from ETH currency.
-  uint256 private constant _ETH_FIXED_POINT_FIDELITY = 18;
 
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
@@ -131,7 +124,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   ) external view override returns (uint256) {
     // Return the overflow during the project's current funding cycle.
     return
-      _overflowDuring(
+      _overflowFrom(
         _terminal,
         _projectId,
         _tokens,
@@ -181,7 +174,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // Use the project's total overflow across all of its terminals if the flag species specifies so. Otherwise, use the overflow local to the specified terminal.
     uint256 _currentOverflow = _useTotalOverflow
       ? _currentTotalOverflowOf(_projectId, _decimals, _currency)
-      : _overflowDuring(_terminal, _projectId, _tokens, _fundingCycle, _decimals, _currency);
+      : _overflowFrom(_terminal, _projectId, _tokens, _fundingCycle, _decimals, _currency);
 
     // If there's no overflow, there's no reclaimable overflow.
     if (_currentOverflow == 0) return 0;
@@ -300,41 +293,41 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
       _weight = fundingCycle.weight;
     }
 
-    // Scoped section prevents stack too deep. `_balanceDiff` only used within scope.
-    {
-      // Keep a reference to the amount that should be added to the project's balance.
-      uint256 _balanceDiff = _amount.value;
+    // Keep a reference to the amount that should be added to the project's balance.
+    uint256 _balanceDiff = _amount.value;
 
-      // Validate all delegated amounts. This needs to be done before returning the delegate allocations to ensure valid delegated amounts.
-      if (delegateAllocations.length != 0) {
-        for (uint256 _i; _i < delegateAllocations.length; ) {
-          // Get a reference to the amount to be delegated.
-          uint256 _delegatedAmount = delegateAllocations[_i].amount;
+    // Keep a reference to the number of delegate allocations.
+    uint256 _numberOfDelegateAllocations = delegateAllocations.length;
 
-          // Validate if non-zero.
-          if (_delegatedAmount != 0) {
-            // Can't delegate more than was paid.
-            if (_delegatedAmount > _balanceDiff) revert INVALID_AMOUNT_TO_SEND_DELEGATE();
+    // Validate all delegated amounts. This needs to be done before returning the delegate allocations to ensure valid delegated amounts.
+    if (_numberOfDelegateAllocations != 0) {
+      for (uint256 _i; _i < _numberOfDelegateAllocations; ) {
+        // Get a reference to the amount to be delegated.
+        uint256 _delegatedAmount = delegateAllocations[_i].amount;
 
-            // Decrement the total amount being added to the balance.
-            _balanceDiff = _balanceDiff - _delegatedAmount;
-          }
+        // Validate if non-zero.
+        if (_delegatedAmount != 0) {
+          // Can't delegate more than was paid.
+          if (_delegatedAmount > _balanceDiff) revert INVALID_AMOUNT_TO_SEND_DELEGATE();
 
-          unchecked {
-            ++_i;
-          }
+          // Decrement the total amount being added to the balance.
+          _balanceDiff = _balanceDiff - _delegatedAmount;
+        }
+
+        unchecked {
+          ++_i;
         }
       }
-
-      // If there's no amount being recorded, there's nothing left to do.
-      if (_amount.value == 0) return (fundingCycle, 0, delegateAllocations);
-
-      // Add the correct balance difference to the token balance of the project.
-      if (_balanceDiff != 0)
-        balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_amount.token] =
-          balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_amount.token] +
-          _balanceDiff;
     }
+
+    // If there's no amount being recorded, there's nothing left to do.
+    if (_amount.value == 0) return (fundingCycle, 0, delegateAllocations);
+
+    // Add the correct balance difference to the token balance of the project.
+    if (_balanceDiff != 0)
+      balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_amount.token] =
+        balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_amount.token] +
+        _balanceDiff;
 
     // If there's no weight, token count must be 0 so there's nothing left to do.
     if (_weight == 0) return (fundingCycle, 0, delegateAllocations);
@@ -389,78 +382,68 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // The current funding cycle must not be paused.
     if (fundingCycle.redeemPaused()) revert FUNDING_CYCLE_REDEEM_PAUSED();
 
-    // Scoped section prevents stack too deep. `_reclaimedTokenAmount`, `_currentOverflow`, and `_totalSupply` only used within scope.
-    {
-      // Get a reference to the reclaimed token amount struct, the current overflow, and the total token supply.
-      JBTokenAmount memory _reclaimedTokenAmount;
-      uint256 _currentOverflow;
-      uint256 _totalSupply;
+    // Get a reference to the terminal's decimals.
+    JBTokenAccountingContext memory _context = IJBPaymentTerminal(msg.sender)
+      .accountingContextForTokenOf(_projectId, _token);
 
-      // Another scoped section prevents stack too deep. `_decimals` and `_currency` only used within scope.
+    // Get the amount of current overflow.
+    // Use the local overflow if the funding cycle specifies that it should be used. Otherwise, use the project's total overflow across all of its terminals.
+    uint256 _currentOverflow = fundingCycle.useTotalOverflowForRedemptions()
+      ? _currentTotalOverflowOf(_projectId, _context.decimals, _context.currency)
+      : _overflowFrom(
+        IJBPaymentTerminal(msg.sender),
+        _projectId,
+        _balanceTokens,
+        fundingCycle,
+        _context.decimals,
+        _context.currency
+      );
+
+    // Get the number of outstanding tokens the project has.
+    uint256 _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
+      .totalOutstandingTokensOf(_projectId);
+
+    // Can't redeem more tokens that is in the supply.
+    if (_tokenCount > _totalSupply) revert INSUFFICIENT_TOKENS();
+
+    if (_currentOverflow != 0)
+      // Calculate reclaim amount using the current overflow amount.
+      reclaimAmount = _reclaimableOverflowDuring(
+        fundingCycle,
+        _tokenCount,
+        _totalSupply,
+        _currentOverflow
+      );
+
+    // Create the struct that describes the amount being reclaimed.
+    JBTokenAmount memory _reclaimedTokenAmount = JBTokenAmount(
+      _token,
+      reclaimAmount,
+      _context.decimals,
+      _context.currency
+    );
+
+    // If the funding cycle has configured a data source, use it to derive a claim amount and memo.
+    if (fundingCycle.useDataSourceForRedeem() && fundingCycle.dataSource() != address(0)) {
+      // Yet another scoped section prevents stack too deep. `_state`  only used within scope.
       {
-        // Get a reference to the terminal's decimals.
-        JBTokenAccountingContext memory _context = IJBPaymentTerminal(msg.sender)
-          .accountingContextForTokenOf(_projectId, _token);
-
-        // Get the amount of current overflow.
-        // Use the local overflow if the funding cycle specifies that it should be used. Otherwise, use the project's total overflow across all of its terminals.
-        _currentOverflow = fundingCycle.useTotalOverflowForRedemptions()
-          ? _currentTotalOverflowOf(_projectId, _context.decimals, _context.currency)
-          : _overflowDuring(
-            IJBPaymentTerminal(msg.sender),
-            _projectId,
-            _balanceTokens,
-            fundingCycle,
-            _context.decimals,
-            _context.currency
-          );
-
-        // Get the number of outstanding tokens the project has.
-        _totalSupply = IJBController3_1(directory.controllerOf(_projectId))
-          .totalOutstandingTokensOf(_projectId);
-
-        // Can't redeem more tokens that is in the supply.
-        if (_tokenCount > _totalSupply) revert INSUFFICIENT_TOKENS();
-
-        if (_currentOverflow != 0)
-          // Calculate reclaim amount using the current overflow amount.
-          reclaimAmount = _reclaimableOverflowDuring(
-            fundingCycle,
-            _tokenCount,
-            _totalSupply,
-            _currentOverflow
-          );
-
-        _reclaimedTokenAmount = JBTokenAmount(
-          _token,
-          reclaimAmount,
-          _context.decimals,
-          _context.currency
+        // Create the params that'll be sent to the data source.
+        JBRedeemParamsData memory _data = JBRedeemParamsData(
+          IJBPaymentTerminal(msg.sender),
+          _holder,
+          _projectId,
+          fundingCycle.configuration,
+          _tokenCount,
+          _totalSupply,
+          _currentOverflow,
+          _reclaimedTokenAmount,
+          fundingCycle.useTotalOverflowForRedemptions(),
+          fundingCycle.redemptionRate(),
+          _metadata
         );
-      }
-
-      // If the funding cycle has configured a data source, use it to derive a claim amount and memo.
-      if (fundingCycle.useDataSourceForRedeem() && fundingCycle.dataSource() != address(0)) {
-        // Yet another scoped section prevents stack too deep. `_state`  only used within scope.
-        {
-          // Create the params that'll be sent to the data source.
-          JBRedeemParamsData memory _data = JBRedeemParamsData(
-            IJBPaymentTerminal(msg.sender),
-            _holder,
-            _projectId,
-            fundingCycle.configuration,
-            _tokenCount,
-            _totalSupply,
-            _currentOverflow,
-            _reclaimedTokenAmount,
-            fundingCycle.useTotalOverflowForRedemptions(),
-            fundingCycle.redemptionRate(),
-            _metadata
-          );
-          (reclaimAmount, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
-            fundingCycle.dataSource()
-          ).redeemParams(_data);
-        }
+        (reclaimAmount, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
+          fundingCycle.dataSource()
+        ).redeemParams(_data);
       }
     }
 
@@ -628,30 +611,27 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         prices.priceFor(_projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY)
       );
 
-    {
-      address[] memory _tokens = new address[](1);
-      _tokens[0] = _token;
-      // The amount being distributed must be available in the overflow.
-      if (
-        usedAmount >
-        _overflowDuring(
-          IJBPaymentTerminal(msg.sender),
-          _projectId,
-          _tokens,
-          fundingCycle,
-          _balanceContext.decimals,
-          _balanceContext.currency
-        )
-      ) revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
-    }
+    // Set the token being used as the only one to look for overflow within.
+    address[] memory _tokens = new address[](1);
+    _tokens[0] = _token;
+
+    // The amount being distributed must be available in the overflow.
+    if (
+      usedAmount >
+      _overflowFrom(
+        IJBPaymentTerminal(msg.sender),
+        _projectId,
+        _tokens,
+        fundingCycle,
+        _balanceContext.decimals,
+        _balanceContext.currency
+      )
+    ) revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
 
     // Store the incremented value.
     usedOverflowAllowanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token][
       fundingCycle.configuration
     ][_currency] = _newUsedOverflowAllowanceOf;
-
-    // if (usedAmount > balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]])
-    //   revert BAD();
 
     // Update the project's balance.
     balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token] =
@@ -717,25 +697,22 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // If the amount being redeemed is the total supply, return the rest of the overflow.
     if (_tokenCount == _totalSupply) return _overflow;
 
-    // Use the ballot redemption rate if the queued cycle is pending approval according to the previous funding cycle's ballot.
-    uint256 _redemptionRate = _fundingCycle.redemptionRate();
-
     // If the redemption rate is 0, nothing is claimable.
-    if (_redemptionRate == 0) return 0;
+    if (_fundingCycle.redemptionRate() == 0) return 0;
 
     // Get a reference to the linear proportion.
     uint256 _base = PRBMath.mulDiv(_overflow, _tokenCount, _totalSupply);
 
     // These conditions are all part of the same curve. Edge conditions are separated because fewer operation are necessary.
-    if (_redemptionRate == JBConstants.MAX_REDEMPTION_RATE) return _base;
+    if (_fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE) return _base;
 
     return
       PRBMath.mulDiv(
         _base,
-        _redemptionRate +
+        _fundingCycle.redemptionRate() +
           PRBMath.mulDiv(
             _tokenCount,
-            JBConstants.MAX_REDEMPTION_RATE - _redemptionRate,
+            JBConstants.MAX_REDEMPTION_RATE - _fundingCycle.redemptionRate(),
             _totalSupply
           ),
         JBConstants.MAX_REDEMPTION_RATE
@@ -746,103 +723,135 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   /// @dev This amount changes as the value of the balance changes in relation to the currency being used to measure the distribution limit.
   /// @param _terminal The terminal for which the overflow is being calculated.
   /// @param _projectId The ID of the project to get overflow for.
-  /// @param _tokens The tokens whose balances should contribute to the overflow being reclaimed from.
+  /// @param _tokens The tokens whose balances should contribute to the overflow being measured.
   /// @param _fundingCycle The ID of the funding cycle to base the overflow on.
-  /// @param _decimals The number of decimals to include in the resulting fixed point number.
-  /// @param _currency The currency that the reported overflow is expected to be in terms of.
+  /// @param _targetDecimals The number of decimals to include in the resulting fixed point number.
+  /// @param _targetCurrency The currency that the reported overflow is expected to be in terms of.
   /// @return overflow The overflow of funds, as a fixed point number with 18 decimals.
-  function _overflowDuring(
+  function _overflowFrom(
     IJBPaymentTerminal _terminal,
     uint256 _projectId,
     address[] memory _tokens,
     JBFundingCycle memory _fundingCycle,
-    uint256 _decimals,
-    uint256 _currency
+    uint256 _targetDecimals,
+    uint256 _targetCurrency
   ) private view returns (uint256 overflow) {
-    // Add distribution limits from each token.
-    for (uint256 _i; _i < _tokens.length; ) {
-      // Get a reference to the terminal's decimals.
-      JBTokenAccountingContext memory _balanceContext = IJBPaymentTerminal(msg.sender)
-        .accountingContextForTokenOf(_projectId, _tokens[_i]);
+    // Keep a reference to the number of tokens being iterated on.
+    uint256 _numberOfTokens = _tokens.length;
 
-      // Keep a reference to the balance.
-      uint256 _balance = balanceOf[_terminal][_projectId][_tokens[_i]];
+    // Add distribution limits from each token.
+    for (uint256 _i; _i < _numberOfTokens; ) {
+      uint256 _tokenOverflow = _tokenOverflowFrom(
+        _terminal,
+        _projectId,
+        _tokens[_i],
+        _fundingCycle,
+        _targetDecimals,
+        _targetCurrency
+      );
+      // Increment the overflow with any remaining balance.
+      if (_tokenOverflow > 0) overflow += _tokenOverflow;
+
+      unchecked {
+        ++_i;
+      }
+    }
+  }
+
+  /// @notice Gets the amount that is overflowing for a token when measured from the specified funding cycle.
+  /// @dev This amount changes as the value of the balance changes in relation to the currency being used to measure the distribution limit.
+  /// @param _terminal The terminal for which the overflow is being calculated.
+  /// @param _projectId The ID of the project to get overflow for.
+  /// @param _token The token whose balance should contribute to the overflow being measured.
+  /// @param _fundingCycle The ID of the funding cycle to base the overflow on.
+  /// @param _targetDecimals The number of decimals to include in the resulting fixed point number.
+  /// @param _targetCurrency The currency that the reported overflow is expected to be in terms of.
+  /// @return overflow The overflow of funds, as a fixed point number with 18 decimals.
+  function _tokenOverflowFrom(
+    IJBPaymentTerminal _terminal,
+    uint256 _projectId,
+    address _token,
+    JBFundingCycle memory _fundingCycle,
+    uint256 _targetDecimals,
+    uint256 _targetCurrency
+  ) private view returns (uint256 overflow) {
+    // Get a reference to the terminal's decimals.
+    JBTokenAccountingContext memory _context = _terminal.accountingContextForTokenOf(
+      _projectId,
+      _token
+    );
+
+    // Keep a reference to the balance.
+    overflow = balanceOf[_terminal][_projectId][_token];
+
+    // Adjust the decimals of the fixed point number if needed to have the correct decimals.
+    overflow = _context.decimals == _targetDecimals
+      ? overflow
+      : JBFixedPointNumber.adjustDecimals(overflow, _context.decimals, _targetDecimals);
+
+    // Add up all the balances.
+    overflow = (overflow == 0 || _context.currency == _targetCurrency)
+      ? overflow
+      : PRBMath.mulDiv(
+        overflow,
+        10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
+        prices.priceFor(_projectId, _context.currency, _targetCurrency, _MAX_FIXED_POINT_FIDELITY)
+      );
+
+    // Get a reference to the distribution limit during the funding cycle for the token.
+    JBCurrencyAmount[] memory _distributionLimits = IJBController3_1(
+      directory.controllerOf(_projectId)
+    ).fundAccessConstraintsStore().distributionLimitsOf(
+        _projectId,
+        _fundingCycle.configuration,
+        _terminal,
+        _token
+      );
+
+    // Keep a reference to the distribution limit being iterated on.
+    JBCurrencyAmount memory _distributionLimit;
+
+    // Keep a reference to the number of distribution limits being iterated on.
+    uint256 _numberOfDistributionLimits = _distributionLimits.length;
+
+    // Loop through each distribution limit to determine the cumulative normalized distribution limit remaining.
+    for (uint256 _i; _i < _numberOfDistributionLimits; ) {
+      _distributionLimit = _distributionLimits[_i];
+
+      // Set the distribution limit value to the amount still distributable during the funding cycle.
+      _distributionLimit.value =
+        _distributionLimit.value -
+        usedDistributionLimitOf[_terminal][_projectId][_token][_fundingCycle.number][
+          _distributionLimit.currency
+        ];
 
       // Adjust the decimals of the fixed point number if needed to have the correct decimals.
-      _balance = _balanceContext.decimals == _decimals
-        ? _balance
-        : JBFixedPointNumber.adjustDecimals(_balance, _balanceContext.decimals, _decimals);
+      _distributionLimit.value = _context.decimals == _targetDecimals
+        ? _distributionLimit.value
+        : JBFixedPointNumber.adjustDecimals(
+          _distributionLimit.value,
+          _context.decimals,
+          _targetDecimals
+        );
 
-      // Add up all the balances.
-      _balance = (_balance == 0 || _balanceContext.currency == _currency)
-        ? _balance
+      // Convert the _distributionRemaining to be in terms of the provided currency.
+      _distributionLimit.value = _distributionLimit.value == 0 ||
+        _distributionLimit.currency == _targetCurrency
+        ? _distributionLimit.value
         : PRBMath.mulDiv(
-          _balance,
+          _distributionLimit.value,
           10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
           prices.priceFor(
             _projectId,
-            _balanceContext.currency,
-            _currency,
+            _distributionLimit.currency,
+            _targetCurrency,
             _MAX_FIXED_POINT_FIDELITY
           )
         );
 
-      // Get a reference to the distribution limit during the funding cycle for the token.
-      JBCurrencyAmount[] memory _distributionLimits = IJBController3_1(
-        directory.controllerOf(_projectId)
-      ).fundAccessConstraintsStore().distributionLimitsOf(
-          _projectId,
-          _fundingCycle.configuration,
-          _terminal,
-          _tokens[_i]
-        );
-
-      // Loop through each distribution limit to determine the cumulative normalized distribution limit remaining.
-      for (uint256 _j; _j < _distributionLimits.length; ) {
-        // Set the distribution limit value to the amount still distributable during the funding cycle.
-        _distributionLimits[_j].value =
-          _distributionLimits[_j].value -
-          usedDistributionLimitOf[_terminal][_projectId][_tokens[_i]][_fundingCycle.number][
-            _distributionLimits[_j].currency
-          ];
-
-        // Adjust the decimals of the fixed point number if needed to have the correct decimals.
-        _distributionLimits[_j].value = _balanceContext.decimals == _decimals
-          ? _distributionLimits[_j].value
-          : JBFixedPointNumber.adjustDecimals(
-            _distributionLimits[_j].value,
-            _balanceContext.decimals,
-            _decimals
-          );
-
-        // Convert the _distributionRemaining to be in terms of the provided currency.
-        _distributionLimits[_j].value = (_distributionLimits[_j].value == 0 ||
-          _distributionLimits[_j].currency == _currency)
-          ? _distributionLimits[_j].value
-          : PRBMath.mulDiv(
-            _distributionLimits[_j].value,
-            10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-            prices.priceFor(
-              _projectId,
-              _distributionLimits[_j].currency,
-              _currency,
-              _MAX_FIXED_POINT_FIDELITY
-            )
-          );
-
-        // Increment overflow if needed.
-        if (_balance > _distributionLimits[_j].value) _balance -= _distributionLimits[_j].value;
-        else {
-          _balance = 0;
-          break;
-        }
-
-        unchecked {
-          ++_j;
-        }
-      }
-
-      if (_balance > 0) overflow += _balance;
+      // Decrement the balance until it reached zero.
+      if (overflow > _distributionLimit.value) overflow -= _distributionLimit.value;
+      else return 0;
 
       unchecked {
         ++_i;
@@ -863,8 +872,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   ) private view returns (uint256 overflow) {
     // Get a reference to the project's terminals.
     IJBPaymentTerminal[] memory _terminals = directory.terminalsOf(_projectId);
+
+    // Keep a reference to the number of termainls.
+    uint256 _numberOfTerminals = _terminals.length;
+
     // Add the current ETH overflow for each terminal.
-    for (uint256 _i; _i < _terminals.length; ) {
+    for (uint256 _i; _i < _numberOfTerminals; ) {
       overflow += _terminals[_i].currentOverflowOf(_projectId, _decimals, _currency);
       unchecked {
         ++_i;

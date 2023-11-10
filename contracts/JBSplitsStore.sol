@@ -117,11 +117,11 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
       address(directory.controllerOf(_projectId)) == msg.sender
     )
   {
-    // Push array length in stack
-    uint256 _groupedSplitsLength = _groupedSplits.length;
+    // Keep a reference to the number of grouped splits.
+    uint256 _numberOfGroupedSplits = _groupedSplits.length;
 
     // Set each grouped splits.
-    for (uint256 _i; _i < _groupedSplitsLength; ) {
+    for (uint256 _i; _i < _numberOfGroupedSplits; ) {
       // Get a reference to the grouped split being iterated on.
       JBGroupedSplits memory _groupedSplit = _groupedSplits[_i];
 
@@ -154,10 +154,10 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     JBSplit[] memory _currentSplits = _getStructsFor(_projectId, _domain, _group);
 
     // Keep a reference to the number of splits.
-    uint256 _currentSplitsLength = _currentSplits.length;
+    uint256 _numberOfCurrentSplits = _currentSplits.length;
 
     // Check to see if all locked splits are included.
-    for (uint256 _i; _i < _currentSplitsLength; ) {
+    for (uint256 _i; _i < _numberOfCurrentSplits; ) {
       // If not locked, continue.
       if (
         block.timestamp < _currentSplits[_i].lockedUntil &&
@@ -173,9 +173,9 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     uint256 _percentTotal;
 
     // Keep a reference to the number of splits.
-    uint256 _splitsLength = _splits.length;
+    uint256 _numberOfSplits = _splits.length;
 
-    for (uint256 _i; _i < _splitsLength; ) {
+    for (uint256 _i; _i < _numberOfSplits; ) {
       // The percent should be greater than 0.
       if (_splits[_i].percent == 0) revert INVALID_SPLIT_PERCENT();
 
@@ -229,7 +229,7 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     }
 
     // Set the new length of the splits.
-    _splitCountOf[_projectId][_domain][_group] = _splitsLength;
+    _splitCountOf[_projectId][_domain][_group] = _numberOfSplits;
   }
 
   /// @notice A flag indiciating if the provided splits array includes the locked split.
