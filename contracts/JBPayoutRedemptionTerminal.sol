@@ -13,6 +13,7 @@ import {IJBAllowanceTerminal3_1} from './interfaces/IJBAllowanceTerminal3_1.sol'
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBPayoutRedemptionTerminal} from './interfaces/IJBPayoutRedemptionTerminal.sol';
+import {IJBCustomPayToken} from './interfaces/IJBCustomPayToken.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
@@ -424,7 +425,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Transfer the balance if needed.
     if (balance != 0) {
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferTo(_projectId, address(_to), _token, balance);
+      _beforeTransferFor(_projectId, address(_to), _token, balance);
 
       // If this terminal's token is ETH, send it in msg.value.
       uint256 _payableValue = _token == JBTokens.ETH ? balance : 0;
@@ -550,7 +551,9 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         (_accountingContext.standard == JBTokenStandards.NATIVE &&
           _accountingContext.decimals != 18) ||
         (_accountingContext.standard == JBTokenStandards.ERC20 &&
-          _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals())
+          _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals()) ||
+        (_accountingContext.standard == JBTokenStandards.CUSTOM &&
+          _accountingContext.decimals != IJBCustomPayToken(_accountingContext.token).decimals())
       ) revert UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
 
       // Make sure currency is correct.
@@ -600,7 +603,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _balanceBefore = _balance(_projectId, _token);
 
     // Transfer tokens to this terminal from the msg sender.
-    _transferFrom(_projectId, msg.sender, payable(address(this)), _token, _amount);
+    _transferFor(_projectId, msg.sender, payable(address(this)), _token, _amount);
 
     // The amount should reflect the change in balance.
     return _balance(_projectId, _token) - _balanceBefore;
@@ -815,7 +818,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
         // Subtract the fee from the reclaim amount.
         if (reclaimAmount != 0)
-          _transferFrom(_projectId, address(this), _beneficiary, _token, reclaimAmount);
+          _transferFor(_projectId, address(this), _beneficiary, _token, reclaimAmount);
       }
 
       // Take the fee from all outbound reclaimations.
@@ -913,13 +916,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, _feePercent));
 
       // Transfer the amount to the project owner.
-      _transferFrom(
-        _projectId,
-        address(this),
-        _projectOwner,
-        _token,
-        netLeftoverDistributionAmount
-      );
+      _transferFor(_projectId, address(this), _projectOwner, _token, netLeftoverDistributionAmount);
     }
 
     emit DistributePayouts(
@@ -994,7 +991,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     // Transfer any remaining balance to the beneficiary.
     if (netDistributedAmount != 0)
-      _transferFrom(_projectId, address(this), _beneficiary, _token, netDistributedAmount);
+      _transferFor(_projectId, address(this), _beneficiary, _token, netDistributedAmount);
 
     emit UseAllowance(
       _fundingCycle.configuration,
@@ -1114,7 +1111,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       }
 
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferTo(_projectId, address(_split.allocator), _token, netPayoutAmount);
+      _beforeTransferFor(_projectId, address(_split.allocator), _token, netPayoutAmount);
 
       // Get a reference to the token's accounting context.
       JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
@@ -1187,7 +1184,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         }
 
         // Trigger any inherited pre-transfer logic.
-        _beforeTransferTo(_projectId, address(_terminal), _token, netPayoutAmount);
+        _beforeTransferFor(_projectId, address(_terminal), _token, netPayoutAmount);
 
         // Add to balance if prefered.
         if (_split.preferAddToBalance)
@@ -1242,7 +1239,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       }
 
       // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
-      _transferFrom(
+      _transferFor(
         _projectId,
         address(this),
         _split.beneficiary != address(0) ? _split.beneficiary : payable(msg.sender),
@@ -1303,7 +1300,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _data.dataSourceMetadata = _allocation.metadata;
 
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferTo(
+      _beforeTransferFor(
         _projectId,
         address(_allocation.delegate),
         _tokenAmount.token,
@@ -1371,7 +1368,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _allocation = _allocations[_i];
 
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferTo(
+      _beforeTransferFor(
         _projectId,
         address(_allocation.delegate),
         _beneficiaryTokenAmount.token,
@@ -1476,7 +1473,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     // Trigger any inherited pre-transfer logic if funds will be transferred.
     if (address(_feeTerminal) != address(this))
-      _beforeTransferTo(_projectId, address(_feeTerminal), _token, _amount);
+      _beforeTransferFor(_projectId, address(_feeTerminal), _token, _amount);
 
     try
       // Send the fee.
@@ -1580,7 +1577,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   ) internal {
     // Cancel allowance if needed.
     if (_allowanceAmount != 0 && _expectedDestination != address(this))
-      _cancelTransferTo(_projectId, _expectedDestination, _token, _allowanceAmount);
+      _cancelTransferFor(_projectId, _expectedDestination, _token, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
     STORE.recordAddedBalanceFor(_projectId, _token, _depositAmount);
@@ -1592,7 +1589,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _to The address to which the transfer should go.
   /// @param _token The token being transfered.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _transferFrom(
+  function _transferFor(
     uint256 _projectId,
     address _from,
     address payable _to,
@@ -1611,6 +1608,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _from == address(this)
         ? IERC20(_token).safeTransfer(_to, _amount)
         : IERC20(_token).safeTransferFrom(_from, _to, _amount);
+    else IJBCustomPayToken(_token).transferFor(_projectId, _from, _to, _amount, _accountingContext);
   }
 
   /// @notice Logic to be triggered before transferring tokens from this terminal.
@@ -1618,7 +1616,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _to The address to which the transfer is going.
   /// @param _token The token being transfered.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _beforeTransferTo(
+  function _beforeTransferFor(
     uint256 _projectId,
     address _to,
     address _token,
@@ -1634,6 +1632,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     if (_accountingContext.standard == JBTokenStandards.ERC20)
       IERC20(_token).safeIncreaseAllowance(_to, _amount);
+    else IJBCustomPayToken(_token).beforeTransferTo(_projectId, _to, _amount, _accountingContext);
   }
 
   /// @notice Logic to be triggered if a transfer should be undone
@@ -1641,7 +1640,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _to The address to which the transfer went.
   /// @param _token The token being transfered.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _cancelTransferTo(
+  function _cancelTransferFor(
     uint256 _projectId,
     address _to,
     address _token,
@@ -1657,5 +1656,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     if (_accountingContext.standard == JBTokenStandards.ERC20)
       IERC20(_token).safeDecreaseAllowance(_to, _amount);
+    else IJBCustomPayToken(_token).cancelTransferTo(_projectId, _to, _amount, _accountingContext);
   }
 }
