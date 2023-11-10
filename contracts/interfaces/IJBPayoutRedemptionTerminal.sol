@@ -27,6 +27,7 @@ interface IJBPayoutRedemptionTerminal is
     uint256 indexed projectId,
     uint256 amount,
     uint256 refundedFees,
+    string memo,
     bytes metadata,
     address caller
   );
@@ -94,6 +95,7 @@ interface IJBPayoutRedemptionTerminal is
     address beneficiary,
     uint256 amount,
     uint256 beneficiaryTokenCount,
+    string memo,
     bytes metadata,
     address caller
   );

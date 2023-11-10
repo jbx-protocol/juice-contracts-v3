@@ -226,6 +226,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
   /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _memo A memo to pass along to the emitted event.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
   /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
   function pay(
@@ -234,6 +235,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _amount,
     address _beneficiary,
     uint256 _minReturnedTokens,
+    string calldata _memo,
     bytes calldata _metadata
   ) external payable virtual override returns (uint256) {
     // Make sure the project has set an accounting context for the token being paid.
@@ -243,7 +245,16 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     _amount = _acceptToken(_token, _amount);
 
     return
-      _pay(_token, _amount, msg.sender, _projectId, _beneficiary, _minReturnedTokens, _metadata);
+      _pay(
+        _token,
+        _amount,
+        msg.sender,
+        _projectId,
+        _beneficiary,
+        _minReturnedTokens,
+        _memo,
+        _metadata
+      );
   }
 
   /// @notice Receives funds belonging to the specified project.
@@ -251,12 +262,14 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
   /// @param _token The token being paid. This terminal ignores this property since it only manages one currency.
   /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+  /// @param _memo A memo to pass along to the emitted event.
   /// @param _metadata Extra data to pass along to the emitted event.
   function addToBalanceOf(
     uint256 _projectId,
     address _token,
     uint256 _amount,
     bool _shouldRefundHeldFees,
+    string calldata _memo,
     bytes calldata _metadata
   ) external payable virtual override {
     // Make sure the project has set an accounting context for the token being paid.
@@ -266,7 +279,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     _amount = _acceptToken(_token, _amount);
 
     // Add to balance.
-    _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _metadata);
+    _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
   }
 
   /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -397,7 +410,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       uint256 _payableValue = _token == JBTokens.ETH ? balance : 0;
 
       // Withdraw the balance to transfer to the new terminal;
-      _to.addToBalanceOf{value: _payableValue}(_projectId, _token, balance, false, bytes(''));
+      _to.addToBalanceOf{value: _payableValue}(_projectId, _token, balance, false, '', bytes(''));
     }
 
     emit Migrate(_projectId, _to, balance, msg.sender);
@@ -539,6 +552,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _projectId The ID of the project being paid.
   /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+  /// @param _memo A memo to pass along to the emitted event.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
   /// @return beneficiaryTokenCount The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
   function _pay(
@@ -548,6 +562,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _projectId,
     address _beneficiary,
     uint256 _minReturnedTokens,
+    string memory _memo,
     bytes memory _metadata
   ) internal returns (uint256 beneficiaryTokenCount) {
     // Cant send tokens to the zero address.
@@ -616,6 +631,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _beneficiary,
       _amount,
       beneficiaryTokenCount,
+      _memo,
       _metadata,
       msg.sender
     );
@@ -626,12 +642,14 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _token The address of the token being added to the project's balance.
   /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
   /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+  /// @param _memo A memo to pass along to the emitted event.
   /// @param _metadata Extra data to pass along to the emitted event.
   function _addToBalanceOf(
     uint256 _projectId,
     address _token,
     uint256 _amount,
     bool _shouldRefundHeldFees,
+    string memory _memo,
     bytes memory _metadata
   ) internal {
     // Refund any held fees to make sure the project doesn't pay double for funds going in and out of the protocol.
@@ -640,7 +658,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Record the added funds with any refunded fees.
     STORE.recordAddedBalanceFor(_projectId, _token, _amount + _refundedFees);
 
-    emit AddToBalance(_projectId, _amount, _refundedFees, _metadata, msg.sender);
+    emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
   }
 
   /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -1153,6 +1171,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
               _token,
               netPayoutAmount,
               false,
+              '',
               // Send the projectId in the metadata as a referral.
               bytes(abi.encodePacked(_projectId))
             )
@@ -1173,6 +1192,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
               netPayoutAmount,
               _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
               0,
+              '',
               // Send the projectId in the metadata as a referral.
               bytes(abi.encodePacked(_projectId))
             )
@@ -1431,6 +1451,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         _amount,
         _beneficiary,
         0,
+        '',
         // Send the projectId in the metadata.
         bytes(abi.encodePacked(_projectId))
       )

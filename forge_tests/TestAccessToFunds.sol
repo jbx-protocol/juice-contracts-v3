@@ -168,6 +168,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             token: JBTokens.ETH, 
             beneficiary: _beneficiary, 
             minReturnedTokens: 0, 
+            memo: "",
             metadata: new bytes(0)
         }); 
 
@@ -352,6 +353,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             token: JBTokens.ETH,
             beneficiary: _beneficiary, 
             minReturnedTokens: 0, 
+            memo: "",
             metadata: new bytes(0)
         });
 
@@ -569,6 +571,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             token: JBTokens.ETH, 
             beneficiary: _beneficiary, 
             minReturnedTokens: 0, 
+            memo: "",
             metadata: new bytes(0)
         });
 
@@ -772,6 +775,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             token: JBTokens.ETH,
             beneficiary: _beneficiary, 
             minReturnedTokens: 0, 
+            memo: "",
             metadata: new bytes(0)
         });
 
@@ -1027,6 +1031,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             token: JBTokens.ETH,
             beneficiary: _beneficiary, 
             minReturnedTokens: 0, 
+            memo: "",
             metadata: new bytes(0)
         });
 
@@ -1046,6 +1051,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             token: address(_usdcToken),
             beneficiary: _beneficiary, 
             minReturnedTokens: 0, 
+            memo: "",
             metadata: new bytes(0)
         });
 

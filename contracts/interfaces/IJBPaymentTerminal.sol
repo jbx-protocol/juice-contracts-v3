@@ -22,6 +22,7 @@ interface IJBPaymentTerminal is IERC165 {
     uint256 amount,
     address beneficiary,
     uint256 minReturnedTokens,
+    string calldata memo,
     bytes calldata metadata
   ) external payable returns (uint256 beneficiaryTokenCount);
 
@@ -30,6 +31,7 @@ interface IJBPaymentTerminal is IERC165 {
     address token,
     uint256 amount,
     bool shouldRefundHeldFees,
+    string calldata memo,
     bytes calldata metadata
   ) external payable;
 
