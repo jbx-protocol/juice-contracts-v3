@@ -26,6 +26,7 @@ import {JBFees} from './libraries/JBFees.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBTokens} from './libraries/JBTokens.sol';
+import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
 import {JBDidRedeemData3_1_1} from './structs/JBDidRedeemData3_1_1.sol';
 import {JBDidPayData3_1_1} from './structs/JBDidPayData3_1_1.sol';
 import {JBFee} from './structs/JBFee.sol';
@@ -118,6 +119,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @custom:param _address The address that can be paid toward.
   mapping(address => bool) public override isFeelessAddress;
 
+  //*********************************************************************//
+  // ------------------------- external views -------------------------- //
+  //*********************************************************************//
+
   /// @notice Information on how a project accounts for tokens.
   /// @param _projectId The ID of the project to get token accounting info for.
   /// @param _token The token to check the accounting info for.
@@ -129,9 +134,37 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     return _accountingContextForTokenOf[_projectId][_token];
   }
 
-  //*********************************************************************//
-  // ------------------------- external views -------------------------- //
-  //*********************************************************************//
+  /// @notice The tokens accepted by a project.
+  /// @param _projectId The ID of the project to get accepted tokens for.
+  /// @return tokenContexts The contexts of the accepted tokens.
+  function tokenContextsAcceptedBy(
+    uint256 _projectId
+  ) external view override returns (JBTokenAccountingContext[] memory tokenContexts) {
+    // Get a reference to all tokens accepted by the project;
+    address[] memory _acceptedTokens = _tokensAcceptedBy[_projectId];
+
+    // Keep a reference to the number of tokens the project accepts.
+    uint256 _numberOfAcceptedTokens = _acceptedTokens.length;
+
+    // Initialize the array that'll be returned.
+    tokenContexts = new JBTokenAccountingContext[](_numberOfAcceptedTokens);
+
+    // Iterate through each token.
+    for (uint256 _i; _i < _numberOfAcceptedTokens; ) {
+      JBTokenAccountingContext storage _context = _accountingContextForTokenOf[_projectId][
+        _acceptedTokens[_i]
+      ];
+      tokenContexts[_i] = JBTokenAccountingContext({
+        token: _context.token,
+        decimals: _context.decimals,
+        currency: _context.currency,
+        standard: _context.standard
+      });
+      unchecked {
+        ++_i;
+      }
+    }
+  }
 
   /// @notice Gets the current overflowed amount in this terminal for a specified project, in terms of ETH.
   /// @dev The current overflow is represented as a fixed point number with 18 decimals.
@@ -498,11 +531,13 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _token The token that this terminal manages.
   /// @param _decimals The number of decimals the token fixed point amounts are expected to have.
   /// @param _currency The currency that this terminal's token adheres to for price feeds.
+  /// @param _standard The token's standard.
   function setTokenAccountingContextFor(
     uint256 _projectId,
     address _token,
     uint8 _decimals,
-    uint32 _currency
+    uint32 _currency,
+    uint8 _standard
   ) external override {
     // Make sure the token accounting isn't already set.
     if (_accountingContextForTokenOf[_projectId][_token].decimals != 0) revert();
@@ -512,8 +547,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     // Store the value.
     _accountingContextForTokenOf[_projectId][_token] = JBTokenAccountingContext({
+      token: _token,
       decimals: _decimals,
-      currency: _currency
+      currency: _currency,
+      standard: _standard
     });
   }
 

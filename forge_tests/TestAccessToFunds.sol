@@ -147,7 +147,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _FEE_PROJECT_ID,
             token: JBTokens.ETH,
             decimals:_ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Set the test project's terminal's ETH accounting context.
@@ -155,7 +156,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Get a reference to the amount being paid, such that the distribution limit is met with two times the overflow than is allowed to be withdrawn.
@@ -335,7 +337,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _FEE_PROJECT_ID,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Set the test project's terminal's ETH accounting context.
@@ -343,7 +346,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
@@ -553,7 +557,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 projectId: _FEE_PROJECT_ID,
                 token: JBTokens.ETH,
                 decimals: _ETH_DECIMALS,
-                currency: uint32(JBCurrencies.ETH)
+                currency: uint32(JBCurrencies.ETH),
+                standard: JBTokenStandards.NATIVE
             });
 
         // Set the test project's terminal's ETH accounting context.
@@ -561,7 +566,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
@@ -765,7 +771,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
@@ -981,7 +988,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _FEE_PROJECT_ID,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Set the test project's terminal's ETH accounting context.
@@ -989,7 +997,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
-            currency: uint32(JBCurrencies.ETH)
+            currency: uint32(JBCurrencies.ETH),
+            standard: JBTokenStandards.NATIVE
         });
 
         // Set the fee collecting terminal's usdc accounting context.
@@ -997,7 +1006,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _FEE_PROJECT_ID,
             token: address(_usdcToken),
             decimals: _USDC_DECIMALS,
-            currency: uint32(JBCurrencies.USD)
+            currency: uint32(JBCurrencies.USD),
+            standard: JBTokenStandards.ERC20
         });
 
         // Set the test project's terminal's ETH accounting context.
@@ -1005,7 +1015,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             token: address(_usdcToken),
             decimals: _USDC_DECIMALS,
-            currency: uint32(JBCurrencies.USD)
+            currency: uint32(JBCurrencies.USD),
+            standard: JBTokenStandards.ERC20
         });
 
         // Add a price feed to convert from ETH to USD currencies.

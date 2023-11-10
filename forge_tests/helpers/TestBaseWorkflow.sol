@@ -72,6 +72,7 @@ import {IJBSplitsPayer} from '@juicebox/interfaces/IJBSplitsPayer.sol';
 
 import {JBTokens} from '@juicebox/libraries/JBTokens.sol';
 import {JBCurrencies} from '@juicebox/libraries/JBCurrencies.sol';
+import {JBTokenStandards} from '@juicebox/libraries/JBTokenStandards.sol';
 import {JBFundingCycleMetadataResolver} from '@juicebox/libraries/JBFundingCycleMetadataResolver.sol';
 import {JBConstants} from '@juicebox/libraries/JBConstants.sol';
 import {JBSplitsGroups} from '@juicebox/libraries/JBSplitsGroups.sol';

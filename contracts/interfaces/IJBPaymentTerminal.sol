@@ -10,6 +10,10 @@ interface IJBPaymentTerminal is IERC165 {
     address token
   ) external view returns (JBTokenAccountingContext memory);
 
+  function tokenContextsAcceptedBy(
+    uint256 projectId
+  ) external view returns (JBTokenAccountingContext[] memory);
+
   function currentOverflowOf(
     uint256 projectId,
     uint256 decimals,
@@ -39,6 +43,7 @@ interface IJBPaymentTerminal is IERC165 {
     uint256 projectId,
     address token,
     uint8 decimals,
-    uint32 currency
+    uint32 currency,
+    uint8 standard
   ) external;
 }
