@@ -139,17 +139,21 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @notice Gets the current overflowed amount in this terminal for a specified project, in terms of ETH.
   /// @dev The current overflow is represented as a fixed point number with 18 decimals.
   /// @param _projectId The ID of the project to get overflow for.
+  /// @param _decimals The number of decimals included in the fixed point returned value.
+  /// @param _currency The currency in which the ETH value is returned.
   /// @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
-  function currentEthOverflowOf(
-    uint256 _projectId
+  function currentOverflowOf(
+    uint256 _projectId,
+    uint256 _decimals,
+    uint256 _currency
   ) external view virtual override returns (uint256) {
     return
       STORE.currentOverflowOf(
         this,
         _projectId,
         _tokensAcceptedBy[_projectId],
-        JBCurrencies.ETH,
-        18
+        _decimals,
+        _currency
       );
   }
 

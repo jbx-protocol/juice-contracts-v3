@@ -10,7 +10,11 @@ interface IJBPaymentTerminal is IERC165 {
     address token
   ) external view returns (JBTokenAccountingContext memory);
 
-  function currentEthOverflowOf(uint256 projectId) external view returns (uint256);
+  function currentOverflowOf(
+    uint256 projectId,
+    uint256 decimals,
+    uint256 currency
+  ) external view returns (uint256);
 
   function pay(
     uint256 projectId,

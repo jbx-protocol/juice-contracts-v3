@@ -56,6 +56,9 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   /// @notice Ensures a maximum number of decimal points of persisted fidelity on mulDiv operations of fixed point numbers.
   uint256 private constant _MAX_FIXED_POINT_FIDELITY = 18;
 
+  /// @notice The number of decimals expected from ETH currency.
+  uint256 private constant _ETH_FIXED_POINT_FIDELITY = 18;
+
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
@@ -123,8 +126,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     IJBPaymentTerminal _terminal,
     uint256 _projectId,
     address[] calldata _tokens,
-    uint256 _currency,
-    uint256 _decimals
+    uint256 _decimals,
+    uint256 _currency
   ) external view override returns (uint256) {
     // Return the overflow during the project's current funding cycle.
     return
@@ -756,39 +759,33 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     uint256 _decimals,
     uint256 _currency
   ) private view returns (uint256 overflow) {
-    // Keep a reference to the distribution limit remaining normalized to the balance currency.
-    uint256 _normalizedDistributionLimitsRemaining;
-
     // Add distribution limits from each token.
     for (uint256 _i; _i < _tokens.length; ) {
       // Get a reference to the terminal's decimals.
       JBTokenAccountingContext memory _balanceContext = IJBPaymentTerminal(msg.sender)
         .accountingContextForTokenOf(_projectId, _tokens[_i]);
-      {
-        // Keep a reference to the balance.
-        uint256 _balance = balanceOf[_terminal][_projectId][_tokens[_i]];
 
-        // Adjust the decimals of the fixed point number if needed to have the correct decimals.
-        _balance = _balanceContext.decimals == _decimals
-          ? _balance
-          : JBFixedPointNumber.adjustDecimals(_balance, _balanceContext.decimals, _decimals);
+      // Keep a reference to the balance.
+      uint256 _balance = balanceOf[_terminal][_projectId][_tokens[_i]];
 
-        _balance = (_balance == 0 || _balanceContext.currency == _currency)
-          ? _balance
-          : PRBMath.mulDiv(
-            _balance,
-            10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-            prices.priceFor(
-              _projectId,
-              _balanceContext.currency,
-              _currency,
-              _MAX_FIXED_POINT_FIDELITY
-            )
-          );
+      // Adjust the decimals of the fixed point number if needed to have the correct decimals.
+      _balance = _balanceContext.decimals == _decimals
+        ? _balance
+        : JBFixedPointNumber.adjustDecimals(_balance, _balanceContext.decimals, _decimals);
 
-        // Add up all the balances.
-        overflow += _balance;
-      }
+      // Add up all the balances.
+      _balance = (_balance == 0 || _balanceContext.currency == _currency)
+        ? _balance
+        : PRBMath.mulDiv(
+          _balance,
+          10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
+          prices.priceFor(
+            _projectId,
+            _balanceContext.currency,
+            _currency,
+            _MAX_FIXED_POINT_FIDELITY
+          )
+        );
 
       // Get a reference to the distribution limit during the funding cycle for the token.
       JBCurrencyAmount[] memory _distributionLimits = IJBController3_1(
@@ -819,7 +816,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
           );
 
         // Convert the _distributionRemaining to be in terms of the provided currency.
-        _normalizedDistributionLimitsRemaining += (_distributionLimits[_j].value == 0 ||
+        _distributionLimits[_j].value = (_distributionLimits[_j].value == 0 ||
           _distributionLimits[_j].currency == _currency)
           ? _distributionLimits[_j].value
           : PRBMath.mulDiv(
@@ -833,22 +830,23 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             )
           );
 
+        // Increment overflow if needed.
+        if (_balance > _distributionLimits[_j].value) _balance -= _distributionLimits[_j].value;
+        else {
+          _balance = 0;
+          break;
+        }
+
         unchecked {
           ++_j;
         }
       }
 
+      if (_balance > 0) overflow += _balance;
+
       unchecked {
         ++_i;
       }
-    }
-
-    // Overflow is the balance of this project minus the amount that can still be distributed.
-    unchecked {
-      return
-        overflow > _normalizedDistributionLimitsRemaining
-          ? overflow - _normalizedDistributionLimitsRemaining
-          : 0;
     }
   }
 
@@ -862,34 +860,15 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     uint256 _projectId,
     uint256 _decimals,
     uint256 _currency
-  ) private view returns (uint256) {
+  ) private view returns (uint256 overflow) {
     // Get a reference to the project's terminals.
     IJBPaymentTerminal[] memory _terminals = directory.terminalsOf(_projectId);
-
-    // Keep a reference to the ETH overflow across all terminals, as a fixed point number with 18 decimals.
-    uint256 _ethOverflow;
-
     // Add the current ETH overflow for each terminal.
     for (uint256 _i; _i < _terminals.length; ) {
-      _ethOverflow = _ethOverflow + _terminals[_i].currentEthOverflowOf(_projectId);
+      overflow += _terminals[_i].currentOverflowOf(_projectId, _decimals, _currency);
       unchecked {
         ++_i;
       }
     }
-
-    // Convert the ETH overflow to the specified currency if needed, maintaining a fixed point number with 18 decimals.
-    uint256 _totalOverflow18Decimal = _currency == JBCurrencies.ETH
-      ? _ethOverflow
-      : PRBMath.mulDiv(
-        _ethOverflow,
-        10 ** 18,
-        prices.priceFor(_projectId, JBCurrencies.ETH, _currency, 18)
-      );
-
-    // Adjust the decimals of the fixed point number if needed to match the target decimals.
-    return
-      (_decimals == 18)
-        ? _totalOverflow18Decimal
-        : JBFixedPointNumber.adjustDecimals(_totalOverflow18Decimal, 18, _decimals);
   }
 }
