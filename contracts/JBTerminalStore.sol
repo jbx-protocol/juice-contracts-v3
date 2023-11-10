@@ -47,6 +47,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   error INSUFFICIENT_TOKENS();
   error INVALID_FUNDING_CYCLE();
   error PAYMENT_TERMINAL_MIGRATION_NOT_ALLOWED();
+  error BAD();
 
   //*********************************************************************//
   // -------------------------- private constants ---------------------- //
@@ -570,14 +571,14 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   /// @notice Records newly used allowance funds of a project.
   /// @dev The msg.sender must be an IJBPaymentTerminal.
   /// @param _projectId The ID of the project to use the allowance of.
-  /// @param _tokens The tokens whose balances should contribute to the overflow being reclaimed from.
+  /// @param _token The token whose balances should contribute to the overflow being reclaimed from.
   /// @param _amount The amount to use from the allowance, as a fixed point number.
   /// @param _currency The currency of the `_amount`. Must match the currency of the overflow allowance.
   /// @return fundingCycle The funding cycle during which the overflow allowance is being used.
   /// @return usedAmount The amount of terminal tokens used, as a fixed point number with the same amount of decimals as its relative terminal.
   function recordUsedAllowanceOf(
     uint256 _projectId,
-    address[] calldata _tokens,
+    address _token,
     uint256 _amount,
     uint256 _currency
   )
@@ -592,7 +593,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // Get a reference to the new used overflow allowance for this funding cycle configuration.
     uint256 _newUsedOverflowAllowanceOf = usedOverflowAllowanceOf[IJBPaymentTerminal(msg.sender)][
       _projectId
-    ][_tokens[0]][fundingCycle.configuration][_currency] + _amount;
+    ][_token][fundingCycle.configuration][_currency] + _amount;
 
     // There must be sufficient allowance available.
     uint256 _overflowAllowance = IJBController3_1(directory.controllerOf(_projectId))
@@ -601,7 +602,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         _projectId,
         fundingCycle.configuration,
         IJBPaymentTerminal(msg.sender),
-        _tokens[0],
+        _token,
         _currency
       );
 
@@ -611,7 +612,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
     // Get a reference to the terminal's decimals.
     JBTokenAccountingContext memory _balanceContext = IJBPaymentTerminal(msg.sender)
-      .accountingContextForTokenOf(_projectId, _tokens[0]);
+      .accountingContextForTokenOf(_projectId, _token);
 
     // Convert the amount to this store's terminal's token.
     usedAmount = (_currency == _balanceContext.currency)
@@ -622,27 +623,34 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         prices.priceFor(_projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY)
       );
 
-    // The amount being distributed must be available in the overflow.
-    if (
-      usedAmount >
-      _overflowDuring(
-        IJBPaymentTerminal(msg.sender),
-        _projectId,
-        _tokens,
-        fundingCycle,
-        _balanceContext.decimals,
-        _balanceContext.currency
-      )
-    ) revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
+    {
+      address[] memory _tokens = new address[](1);
+      _tokens[0] = _token;
+      // The amount being distributed must be available in the overflow.
+      if (
+        usedAmount >
+        _overflowDuring(
+          IJBPaymentTerminal(msg.sender),
+          _projectId,
+          _tokens,
+          fundingCycle,
+          _balanceContext.decimals,
+          _balanceContext.currency
+        )
+      ) revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
+    }
 
     // Store the incremented value.
-    usedOverflowAllowanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]][
+    usedOverflowAllowanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token][
       fundingCycle.configuration
     ][_currency] = _newUsedOverflowAllowanceOf;
 
+    // if (usedAmount > balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]])
+    //   revert BAD();
+
     // Update the project's balance.
-    balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]] =
-      balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]] -
+    balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token] =
+      balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token] -
       usedAmount;
   }
 

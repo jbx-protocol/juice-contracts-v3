@@ -107,7 +107,7 @@ interface IJBTerminalStore {
 
   function recordUsedAllowanceOf(
     uint256 projectId,
-    address[] calldata tokens,
+    address token,
     uint256 amount,
     uint256 currency
   ) external returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);

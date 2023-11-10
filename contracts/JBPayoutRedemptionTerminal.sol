@@ -908,7 +908,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Record the use of the allowance.
     (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = STORE.recordUsedAllowanceOf(
       _projectId,
-      _tokensAcceptedBy[_projectId],
+      _token,
+      // _tokensAcceptedBy[_projectId],
       _amount,
       _currency
     );
