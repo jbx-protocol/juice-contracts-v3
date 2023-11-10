@@ -669,14 +669,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Keep a reference to the funding cycle during which the redemption is being made.
     JBFundingCycle memory _fundingCycle;
 
-    // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount`, `_feePercent`, and  `_delegateAllocations` only used within scope.
+    // Scoped section prevents stack too deep.
     {
-      // Keep a reference to the amount being reclaimed that should have fees withheld from.
-      uint256 _feeEligibleDistributionAmount;
-
-      // Keep a reference to the fee.
-      uint256 _feePercent;
-
       JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
 
       // Scoped section prevents stack too deep. `_tokens` only used within scope.
@@ -696,7 +690,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       }
 
       // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
-      _feePercent = isFeelessAddress[_beneficiary] ||
+      uint256 _feePercent = isFeelessAddress[_beneficiary] ||
         _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
         ? 0
         : fee;
@@ -713,6 +707,9 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
           '',
           false
         );
+
+      // Keep a reference to the amount being reclaimed that should have fees withheld from.
+      uint256 _feeEligibleDistributionAmount;
 
       // If delegate allocations were specified by the data source, fulfill them.
       if (_delegateAllocations.length != 0) {
@@ -816,21 +813,18 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // The fee is 0 if the fee beneficiary doesn't accept the given token.
     uint256 _feePercent = fee;
 
-    // The amount distributed that is eligible for incurring fees.
-    uint256 _feeEligibleDistributionAmount;
-
-    // The amount leftover after distributing to the splits.
-    uint256 _leftoverDistributionAmount;
-
     // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
     // Also get a reference to the amount that was distributed to splits from which fees should be taken.
-    (_leftoverDistributionAmount, _feeEligibleDistributionAmount) = _distributeToPayoutSplitsOf(
-      _projectId,
-      _token,
-      _fundingCycle.configuration,
-      _distributedAmount,
-      _feePercent
-    );
+    (
+      uint256 _leftoverDistributionAmount,
+      uint256 _feeEligibleDistributionAmount
+    ) = _distributeToPayoutSplitsOf(
+        _projectId,
+        _token,
+        _fundingCycle.configuration,
+        _distributedAmount,
+        _feePercent
+      );
 
     if (_feePercent != 0) {
       // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
