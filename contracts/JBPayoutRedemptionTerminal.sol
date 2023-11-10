@@ -308,7 +308,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _tokenCount,
     uint256 _minReturnedTokens,
     address payable _beneficiary,
-    bytes memory _metadata
+    bytes calldata _metadata
   )
     external
     virtual
@@ -366,7 +366,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _currency,
     uint256 _minReturnedTokens,
     address payable _beneficiary,
-    string memory _memo
+    string calldata _memo
   )
     external
     virtual

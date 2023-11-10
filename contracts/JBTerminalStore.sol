@@ -255,7 +255,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     JBTokenAmount calldata _amount,
     uint256 _projectId,
     address _beneficiary,
-    bytes memory _metadata
+    bytes calldata _metadata
   )
     external
     override
@@ -303,26 +303,29 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // Keep a reference to the amount that should be added to the project's balance.
     uint256 _balanceDiff = _amount.value;
 
-    // Keep a reference to the number of delegate allocations.
-    uint256 _numberOfDelegateAllocations = delegateAllocations.length;
+    // Scoped section preventing stack too deep.
+    {
+      // Keep a reference to the number of delegate allocations.
+      uint256 _numberOfDelegateAllocations = delegateAllocations.length;
 
-    // Validate all delegated amounts. This needs to be done before returning the delegate allocations to ensure valid delegated amounts.
-    if (_numberOfDelegateAllocations != 0) {
-      for (uint256 _i; _i < _numberOfDelegateAllocations; ) {
-        // Get a reference to the amount to be delegated.
-        uint256 _delegatedAmount = delegateAllocations[_i].amount;
+      // Validate all delegated amounts. This needs to be done before returning the delegate allocations to ensure valid delegated amounts.
+      if (_numberOfDelegateAllocations != 0) {
+        for (uint256 _i; _i < _numberOfDelegateAllocations; ) {
+          // Get a reference to the amount to be delegated.
+          uint256 _delegatedAmount = delegateAllocations[_i].amount;
 
-        // Validate if non-zero.
-        if (_delegatedAmount != 0) {
-          // Can't delegate more than was paid.
-          if (_delegatedAmount > _balanceDiff) revert INVALID_AMOUNT_TO_SEND_DELEGATE();
+          // Validate if non-zero.
+          if (_delegatedAmount != 0) {
+            // Can't delegate more than was paid.
+            if (_delegatedAmount > _balanceDiff) revert INVALID_AMOUNT_TO_SEND_DELEGATE();
 
-          // Decrement the total amount being added to the balance.
-          _balanceDiff = _balanceDiff - _delegatedAmount;
-        }
+            // Decrement the total amount being added to the balance.
+            _balanceDiff = _balanceDiff - _delegatedAmount;
+          }
 
-        unchecked {
-          ++_i;
+          unchecked {
+            ++_i;
+          }
         }
       }
     }
