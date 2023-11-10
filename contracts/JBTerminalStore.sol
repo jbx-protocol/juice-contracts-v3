@@ -356,7 +356,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   /// @dev The msg.sender must be an IJBPaymentTerminal. The amount specified in the params is in terms of the msg.senders tokens.
   /// @param _holder The account that is having its tokens redeemed.
   /// @param _projectId The ID of the project to which the tokens being redeemed belong.
-  /// @param _tokens The tokens whose balances should contribute to the overflow being reclaimed from.
+  /// @param _token The token being reclaimed from the redemption.
+  /// @param _balanceTokens The tokens whose balances should contribute to the overflow being reclaimed from.
   /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
   /// @param _metadata Bytes to send along to the data source, if one is provided.
   /// @return fundingCycle The funding cycle during which the redemption was made.
@@ -365,7 +366,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   function recordRedemptionFor(
     address _holder,
     uint256 _projectId,
-    address[] memory _tokens,
+    address _token,
+    address[] memory _balanceTokens,
     uint256 _tokenCount,
     bytes memory _metadata
   )
@@ -395,7 +397,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
       {
         // Get a reference to the terminal's decimals.
         JBTokenAccountingContext memory _context = IJBPaymentTerminal(msg.sender)
-          .accountingContextForTokenOf(_projectId, _tokens[0]);
+          .accountingContextForTokenOf(_projectId, _token);
 
         // Get the amount of current overflow.
         // Use the local overflow if the funding cycle specifies that it should be used. Otherwise, use the project's total overflow across all of its terminals.
@@ -404,7 +406,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
           : _overflowDuring(
             IJBPaymentTerminal(msg.sender),
             _projectId,
-            _tokens,
+            _balanceTokens,
             fundingCycle,
             _context.decimals,
             _context.currency
@@ -427,7 +429,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
           );
 
         _reclaimedTokenAmount = JBTokenAmount(
-          _tokens[0],
+          _token,
           reclaimAmount,
           _context.decimals,
           _context.currency
@@ -480,14 +482,14 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     }
 
     // The amount being reclaimed must be within the project's balance.
-    if (_balanceDiff > balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]])
+    if (_balanceDiff > balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token])
       revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
 
     // Remove the reclaimed funds from the project's balance.
     if (_balanceDiff != 0) {
       unchecked {
-        balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]] =
-          balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_tokens[0]] -
+        balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token] =
+          balanceOf[IJBPaymentTerminal(msg.sender)][_projectId][_token] -
           _balanceDiff;
       }
     }

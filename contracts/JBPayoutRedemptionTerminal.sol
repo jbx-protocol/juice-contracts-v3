@@ -684,6 +684,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         (_fundingCycle, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
           _holder,
           _projectId,
+          _token,
           _tokens,
           _tokenCount,
           _metadata

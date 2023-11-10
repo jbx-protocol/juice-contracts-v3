@@ -87,6 +87,7 @@ interface IJBTerminalStore {
   function recordRedemptionFor(
     address holder,
     uint256 projectId,
+    address _token,
     address[] memory _tokens,
     uint256 tokenCount,
     bytes calldata metadata
