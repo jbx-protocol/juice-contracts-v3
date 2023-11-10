@@ -509,35 +509,52 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     emit SetFeelessAddress(_address, _flag, msg.sender);
   }
 
+  error K(address m);
+
   /// @notice Sets accounting context for a token so that a project can begin accepting it.
   /// @param _projectId The ID of the project having its token accounting context set.
-  /// @param _token The token that this terminal manages.
-  /// @param _standard The token's standard.
-  function setAccountingContextFor(
+  /// @param _accountingContexts The accounting contexts to set.
+  function setAccountingContextsFor(
     uint256 _projectId,
-    address _token,
-    uint8 _standard
+    JBAccountingContext[] calldata _accountingContexts
   ) external override {
-    // Make sure the token accounting isn't already set.
-    if (_accountingContextForTokenOf[_projectId][_token].token != address(0)) revert();
+    // Keep a reference to the number of accounting contexts.
+    uint256 _numberOfAccountingContexts = _accountingContexts.length;
 
-    // Store the value.
-    JBAccountingContext memory _context = JBAccountingContext({
-      token: _token,
-      // Set the decimals as either the expected native amount, or read it from the standard.
-      decimals: _standard == JBTokenStandards.NATIVE ? 18 : _standard == JBTokenStandards.ERC20
-        ? IERC20Metadata(_token).decimals()
-        : 0,
-      // Set the currency as either the native currency or as the first 24 bytes of the token's address.
-      currency: uint24(uint160(address(_token))),
-      standard: _standard
-    });
+    // Keep a reference to the accounting context being iterated on.
+    JBAccountingContext memory _accountingContext;
 
-    // Set the context.
-    _accountingContextForTokenOf[_projectId][_token] = _context;
+    // Set each accounting context.
+    for (uint256 _i; _i < _numberOfAccountingContexts; ) {
+      // Set the accounting context being iterated on.
+      _accountingContext = _accountingContexts[_i];
 
-    // Add the token to the list of accepted tokens of the project.
-    _accountingContextsOf[_projectId].push(_context);
+      // Make sure the token accounting isn't already set.
+      if (_accountingContextForTokenOf[_projectId][_accountingContext.token].token != address(0))
+        revert K(_accountingContextForTokenOf[_projectId][_accountingContext.token].token);
+
+      // Make sure decimals are correct.
+      if (
+        (_accountingContext.standard == JBTokenStandards.NATIVE &&
+          _accountingContext.decimals != 18) ||
+        (_accountingContext.standard == JBTokenStandards.ERC20 &&
+          _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals())
+      ) revert('2');
+
+      // Make sure currency is correct.
+      if (_accountingContext.currency != uint24(uint160(address(_accountingContext.token))))
+        revert('3');
+
+      // Set the context.
+      _accountingContextForTokenOf[_projectId][_accountingContext.token] = _accountingContext;
+
+      // Add the token to the list of accepted tokens of the project.
+      _accountingContextsOf[_projectId].push(_accountingContext);
+
+      unchecked {
+        ++_i;
+      }
+    }
   }
 
   //*********************************************************************//

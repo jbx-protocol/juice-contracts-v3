@@ -7,6 +7,7 @@ import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
 import {JBFundingCycleConfiguration} from './../structs/JBFundingCycleConfiguration.sol';
 import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './../structs/JBProjectMetadata.sol';
+import {JBTerminalConfiguration} from './../structs/JBTerminalConfiguration.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore} from './IJBFundAccessConstraintsStore.sol';
@@ -119,21 +120,21 @@ interface IJBController3_1 is IERC165 {
   function launchProjectFor(
     address owner,
     JBProjectMetadata calldata projectMetadata,
-    JBFundingCycleConfiguration[] calldata configurations,
-    IJBPaymentTerminal[] memory terminals,
+    JBFundingCycleConfiguration[] calldata fundingCycleConfigurations,
+    JBTerminalConfiguration[] memory terminalConfigurations,
     string calldata memo
   ) external returns (uint256 projectId);
 
   function launchFundingCyclesFor(
     uint256 projectId,
-    JBFundingCycleConfiguration[] calldata configurations,
-    IJBPaymentTerminal[] memory terminals,
+    JBFundingCycleConfiguration[] calldata fundingCycleConfigurations,
+    JBTerminalConfiguration[] memory terminalConfigurations,
     string calldata memo
   ) external returns (uint256 configured);
 
   function reconfigureFundingCyclesOf(
     uint256 projectId,
-    JBFundingCycleConfiguration[] calldata configurations,
+    JBFundingCycleConfiguration[] calldata fundingCycleConfigurations,
     string calldata memo
   ) external returns (uint256 configured);
 

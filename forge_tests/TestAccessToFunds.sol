@@ -28,7 +28,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
-    IJBPaymentTerminal[] private _terminals;
 
     function setUp() public override {
         super.setUp();
@@ -73,8 +72,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             dataSource: address(0),
             metadata: 0
         });
-
-        _terminals.push(_terminal);
     }
     
     // Tests that basic distribution limit and overflow allowance constraints work as intended.
@@ -114,19 +111,32 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-            _cycleConfig[0].mustStartAtOrAfter = 0;
-            _cycleConfig[0].data = _data;
-            _cycleConfig[0].metadata = _metadata;
-            _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            _cycleConfigurations[0].mustStartAtOrAfter = 0;
+            _cycleConfigurations[0].data = _data;
+            _cycleConfigurations[0].metadata = _metadata;
+            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+
+            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
+            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
+            _accountingContexts[0] = JBAccountingContext({
+                token: JBTokens.ETH,
+                currency: uint24(uint160(JBTokens.ETH)),
+                decimals: _ETH_DECIMALS,
+                standard: JBTokenStandards.NATIVE
+            });
+            _terminalConfigurations[0] = JBTerminalConfiguration({
+                terminal: _terminal,
+                accountingContexts: _accountingContexts
+            });
 
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                configurations: _cycleConfig,
-                terminals: _terminals, // set terminals where fees will be received
+                fundingCycleConfigurations: _cycleConfigurations,
+                terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
 
@@ -134,26 +144,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                configurations: _cycleConfig,
-                terminals: _terminals,
+                fundingCycleConfigurations: _cycleConfigurations,
+                terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
-            
         }
-
-        // Set the fee collecting terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _FEE_PROJECT_ID,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
-
-        // Set the test project's terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _projectId,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
 
         // Get a reference to the amount being paid, such that the distribution limit is met with two times the overflow than is allowed to be withdrawn.
         uint256 _ethPayAmount = _ethCurrencyDistributionLimit + (2 * _ethCurrencyOverflowAllowance);
@@ -301,19 +296,32 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-            _cycleConfig[0].mustStartAtOrAfter = 0;
-            _cycleConfig[0].data = _data;
-            _cycleConfig[0].metadata = _metadata;
-            _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            _cycleConfigurations[0].mustStartAtOrAfter = 0;
+            _cycleConfigurations[0].data = _data;
+            _cycleConfigurations[0].metadata = _metadata;
+            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+
+            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
+            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
+            _accountingContexts[0] = JBAccountingContext({
+                token: JBTokens.ETH,
+                currency: uint24(uint160(JBTokens.ETH)),
+                decimals: _ETH_DECIMALS,
+                standard: JBTokenStandards.NATIVE
+            });
+            _terminalConfigurations[0] = JBTerminalConfiguration({
+                terminal: _terminal,
+                accountingContexts: _accountingContexts
+            });
 
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                configurations: _cycleConfig, // use the same cycle configs
-                terminals: _terminals, // set terminals where fees will be received
+                fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
+                terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
 
@@ -321,25 +329,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                configurations: _cycleConfig,
-                terminals: _terminals,
+                fundingCycleConfigurations: _cycleConfigurations,
+                terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
         }
-
-        // Set the fee collecting terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _FEE_PROJECT_ID,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
-
-        // Set the test project's terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _projectId,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
 
         // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
         _terminal.pay{value: _ethPayAmount}({
@@ -515,47 +509,47 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _projectId;
 
         {
+            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
+            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
+            _accountingContexts[0] = JBAccountingContext({
+                token: JBTokens.ETH,
+                currency: uint24(uint160(JBTokens.ETH)),
+                decimals: _ETH_DECIMALS,
+                standard: JBTokenStandards.NATIVE
+            });
+
+            _terminalConfigurations[0] = JBTerminalConfiguration({
+                terminal: _terminal,
+                accountingContexts: _accountingContexts
+            });
+
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                configurations: new JBFundingCycleConfiguration[](0), // No cycle config will force revert when paid.
-                terminals: _terminals, // set terminals where fees will be received
+                fundingCycleConfigurations: new JBFundingCycleConfiguration[](0), // No cycle config will force revert when paid.
+                // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
+                terminalConfigurations: _feeProjectAcceptsToken ? _terminalConfigurations : new JBTerminalConfiguration[](0), // set terminals where fees will be received
                 memo: ""
             });
 
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-            _cycleConfig[0].mustStartAtOrAfter = 0;
-            _cycleConfig[0].data = _data;
-            _cycleConfig[0].metadata = _metadata;
-            _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            _cycleConfigurations[0].mustStartAtOrAfter = 0;
+            _cycleConfigurations[0].data = _data;
+            _cycleConfigurations[0].metadata = _metadata;
+            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                configurations: _cycleConfig,
-                terminals: _terminals,
+                fundingCycleConfigurations: _cycleConfigurations,
+                terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
         }
-
-        // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
-        if (_feeProjectAcceptsToken)
-            _terminal.setAccountingContextFor({
-                projectId: _FEE_PROJECT_ID,
-                token: JBTokens.ETH,
-                standard: JBTokenStandards.NATIVE
-            });
-
-        // Set the test project's terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _projectId,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
 
         // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
         _terminal.pay{value: _ethPayAmount}({
@@ -737,28 +731,36 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-            _cycleConfig[0].mustStartAtOrAfter = 0;
-            _cycleConfig[0].data = _data;
-            _cycleConfig[0].metadata = _metadata;
-            _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            _cycleConfigurations[0].mustStartAtOrAfter = 0;
+            _cycleConfigurations[0].data = _data;
+            _cycleConfigurations[0].metadata = _metadata;
+            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+
+            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
+            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
+            _accountingContexts[0] = JBAccountingContext({
+                token: JBTokens.ETH,
+                currency: uint24(uint160(JBTokens.ETH)),
+                decimals: _ETH_DECIMALS,
+                standard: JBTokenStandards.NATIVE
+            });
+
+            _terminalConfigurations[0] = JBTerminalConfiguration({
+                terminal: _terminal,
+                accountingContexts: _accountingContexts
+            });
+
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                configurations: _cycleConfig,
-                terminals: _terminals,
+                fundingCycleConfigurations: _cycleConfigurations,
+                terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
         }
-
-        // Set the test project's terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _projectId,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
 
         // Make a payment to the project to give it a starting balance. Send the tokens to the _beneficiary.
         _terminal.pay{value: _ethPayAmount}({
@@ -942,19 +944,39 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 });
 
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-            _cycleConfig[0].mustStartAtOrAfter = 0;
-            _cycleConfig[0].data = _data;
-            _cycleConfig[0].metadata = _metadata;
-            _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            _cycleConfigurations[0].mustStartAtOrAfter = 0;
+            _cycleConfigurations[0].data = _data;
+            _cycleConfigurations[0].metadata = _metadata;
+            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+
+            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
+            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](2);
+            _accountingContexts[0] = JBAccountingContext({
+                token: JBTokens.ETH,
+                currency: uint24(uint160(JBTokens.ETH)),
+                decimals: _ETH_DECIMALS,
+                standard: JBTokenStandards.NATIVE
+            });
+            _accountingContexts[1] = JBAccountingContext({
+                token: address(_usdcToken),
+                currency: uint24(uint160(address(_usdcToken))),
+                decimals: _usdcToken.decimals(),
+                standard: JBTokenStandards.ERC20
+            });
+
+            _terminalConfigurations[0] = JBTerminalConfiguration({
+                terminal: _terminal,
+                accountingContexts: _accountingContexts
+            });
 
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                configurations: _cycleConfig, // use the same cycle configs
-                terminals: _terminals, // set terminals where fees will be received
+                fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
+                terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
 
@@ -962,39 +984,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                configurations: _cycleConfig,
-                terminals: _terminals,
+                fundingCycleConfigurations: _cycleConfigurations,
+                terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
         }
-
-        // Set the fee collecting terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _FEE_PROJECT_ID,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
-
-        // Set the test project's terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _projectId,
-            token: JBTokens.ETH,
-            standard: JBTokenStandards.NATIVE
-        });
-
-        // Set the fee collecting terminal's usdc accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _FEE_PROJECT_ID,
-            token: address(_usdcToken),
-            standard: JBTokenStandards.ERC20
-        });
-
-        // Set the test project's terminal's ETH accounting context.
-        _terminal.setAccountingContextFor({
-            projectId: _projectId,
-            token: address(_usdcToken),
-            standard: JBTokenStandards.ERC20
-        });
 
         // Add a price feed to convert from ETH to USD currencies.
         {

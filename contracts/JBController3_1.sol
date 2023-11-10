@@ -26,6 +26,7 @@ import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
 import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
+import {JBTerminalConfiguration} from './structs/JBTerminalConfiguration.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
@@ -215,15 +216,15 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @dev Anyone can deploy a project on an owner's behalf.
   /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
   /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
-  /// @param _configurations The funding cycle configurations to schedule.
-  /// @param _terminals Payment terminals to add for the project.
+  /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+  /// @param _terminalConfigurations The terminal configurations to add for the project.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return projectId The ID of the project.
   function launchProjectFor(
     address _owner,
     JBProjectMetadata calldata _projectMetadata,
-    JBFundingCycleConfiguration[] calldata _configurations,
-    IJBPaymentTerminal[] memory _terminals,
+    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations,
+    JBTerminalConfiguration[] calldata _terminalConfigurations,
     string memory _memo
   ) external virtual override returns (uint256 projectId) {
     // Keep a reference to the directory.
@@ -236,10 +237,10 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     _directory.setControllerOf(projectId, address(this));
 
     // Configure the first funding cycle.
-    uint256 _configuration = _configure(projectId, _configurations);
+    uint256 _configuration = _configureFundingCycles(projectId, _fundingCycleConfigurations);
 
-    // Add the provided terminals to the list of terminals.
-    if (_terminals.length > 0) _directory.setTerminalsOf(projectId, _terminals);
+    // Configure the terminals.
+    _configureTerminals(projectId, _terminalConfigurations);
 
     emit LaunchProject(_configuration, projectId, _memo, msg.sender);
   }
@@ -248,14 +249,14 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @dev Each operation within this transaction can be done in sequence separately.
   /// @dev Only a project owner or operator can launch its funding cycles.
   /// @param _projectId The ID of the project to launch funding cycles for.
-  /// @param _configurations The funding cycle configurations to schedule.
-  /// @param _terminals Payment terminals to add for the project.
+  /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+  /// @param _terminalConfigurations The terminal configurations to add for the project.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function launchFundingCyclesFor(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _configurations,
-    IJBPaymentTerminal[] memory _terminals,
+    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations,
+    JBTerminalConfiguration[] calldata _terminalConfigurations,
     string memory _memo
   )
     external
@@ -272,10 +273,10 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     directory.setControllerOf(_projectId, address(this));
 
     // Configure the first funding cycle.
-    configured = _configure(_projectId, _configurations);
+    configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
 
-    // Add the provided terminals to the list of terminals.
-    if (_terminals.length > 0) directory.setTerminalsOf(_projectId, _terminals);
+    // Configure the terminals.
+    _configureTerminals(_projectId, _terminalConfigurations);
 
     emit LaunchFundingCycles(configured, _projectId, _memo, msg.sender);
   }
@@ -283,12 +284,12 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's ballot.
   /// @dev Only a project's owner or a designated operator can configure its funding cycles.
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-  /// @param _configurations The funding cycle configurations to schedule.
+  /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
   /// @param _memo A memo to pass along to the emitted event.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function reconfigureFundingCyclesOf(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _configurations,
+    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations,
     string calldata _memo
   )
     external
@@ -298,7 +299,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     returns (uint256 configured)
   {
     // Configure the next funding cycle.
-    configured = _configure(_projectId, _configurations);
+    configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
 
     emit ReconfigureFundingCycles(configured, _projectId, _memo, msg.sender);
   }
@@ -622,21 +623,21 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
 
   /// @notice Configures a funding cycle and stores information pertinent to the configuration.
   /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-  /// @param _configurations The funding cycle configurations to schedule.
+  /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
-  function _configure(
+  function _configureFundingCycles(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _configurations
+    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations
   ) internal returns (uint256 configured) {
     // Keep a reference to the configuration being iterated on.
     JBFundingCycleConfiguration memory _configuration;
 
     // Keep a reference to the number of configurations being scheduled.
-    uint256 _numberOfConfigurations = _configurations.length;
+    uint256 _numberOfConfigurations = _fundingCycleConfigurations.length;
 
     for (uint256 _i; _i < _numberOfConfigurations; ) {
       // Get a reference to the configuration being iterated on.
-      _configuration = _configurations[_i];
+      _configuration = _fundingCycleConfigurations[_i];
 
       // Make sure the provided reserved rate is valid.
       if (_configuration.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE)
@@ -674,5 +675,45 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         ++_i;
       }
     }
+  }
+
+  /// @notice Configure terminals for use.
+  /// @param _projectId The ID of the project configuring the terminals for use.
+  /// @param _terminalConfigurations The configurations to enact.
+  function _configureTerminals(
+    uint256 _projectId,
+    JBTerminalConfiguration[] calldata _terminalConfigurations
+  ) internal {
+    // Keep a reference to the number of terminals being configured.
+    uint256 _numberOfTerminalConfigurations = _terminalConfigurations.length;
+
+    // Set a array of terminals to populate.
+    IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](
+      _numberOfTerminalConfigurations
+    );
+
+    // Keep a reference to the terminal configuration beingiterated on.
+    JBTerminalConfiguration memory _terminalConfiguration;
+
+    for (uint256 _i; _i < _numberOfTerminalConfigurations; ) {
+      // Set the terminal configuration being iterated on.
+      _terminalConfiguration = _terminalConfigurations[_i];
+
+      // The the accounting contexts.
+      _terminalConfiguration.terminal.setAccountingContextsFor(
+        _projectId,
+        _terminalConfiguration.accountingContexts
+      );
+
+      // Add the terminal.
+      _terminals[_i] = _terminalConfiguration.terminal;
+
+      unchecked {
+        ++_i;
+      }
+    }
+
+    // Set the terminals in the directory.
+    if (_numberOfTerminalConfigurations > 0) directory.setTerminalsOf(_projectId, _terminals);
   }
 }
