@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
 import {JBPayDelegateAllocation3_1_1} from './../structs/JBPayDelegateAllocation3_1_1.sol';
 import {JBRedemptionDelegateAllocation3_1_1} from './../structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBAccountingContext} from './../structs/JBAccountingContext.sol';
 import {JBTokenAmount} from './../structs/JBTokenAmount.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFundingCycleStore} from './IJBFundingCycleStore.sol';
@@ -42,7 +43,7 @@ interface IJBTerminalStore {
   function currentOverflowOf(
     IJBPaymentTerminal terminal,
     uint256 projectId,
-    address[] calldata tokens,
+    JBAccountingContext[] calldata tokenContexts,
     uint256 decimals,
     uint256 currency
   ) external view returns (uint256);
@@ -56,7 +57,7 @@ interface IJBTerminalStore {
   function currentReclaimableOverflowOf(
     IJBPaymentTerminal terminal,
     uint256 projectId,
-    address[] calldata tokens,
+    JBAccountingContext[] calldata tokenContexts,
     uint256 _decimals,
     uint256 _currency,
     uint256 tokenCount,
@@ -87,8 +88,8 @@ interface IJBTerminalStore {
   function recordRedemptionFor(
     address holder,
     uint256 projectId,
-    address _token,
-    address[] memory _tokens,
+    JBAccountingContext calldata tokenContext,
+    JBAccountingContext[] calldata balanceTokenContexts,
     uint256 tokenCount,
     bytes calldata metadata
   )
@@ -101,14 +102,14 @@ interface IJBTerminalStore {
 
   function recordDistributionFor(
     uint256 projectId,
-    address token,
+    JBAccountingContext calldata tokenContext,
     uint256 amount,
     uint256 currency
   ) external returns (JBFundingCycle memory fundingCycle, uint256 distributedAmount);
 
   function recordUsedAllowanceOf(
     uint256 projectId,
-    address token,
+    JBAccountingContext calldata tokenContext,
     uint256 amount,
     uint256 currency
   ) external returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);

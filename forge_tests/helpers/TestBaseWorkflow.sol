@@ -22,7 +22,7 @@ import {JBTokenStore} from '@juicebox/JBTokenStore.sol';
 import {JBReconfigurationBufferBallot} from '@juicebox/JBReconfigurationBufferBallot.sol';
 import {JBPayoutRedemptionTerminal} from '@juicebox/JBPayoutRedemptionTerminal.sol';
 import {JBCurrencyAmount} from '@juicebox/structs/JBCurrencyAmount.sol';
-import {JBTokenAccountingContext} from '@juicebox/structs/JBTokenAccountingContext.sol';
+import {JBAccountingContext} from '@juicebox/structs/JBAccountingContext.sol';
 import {JBDidPayData3_1_1} from '@juicebox/structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData3_1_1} from '@juicebox/structs/JBDidRedeemData3_1_1.sol';
 import {JBFee} from '@juicebox/structs/JBFee.sol';

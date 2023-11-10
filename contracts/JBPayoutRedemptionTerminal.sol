@@ -35,7 +35,7 @@ import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1
 import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
-import {JBTokenAccountingContext} from './structs/JBTokenAccountingContext.sol';
+import {JBAccountingContext} from './structs/JBAccountingContext.sol';
 import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 
@@ -79,12 +79,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @notice Context describing how a token is accounted for by a project.
   /// @custom:param _projectId The ID of the project to which the token accounting context applies.
   /// @custom:param _token The address of the token being accounted for.
-  mapping(uint256 => mapping(address => JBTokenAccountingContext))
-    internal _accountingContextForTokenOf;
+  mapping(uint256 => mapping(address => JBAccountingContext)) internal _accountingContextForTokenOf;
 
   /// @notice A list of tokens accepted by each project.
   /// @custom:param _projectId The ID of the project to get a list of accepted tokens for.
-  mapping(uint256 => address[]) internal _tokensAcceptedBy;
+  mapping(uint256 => JBAccountingContext[]) internal _accountingContextsOf;
 
   /// @notice Fees that are being held to be processed later.
   /// @custom:param _projectId The ID of the project for which fees are being held.
@@ -130,40 +129,17 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   function accountingContextForTokenOf(
     uint256 _projectId,
     address _token
-  ) external view override returns (JBTokenAccountingContext memory) {
+  ) external view override returns (JBAccountingContext memory) {
     return _accountingContextForTokenOf[_projectId][_token];
   }
 
   /// @notice The tokens accepted by a project.
   /// @param _projectId The ID of the project to get accepted tokens for.
   /// @return tokenContexts The contexts of the accepted tokens.
-  function tokenContextsAcceptedBy(
+  function accountingContextsOf(
     uint256 _projectId
-  ) external view override returns (JBTokenAccountingContext[] memory tokenContexts) {
-    // Get a reference to all tokens accepted by the project;
-    address[] memory _acceptedTokens = _tokensAcceptedBy[_projectId];
-
-    // Keep a reference to the number of tokens the project accepts.
-    uint256 _numberOfAcceptedTokens = _acceptedTokens.length;
-
-    // Initialize the array that'll be returned.
-    tokenContexts = new JBTokenAccountingContext[](_numberOfAcceptedTokens);
-
-    // Iterate through each token.
-    for (uint256 _i; _i < _numberOfAcceptedTokens; ) {
-      JBTokenAccountingContext storage _context = _accountingContextForTokenOf[_projectId][
-        _acceptedTokens[_i]
-      ];
-      tokenContexts[_i] = JBTokenAccountingContext({
-        token: _context.token,
-        decimals: _context.decimals,
-        currency: _context.currency,
-        standard: _context.standard
-      });
-      unchecked {
-        ++_i;
-      }
-    }
+  ) external view override returns (JBAccountingContext[] memory) {
+    return _accountingContextsOf[_projectId];
   }
 
   /// @notice Gets the current overflowed amount in this terminal for a specified project, in terms of ETH.
@@ -181,7 +157,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       STORE.currentOverflowOf(
         this,
         _projectId,
-        _tokensAcceptedBy[_projectId],
+        _accountingContextsOf[_projectId],
         _decimals,
         _currency
       );
@@ -532,7 +508,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _decimals The number of decimals the token fixed point amounts are expected to have.
   /// @param _currency The currency that this terminal's token adheres to for price feeds.
   /// @param _standard The token's standard.
-  function setTokenAccountingContextFor(
+  function setAccountingContextFor(
     uint256 _projectId,
     address _token,
     uint8 _decimals,
@@ -542,16 +518,19 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Make sure the token accounting isn't already set.
     if (_accountingContextForTokenOf[_projectId][_token].decimals != 0) revert();
 
-    // Add the token to the list of accepted tokens of the project.
-    _tokensAcceptedBy[_projectId].push(_token);
-
     // Store the value.
-    _accountingContextForTokenOf[_projectId][_token] = JBTokenAccountingContext({
+    JBAccountingContext memory _context = JBAccountingContext({
       token: _token,
       decimals: _decimals,
       currency: _currency,
       standard: _standard
     });
+
+    // Set the context.
+    _accountingContextForTokenOf[_projectId][_token] = _context;
+
+    // Add the token to the list of accepted tokens of the project.
+    _accountingContextsOf[_projectId].push(_context);
   }
 
   //*********************************************************************//
@@ -617,7 +596,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       uint256 _tokenCount;
 
       // Get a reference to the token's accounting context.
-      JBTokenAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
+      JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
 
       // Bundle the amount info into a JBTokenAmount struct.
       _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
@@ -728,21 +707,15 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     {
       JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
 
-      // Scoped section prevents stack too deep. `_tokens` only used within scope.
-      {
-        // Keep a reference to the tokens accepted by the project.
-        address[] memory _tokens = _tokensAcceptedBy[_projectId];
-
-        // Record the redemption.
-        (_fundingCycle, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
-          _holder,
-          _projectId,
-          _token,
-          _tokens,
-          _tokenCount,
-          _metadata
-        );
-      }
+      // Record the redemption.
+      (_fundingCycle, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
+        _holder,
+        _projectId,
+        _accountingContextForTokenOf[_projectId][_token],
+        _accountingContextsOf[_projectId],
+        _tokenCount,
+        _metadata
+      );
 
       // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
       uint256 _feePercent = isFeelessAddress[_beneficiary] ||
@@ -769,7 +742,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       // If delegate allocations were specified by the data source, fulfill them.
       if (_delegateAllocations.length != 0) {
         // Get a reference to the token's accounting context.
-        JBTokenAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
+        JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
 
         // Fulfill the delegates.
         _feeEligibleDistributionAmount += _fulfillRedemptionDelegateAllocationsFor(
@@ -852,7 +825,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Record the distribution.
     (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = STORE.recordDistributionFor(
       _projectId,
-      _token,
+      _accountingContextForTokenOf[_projectId][_token],
       _amount,
       _currency
     );
@@ -961,7 +934,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Record the use of the allowance.
     (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = STORE.recordUsedAllowanceOf(
       _projectId,
-      _token,
+      _accountingContextForTokenOf[_projectId][_token],
       _amount,
       _currency
     );
@@ -1128,7 +1101,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _beforeTransferTo(address(_split.allocator), _token, netPayoutAmount);
 
       // Get a reference to the token's accounting context.
-      JBTokenAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
+      JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
 
       // Create the data to send to the allocator.
       JBSplitAllocationData memory _data = JBSplitAllocationData(

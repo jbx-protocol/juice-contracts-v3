@@ -2,17 +2,17 @@
 pragma solidity ^0.8.0;
 
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import {JBTokenAccountingContext} from '../structs/JBTokenAccountingContext.sol';
+import {JBAccountingContext} from '../structs/JBAccountingContext.sol';
 
 interface IJBPaymentTerminal is IERC165 {
   function accountingContextForTokenOf(
     uint256 projectId,
     address token
-  ) external view returns (JBTokenAccountingContext memory);
+  ) external view returns (JBAccountingContext memory);
 
-  function tokenContextsAcceptedBy(
+  function accountingContextsOf(
     uint256 projectId
-  ) external view returns (JBTokenAccountingContext[] memory);
+  ) external view returns (JBAccountingContext[] memory);
 
   function currentOverflowOf(
     uint256 projectId,
@@ -39,7 +39,7 @@ interface IJBPaymentTerminal is IERC165 {
     bytes calldata metadata
   ) external payable;
 
-  function setTokenAccountingContextFor(
+  function setAccountingContextFor(
     uint256 projectId,
     address token,
     uint8 decimals,

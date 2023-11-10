@@ -143,7 +143,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Set the fee collecting terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _FEE_PROJECT_ID,
             token: JBTokens.ETH,
             decimals:_ETH_DECIMALS,
@@ -152,7 +152,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Set the test project's terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -333,7 +333,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Set the fee collecting terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _FEE_PROJECT_ID,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -342,7 +342,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Set the test project's terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -553,7 +553,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
         if (_feeProjectAcceptsToken)
-            _terminal.setTokenAccountingContextFor({
+            _terminal.setAccountingContextFor({
                 projectId: _FEE_PROJECT_ID,
                 token: JBTokens.ETH,
                 decimals: _ETH_DECIMALS,
@@ -562,7 +562,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
         // Set the test project's terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -767,7 +767,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Set the test project's terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -984,7 +984,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Set the fee collecting terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _FEE_PROJECT_ID,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -993,7 +993,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Set the test project's terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _projectId,
             token: JBTokens.ETH,
             decimals: _ETH_DECIMALS,
@@ -1002,7 +1002,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Set the fee collecting terminal's usdc accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _FEE_PROJECT_ID,
             token: address(_usdcToken),
             decimals: _USDC_DECIMALS,
@@ -1011,7 +1011,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Set the test project's terminal's ETH accounting context.
-        _terminal.setTokenAccountingContextFor({
+        _terminal.setAccountingContextFor({
             projectId: _projectId,
             token: address(_usdcToken),
             decimals: _USDC_DECIMALS,
