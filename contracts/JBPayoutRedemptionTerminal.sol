@@ -458,6 +458,12 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // Keep a reference to the number of held fees.
     uint256 _numberOfHeldFees = _heldFees.length;
 
+    // Keep a reference to the terminal that'll receive the fees.
+    IJBPaymentTerminal _feeTerminal = DIRECTORY.primaryTerminalOf(
+      _FEE_BENEFICIARY_PROJECT_ID,
+      _token
+    );
+
     // Process each fee.
     for (uint256 _i; _i < _numberOfHeldFees; ) {
       // Get the fee amount.
@@ -466,7 +472,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       );
 
       // Process the fee.
-      _processFee(_projectId, _token, _amount, _heldFees[_i].beneficiary);
+      _processFee(_projectId, _token, _amount, _heldFees[_i].beneficiary, _feeTerminal);
 
       emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, msg.sender);
 
@@ -1398,8 +1404,14 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
       emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, msg.sender);
     } else {
+      // Get the terminal that'll receive the fee if one wasn't provided.
+      IJBPaymentTerminal _feeTerminal = DIRECTORY.primaryTerminalOf(
+        _FEE_BENEFICIARY_PROJECT_ID,
+        _token
+      );
+
       // Process the fee.
-      _processFee(_projectId, _token, feeAmount, _beneficiary);
+      _processFee(_projectId, _token, feeAmount, _beneficiary, _feeTerminal);
 
       emit ProcessFee(_projectId, feeAmount, false, _beneficiary, msg.sender);
     }
@@ -1410,18 +1422,14 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _token The token the fee is being paid in.
   /// @param _amount The fee amount, as a floating point number with 18 decimals.
   /// @param _beneficiary The address to mint the platform's tokens for.
+  /// @param _feeTerminal The terminal that'll receive the fees. This'll be filled if one isn't provided.
   function _processFee(
     uint256 _projectId,
     address _token,
     uint256 _amount,
-    address _beneficiary
+    address _beneficiary,
+    IJBPaymentTerminal _feeTerminal
   ) internal {
-    // Keep a reference to the terminal that'll receive the fee.
-    IJBPaymentTerminal _feeTerminal = DIRECTORY.primaryTerminalOf(
-      _FEE_BENEFICIARY_PROJECT_ID,
-      _token
-    );
-
     if (address(_feeTerminal) == address(0)) {
       _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
       emit FeeReverted(
