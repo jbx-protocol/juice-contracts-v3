@@ -528,7 +528,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       decimals: _standard == JBTokenStandards.NATIVE ? 18 : _standard == JBTokenStandards.ERC20
         ? IERC20Metadata(_token).decimals()
         : 0,
-      // Set the currency as either the native currency or as the first 32 bytes of the token's address.
+      // Set the currency as either the native currency or as the first 24 bytes of the token's address.
       currency: uint24(uint160(address(_token))),
       standard: _standard
     });
