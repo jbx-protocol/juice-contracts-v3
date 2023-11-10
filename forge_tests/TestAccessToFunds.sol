@@ -21,6 +21,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     IJBPrices private _prices;
     IJBPayoutRedemptionTerminal private _terminal; 
     IJBTokenStore private _tokenStore;
+    address private _multisig;
     address private _projectOwner;
     address private _beneficiary;
     MockERC20 private _usdcToken;
@@ -35,6 +36,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
         _beneficiary = beneficiary();
+        _multisig = multisig();
         _usdcToken = usdcToken();
         _tokenStore = jbTokenStore();
         _controller = jbController();
@@ -942,13 +944,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     distributionLimits: _distributionLimits,
                     overflowAllowances: _overflowAllowances
                 });
-            // _fundAccessConstraints[1] =
-            //     JBFundAccessConstraints({
-            //         terminal: _terminal,
-            //         token: address(_usdcToken),
-            //         distributionLimits: _distributionLimits,
-            //         overflowAllowances: _overflowAllowances
-            //     });
 
             // Package up the configuration info.
             JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
@@ -1011,12 +1006,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Add a price feed to convert from ETH to USD currencies.
         {
-            vm.startPrank(_projectOwner);
+            vm.startPrank(_multisig);
             MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_USD_PRICE_PER_ETH, _PRICE_FEED_DECIMALS);
             vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USDC");
 
             _prices.addFeedFor({
-                projectId: _projectId,
+                projectId: 0,
                 currency: JBCurrencies.USD, 
                 base: JBCurrencies.ETH, 
                 priceFeed: _priceFeedEthUsd
@@ -1310,6 +1305,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 );
 
                 assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, address(_usdcToken)), _usdcPayAmount - _usdcReclaimAmount);
+
+                uint256 _usdcFeeAmount = _usdcReclaimAmount - _usdcReclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+                // assertEq(_usdcToken.balanceOf(_beneficiary), _usdcReclaimAmount - _usdcFeeAmount);
+
+                // Make sure the fee was paid correctly.
+                // assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, address(_usdcToken)), _usdcFeeAmount);
+                // assertEq(_usdcToken.balanceOf(address(_terminal)), _usdcPayAmount - _usdcReclaimAmount + _usdcFeeAmount);
             } else {
                 // Redeem ETH from the overflow using all of the _beneficiary's tokens.
                 _terminal.redeemTokensOf({

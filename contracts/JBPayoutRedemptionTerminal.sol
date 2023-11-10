@@ -511,11 +511,18 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   // ---------------------- internal transactions ---------------------- //
   //*********************************************************************//
 
+  /// @notice Accepts an incoming token.
+  /// @param _token The token being accepted.
+  /// @param _amount The amount of tokens being accepted.
+  /// @return The amount of tokens that have been accepted.
   function _acceptToken(address _token, uint256 _amount) internal returns (uint256) {
     // If this terminal's token isn't ETH, make sure no msg.value was sent, then transfer the tokens in from msg.sender.
     if (_token != JBTokens.ETH) {
       // Amount must be greater than 0.
       if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
+
+      // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
+      if (msg.sender == address(this)) return _amount;
 
       // Get a reference to the balance before receiving tokens.
       uint256 _balanceBefore = _balance(_token);
@@ -1532,7 +1539,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _depositAmount
   ) internal {
     // Cancel allowance if needed.
-    if (_allowanceAmount != 0) _cancelTransferTo(_expectedDestination, _token, _allowanceAmount);
+    if (_allowanceAmount != 0 && _expectedDestination != address(this))
+      _cancelTransferTo(_expectedDestination, _token, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
     STORE.recordAddedBalanceFor(_projectId, _token, _depositAmount);
