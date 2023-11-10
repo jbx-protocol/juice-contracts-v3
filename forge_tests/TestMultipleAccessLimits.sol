@@ -4,11 +4,11 @@ pragma solidity ^0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
-contract TestMultipleDistLimits_Local is TestBaseWorkflow {
+contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     uint256 private _ethCurrency; 
     uint256 private _usdCurrency; 
     IJBController3_1 private _controller;
-    IJBPayoutRedemptionPaymentTerminal3_1 private _terminal3_2;
+    IJBPayoutRedemptionPaymentTerminal3_1 private __terminal;
     IJBPrices private _prices;
     JBTokenStore private _tokenStore;
     JBSingleTokenPaymentTerminalStore3_1_1 private _jbPaymentTerminalStore3_1_1;
@@ -30,7 +30,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         _beneficiary = beneficiary();
         _prices = jbPrices();
         _jbPaymentTerminalStore3_1_1 = jbPaymentTerminalStore();
-        _terminal3_2 = new JBETHPaymentTerminal3_1_2(
+        __terminal = new JBETHPaymentTerminal3_1_2(
             jbOperatorStore(),
             jbProjects(),
             jbDirectory(),
@@ -72,7 +72,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        _terminals.push(_terminal3_2);
+        _terminals.push(__terminal);
     }
 
     function testAccessConstraintsDelineation() external {
@@ -101,7 +101,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
-                terminal: _terminal3_2,
+                terminal: __terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
@@ -145,7 +145,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         vm.stopPrank();
 
-        _terminal3_2.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
             token: address(0), // unused.
@@ -156,13 +156,13 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             metadata: new bytes(0)
         });
 
-        uint256 initTerminalBalance = address(_terminal3_2).balance;
+        uint256 initTerminalBalance = address(__terminal).balance;
 
         // Make sure the beneficiary has a balance of JBTokens.
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), PRBMathUD60x18.mul(_ethPayAmount, _data.weight));
 
         // First dist meets our ETH limit
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethDistributionLimit,
             currency: _ethCurrency,
@@ -173,8 +173,8 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         // Make sure the balance has changed, accounting for the fee that stays.
         assertEq(
-            address(_terminal3_2).balance,
-            initTerminalBalance - PRBMath.mulDiv(_distributionLimits[0].value, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + _terminal3_2.fee())
+            address(__terminal).balance,
+            initTerminalBalance - PRBMath.mulDiv(_distributionLimits[0].value, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee())
         );
 
         // Price for the amount (in USD) that is distributable based on the terminals current balance
@@ -191,13 +191,13 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         // Confirm that anything over the _distributableAmount will fail via paymentterminalstore3_2
         // This doesn't work when expecting & calling distributePayoutsOf bc of chained calls
-        vm.prank(address(_terminal3_2));
+        vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
         // add 10000 to make up for the fidelity difference in prices. (0.0005/1)
         _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, _usdDistributableAmount + 10000, _usdCurrency);
 
         // Should succeed with _distributableAmount
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: _usdCurrency,
@@ -210,7 +210,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         vm.deal(_beneficiary, _ethPayAmount);
         vm.prank(_beneficiary);
 
-        _terminal3_2.pay{value:_ethPayAmount}({
+        __terminal.pay{value:_ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
             token: address(0), // unused 
@@ -222,12 +222,12 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
 
         // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
-        vm.prank(address(_terminal3_2));
+        vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
         _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, 1, _ethCurrency);
 
         // But distribution via USD limit will succeed 
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: _usdCurrency,
@@ -259,7 +259,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
-                terminal: _terminal3_2,
+                terminal: __terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
@@ -310,7 +310,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
-                terminal: _terminal3_2,
+                terminal: __terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
@@ -366,7 +366,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
-                terminal: _terminal3_2,
+                terminal: __terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
@@ -413,7 +413,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
-                terminal: _terminal3_2,
+                terminal: __terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
@@ -444,7 +444,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             memo: ""
         });
 
-        _terminal3_2.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
             token: address(0), // unused
@@ -458,10 +458,10 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         // Make sure beneficiary has a balance of JBTokens
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _userTokenBalance);
-        uint256 initTerminalBalance = address(_terminal3_2).balance;
+        uint256 initTerminalBalance = address(__terminal).balance;
 
         // First dist should be fine based on price
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 1800000000,
             currency: _usdCurrency,
@@ -483,12 +483,12 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         // Make sure the remaining balance is correct.
         assertEq(
-            address(_terminal3_2).balance,
-            initTerminalBalance - PRBMath.mulDiv(_distributedAmount, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + _terminal3_2.fee())
+            address(__terminal).balance,
+            initTerminalBalance - PRBMath.mulDiv(_distributedAmount, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee())
         );
 
         // Next dist should be fine based on price
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 1700000000,
             currency: _usdCurrency,
@@ -515,7 +515,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         });
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
-                terminal: _terminal3_2,
+                terminal: __terminal,
                 token: jbLibraries().ETHToken(),
                 distributionLimits: _distributionLimits,
                 overflowAllowances: new JBCurrencyAmount[](0)
@@ -537,7 +537,7 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
             ""
         );
 
-        _terminal3_2.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
             token: address(0), // unused
@@ -564,10 +564,10 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _userTokenBalance);
 
-        uint256 initTerminalBalance = address(_terminal3_2).balance;
+        uint256 initTerminalBalance = address(__terminal).balance;
         uint256 ownerBalanceBeforeFirst = _projectOwner.balance;
 
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 3000000000,
             currency: _usdCurrency,
@@ -589,19 +589,19 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
 
         assertEq(
             _projectOwner.balance,
-            ownerBalanceBeforeFirst + PRBMath.mulDiv(_distributedAmount, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + _terminal3_2.fee())
+            ownerBalanceBeforeFirst + PRBMath.mulDiv(_distributedAmount, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee())
         );
 
         // Funds leaving the ecosystem -> fee taken
         assertEq(
-            address(_terminal3_2).balance,
-            initTerminalBalance - PRBMath.mulDiv(_distributedAmount, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + _terminal3_2.fee())
+            address(__terminal).balance,
+            initTerminalBalance - PRBMath.mulDiv(_distributedAmount, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee())
         );
 
-        uint256 _balanceBeforeEthDist = address(_terminal3_2).balance;
+        uint256 _balanceBeforeEthDist = address(__terminal).balance;
         uint256 _ownerBalanceBeforeEthDist = _projectOwner.balance;
 
-        _terminal3_2.distributePayoutsOf({
+        __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 1 ether,
             currency: _ethCurrency,
@@ -613,12 +613,12 @@ contract TestMultipleDistLimits_Local is TestBaseWorkflow {
         // Funds leaving the ecosystem -> fee taken
         assertEq(
             _projectOwner.balance,
-            _ownerBalanceBeforeEthDist + PRBMath.mulDiv(1 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + _terminal3_2.fee())
+            _ownerBalanceBeforeEthDist + PRBMath.mulDiv(1 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee())
         );
 
         assertEq(
-            address(_terminal3_2).balance,
-            _balanceBeforeEthDist - PRBMath.mulDiv(1 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + _terminal3_2.fee())
+            address(__terminal).balance,
+            _balanceBeforeEthDist - PRBMath.mulDiv(1 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee())
         );
     }
 }
