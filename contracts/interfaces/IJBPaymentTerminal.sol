@@ -39,11 +39,5 @@ interface IJBPaymentTerminal is IERC165 {
     bytes calldata metadata
   ) external payable;
 
-  function setAccountingContextFor(
-    uint256 projectId,
-    address token,
-    uint8 decimals,
-    uint32 currency,
-    uint8 standard
-  ) external;
+  function setAccountingContextFor(uint256 projectId, address token, uint8 standard) external;
 }

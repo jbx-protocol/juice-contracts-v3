@@ -8,6 +8,6 @@ pragma solidity ^0.8.0;
 struct JBAccountingContext {
   address token;
   uint8 decimals;
-  uint32 currency;
+  uint24 currency;
   uint8 standard;
 }

@@ -5,6 +5,7 @@ import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {Address} from '@openzeppelin/contracts/utils/Address.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
@@ -207,6 +208,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     if (_accountingContext.standard == JBTokenStandards.ERC20)
       return IERC20(_token).balanceOf(address(this));
+
+    return 0;
   }
 
   //*********************************************************************//
@@ -509,24 +512,24 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @notice Sets accounting context for a token so that a project can begin accepting it.
   /// @param _projectId The ID of the project having its token accounting context set.
   /// @param _token The token that this terminal manages.
-  /// @param _decimals The number of decimals the token fixed point amounts are expected to have.
-  /// @param _currency The currency that this terminal's token adheres to for price feeds.
   /// @param _standard The token's standard.
   function setAccountingContextFor(
     uint256 _projectId,
     address _token,
-    uint8 _decimals,
-    uint32 _currency,
     uint8 _standard
   ) external override {
     // Make sure the token accounting isn't already set.
-    if (_accountingContextForTokenOf[_projectId][_token].decimals != 0) revert();
+    if (_accountingContextForTokenOf[_projectId][_token].token != address(0)) revert();
 
     // Store the value.
     JBAccountingContext memory _context = JBAccountingContext({
       token: _token,
-      decimals: _decimals,
-      currency: _currency,
+      // Set the decimals as either the expected native amount, or read it from the standard.
+      decimals: _standard == JBTokenStandards.NATIVE ? 18 : _standard == JBTokenStandards.ERC20
+        ? IERC20Metadata(_token).decimals()
+        : 0,
+      // Set the currency as either the native currency or as the first 32 bytes of the token's address.
+      currency: uint24(uint160(address(_token))),
       standard: _standard
     });
 
