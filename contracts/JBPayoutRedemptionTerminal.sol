@@ -542,7 +542,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       // Set the accounting context being iterated on.
       _accountingContext = _accountingContexts[_i];
 
-      // Make sure the token accounting isn't already set.
+      // Make sure the token accounting context isn't already set.
       if (_accountingContextForTokenOf[_projectId][_accountingContext.token].token != address(0))
         revert ACCOUNTING_CONTEXT_ALREADY_SET();
 
