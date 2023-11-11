@@ -13,7 +13,6 @@ import {IJBAllowanceTerminal3_1} from './interfaces/IJBAllowanceTerminal3_1.sol'
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBPayoutRedemptionTerminal} from './interfaces/IJBPayoutRedemptionTerminal.sol';
-import {IJBCustomPayToken} from './interfaces/IJBCustomPayToken.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
@@ -551,9 +550,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         (_accountingContext.standard == JBTokenStandards.NATIVE &&
           _accountingContext.decimals != 18) ||
         (_accountingContext.standard == JBTokenStandards.ERC20 &&
-          _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals()) ||
-        (_accountingContext.standard == JBTokenStandards.CUSTOM &&
-          _accountingContext.decimals != IJBCustomPayToken(_accountingContext.token).decimals())
+          _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals())
       ) revert UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
 
       // Make sure currency is correct.
@@ -1608,7 +1605,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _from == address(this)
         ? IERC20(_token).safeTransfer(_to, _amount)
         : IERC20(_token).safeTransferFrom(_from, _to, _amount);
-    else IJBCustomPayToken(_token).transferFor(_projectId, _from, _to, _amount, _accountingContext);
   }
 
   /// @notice Logic to be triggered before transferring tokens from this terminal.
@@ -1632,7 +1628,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     if (_accountingContext.standard == JBTokenStandards.ERC20)
       IERC20(_token).safeIncreaseAllowance(_to, _amount);
-    else IJBCustomPayToken(_token).beforeTransferTo(_projectId, _to, _amount, _accountingContext);
   }
 
   /// @notice Logic to be triggered if a transfer should be undone
@@ -1656,6 +1651,5 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     if (_accountingContext.standard == JBTokenStandards.ERC20)
       IERC20(_token).safeDecreaseAllowance(_to, _amount);
-    else IJBCustomPayToken(_token).cancelTransferTo(_projectId, _to, _amount, _accountingContext);
   }
 }
