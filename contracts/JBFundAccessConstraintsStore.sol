@@ -32,7 +32,7 @@ contract JBFundAccessConstraintsStore is
 
   /// @notice Data regarding the distribution limits of a project during a configuration.
   /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
-  /// @dev bits 232-255: The currency of amount that a project can distribute.
+  /// @dev bits 224-255: The currency of amount that a project can distribute.
   /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
   /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
   /// @custom:param _terminal The terminal from which distributions are being limited.
@@ -42,7 +42,7 @@ contract JBFundAccessConstraintsStore is
 
   /// @notice Data regarding the overflow allowance of a project during a configuration.
   /// @dev bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
-  /// @dev bits 232-255: The currency of the amount of overflow that a project is allowed to tap.
+  /// @dev bits 224-255: The currency of the amount of overflow that a project is allowed to tap.
   /// @custom:param _projectId The ID of the project to get the packed overflow allowance data of.
   /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
   /// @custom:param _terminal The terminal managing the overflow.
@@ -86,10 +86,10 @@ contract JBFundAccessConstraintsStore is
       // Set the data being iterated on.
       _packedDistributionLimitData = _packedDistributionLimitsData[_i];
 
-      // The limit is in bits 0-231. The currency is in bits 232-255.
+      // The limit is in bits 0-231. The currency is in bits 224-255.
       distributionLimits[_i] = JBCurrencyAmount({
-        currency: _packedDistributionLimitData >> 232,
-        value: uint256(uint232(_packedDistributionLimitData))
+        currency: _packedDistributionLimitData >> 224,
+        value: uint256(uint224(_packedDistributionLimitData))
       });
 
       unchecked {
@@ -130,8 +130,8 @@ contract JBFundAccessConstraintsStore is
       _packedDistributionLimitData = _data[_i];
 
       // If the currencies match, return the value.
-      if (_currency == _packedDistributionLimitData >> 232)
-        return uint256(uint232(_packedDistributionLimitData));
+      if (_currency == _packedDistributionLimitData >> 224)
+        return uint256(uint224(_packedDistributionLimitData));
 
       unchecked {
         ++_i;
@@ -171,10 +171,10 @@ contract JBFundAccessConstraintsStore is
       // Set the data being iterated on.
       _packedOverflowAllowanceData = _packedOverflowAllowancesData[_i];
 
-      // The limit is in bits 0-231. The currency is in bits 232-255.
+      // The limit is in bits 0-231. The currency is in bits 224-255.
       overflowAllowances[_i] = JBCurrencyAmount({
-        currency: _packedOverflowAllowanceData >> 232,
-        value: uint256(uint232(_packedOverflowAllowanceData))
+        currency: _packedOverflowAllowanceData >> 224,
+        value: uint256(uint224(_packedOverflowAllowanceData))
       });
 
       unchecked {
@@ -215,8 +215,8 @@ contract JBFundAccessConstraintsStore is
       _packedOverflowAllowanceData = _data[_i];
 
       // If the currencies match, return the value.
-      if (_currency == _packedOverflowAllowanceData >> 232)
-        return uint256(uint232(_packedOverflowAllowanceData));
+      if (_currency == _packedOverflowAllowanceData >> 224)
+        return uint256(uint224(_packedOverflowAllowanceData));
 
       unchecked {
         ++_i;
@@ -241,7 +241,7 @@ contract JBFundAccessConstraintsStore is
   /// @dev Distribution limits and overflow allowances must be specified in increasing order by currencies to prevent duplicates.
   /// @param _projectId The ID of the project whose fund access constraints are being set.
   /// @param _configuration The funding cycle configuration the constraints apply within.
-  /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
+  /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint224`.
   function setFor(
     uint256 _projectId,
     uint256 _configuration,
@@ -269,8 +269,8 @@ contract JBFundAccessConstraintsStore is
         // Set the distribution limit being iterated on.
         _distributionLimit = _constraints.distributionLimits[_j];
 
-        // If distribution limit value is larger than 232 bits, revert.
-        if (_distributionLimit.value > type(uint232).max) revert INVALID_DISTRIBUTION_LIMIT();
+        // If distribution limit value is larger than 224 bits, revert.
+        if (_distributionLimit.value > type(uint224).max) revert INVALID_DISTRIBUTION_LIMIT();
 
         // If distribution limit currency value is larger than 32 bits, revert.
         if (_distributionLimit.currency > type(uint32).max)
@@ -286,7 +286,7 @@ contract JBFundAccessConstraintsStore is
           _packedDistributionLimitsDataOf[_projectId][_configuration][
             _fundAccessConstraints[_i].terminal
           ][_fundAccessConstraints[_i].token].push(
-              _distributionLimit.value | (_distributionLimit.currency << 232)
+              _distributionLimit.value | (_distributionLimit.currency << 224)
             );
 
         unchecked {
@@ -305,8 +305,8 @@ contract JBFundAccessConstraintsStore is
         // Set the distribution limit being iterated on.
         _overflowAllowance = _constraints.overflowAllowances[_j];
 
-        // If overflow allowance value is larger than 232 bits, revert.
-        if (_overflowAllowance.value > type(uint232).max) revert INVALID_OVERFLOW_ALLOWANCE();
+        // If overflow allowance value is larger than 224 bits, revert.
+        if (_overflowAllowance.value > type(uint224).max) revert INVALID_OVERFLOW_ALLOWANCE();
 
         // If overflow allowance currency value is larger than 32 bits, revert.
         if (_overflowAllowance.currency > type(uint32).max)
@@ -322,7 +322,7 @@ contract JBFundAccessConstraintsStore is
           _packedOverflowAllowancesDataOf[_projectId][_configuration][
             _fundAccessConstraints[_i].terminal
           ][_fundAccessConstraints[_i].token].push(
-              _overflowAllowance.value | (_overflowAllowance.currency << 232)
+              _overflowAllowance.value | (_overflowAllowance.currency << 224)
             );
 
         unchecked {

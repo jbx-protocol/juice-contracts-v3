@@ -252,7 +252,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_beneficiary, _FEE_PROJECT_ID), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** _ETH_DECIMALS) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
     }
 
-    function testFuzzETHAllowance(uint232 _ethCurrencyOverflowAllowance, uint232 _ethCurrencyDistributionLimit, uint256 _ethPayAmount) public {
+    function testFuzzETHAllowance(uint224 _ethCurrencyOverflowAllowance, uint224 _ethCurrencyDistributionLimit, uint256 _ethPayAmount) public {
         // Make sure the amount of eth to pay is bounded. 
         _ethPayAmount = bound(_ethPayAmount, 0, 1000000 * 10**_ETH_DECIMALS);
 
@@ -466,7 +466,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
 
-    function testFuzzETHAllowanceWithRevertingFeeProject(uint232 _ethCurrencyOverflowAllowance, uint232 _ethCurrencyDistributionLimit, uint256 _ethPayAmount, bool _feeProjectAcceptsToken) public {
+    function testFuzzETHAllowanceWithRevertingFeeProject(uint224 _ethCurrencyOverflowAllowance, uint224 _ethCurrencyDistributionLimit, uint256 _ethPayAmount, bool _feeProjectAcceptsToken) public {
         // Make sure the amount of eth to pay is bounded. 
         _ethPayAmount = bound(_ethPayAmount, 0, 1000000 * 10**_ETH_DECIMALS);
 
@@ -687,7 +687,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
 
-    function testFuzzETHAllowanceForTheFeeProject(uint232 _ethCurrencyOverflowAllowance, uint232 _ethCurrencyDistributionLimit, uint256 _ethPayAmount) public {
+    function testFuzzETHAllowanceForTheFeeProject(uint224 _ethCurrencyOverflowAllowance, uint224 _ethCurrencyDistributionLimit, uint256 _ethPayAmount) public {
         // Make sure the amount of eth to pay is bounded. 
         _ethPayAmount = bound(_ethPayAmount, 0, 1000000 * 10**_ETH_DECIMALS);
 
@@ -889,7 +889,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
     
-    function testFuzzMultiCurrencyAllowance(uint232 _ethCurrencyOverflowAllowance, uint232 _ethCurrencyDistributionLimit, uint256 _ethPayAmount, uint232 _usdCurrencyOverflowAllowance, uint232 _usdCurrencyDistributionLimit, uint256 _usdcPayAmount) public {
+    function testFuzzMultiCurrencyAllowance(uint224 _ethCurrencyOverflowAllowance, uint224 _ethCurrencyDistributionLimit, uint256 _ethPayAmount, uint224 _usdCurrencyOverflowAllowance, uint224 _usdCurrencyDistributionLimit, uint256 _usdcPayAmount) public {
         // Make sure the amount of eth to pay is bounded. 
         _ethPayAmount = bound(_ethPayAmount, 0, 1000000 * 10**_ETH_DECIMALS);
         _usdcPayAmount = bound(_usdcPayAmount, 0, 1000000 * 10**_usdcToken.decimals());
