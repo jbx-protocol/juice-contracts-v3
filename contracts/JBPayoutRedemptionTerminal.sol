@@ -554,7 +554,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       ) revert UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
 
       // Make sure currency is correct.
-      if (_accountingContext.currency != uint24(uint160(address(_accountingContext.token))))
+      if (_accountingContext.currency != uint32(uint160(address(_accountingContext.token))))
         revert UNEXPECTED_ACCOUNTING_CONTEXT_CURRENCY();
 
       // Set the context.

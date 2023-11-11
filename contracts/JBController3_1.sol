@@ -351,11 +351,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
 
       // Determine the reserved rate to use.
       _reservedRate = _useReservedRate ? _fundingCycle.reservedRate() : 0;
-
-      // Override the claimed token preference with the funding cycle value.
-      _preferClaimedTokens = _preferClaimedTokens == true
-        ? _preferClaimedTokens
-        : _fundingCycle.preferClaimedTokenOverride();
     }
 
     if (_reservedRate != JBConstants.MAX_RESERVED_RATE) {
@@ -414,12 +409,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
 
     // Get a reference to the project's current funding cycle.
     JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
-
-    // If the message sender is a terminal, the current funding cycle must not be paused.
-    if (
-      _fundingCycle.burnPaused() &&
-      !directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
-    ) revert BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_DELEGATE();
 
     // Burn the tokens.
     tokenStore.burnFrom(_holder, _projectId, _tokenCount, _preferClaimedTokens);
@@ -648,7 +637,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         revert INVALID_REDEMPTION_RATE();
 
       // Make sure the provided base currency is valid.
-      if (_configuration.metadata.baseCurrency > type(uint24).max) revert INVALID_BASE_CURRENCY();
+      if (_configuration.metadata.baseCurrency > type(uint32).max) revert INVALID_BASE_CURRENCY();
 
       // Configure the funding cycle's properties.
       JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(

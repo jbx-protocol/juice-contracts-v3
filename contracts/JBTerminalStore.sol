@@ -389,9 +389,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // Get a reference to the project's current funding cycle.
     fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
 
-    // The current funding cycle must not be paused.
-    if (fundingCycle.redeemPaused()) revert FUNDING_CYCLE_REDEEM_PAUSED();
-
     // Get the amount of current overflow.
     // Use the local overflow if the funding cycle specifies that it should be used. Otherwise, use the project's total overflow across all of its terminals.
     uint256 _currentOverflow = fundingCycle.useTotalOverflowForRedemptions()
@@ -513,9 +510,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   {
     // Get a reference to the project's current funding cycle.
     fundingCycle = FUNDING_CYCLE_STORE.currentOf(_projectId);
-
-    // The funding cycle must not be configured to have distributions paused.
-    if (fundingCycle.distributionsPaused()) revert FUNDING_CYCLE_DISTRIBUTION_PAUSED();
 
     // The new total amount that has been distributed during this funding cycle.
     uint256 _newUsedDistributionLimitOf = usedDistributionLimitOf[IJBPaymentTerminal(msg.sender)][

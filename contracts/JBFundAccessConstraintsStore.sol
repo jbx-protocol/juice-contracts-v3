@@ -272,8 +272,8 @@ contract JBFundAccessConstraintsStore is
         // If distribution limit value is larger than 232 bits, revert.
         if (_distributionLimit.value > type(uint232).max) revert INVALID_DISTRIBUTION_LIMIT();
 
-        // If distribution limit currency value is larger than 24 bits, revert.
-        if (_distributionLimit.currency > type(uint24).max)
+        // If distribution limit currency value is larger than 32 bits, revert.
+        if (_distributionLimit.currency > type(uint32).max)
           revert INVALID_DISTRIBUTION_LIMIT_CURRENCY();
 
         // Make sure the distribution limits are passed in increasing order of currency to prevent duplicates.
@@ -308,8 +308,8 @@ contract JBFundAccessConstraintsStore is
         // If overflow allowance value is larger than 232 bits, revert.
         if (_overflowAllowance.value > type(uint232).max) revert INVALID_OVERFLOW_ALLOWANCE();
 
-        // If overflow allowance currency value is larger than 24 bits, revert.
-        if (_overflowAllowance.currency > type(uint24).max)
+        // If overflow allowance currency value is larger than 32 bits, revert.
+        if (_overflowAllowance.currency > type(uint32).max)
           revert INVALID_OVERFLOW_ALLOWANCE_CURRENCY();
 
         // Make sure the overflow allowances are passed in increasing order of currency to prevent duplicates.

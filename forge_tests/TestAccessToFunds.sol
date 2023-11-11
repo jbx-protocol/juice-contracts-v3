@@ -56,16 +56,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             }),
             reservedRate:  JBConstants.MAX_RESERVED_RATE / 2, //50%
             redemptionRate:  JBConstants.MAX_REDEMPTION_RATE / 2, //50%
-            baseCurrency: uint24(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
-            pauseDistributions: false,
-            pauseRedeem: false,
-            pauseBurn: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            preferClaimedTokenOverride: false,
             useTotalOverflowForRedemptions: true,
             useDataSourceForPay: false,
             useDataSourceForRedeem: false,
@@ -87,14 +83,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
             _distributionLimits[0] = JBCurrencyAmount({
                 value: _ethCurrencyDistributionLimit,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });  
 
             // Specify an overflow allowance.
             JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
             _overflowAllowances[0] = JBCurrencyAmount({
                 value: _ethCurrencyOverflowAllowance,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });
 
             _fundAccessConstraints[0] =
@@ -122,7 +118,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
             _accountingContexts[0] = JBAccountingContext({
                 token: JBTokens.ETH,
-                currency: uint24(uint160(JBTokens.ETH)),
+                currency: uint32(uint160(JBTokens.ETH)),
                 decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
@@ -176,7 +172,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _ethCurrencyOverflowAllowance,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0, 
             beneficiary: payable(_beneficiary),
@@ -199,7 +195,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyDistributionLimit,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0
         });
@@ -272,14 +268,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
             _distributionLimits[0] = JBCurrencyAmount({
                 value: _ethCurrencyDistributionLimit,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });  
 
             // Specify an overflow allowance.
             JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
             _overflowAllowances[0] = JBCurrencyAmount({
                 value: _ethCurrencyOverflowAllowance,
-                currency: uint24(uint160(JBTokens.ETH)) 
+                currency: uint32(uint160(JBTokens.ETH)) 
             });
 
             _fundAccessConstraints[0] =
@@ -307,7 +303,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
             _accountingContexts[0] = JBAccountingContext({
                 token: JBTokens.ETH,
-                currency: uint24(uint160(JBTokens.ETH)),
+                currency: uint32(uint160(JBTokens.ETH)),
                 decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
@@ -366,7 +362,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _ethCurrencyOverflowAllowance,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary), 
@@ -407,7 +403,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyDistributionLimit,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0
         });
@@ -486,14 +482,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
             _distributionLimits[0] = JBCurrencyAmount({
                 value: _ethCurrencyDistributionLimit,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });  
 
             // Specify an overflow allowance.
             JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
             _overflowAllowances[0] = JBCurrencyAmount({
                 value: _ethCurrencyOverflowAllowance,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });
 
             _fundAccessConstraints[0] =
@@ -513,7 +509,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
             _accountingContexts[0] = JBAccountingContext({
                 token: JBTokens.ETH,
-                currency: uint24(uint160(JBTokens.ETH)),
+                currency: uint32(uint160(JBTokens.ETH)),
                 decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
@@ -582,7 +578,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _ethCurrencyOverflowAllowance,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary), 
@@ -624,7 +620,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyDistributionLimit,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH, 
             minReturnedTokens: 0
         });
@@ -707,14 +703,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
             _distributionLimits[0] = JBCurrencyAmount({
                 value: _ethCurrencyDistributionLimit,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });  
 
             // Specify an overflow allowance.
             JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
             _overflowAllowances[0] = JBCurrencyAmount({
                 value: _ethCurrencyOverflowAllowance,
-                currency: uint24(uint160(JBTokens.ETH)) 
+                currency: uint32(uint160(JBTokens.ETH)) 
             });
 
             _fundAccessConstraints[0] =
@@ -742,7 +738,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
             _accountingContexts[0] = JBAccountingContext({
                 token: JBTokens.ETH,
-                currency: uint24(uint160(JBTokens.ETH)),
+                currency: uint32(uint160(JBTokens.ETH)),
                 decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
@@ -793,7 +789,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _ethCurrencyOverflowAllowance,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary), 
@@ -831,7 +827,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyDistributionLimit,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0
         });
@@ -917,22 +913,22 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
             _distributionLimits[0] = JBCurrencyAmount({
                 value: _ethCurrencyDistributionLimit,
-                currency: uint24(uint160(JBTokens.ETH))
+                currency: uint32(uint160(JBTokens.ETH))
             });  
             _distributionLimits[1] = JBCurrencyAmount({
                 value: _usdCurrencyDistributionLimit,
-                currency: uint24(uint160(address(_usdcToken)))
+                currency: uint32(uint160(address(_usdcToken)))
             });  
 
             // Specify an overflow allowance.
             JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](2);
             _overflowAllowances[0] = JBCurrencyAmount({
                 value: _ethCurrencyOverflowAllowance,
-                currency: uint24(uint160(JBTokens.ETH)) 
+                currency: uint32(uint160(JBTokens.ETH)) 
             });
             _overflowAllowances[1] = JBCurrencyAmount({
                 value: _usdCurrencyOverflowAllowance,
-                currency: uint24(uint160(address(_usdcToken)))
+                currency: uint32(uint160(address(_usdcToken)))
             });
 
             _fundAccessConstraints[0] =
@@ -955,13 +951,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](2);
             _accountingContexts[0] = JBAccountingContext({
                 token: JBTokens.ETH,
-                currency: uint24(uint160(JBTokens.ETH)),
+                currency: uint32(uint160(JBTokens.ETH)),
                 decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContext({
                 token: address(_usdcToken),
-                currency: uint24(uint160(address(_usdcToken))),
+                currency: uint32(uint160(address(_usdcToken))),
                 decimals: _usdcToken.decimals(),
                 standard: JBTokenStandards.ERC20
             });
@@ -998,8 +994,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             _prices.addFeedFor({
                 projectId: 0,
-                currency: uint24(uint160(address(_usdcToken))), 
-                base: uint24(uint160(JBTokens.ETH)), 
+                currency: uint32(uint160(address(_usdcToken))), 
+                base: uint32(uint160(JBTokens.ETH)), 
                 priceFeed: _priceFeedEthUsd
             });
 
@@ -1067,7 +1063,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _ethCurrencyOverflowAllowance,
-            currency: uint24(uint160(JBTokens.ETH)),
+            currency: uint32(uint160(JBTokens.ETH)),
             token: JBTokens.ETH,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary), 
@@ -1108,7 +1104,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _usdCurrencyOverflowAllowance,
-            currency: uint24(uint160(address(_usdcToken))),
+            currency: uint32(uint160(address(_usdcToken))),
             token: JBTokens.ETH,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary), 
@@ -1147,7 +1143,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _terminal.distributePayoutsOf({
                 projectId: _projectId,
                 amount: _ethCurrencyDistributionLimit,
-                currency: uint24(uint160(JBTokens.ETH)),
+                currency: uint32(uint160(JBTokens.ETH)),
                 token: JBTokens.ETH,
                 minReturnedTokens: 0
             });
@@ -1183,7 +1179,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _terminal.distributePayoutsOf({
                 projectId: _projectId,
                 amount: _usdCurrencyDistributionLimit,
-                currency: uint24(uint160(address(_usdcToken))),
+                currency: uint32(uint160(address(_usdcToken))),
                 token: JBTokens.ETH,
                 minReturnedTokens: 0
             });
