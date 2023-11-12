@@ -42,6 +42,7 @@ import {JBSingleAllowanceData} from './structs/JBSingleAllowanceData.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 import {JBAccountingContext} from './structs/JBAccountingContext.sol';
+import {JBAccountingContextConfig} from './structs/JBAccountingContextConfig.sol';
 import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 
@@ -261,13 +262,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     string calldata _memo,
     bytes calldata _metadata
   ) external payable virtual override returns (uint256) {
-    // Accept the token.
-    _amount = _acceptToken(_projectId, _token, _amount, _metadata);
-
     return
       _pay(
         _token,
-        _amount,
+        _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
         msg.sender,
         _projectId,
         _beneficiary,
@@ -292,11 +290,15 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     string calldata _memo,
     bytes calldata _metadata
   ) external payable virtual override {
-    // Accept the token.
-    _amount = _acceptToken(_projectId, _token, _amount, _metadata);
-
     // Add to balance.
-    _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
+    _addToBalanceOf(
+      _projectId,
+      _token,
+      _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
+      _shouldRefundHeldFees,
+      _memo,
+      _metadata
+    );
   }
 
   /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -513,10 +515,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @notice Sets accounting context for a token so that a project can begin accepting it.
   /// @dev Only a project owner, a designated operator, or a project's controller can set its accounting context.
   /// @param _projectId The ID of the project having its token accounting context set.
-  /// @param _accountingContexts The accounting contexts to set.
+  /// @param _accountingContextConfigs The accounting contexts to set.
   function setAccountingContextsFor(
     uint256 _projectId,
-    JBAccountingContext[] calldata _accountingContexts
+    JBAccountingContextConfig[] calldata _accountingContextConfigs
   )
     external
     override
@@ -527,26 +529,44 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       msg.sender == DIRECTORY.controllerOf(_projectId)
     )
   {
-    // Keep a reference to the number of accounting contexts.
-    uint256 _numberOfAccountingContexts = _accountingContexts.length;
+    // Keep a reference to the number of accounting context configurations.
+    uint256 _numberOfAccountingContextsConfigs = _accountingContextConfigs.length;
 
     // Keep a reference to the accounting context being iterated on.
-    JBAccountingContext memory _accountingContext;
+    JBAccountingContextConfig memory _accountingContextConfig;
 
     // Set each accounting context.
-    for (uint256 _i; _i < _numberOfAccountingContexts; ) {
+    for (uint256 _i; _i < _numberOfAccountingContextsConfigs; ) {
       // Set the accounting context being iterated on.
-      _accountingContext = _accountingContexts[_i];
+      _accountingContextConfig = _accountingContextConfigs[_i];
 
       // Make sure the token accounting context isn't already set.
-      if (_accountingContextForTokenOf[_projectId][_accountingContext.token].token != address(0))
-        revert ACCOUNTING_CONTEXT_ALREADY_SET();
+      if (
+        _accountingContextForTokenOf[_projectId][_accountingContextConfig.token].token != address(0)
+      ) revert ACCOUNTING_CONTEXT_ALREADY_SET();
+
+      // Define the context from the config.
+      JBAccountingContext memory _accountingContext = JBAccountingContext(
+        _accountingContextConfig.token,
+        _accountingContextConfig.standard == JBTokenStandards.NATIVE
+          ? 18
+          : IERC20Metadata(_accountingContextConfig.token).decimals(),
+        uint32(uint160(_accountingContextConfig.token)),
+        _accountingContextConfig.standard
+      );
 
       // Set the context.
       _accountingContextForTokenOf[_projectId][_accountingContext.token] = _accountingContext;
 
       // Add the token to the list of accepted tokens of the project.
       _accountingContextsOf[_projectId].push(_accountingContext);
+
+      emit SetAccountingContext(
+        _projectId,
+        _accountingContextConfig.token,
+        _accountingContext,
+        msg.sender
+      );
 
       unchecked {
         ++_i;
@@ -564,7 +584,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _amount The amount of tokens being accepted.
   /// @param _metadata The metadata in which permit2 context is provided.
   /// @return The amount of tokens that have been accepted.
-  function _acceptToken(
+  function _acceptedTokenAmountFor(
     uint256 _projectId,
     address _token,
     uint256 _amount,
@@ -590,7 +610,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     bytes memory _parsedMetadata;
 
     // Unpack the quote from the pool, given by the frontend.
-    (_quoteExists, _parsedMetadata) = JBDelegateMetadataLib.getMetadata(bytes4('A'), _metadata);
+    (_quoteExists, _parsedMetadata) = JBDelegateMetadataLib.getMetadata(
+      bytes4(uint32(uint160(address(this)))),
+      _metadata
+    );
     if (_quoteExists) (_allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
 
     // Set the allowance to `spend` tokens for the user if needed.
@@ -663,7 +686,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
           _tokenCount,
           _beneficiary,
           '',
-          true,
           true
         );
 
@@ -777,8 +799,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
           _holder,
           _projectId,
           _tokenCount,
-          '',
-          false
+          ''
         );
 
       // Keep a reference to the amount being reclaimed that should have fees withheld from.
@@ -805,12 +826,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
       // Send the reclaimed funds to the beneficiary.
       if (reclaimAmount != 0) {
-        // Get the fee for the reclaimed amount.
-        uint256 _reclaimAmountFee = _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
-
-        if (_reclaimAmountFee != 0) {
+        if (_feePercent != 0) {
           _feeEligibleDistributionAmount += reclaimAmount;
-          reclaimAmount -= _reclaimAmountFee;
+          // Subtract the fee for the reclaimed amount.
+          reclaimAmount -= _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
         }
 
         // Subtract the fee from the reclaim amount.
@@ -1110,14 +1129,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       // Trigger any inherited pre-transfer logic.
       _beforeTransferFor(_projectId, address(_split.allocator), _token, netPayoutAmount);
 
-      // Get a reference to the token's accounting context.
-      JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
-
       // Create the data to send to the allocator.
       JBSplitAllocationData memory _data = JBSplitAllocationData(
         _token,
         netPayoutAmount,
-        _context.decimals,
+        _accountingContextForTokenOf[_projectId][_token].decimals,
         _projectId,
         uint256(uint160(_token)),
         _split
@@ -1172,7 +1188,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
         // Revert the payout.
         _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
 
-        emit PayoutReverted(_projectId, _split, _amount, 'Terminal not found', msg.sender);
+        // Specify the reason for reverting.
+        bytes memory _reason = 'Terminal not found';
+
+        emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
       } else {
         // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
         if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)]) {
@@ -1189,6 +1208,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
         // Add to balance if prefered.
         if (_split.preferAddToBalance) {
+          bytes memory _metadata = bytes(abi.encodePacked(_projectId));
           try
             _terminal.addToBalanceOf{value: _payValue}(
               _split.projectId,
@@ -1197,7 +1217,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
               false,
               '',
               // Send the projectId in the metadata as a referral.
-              bytes(abi.encodePacked(_projectId))
+              _metadata
             )
           {} catch (bytes memory _reason) {
             // Revert the payout.
@@ -1353,7 +1373,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _beneficiaryTokenAmount,
       _fundingCycle.redemptionRate(),
       _beneficiary,
-      bytes(''),
+      '',
       _metadata
     );
 
@@ -1461,13 +1481,11 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   ) internal {
     if (address(_feeTerminal) == address(0)) {
       _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
-      emit FeeReverted(
-        _projectId,
-        _FEE_BENEFICIARY_PROJECT_ID,
-        _amount,
-        bytes('FEE NOT ACCEPTED'),
-        msg.sender
-      );
+
+      // Specify the reason for reverting.
+      bytes memory _reason = 'Fee not accepted';
+
+      emit FeeReverted(_projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
       return;
     }
 
@@ -1539,9 +1557,9 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
           }
         } else {
           // And here we overwrite with feeFrom the leftoverAmount
-          _feeAmount = (
-            _heldFees[_i].fee == 0 ? 0 : JBFees.feeFrom(leftoverAmount, _heldFees[_i].fee)
-          );
+          _feeAmount = _heldFees[_i].fee == 0
+            ? 0
+            : JBFees.feeFrom(leftoverAmount, _heldFees[_i].fee);
 
           unchecked {
             _heldFeesOf[_projectId].push(
@@ -1579,8 +1597,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     uint256 _depositAmount
   ) internal {
     // Cancel allowance if needed.
-    if (_allowanceAmount != 0 && _expectedDestination != address(this))
-      _cancelTransferFor(_projectId, _expectedDestination, _token, _allowanceAmount);
+    if (_allowanceAmount != 0 && _token != JBTokens.ETH)
+      IERC20(_token).safeDecreaseAllowance(_expectedDestination, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
     STORE.recordAddedBalanceFor(_projectId, _token, _depositAmount);
@@ -1626,22 +1644,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // If the token is ETH, assume the native token standard.
     if (_token == JBTokens.ETH) return;
     IERC20(_token).safeIncreaseAllowance(_to, _amount);
-  }
-
-  /// @notice Logic to be triggered if a transfer should be undone
-  /// @param _projectId The ID of the project for which the transfer is taking place.
-  /// @param _to The address to which the transfer went.
-  /// @param _token The token being transfered.
-  /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _cancelTransferFor(
-    uint256 _projectId,
-    address _to,
-    address _token,
-    uint256 _amount
-  ) internal virtual {
-    // If the token is ETH, assume the native token standard.
-    if (_token == JBTokens.ETH) return;
-    IERC20(_token).safeDecreaseAllowance(_to, _amount);
   }
 
   /// @notice Sets the permit2 allowance for a token.

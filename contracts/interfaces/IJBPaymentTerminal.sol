@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBAccountingContext} from '../structs/JBAccountingContext.sol';
+import {JBAccountingContextConfig} from '../structs/JBAccountingContextConfig.sol';
 
 interface IJBPaymentTerminal is IERC165 {
   function accountingContextForTokenOf(
@@ -41,6 +42,6 @@ interface IJBPaymentTerminal is IERC165 {
 
   function setAccountingContextsFor(
     uint256 projectId,
-    JBAccountingContext[] calldata accountingContexts
+    JBAccountingContextConfig[] calldata accountingContexts
   ) external;
 }

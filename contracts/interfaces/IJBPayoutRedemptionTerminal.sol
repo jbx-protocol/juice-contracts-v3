@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBFee} from './../structs/JBFee.sol';
+import {JBAccountingContext} from './../structs/JBAccountingContext.sol';
 import {IJBAllowanceTerminal3_1} from './IJBAllowanceTerminal3_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
@@ -126,6 +127,13 @@ interface IJBPayoutRedemptionTerminal is
   event SetFee(uint256 fee, address caller);
 
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
+
+  event SetAccountingContext(
+    uint256 indexed projectId,
+    address indexed token,
+    JBAccountingContext context,
+    address caller
+  );
 
   event PayoutReverted(
     uint256 indexed projectId,
