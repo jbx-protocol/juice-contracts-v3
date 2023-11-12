@@ -95,7 +95,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   address private _multisig = address(123);
   address private _beneficiary = address(69420);
   MockERC20 private _usdcToken;
-  //   address private _permit2;
+  address private _permit2;
   JBOperatorStore private _jbOperatorStore;
   JBProjects private _jbProjects;
   JBPrices private _jbPrices;
@@ -119,6 +119,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
   function usdcToken() internal view returns (MockERC20) {
     return _usdcToken;
+  }
+
+  function permit2() internal view returns (IPermit2) {
+    return IPermit2(_permit2);
   }
 
   function jbOperatorStore() internal view returns (JBOperatorStore) {
@@ -214,12 +218,16 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbFundingCycleStore, _jbPrices);
     vm.label(address(_jbTerminalStore), 'JBSingleTokenPaymentTerminalStore3_1_1');
 
+    vm.prank(_multisig);
+    _permit2 = deployPermit2();
+
     _jbPayoutRedemptionTerminal = new JBPayoutRedemptionTerminal(
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,
       _jbSplitsStore,
       _jbTerminalStore,
+      IPermit2(_permit2),
       _multisig
     );
 

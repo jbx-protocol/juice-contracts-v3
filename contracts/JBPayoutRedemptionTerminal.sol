@@ -9,6 +9,9 @@ import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {ERC165Checker} from '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
 import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
+import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
+import {IAllowanceTransfer} from '@permit2/src/src/interfaces/IPermit2.sol';
+import {JBDelegateMetadataLib} from '@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol';
 import {IJBAllowanceTerminal3_1} from './interfaces/IJBAllowanceTerminal3_1.sol';
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
@@ -35,6 +38,7 @@ import {JBFee} from './structs/JBFee.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1_1.sol';
 import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBSingleAllowanceData} from './structs/JBSingleAllowanceData.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 import {JBAccountingContext} from './structs/JBAccountingContext.sol';
@@ -60,11 +64,10 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   error INADEQUATE_TOKEN_COUNT();
   error NO_MSG_VALUE_ALLOWED();
   error PAY_TO_ZERO_ADDRESS();
+  error PERMIT_ALLOWANCE_NOT_ENOUGH(uint256 transactionAmount, uint256 permitAllowance);
   error REDEEM_TO_ZERO_ADDRESS();
   error TERMINAL_TOKENS_INCOMPATIBLE();
   error TOKEN_NOT_ACCEPTED();
-  error UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
-  error UNEXPECTED_ACCOUNTING_CONTEXT_CURRENCY();
 
   //*********************************************************************//
   // --------------------- internal stored constants ------------------- //
@@ -109,6 +112,9 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
   /// @notice The contract that stores and manages the terminal's data.
   IJBTerminalStore public immutable override STORE;
+
+  /// @notice The permit2 utility.
+  IPermit2 public immutable PERMIT2;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -225,6 +231,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _directory A contract storing directories of terminals and controllers for each project.
   /// @param _splitsStore A contract that stores splits for each project.
   /// @param _store A contract that stores the terminal's data.
+  /// @param _permit2 A permit2 utility.
   /// @param _owner The address that will own this contract.
   constructor(
     IJBOperatorStore _operatorStore,
@@ -232,12 +239,14 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBTerminalStore _store,
+    IPermit2 _permit2,
     address _owner
   ) JBOperatable(_operatorStore) {
     PROJECTS = _projects;
     DIRECTORY = _directory;
     SPLITS = _splitsStore;
     STORE = _store;
+    PERMIT2 = _permit2;
 
     transferOwnership(_owner);
   }
@@ -545,18 +554,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       if (_accountingContextForTokenOf[_projectId][_accountingContext.token].token != address(0))
         revert ACCOUNTING_CONTEXT_ALREADY_SET();
 
-      // Make sure decimals are correct.
-      if (
-        (_accountingContext.standard == JBTokenStandards.NATIVE &&
-          _accountingContext.decimals != 18) ||
-        (_accountingContext.standard == JBTokenStandards.ERC20 &&
-          _accountingContext.decimals != IERC20Metadata(_accountingContext.token).decimals())
-      ) revert UNEXPECTED_ACCOUNTING_CONTEXT_DECIMALS();
-
-      // Make sure currency is correct.
-      if (_accountingContext.currency != uint32(uint160(address(_accountingContext.token))))
-        revert UNEXPECTED_ACCOUNTING_CONTEXT_CURRENCY();
-
       // Set the context.
       _accountingContextForTokenOf[_projectId][_accountingContext.token] = _accountingContext;
 
@@ -595,6 +592,14 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
     if (msg.sender == address(this)) return _amount;
+
+    JBSingleAllowanceData memory _allowance;
+    // Unpack the quote from the pool, given by the frontend.
+    (_quoteExists, _metadata) = JBDelegateMetadataLib.getMetadata('A', _data.metadata);
+    if (_quoteExists) (_allowance) = abi.decode(_metadata, (JBSingleAllowanceData));
+
+    // Get allowance to `spend` tokens for the user
+    _permitAllowance(_allowance, _token);
 
     // Get a reference to the balance before receiving tokens.
     uint256 _balanceBefore = _balance(_projectId, _token);
@@ -1596,15 +1601,16 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     // If the token is ETH, assume the native token standard.
     if (_token == JBTokens.ETH) return Address.sendValue(_to, _amount);
 
-    // Get a reference to the accounting context.
-    JBAccountingContext memory _accountingContext = _accountingContextForTokenOf[_projectId][
-      _token
-    ];
+    if (_from == address(this)) return IERC20(_token).safeTransfer(_to, _amount);
 
-    if (_accountingContext.standard == JBTokenStandards.ERC20)
-      _from == address(this)
-        ? IERC20(_token).safeTransfer(_to, _amount)
-        : IERC20(_token).safeTransferFrom(_from, _to, _amount);
+    // Get a reference to the amount this contract is approved to transfer
+    uint256 _approvalAmount = IERC20(_token).allowance(address(_from), address(this));
+
+    // If there's sufficient approval, transfer normally.
+    if (_approvalAmount >= _amount) return IERC20(_token).safeTransferFrom(_from, _to, _amount);
+
+    // Otherwise we attempt to use the PERMIT2 method.
+    PERMIT2.transferFrom(_from, _to, uint160(_amount), _token);
   }
 
   /// @notice Logic to be triggered before transferring tokens from this terminal.
@@ -1620,14 +1626,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   ) internal virtual {
     // If the token is ETH, assume the native token standard.
     if (_token == JBTokens.ETH) return;
-
-    // Get a reference to the accounting context.
-    JBAccountingContext memory _accountingContext = _accountingContextForTokenOf[_projectId][
-      _token
-    ];
-
-    if (_accountingContext.standard == JBTokenStandards.ERC20)
-      IERC20(_token).safeIncreaseAllowance(_to, _amount);
+    IERC20(_token).safeIncreaseAllowance(_to, _amount);
   }
 
   /// @notice Logic to be triggered if a transfer should be undone
@@ -1643,13 +1642,27 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   ) internal virtual {
     // If the token is ETH, assume the native token standard.
     if (_token == JBTokens.ETH) return;
+    IERC20(_token).safeDecreaseAllowance(_to, _amount);
+  }
 
-    // Get a reference to the accounting context.
-    JBAccountingContext memory _accountingContext = _accountingContextForTokenOf[_projectId][
-      _token
-    ];
-
-    if (_accountingContext.standard == JBTokenStandards.ERC20)
-      IERC20(_token).safeDecreaseAllowance(_to, _amount);
+  /// @notice Gets allowance
+  /// @param _allowance the allowance to get using permit2
+  /// @param _token The token being allowed.
+  function _permitAllowance(JBSingleAllowanceData memory _allowance, address _token) internal {
+    // Use Permit2 to set the allowance
+    PERMIT2.permit(
+      msg.sender,
+      IAllowanceTransfer.PermitSingle({
+        details: IAllowanceTransfer.PermitDetails({
+          token: _token,
+          amount: _allowance.amount,
+          expiration: _allowance.expiration,
+          nonce: _allowance.nonce
+        }),
+        spender: address(this),
+        sigDeadline: _allowance.sigDeadline
+      }),
+      _allowance.signature
+    );
   }
 }

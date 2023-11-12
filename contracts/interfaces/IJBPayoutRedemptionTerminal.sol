@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBFee} from './../structs/JBFee.sol';
 import {IJBAllowanceTerminal3_1} from './IJBAllowanceTerminal3_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
@@ -164,6 +165,8 @@ interface IJBPayoutRedemptionTerminal is
   function DIRECTORY() external view returns (IJBDirectory);
 
   function STORE() external view returns (IJBTerminalStore);
+
+  function PERMIT2() external returns (IPermit2);
 
   function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
 

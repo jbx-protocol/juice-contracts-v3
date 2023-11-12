@@ -1116,6 +1116,13 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
+"@jbx-protocol/juice-delegate-metadata-lib@https://github.com/jbx-protocol/juice-delegate-metadata-lib.git":
+  version "1.0.1"
+  resolved "https://github.com/jbx-protocol/juice-delegate-metadata-lib.git#da5a4b405dd77812ee819145a5c71885119339d3"
+  dependencies:
+    ds-test "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
+    forge-std "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
+
 "@metamask/eth-sig-util@^4.0.0":
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/@metamask/eth-sig-util/-/eth-sig-util-4.0.1.tgz#3ad61f6ea9ad73ba5b19db780d40d9aae5157088"
@@ -4052,6 +4059,10 @@ drbg.js@^1.0.1:
     create-hash "^1.1.2"
     create-hmac "^1.1.4"
 
+"ds-test@https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0":
+  version "1.0.0"
+  resolved "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
+
 duplexer3@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/duplexer3/-/duplexer3-0.1.4.tgz#ee01dd1cac0ed3cbc7fdbea37dc0a8f1ce002ce2"
@@ -5401,6 +5412,10 @@ forever-agent@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
   integrity sha1-+8cfDEGt6zf5bFd60e1C2P2sypE=
+
+"forge-std@https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e":
+  version "1.5.6"
+  resolved "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
 
 form-data@^2.2.0:
   version "2.5.1"
