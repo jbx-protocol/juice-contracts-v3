@@ -147,7 +147,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   )
     external
     override
-    requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE)
+    requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
     returns (IJBToken token)
   {
     // There must be a name.
@@ -317,7 +317,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     uint256 _projectId,
     uint256 _amount,
     address _beneficiary
-  ) external override requirePermission(_holder, _projectId, JBOperations.CLAIM) {
+  ) external override requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS) {
     // Get a reference to the project's current token.
     IJBToken _token = tokenOf[_projectId];
 
@@ -355,7 +355,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     uint256 _projectId,
     address _recipient,
     uint256 _amount
-  ) external override requirePermission(_holder, _projectId, JBOperations.TRANSFER) {
+  ) external override requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS) {
     // Get a reference to the current funding cycle for the project.
     JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 

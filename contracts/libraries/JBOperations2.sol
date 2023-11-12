@@ -1,7 +1,0 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-library JBOperations2 {
-  uint256 public constant ADD_PRICE_FEED = 19;
-  uint256 public constant SET_ACCOUNTING_CONTEXT = 20;
-}

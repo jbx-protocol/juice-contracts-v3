@@ -262,7 +262,11 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     external
     virtual
     override
-    requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.RECONFIGURE)
+    requirePermission(
+      projects.ownerOf(_projectId),
+      _projectId,
+      JBOperations.RECONFIGURE_FUNDING_CYCLES
+    )
     returns (uint256 configured)
   {
     // If there is a previous configuration, reconfigureFundingCyclesOf should be called instead
@@ -295,7 +299,11 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     external
     virtual
     override
-    requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.RECONFIGURE)
+    requirePermission(
+      projects.ownerOf(_projectId),
+      _projectId,
+      JBOperations.RECONFIGURE_FUNDING_CYCLES
+    )
     returns (uint256 configured)
   {
     // Configure the next funding cycle.
@@ -337,7 +345,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
       _requirePermissionAllowingOverride(
         projects.ownerOf(_projectId),
         _projectId,
-        JBOperations.MINT,
+        JBOperations.MINT_TOKENS,
         directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender)) ||
           msg.sender == address(_fundingCycle.dataSource())
       );
@@ -400,7 +408,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     requirePermissionAllowingOverride(
       _holder,
       _projectId,
-      JBOperations.BURN,
+      JBOperations.BURN_TOKENS,
       directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
     )
   {

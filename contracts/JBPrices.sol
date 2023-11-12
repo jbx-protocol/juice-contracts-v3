@@ -8,7 +8,7 @@ import {IJBPriceFeed} from './interfaces/IJBPriceFeed.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBPrices} from './interfaces/IJBPrices.sol';
-import {JBOperations2} from './libraries/JBOperations2.sol';
+import {JBOperations} from './libraries/JBOperations.sol';
 
 /// @notice Manages and normalizes price feeds.
 contract JBPrices is Ownable, JBOperatable, IJBPrices {
@@ -117,7 +117,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     IJBPriceFeed _feed
   ) external override {
     if (msg.sender != owner() || _projectId != 0)
-      _requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations2.ADD_PRICE_FEED);
+      _requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED);
 
     // Make sure the currencies aren't 0.
     if (_currency == 0 || _base == 0) revert INVALID_CURRENCY();
