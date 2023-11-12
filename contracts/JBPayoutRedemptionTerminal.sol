@@ -593,8 +593,8 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     (_quoteExists, _parsedMetadata) = JBDelegateMetadataLib.getMetadata(bytes4('A'), _metadata);
     if (_quoteExists) (_allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
 
-    // Get allowance to `spend` tokens for the user
-    _permitAllowance(_allowance, _token);
+    // Set the allowance to `spend` tokens for the user if needed.
+    if (_allowance.amount > 0) _permitAllowance(_allowance, _token);
 
     // Get a reference to the balance before receiving tokens.
     uint256 _balanceBefore = _balance(_projectId, _token);
