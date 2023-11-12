@@ -161,11 +161,9 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     IJBProjects _projects,
     IJBFundingCycleStore _fundingCycleStore,
     address _owner
-  ) JBOperatable(_operatorStore) {
+  ) JBOperatable(_operatorStore) Ownable(_owner) {
     projects = _projects;
     fundingCycleStore = _fundingCycleStore;
-
-    _transferOwnership(_owner);
   }
 
   //*********************************************************************//

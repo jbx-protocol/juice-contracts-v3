@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 import {JBControllerUtility} from './abstract/JBControllerUtility.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
@@ -160,7 +161,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
     // Deploy the token contract.
-    token = new JBToken(_name, _symbol, _projectId);
+    token = new JBToken(_name, _symbol, _projectId, address(this));
 
     // Store the token contract.
     tokenOf[_projectId] = token;

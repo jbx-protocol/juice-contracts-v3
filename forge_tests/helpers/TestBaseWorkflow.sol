@@ -181,7 +181,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     vm.label(address(_jbOperatorStore), 'JBOperatorStore');
     _usdcToken = new MockERC20('USDC', 'USDC');
     vm.label(address(_usdcToken), 'ERC20');
-    _jbProjects = new JBProjects(_jbOperatorStore);
+    _jbProjects = new JBProjects(_jbOperatorStore, _multisig);
     vm.label(address(_jbProjects), 'JBProjects');
     _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
     vm.label(address(_jbPrices), 'JBPrices');

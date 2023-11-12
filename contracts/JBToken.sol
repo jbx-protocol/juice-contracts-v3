@@ -2,11 +2,12 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
-import {ERC20Votes, ERC20, ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Votes, ERC20} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Permit, Nonces} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol';
 import {IJBToken} from './interfaces/IJBToken.sol';
 
 /// @notice An ERC-20 token that can be used by a project in the `JBTokenStore`.
-contract JBToken is ERC20Votes, Ownable, IJBToken {
+contract JBToken is ERC20Votes, ERC20Permit, Ownable, IJBToken {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
@@ -63,11 +64,13 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
   /// @param _name The name of the token.
   /// @param _symbol The symbol that the token should be represented by.
   /// @param _projectId The ID of the project that this token should be exclusively used for. Send 0 to support any project.
+  /// @param _owner The owner of the token.
   constructor(
     string memory _name,
     string memory _symbol,
-    uint256 _projectId
-  ) ERC20(_name, _symbol) ERC20Permit(_name) {
+    uint256 _projectId,
+    address _owner
+  ) ERC20(_name, _symbol) ERC20Permit(_name) Ownable(_owner) {
     projectId = _projectId;
   }
 
@@ -136,5 +139,21 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
     if (_projectId != projectId) revert BAD_PROJECT();
 
     transferFrom(_from, _to, _amount);
+  }
+
+  /// @notice required override.
+  function nonces(
+    address owner
+  ) public view virtual override(ERC20Permit, Nonces) returns (uint256) {
+    return super.nonces(owner);
+  }
+
+  /// @notice required override.
+  function _update(
+    address from,
+    address to,
+    uint256 value
+  ) internal virtual override(ERC20, ERC20Votes) {
+    super._update(from, to, value);
   }
 }
