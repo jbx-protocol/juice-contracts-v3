@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
-import {ERC721Votes, ERC721, EIP712} from '@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol';
+import {ERC721Votes, ERC721, EIP712} from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
