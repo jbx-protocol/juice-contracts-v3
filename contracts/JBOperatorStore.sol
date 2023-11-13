@@ -94,7 +94,7 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
   function setOperatorOf(
     address _account,
     JBOperatorData calldata _operatorData
-  ) external override requirePermission(_account, 0, JBOperations.ROOT) {
+  ) external override requirePermission(_account, _operatorData.domain, JBOperations.ROOT) {
     // Pack the indexes into a uint256.
     uint256 _packed = _packedPermissions(_operatorData.permissionIndexes);
 
@@ -109,39 +109,6 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
       _packed,
       msg.sender
     );
-  }
-
-  /// @notice Sets permissions for many operators.
-  /// @dev Only an address can set its own operators.
-  /// @param _account The account having an operator set.
-  /// @param _operatorData The data that specify the params for each operator being set.
-  function setOperatorsOf(
-    address _account,
-    JBOperatorData[] calldata _operatorData
-  ) external override requirePermission(_account, 0, JBOperations.ROOT) {
-    // Keep a reference to the number of operators being iterated on.
-    uint256 _numberOfOperators = _operatorData.length;
-
-    for (uint256 _i; _i < _numberOfOperators; ) {
-      // Pack the indexes into a uint256.
-      uint256 _packed = _packedPermissions(_operatorData[_i].permissionIndexes);
-
-      // Store the new value.
-      permissionsOf[_operatorData[_i].operator][_account][_operatorData[_i].domain] = _packed;
-
-      emit SetOperator(
-        _operatorData[_i].operator,
-        _account,
-        _operatorData[_i].domain,
-        _operatorData[_i].permissionIndexes,
-        _packed,
-        msg.sender
-      );
-
-      unchecked {
-        ++_i;
-      }
-    }
   }
 
   //*********************************************************************//

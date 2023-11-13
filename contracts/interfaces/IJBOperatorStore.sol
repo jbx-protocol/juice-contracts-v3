@@ -34,6 +34,4 @@ interface IJBOperatorStore {
   ) external view returns (bool);
 
   function setOperatorOf(address account, JBOperatorData calldata operatorData) external;
-
-  function setOperatorsOf(address account, JBOperatorData[] calldata operatorData) external;
 }
