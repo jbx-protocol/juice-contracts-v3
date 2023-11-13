@@ -7,11 +7,29 @@ import {JBOperations} from './libraries/JBOperations.sol';
 import {JBOperatorData} from './structs/JBOperatorData.sol';
 
 /// @notice Stores operator permissions for all addresses. Addresses can give permissions to any other address to take specific indexed actions on their behalf.
-contract JBOperatorStore is JBOperatable, IJBOperatorStore {
+contract JBOperatorStore is IJBOperatorStore {
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
   //*********************************************************************//
   error PERMISSION_INDEX_OUT_OF_BOUNDS();
+  error UNAUTHORIZED();
+
+  //*********************************************************************//
+  // ---------------------------- modifiers ---------------------------- //
+  //*********************************************************************//
+
+  /// @notice Only allows the speficied account or an operator of the account to proceed.
+  /// @param _account The account to check for.
+  /// @param _domain The domain namespace to look for an operator within.
+  /// @param _permissionIndex The index of the permission to check for.
+  modifier requirePermission(
+    address _account,
+    uint256 _domain,
+    uint256 _permissionIndex
+  ) {
+    _requirePermission(_account, _domain, _permissionIndex);
+    _;
+  }
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -29,23 +47,6 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
   //*********************************************************************//
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
-
-  /// @notice Whether or not an operator has the permission to take a certain action pertaining to the specified domain.
-  /// @param _operator The operator to check.
-  /// @param _account The account that has given out permissions to the operator.
-  /// @param _domain The domain that the operator has been given permissions to operate.
-  /// @param _permissionIndex The permission index to check for.
-  /// @return A flag indicating whether the operator has the specified permission.
-  function hasPermission(
-    address _operator,
-    address _account,
-    uint256 _domain,
-    uint256 _permissionIndex
-  ) external view override returns (bool) {
-    if (_permissionIndex > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();
-
-    return (((permissionsOf[_operator][_account][_domain] >> _permissionIndex) & 1) == 1);
-  }
 
   /// @notice Whether or not an operator has the permission to take certain actions pertaining to the specified domain.
   /// @param _operator The operator to check.
@@ -78,10 +79,31 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
   }
 
   //*********************************************************************//
+  // ------------------------- public views -------------------------- //
+  //*********************************************************************//
+
+  /// @notice Whether or not an operator has the permission to take a certain action pertaining to the specified domain.
+  /// @param _operator The operator to check.
+  /// @param _account The account that has given out permissions to the operator.
+  /// @param _domain The domain that the operator has been given permissions to operate.
+  /// @param _permissionIndex The permission index to check for.
+  /// @return A flag indicating whether the operator has the specified permission.
+  function hasPermission(
+    address _operator,
+    address _account,
+    uint256 _domain,
+    uint256 _permissionIndex
+  ) public view override returns (bool) {
+    if (_permissionIndex > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();
+
+    return (((permissionsOf[_operator][_account][_domain] >> _permissionIndex) & 1) == 1);
+  }
+
+  //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  constructor() JBOperatable(this) {}
+  constructor() {}
 
   //*********************************************************************//
   // ---------------------- external transactions ---------------------- //
@@ -94,7 +116,7 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
   function setOperatorOf(
     address _account,
     JBOperatorData calldata _operatorData
-  ) external override requirePermission(_account, 0, JBOperations.ROOT) {
+  ) external override requirePermission(_account, _operatorData.domain, JBOperations.ROOT) {
     // Pack the indexes into a uint256.
     uint256 _packed = _packedPermissions(_operatorData.permissionIndexes);
 
@@ -109,39 +131,6 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
       _packed,
       msg.sender
     );
-  }
-
-  /// @notice Sets permissions for many operators.
-  /// @dev Only an address can set its own operators.
-  /// @param _account The account having an operator set.
-  /// @param _operatorData The data that specify the params for each operator being set.
-  function setOperatorsOf(
-    address _account,
-    JBOperatorData[] calldata _operatorData
-  ) external override requirePermission(_account, 0, JBOperations.ROOT) {
-    // Keep a reference to the number of operators being iterated on.
-    uint256 _numberOfOperators = _operatorData.length;
-
-    for (uint256 _i; _i < _numberOfOperators; ) {
-      // Pack the indexes into a uint256.
-      uint256 _packed = _packedPermissions(_operatorData[_i].permissionIndexes);
-
-      // Store the new value.
-      permissionsOf[_operatorData[_i].operator][_account][_operatorData[_i].domain] = _packed;
-
-      emit SetOperator(
-        _operatorData[_i].operator,
-        _account,
-        _operatorData[_i].domain,
-        _operatorData[_i].permissionIndexes,
-        _packed,
-        msg.sender
-      );
-
-      unchecked {
-        ++_i;
-      }
-    }
   }
 
   //*********************************************************************//
@@ -167,5 +156,21 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
         ++_i;
       }
     }
+  }
+
+  /// @notice Require the message sender is either the account or has the specified permission.
+  /// @param _account The account to allow.
+  /// @param _domain The domain namespace within which the permission index will be checked.
+  /// @param _permissionIndex The permission index that an operator must have within the specified domain to be allowed.
+  function _requirePermission(
+    address _account,
+    uint256 _domain,
+    uint256 _permissionIndex
+  ) private view {
+    if (
+      msg.sender != _account &&
+      !hasPermission(msg.sender, _account, _domain, _permissionIndex) &&
+      !hasPermission(msg.sender, _account, 0, _permissionIndex)
+    ) revert UNAUTHORIZED();
   }
 }
