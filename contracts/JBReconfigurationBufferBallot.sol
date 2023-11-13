@@ -76,7 +76,7 @@ contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
     /// @param _duration The number of seconds to wait until a reconfiguration can be either `Approved` or `Failed`.
     constructor(uint256 _duration) {
         // Insure we don't underflow in state Of
-        if (duration > block.timestamp) revert WrongDuration();
+        if (_duration > block.timestamp) revert WrongDuration();
 
         duration = _duration;
     }
