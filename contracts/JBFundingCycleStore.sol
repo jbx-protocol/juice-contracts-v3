@@ -344,7 +344,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
   /// @notice Cache the value of the funding cycle weight.
   /// @param _projectId The ID of the project having its funding cycle weight cached.
-  function updateFundingCycleWeightCache(uint256 _projectId) external {
+  function updateFundingCycleWeightCache(uint256 _projectId) external override {
     // Keep a reference to the latest configured funding cycle, from which the cached value will be based.
     JBFundingCycle memory _latestConfiguredFundingCycle = _getStructFor(
       _projectId,
@@ -362,8 +362,9 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     ];
 
     // Determine the max start timestamp from which the cache can be set.
-    uint256 _maxStart = ((_cache.discountMultiple + _DISCOUNT_MULTIPLE_CACHE_THRESHOLD) *
-      _latestConfiguredFundingCycle.duration) + _latestConfiguredFundingCycle.start;
+    uint256 _maxStart = _latestConfiguredFundingCycle.start +
+      (_cache.discountMultiple + _DISCOUNT_MULTIPLE_CACHE_THRESHOLD) *
+      _latestConfiguredFundingCycle.duration;
 
     // Determine the timestamp from the which the cache will be set.
     uint256 _start = block.timestamp < _maxStart ? block.timestamp : _maxStart;
