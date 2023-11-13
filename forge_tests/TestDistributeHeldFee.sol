@@ -32,7 +32,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -43,7 +43,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: 10000, //100%
+            redemptionRate: 10_000, //100%
             ballotRedemptionRate: 0,
             pausePay: false,
             pauseDistributions: false,
@@ -85,26 +85,24 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
-    function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
+    function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount)
+        external
+    {
         // Assuming we don't revert when distributing too much and avoid rounding errors
         payAmountInWei = bound(payAmountInWei, 1, _targetInWei);
         fee = bound(fee, 0, 50_000_000);
         feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
-        
+
         address _userWallet = address(1234);
 
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(address(69696969));
+        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(address(69_696_969));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
@@ -162,7 +160,9 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         // -- add to balance --
         // Will get the fee reimbursed:
         uint256 heldFee = payAmountInWei
-            - PRBMath.mulDiv(payAmountInWei, jbLibraries().MAX_FEE(), discountedFee + jbLibraries().MAX_FEE()); // no discount
+            - PRBMath.mulDiv(
+                payAmountInWei, jbLibraries().MAX_FEE(), discountedFee + jbLibraries().MAX_FEE()
+            ); // no discount
 
         _terminal.addToBalanceOf{value: payAmountInWei}(
             _projectId,
@@ -176,19 +176,21 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         );
 
         // verify: project should get the fee back (plus the addToBalance amount)
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), payAmountInWei + heldFee);
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(_terminal, _projectId), payAmountInWei + heldFee
+        );
     }
 
     function testFeeGetsHeldSpecialCase() public {
         uint256 feeDiscount = 0;
         uint256 fee = 50_000_000;
-        uint256 payAmountInWei = 1000000000; // The same value as 100% in the split (makes it easy to leave `1` left over)
+        uint256 payAmountInWei = 1_000_000_000; // The same value as 100% in the split (makes it easy to leave `1` left over)
 
         JBSplit[] memory _jbSplits = new JBSplit[](1);
         _jbSplits[0] = JBSplit(
             false,
             false,
-            1000000000 - 1, // We make it so there is exactly `1` left over (note: change the subtraction to be anything else than 1 for this test to pass)
+            1_000_000_000 - 1, // We make it so there is exactly `1` left over (note: change the subtraction to be anything else than 1 for this test to pass)
             0,
             payable(address(5)),
             0,
@@ -208,11 +210,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         address _userWallet = address(1234);
@@ -220,7 +218,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(address(69696969));
+        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(address(69_696_969));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),

@@ -37,7 +37,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -90,24 +90,15 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch a protocol project first
-        _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
+        _controller.launchProjectFor(_projectOwner, _projectMetadata, _cycleConfig, _terminals, "");
 
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
-    event K(uint256 q, uint256 w, uint256 e, uint256 j, uint256 k, uint256 l, uint256 n);    
+    event K(uint256 q, uint256 w, uint256 e, uint256 j, uint256 k, uint256 l, uint256 n);
+
     function testRedeem(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false
         uint96 payAmountInWei = 10 ether;
@@ -167,19 +158,18 @@ contract TestRedeem_Local is TestBaseWorkflow {
         );
 
         uint256 _grossRedeemed = PRBMath.mulDiv(
-                PRBMath.mulDiv(_terminalBalanceInWei, _tokenAmountToRedeem, _userTokenBalance),
-                5000 +
-                PRBMath.mulDiv(
-                    _tokenAmountToRedeem,
-                    JBConstants.MAX_REDEMPTION_RATE - 5000,
-                    _userTokenBalance
+            PRBMath.mulDiv(_terminalBalanceInWei, _tokenAmountToRedeem, _userTokenBalance),
+            5000
+                + PRBMath.mulDiv(
+                    _tokenAmountToRedeem, JBConstants.MAX_REDEMPTION_RATE - 5000, _userTokenBalance
                 ),
-                JBConstants.MAX_REDEMPTION_RATE
-            );
+            JBConstants.MAX_REDEMPTION_RATE
+        );
 
         // Compute the fee taken
-        uint256 _fee =  _grossRedeemed - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25000000 + 1_000_000_000); // 2.5% fee
-        
+        uint256 _fee = _grossRedeemed
+            - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
+
         // Compute the net amount received, still in $project
         uint256 _netReceived = _grossRedeemed - _fee;
 
@@ -190,9 +180,17 @@ contract TestRedeem_Local is TestBaseWorkflow {
         assertEq(payable(_userWallet).balance, _reclaimAmtInWei);
 
         // verify: beneficiary has correct amount of token
-        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance - _tokenAmountToRedeem, "incorrect beneficiary balance");
+        assertEq(
+            _tokenStore.balanceOf(_userWallet, _projectId),
+            _userTokenBalance - _tokenAmountToRedeem,
+            "incorrect beneficiary balance"
+        );
 
         // verify: ETH balance in terminal should be up to date (with 1 wei precision)
-        assertApproxEqAbs(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000), 1);
+        assertApproxEqAbs(
+            jbPaymentTerminalStore().balanceOf(_terminal, _projectId),
+            _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000),
+            1
+        );
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {IJBSplitAllocator} from "./../interfaces/IJBSplitAllocator.sol";
 
 /// @custom:member preferClaimed A flag that only has effect if a projectId is also specified, and the project has a token contract attached. If so, this flag indicates if the tokens that result from making a payment to the project should be delivered claimed into the beneficiary's wallet, or unclaimed to save gas.
 /// @custom:member preferAddToBalance A flag indicating if a distribution to a project should prefer triggering it's addToBalance function instead of its pay function.
@@ -11,11 +11,11 @@ import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 /// @custom:member lockedUntil Specifies if the split should be unchangeable until the specified time, with the exception of extending the locked period.
 /// @custom:member allocator If an allocator is specified, funds will be sent to the allocator contract along with all properties of this split.
 struct JBSplit {
-  bool preferClaimed;
-  bool preferAddToBalance;
-  uint256 percent;
-  uint256 projectId;
-  address payable beneficiary;
-  uint256 lockedUntil;
-  IJBSplitAllocator allocator;
+    bool preferClaimed;
+    bool preferAddToBalance;
+    uint256 percent;
+    uint256 projectId;
+    address payable beneficiary;
+    uint256 lockedUntil;
+    IJBSplitAllocator allocator;
 }

@@ -6,8 +6,8 @@ pragma solidity ^0.8.0;
 /// @custom:member feeDiscount The discount of the fee.
 /// @custom:member beneficiary The address that will receive the tokens that are minted as a result of the fee payment.
 struct JBFee {
-  uint256 amount;
-  uint32 fee;
-  uint32 feeDiscount;
-  address beneficiary;
+    uint256 amount;
+    uint32 fee;
+    uint32 feeDiscount;
+    address beneficiary;
 }

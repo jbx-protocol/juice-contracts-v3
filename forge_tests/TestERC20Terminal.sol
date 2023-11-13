@@ -6,10 +6,16 @@ import {MockMaliciousAllocator, GasGussler} from "./mock/MockMaliciousAllocator.
 import {MockMaliciousTerminal} from "./mock/MockMaliciousTerminal.sol";
 
 contract TestERC20Terminal_Local is TestBaseWorkflow {
-    event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
+    event PayoutReverted(
+        uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller
+    );
 
     event FeeReverted(
-        uint256 indexed projectId, uint256 indexed feeProjectId, uint256 amount, bytes reason, address caller
+        uint256 indexed projectId,
+        uint256 indexed feeProjectId,
+        uint256 amount,
+        bytes reason,
+        address caller
     );
 
     IJBSplitAllocator _allocator;
@@ -39,7 +45,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: WEIGHT,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -94,11 +100,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         address caller = msg.sender;
@@ -109,7 +111,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(caller); // back to regular msg.sender (bug?)
         jbToken().approve(address(terminal), 20 * 10 ** 18);
         vm.prank(caller); // back to regular msg.sender (bug?)
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
         uint256 _userTokenBalance = PRBMath.mulDiv(20, WEIGHT, 2); // 18dec is in WEIGHT
@@ -133,7 +137,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         assertEq(
             jbToken().balanceOf(msg.sender),
-            PRBMath.mulDiv(5 * 10 ** 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee())
+            PRBMath.mulDiv(
+                5 * 10 ** 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee()
+            )
         );
 
         // Distribute the funding target ETH -> splits[] is empty -> everything in left-over, to project owner
@@ -152,7 +158,8 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         // Funds leaving the ecosystem -> fee taken
         assertEq(
             jbToken().balanceOf(_projectOwner),
-            initBalance + (10 * 10 ** 18 * jbLibraries().MAX_FEE()) / (terminal.fee() + jbLibraries().MAX_FEE())
+            initBalance
+                + (10 * 10 ** 18 * jbLibraries().MAX_FEE()) / (terminal.fee() + jbLibraries().MAX_FEE())
         );
 
         // redeem eth from the overflow by the token holder:
@@ -200,11 +207,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         // setting splits
@@ -234,11 +237,14 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         jbToken().approve(address(terminal), 20 * 10 ** 18);
         vm.prank(_user);
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
         // using controller 3.1
-        uint256 _projectStoreBalanceBeforeDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         vm.prank(_projectOwner);
         terminal.distributePayoutsOf(
@@ -249,8 +255,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             0, // Min wei out
             "allocation" // metadata
         );
-        uint256 _projectStoreBalanceAfterDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
@@ -284,11 +291,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         // setting splits
@@ -318,10 +321,13 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         jbToken().approve(address(terminal), 20 * 10 ** 18);
         vm.prank(_user);
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
-        uint256 _projectStoreBalanceBeforeDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         // using controller 3.1
         vm.prank(_projectOwner);
@@ -333,8 +339,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             0, // Min wei out
             "allocation" // metadata
         );
-        uint256 _projectStoreBalanceAfterDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
@@ -367,11 +374,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         // setting splits
@@ -401,13 +404,18 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         jbToken().approve(address(terminal), 20 * 10 ** 18);
         vm.prank(_user);
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
-        uint256 _projectStoreBalanceBeforeDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         vm.expectEmit(true, true, true, true);
-        emit PayoutReverted(projectId, _splits[0], 10 * 10 ** 18, abi.encode("IERC165 fail"), address(this));
+        emit PayoutReverted(
+            projectId, _splits[0], 10 * 10 ** 18, abi.encode("IERC165 fail"), address(this)
+        );
 
         terminal.distributePayoutsOf(
             projectId,
@@ -417,14 +425,17 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             0, // Min wei out
             "allocation" // metadata
         );
-        uint256 _projectStoreBalanceAfterDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
-    function testAllocation_should_emit_event_with_correct_reason_when_reverting(uint256 _revertReason) public {
+    function testAllocation_should_emit_event_with_correct_reason_when_reverting(
+        uint256 _revertReason
+    ) public {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
 
@@ -453,11 +464,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         // setting splits
@@ -488,7 +495,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         jbToken().approve(address(terminal), 20 * 10 ** 18);
 
         vm.prank(_user);
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
         MockMaliciousAllocator(address(_allocator)).setRevertMode(_revertReason);
         bytes memory _reason;
@@ -654,7 +663,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         }
     } */
 
-    function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason) public {
+    function testDistribution_to_malicious_terminal_by_adding_balance(uint256 _revertReason)
+        public
+    {
         _revertReason = bound(_revertReason, 0, 3);
         address _user = makeAddr("user");
 
@@ -671,7 +682,8 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             jbPaymentTerminalStore(),
             multisig()
         );
-        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
+        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints =
+            new JBFundAccessConstraints[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
@@ -706,11 +718,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         JBFundingCycleConfiguration[] memory _cycleConfig2 = new JBFundingCycleConfiguration[](1);
@@ -723,11 +731,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         //project to allocato funds
         uint256 allocationProjectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig2,
-            _splitProjectTerminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig2, _splitProjectTerminals, ""
         );
 
         // setting splits
@@ -757,10 +761,13 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         jbToken().approve(address(terminal), 20 * 10 ** 18);
         vm.prank(_user);
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
-        uint256 _projectStoreBalanceBeforeDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         // using controller 3.1
         _badTerminal.setRevertMode(_revertReason);
@@ -786,14 +793,17 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             0, // Min wei out
             "allocation" // metadata
         );
-        uint256 _projectStoreBalanceAfterDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
     }
 
-    function testDistribution_to_malicious_terminal_by_paying_project(uint256 _revertReason) public {
+    function testDistribution_to_malicious_terminal_by_paying_project(uint256 _revertReason)
+        public
+    {
         _revertReason = bound(_revertReason, 0, 3);
 
         address _user = makeAddr("user");
@@ -811,7 +821,8 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             jbPaymentTerminalStore(),
             multisig()
         );
-        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints = new JBFundAccessConstraints[](1);
+        JBFundAccessConstraints[] memory _splitProjectFundAccessConstraints =
+            new JBFundAccessConstraints[](1);
         IJBPaymentTerminal[] memory _splitProjectTerminals = new IJBPaymentTerminal[](1);
         JBGroupedSplits[] memory _allocationSplits = new JBGroupedSplits[](1); // Default empty
         JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
@@ -846,11 +857,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         JBFundingCycleConfiguration[] memory _cycleConfig2 = new JBFundingCycleConfiguration[](1);
@@ -863,11 +870,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
 
         //project to allocato funds
         uint256 allocationProjectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _splitProjectTerminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _splitProjectTerminals, ""
         );
 
         // setting splits
@@ -897,10 +900,13 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(_user);
         jbToken().approve(address(terminal), 20 * 10 ** 18);
         vm.prank(_user);
-        terminal.pay(projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 token are now in the overflow
+        terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 token are now in the overflow
 
-        uint256 _projectStoreBalanceBeforeDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceBeforeDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         _badTerminal.setRevertMode(_revertReason);
         bytes memory _reason;
@@ -925,8 +931,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
             0, // Min wei out
             "allocation" // metadata
         );
-        uint256 _projectStoreBalanceAfterDistribution =
-            jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(terminal)), projectId);
+        uint256 _projectStoreBalanceAfterDistribution = jbPaymentTerminalStore().balanceOf(
+            IJBSingleTokenPaymentTerminal(address(terminal)), projectId
+        );
 
         assertEq(jbToken().allowance(address(terminal), address(_allocator)), 0);
         assertEq(_projectStoreBalanceAfterDistribution, _projectStoreBalanceBeforeDistribution);
@@ -957,11 +964,7 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         address caller = msg.sender;
@@ -972,7 +975,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         vm.prank(caller); // back to regular msg.sender (bug?)
         jbToken().approve(address(terminal), BALANCE);
         vm.prank(caller); // back to regular msg.sender (bug?)
-        terminal.pay(projectId, BALANCE, address(0), msg.sender, 0, false, "Forge test", new bytes(0)); // funding target met and 10 ETH are now in the overflow
+        terminal.pay(
+            projectId, BALANCE, address(0), msg.sender, 0, false, "Forge test", new bytes(0)
+        ); // funding target met and 10 ETH are now in the overflow
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
         uint256 _userTokenBalance = PRBMath.mulDiv(BALANCE, (WEIGHT / 10 ** 18), 2);
@@ -1008,7 +1013,9 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         if (BALANCE > 1 && !willRevert) {
             assertEq(
                 jbToken().balanceOf(msg.sender),
-                PRBMath.mulDiv(ALLOWANCE, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee())
+                PRBMath.mulDiv(
+                    ALLOWANCE, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + terminal.fee()
+                )
             );
         }
 
@@ -1037,7 +1044,10 @@ contract TestERC20Terminal_Local is TestBaseWorkflow {
         if (TARGET <= BALANCE && TARGET > 1) {
             assertEq(
                 jbToken().balanceOf(_projectOwner),
-                initBalance + PRBMath.mulDiv(TARGET, jbLibraries().MAX_FEE(), terminal.fee() + jbLibraries().MAX_FEE())
+                initBalance
+                    + PRBMath.mulDiv(
+                        TARGET, jbLibraries().MAX_FEE(), terminal.fee() + jbLibraries().MAX_FEE()
+                    )
             );
         }
 
