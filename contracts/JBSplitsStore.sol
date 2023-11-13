@@ -190,16 +190,14 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
 
       uint256 _packedSplitParts1;
 
-      // prefer claimed in bit 0.
-      if (_splits[_i].preferClaimed) _packedSplitParts1 = 1;
-      // prefer add to balance in bit 1.
-      if (_splits[_i].preferAddToBalance) _packedSplitParts1 |= 1 << 1;
-      // percent in bits 2-33.
-      _packedSplitParts1 |= _splits[_i].percent << 2;
-      // projectId in bits 32-89.
-      _packedSplitParts1 |= _splits[_i].projectId << 34;
-      // beneficiary in bits 90-249.
-      _packedSplitParts1 |= uint256(uint160(address(_splits[_i].beneficiary))) << 90;
+      // prefer add to balance in bit 0.
+      if (_splits[_i].preferAddToBalance) _packedSplitParts1 = 1;
+      // percent in bits 1-32.
+      _packedSplitParts1 |= _splits[_i].percent << 1;
+      // projectId in bits 33-88.
+      _packedSplitParts1 |= _splits[_i].projectId << 33;
+      // beneficiary in bits 89-248.
+      _packedSplitParts1 |= uint256(uint160(address(_splits[_i].beneficiary))) << 89;
 
       // Store the first split part.
       _packedSplitParts1Of[_projectId][_domain][_group][_i] = _packedSplitParts1;
@@ -250,7 +248,6 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
         _splits[_i].beneficiary == _lockedSplit.beneficiary &&
         _splits[_i].allocator == _lockedSplit.allocator &&
         _splits[_i].projectId == _lockedSplit.projectId &&
-        _splits[_i].preferClaimed == _lockedSplit.preferClaimed &&
         _splits[_i].preferAddToBalance == _lockedSplit.preferAddToBalance &&
         // Allow lock extention.
         _splits[_i].lockedUntil >= _lockedSplit.lockedUntil
@@ -288,16 +285,14 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
       // Populate the split struct.
       JBSplit memory _split;
 
-      // prefer claimed in bit 0.
-      _split.preferClaimed = _packedSplitPart1 & 1 == 1;
-      // prefer add to balance in bit 1.
-      _split.preferAddToBalance = (_packedSplitPart1 >> 1) & 1 == 1;
-      // percent in bits 2-33.
-      _split.percent = uint256(uint32(_packedSplitPart1 >> 2));
-      // projectId in bits 32-89.
-      _split.projectId = uint256(uint56(_packedSplitPart1 >> 34));
-      // beneficiary in bits 90-249.
-      _split.beneficiary = payable(address(uint160(_packedSplitPart1 >> 90)));
+      // prefer add to balance in bit 0.
+      _split.preferAddToBalance = _packedSplitPart1 & 1 == 1;
+      // percent in bits 1-32.
+      _split.percent = uint256(uint32(_packedSplitPart1 >> 1));
+      // projectId in bits 33-88.
+      _split.projectId = uint256(uint56(_packedSplitPart1 >> 33));
+      // beneficiary in bits 89-248.
+      _split.beneficiary = payable(address(uint160(_packedSplitPart1 >> 89)));
 
       // Get a reference to the second packed data.
       uint256 _packedSplitPart2 = _packedSplitParts2Of[_projectId][_domain][_group][_i];

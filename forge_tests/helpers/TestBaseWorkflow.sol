@@ -20,9 +20,9 @@ import {JBSplitsStore} from '@juicebox/JBSplitsStore.sol';
 import {JBToken} from '@juicebox/JBToken.sol';
 import {JBTokenStore} from '@juicebox/JBTokenStore.sol';
 import {JBReconfigurationBufferBallot} from '@juicebox/JBReconfigurationBufferBallot.sol';
-import {JBPayoutRedemptionTerminal} from '@juicebox/JBPayoutRedemptionTerminal.sol';
+import {JBMultiTerminal} from '@juicebox/JBMultiTerminal.sol';
 import {JBCurrencyAmount} from '@juicebox/structs/JBCurrencyAmount.sol';
-import {JBAccountingContext} from '@juicebox/structs/JBAccountingContext.sol';
+import {JBAccountingContextConfig} from '@juicebox/structs/JBAccountingContextConfig.sol';
 import {JBDidPayData3_1_1} from '@juicebox/structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData3_1_1} from '@juicebox/structs/JBDidRedeemData3_1_1.sol';
 import {JBFee} from '@juicebox/structs/JBFee.sol';
@@ -31,14 +31,14 @@ import {JBFundAccessConstraints} from '@juicebox/structs/JBFundAccessConstraints
 import {JBFundingCycle} from '@juicebox/structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from '@juicebox/structs/JBFundingCycleData.sol';
 import {JBFundingCycleMetadata} from '@juicebox/structs/JBFundingCycleMetadata.sol';
-import {JBFundingCycleConfiguration} from '@juicebox/structs/JBFundingCycleConfiguration.sol';
+import {JBFundingCycleConfig} from '@juicebox/structs/JBFundingCycleConfig.sol';
 import {JBGroupedSplits} from '@juicebox/structs/JBGroupedSplits.sol';
 import {JBOperatorData} from '@juicebox/structs/JBOperatorData.sol';
 import {JBPayParamsData} from '@juicebox/structs/JBPayParamsData.sol';
 import {JBProjectMetadata} from '@juicebox/structs/JBProjectMetadata.sol';
 import {JBRedeemParamsData} from '@juicebox/structs/JBRedeemParamsData.sol';
 import {JBSplit} from '@juicebox/structs/JBSplit.sol';
-import {JBTerminalConfiguration} from '@juicebox/structs/JBTerminalConfiguration.sol';
+import {JBTerminalConfig} from '@juicebox/structs/JBTerminalConfig.sol';
 import {JBProjectMetadata} from '@juicebox/structs/JBProjectMetadata.sol';
 import {JBGlobalFundingCycleMetadata} from '@juicebox/structs/JBGlobalFundingCycleMetadata.sol';
 import {JBPayDelegateAllocation3_1_1} from '@juicebox/structs/JBPayDelegateAllocation3_1_1.sol';
@@ -60,13 +60,10 @@ import {IJBTokenStore} from '@juicebox/interfaces/IJBTokenStore.sol';
 import {IJBSplitAllocator} from '@juicebox/interfaces/IJBSplitAllocator.sol';
 import {IJBPayDelegate3_1_1} from '@juicebox/interfaces/IJBPayDelegate3_1_1.sol';
 import {IJBFundingCycleDataSource3_1_1} from '@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol';
-import {IJBPayoutRedemptionTerminal} from '@juicebox/interfaces/IJBPayoutRedemptionTerminal.sol';
+import {IJBMultiTerminal} from '@juicebox/interfaces/IJBMultiTerminal.sol';
 import {IJBPriceFeed} from '@juicebox/interfaces/IJBPriceFeed.sol';
 import {IJBProjectPayer} from '@juicebox/interfaces/IJBProjectPayer.sol';
 import {IJBOperatable} from '@juicebox/interfaces/IJBOperatable.sol';
-import {IJBAllowanceTerminal3_1} from '@juicebox/interfaces/IJBAllowanceTerminal3_1.sol';
-import {IJBPayoutTerminal3_1} from '@juicebox/interfaces/IJBPayoutTerminal3_1.sol';
-import {IJBRedemptionTerminal} from '@juicebox/interfaces/IJBRedemptionTerminal.sol';
 import {IJBFundingCycleBallot} from '@juicebox/interfaces/IJBFundingCycleBallot.sol';
 import {IJBPrices} from '@juicebox/interfaces/IJBPrices.sol';
 import {IJBSplitsPayer} from '@juicebox/interfaces/IJBSplitsPayer.sol';
@@ -95,7 +92,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   address private _multisig = address(123);
   address private _beneficiary = address(69420);
   MockERC20 private _usdcToken;
-  //   address private _permit2;
+  address private _permit2;
   JBOperatorStore private _jbOperatorStore;
   JBProjects private _jbProjects;
   JBPrices private _jbPrices;
@@ -107,7 +104,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   JBController3_1 private _jbController;
   JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
   JBTerminalStore private _jbTerminalStore;
-  JBPayoutRedemptionTerminal private _jbPayoutRedemptionTerminal;
+  JBMultiTerminal private _jbMultiTerminal;
 
   function multisig() internal view returns (address) {
     return _multisig;
@@ -119,6 +116,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
   function usdcToken() internal view returns (MockERC20) {
     return _usdcToken;
+  }
+
+  function permit2() internal view returns (IPermit2) {
+    return IPermit2(_permit2);
   }
 
   function jbOperatorStore() internal view returns (JBOperatorStore) {
@@ -161,8 +162,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     return _jbTerminalStore;
   }
 
-  function jbPayoutRedemptionTerminal() internal view returns (JBPayoutRedemptionTerminal) {
-    return _jbPayoutRedemptionTerminal;
+  function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
+    return _jbMultiTerminal;
   }
 
   //*********************************************************************//
@@ -177,7 +178,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     vm.label(address(_jbOperatorStore), 'JBOperatorStore');
     _usdcToken = new MockERC20('USDC', 'USDC');
     vm.label(address(_usdcToken), 'ERC20');
-    _jbProjects = new JBProjects(_jbOperatorStore);
+    _jbProjects = new JBProjects(_jbOperatorStore, _multisig);
     vm.label(address(_jbProjects), 'JBProjects');
     _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
     vm.label(address(_jbPrices), 'JBPrices');
@@ -214,16 +215,20 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbFundingCycleStore, _jbPrices);
     vm.label(address(_jbTerminalStore), 'JBSingleTokenPaymentTerminalStore3_1_1');
 
-    _jbPayoutRedemptionTerminal = new JBPayoutRedemptionTerminal(
+    vm.prank(_multisig);
+    _permit2 = deployPermit2();
+
+    _jbMultiTerminal = new JBMultiTerminal(
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,
       _jbSplitsStore,
       _jbTerminalStore,
+      IPermit2(_permit2),
       _multisig
     );
 
-    vm.label(address(_jbPayoutRedemptionTerminal), 'JBPayoutRedemptionTerminal');
+    vm.label(address(_jbMultiTerminal), 'JBMultiTerminal');
   }
 
   //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so

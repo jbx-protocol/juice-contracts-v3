@@ -2,7 +2,8 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
-import {ERC721Votes, ERC721, EIP712} from '@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol';
+import {ERC721Votes, ERC721} from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol';
+import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
@@ -68,12 +69,15 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
   //*********************************************************************//
 
   /// @param _operatorStore A contract storing operator assignments.
+  /// @param _owner The owner of the contract who can set metadata.
   constructor(
-    IJBOperatorStore _operatorStore
+    IJBOperatorStore _operatorStore,
+    address _owner
   )
     ERC721('Juicebox Projects', 'JUICEBOX')
     EIP712('Juicebox Projects', '1')
     JBOperatable(_operatorStore)
+    Ownable(_owner)
   // solhint-disable-next-line no-empty-blocks
   {
 
