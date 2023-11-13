@@ -26,7 +26,6 @@ import {JBConstants} from './libraries/JBConstants.sol';
 import {JBFees} from './libraries/JBFees.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
-import {JBOperations2} from './libraries/JBOperations2.sol';
 import {JBTokens} from './libraries/JBTokens.sol';
 import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
 import {JBDidRedeemData3_1_1} from './structs/JBDidRedeemData3_1_1.sol';
@@ -311,7 +310,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     external
     virtual
     override
-    requirePermission(_holder, _projectId, JBOperations.REDEEM)
+    requirePermission(_holder, _projectId, JBOperations.REDEEM_TOKENS)
     returns (uint256 reclaimAmount)
   {
     return
@@ -500,7 +499,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     requirePermissionAllowingOverride(
       PROJECTS.ownerOf(_projectId),
       _projectId,
-      JBOperations2.SET_ACCOUNTING_CONTEXT,
+      JBOperations.SET_ACCOUNTING_CONTEXT,
       msg.sender == DIRECTORY.controllerOf(_projectId)
     )
   {

@@ -120,7 +120,7 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
   )
     external
     override
-    requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_METADATA)
+    requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
   {
     // Set the project's new metadata content within the specified domain.
     metadataContentOf[_projectId][_metadata.domain] = _metadata.content;
