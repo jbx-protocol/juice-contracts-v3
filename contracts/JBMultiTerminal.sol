@@ -12,7 +12,7 @@ import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {IAllowanceTransfer} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBDelegateMetadataLib} from '@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol';
-import {IJBController3_1} from './interfaces/IJBController3_1.sol';
+import {IJBController} from './interfaces/IJBController.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
 import {IJBMultiTerminal} from './interfaces/IJBMultiTerminal.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
@@ -653,7 +653,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       // Mint the tokens if needed.
       if (_tokenCount != 0)
         // Set token count to be the number of tokens minted for the beneficiary instead of the total amount.
-        beneficiaryTokenCount = IJBController3_1(DIRECTORY.controllerOf(_projectId)).mintTokensOf(
+        beneficiaryTokenCount = IJBController(DIRECTORY.controllerOf(_projectId)).mintTokensOf(
           _projectId,
           _tokenCount,
           _beneficiary,
@@ -767,7 +767,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
       // Burn the project tokens.
       if (_tokenCount != 0)
-        IJBController3_1(DIRECTORY.controllerOf(_projectId)).burnTokensOf(
+        IJBController(DIRECTORY.controllerOf(_projectId)).burnTokensOf(
           _holder,
           _projectId,
           _tokenCount,

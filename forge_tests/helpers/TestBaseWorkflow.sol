@@ -8,7 +8,7 @@ import {IERC721Metadata} from '@openzeppelin/contracts/token/ERC721/extensions/I
 import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {ERC165, IERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
-import {JBController3_1} from '@juicebox/JBController3_1.sol';
+import {JBController} from '@juicebox/JBController.sol';
 import {JBDirectory} from '@juicebox/JBDirectory.sol';
 import {JBTerminalStore} from '@juicebox/JBTerminalStore.sol';
 import {JBFundAccessConstraintsStore} from '@juicebox/JBFundAccessConstraintsStore.sol';
@@ -47,7 +47,7 @@ import {JBSplitAllocationData} from '@juicebox/structs/JBSplitAllocationData.sol
 import {IJBPaymentTerminal} from '@juicebox/interfaces/IJBPaymentTerminal.sol';
 import {IJBToken} from '@juicebox/interfaces/IJBToken.sol';
 import {JBSingleAllowanceData} from '@juicebox/structs/JBSingleAllowanceData.sol';
-import {IJBController3_1} from '@juicebox/interfaces/IJBController3_1.sol';
+import {IJBController} from '@juicebox/interfaces/IJBController.sol';
 import {IJBMigratable} from '@juicebox/interfaces/IJBMigratable.sol';
 import {IJBOperatorStore} from '@juicebox/interfaces/IJBOperatorStore.sol';
 import {IJBTerminalStore} from '@juicebox/interfaces/IJBTerminalStore.sol';
@@ -101,7 +101,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   //   JBToken private _jbToken;
   JBTokenStore private _jbTokenStore;
   JBSplitsStore private _jbSplitsStore;
-  JBController3_1 private _jbController;
+  JBController private _jbController;
   JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
   JBTerminalStore private _jbTerminalStore;
   JBMultiTerminal private _jbMultiTerminal;
@@ -150,7 +150,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     return _jbSplitsStore;
   }
 
-  function jbController() internal view returns (JBController3_1) {
+  function jbController() internal view returns (JBController) {
     return _jbController;
   }
 
@@ -198,7 +198,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     vm.label(address(_jbSplitsStore), 'JBSplitsStore');
     _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
     vm.label(address(_jbFundAccessConstraintsStore), 'JBFundAccessConstraintsStore');
-    _jbController = new JBController3_1(
+    _jbController = new JBController(
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,
@@ -207,7 +207,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbSplitsStore,
       _jbFundAccessConstraintsStore
     );
-    vm.label(address(_jbController), 'JBController3_1');
+    vm.label(address(_jbController), 'JBController');
 
     vm.prank(_multisig);
     _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);

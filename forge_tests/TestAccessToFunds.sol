@@ -16,7 +16,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     uint8 private constant _PRICE_FEED_DECIMALS = 10; 
     uint256 private constant _USD_PRICE_PER_ETH = 2000 * 10**_PRICE_FEED_DECIMALS; // 2000 USDC == 1 ETH
     
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     IJBPrices private _prices;
     IJBMultiTerminal private _terminal; 
     IJBTokenStore private _tokenStore;
