@@ -10,6 +10,7 @@ import {IJBFundingCycleBallot} from './interfaces/IJBFundingCycleBallot.sol';
 import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 import {JBFundingCycleData} from './structs/JBFundingCycleData.sol';
+import {JBFundingCycleWeightCache} from './structs/JBFundingCycleWeightCache.sol';
 
 /// @notice Manages funding cycle configurations and scheduling.
 contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
@@ -24,24 +25,34 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   error NO_SAME_BLOCK_RECONFIGURATION();
 
   //*********************************************************************//
+  // ------------------------- private constants ----------------------- //
+  //*********************************************************************//
+
+  /// @notice The number of discount multiples before which cached values will be prefered.
+  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 50000;
+
+  //*********************************************************************//
   // --------------------- private stored properties ------------------- //
   //*********************************************************************//
 
-  /// @notice Stores the user defined properties of each funding cycle, packed into one storage slot.
+  /// @notice The user defined properties of each funding cycle, packed into one storage slot.
   /// @custom:param _projectId The ID of the project to get properties of.
   /// @custom:param _configuration The funding cycle configuration to get properties of.
   mapping(uint256 => mapping(uint256 => uint256)) private _packedUserPropertiesOf;
 
-  /// @notice Stores the properties added by the mechanism to manage and schedule each funding cycle, packed into one storage slot.
+  /// @notice The properties added by the mechanism to manage and schedule each funding cycle, packed into one storage slot.
   /// @custom:param _projectId The ID of the project to get instrinsic properties of.
   /// @custom:param _configuration The funding cycle configuration to get properties of.
   mapping(uint256 => mapping(uint256 => uint256)) private _packedIntrinsicPropertiesOf;
 
-  /// @notice Stores the metadata for each funding cycle configuration, packed into one storage slot.
+  /// @notice The metadata for each funding cycle configuration, packed into one storage slot.
   /// @custom:param _projectId The ID of the project to get metadata of.
   /// @custom:param _configuration The funding cycle configuration to get metadata of.
   mapping(uint256 => mapping(uint256 => uint256)) private _metadataOf;
 
+  /// @notice Cached values of weights to derive funding cycles from.
+  /// @custom:param _projectId The ID of the project to which the cache applies.
+  mapping(uint256 => JBFundingCycleWeightCache) internal _weightCache;
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
@@ -329,6 +340,47 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     // Return the funding cycle for the new configuration.
     return _getStructFor(_projectId, _configuration);
+  }
+
+  /// @notice Cache the value of the funding cycle weight.
+  /// @param _projectId The ID of the project having its funding cycle weight cached.
+  function updateFundingCycleWeightCache(uint256 _projectId) external override {
+    // Keep a reference to the latest configured funding cycle, from which the cached value will be based.
+    JBFundingCycle memory _latestConfiguredFundingCycle = _getStructFor(
+      _projectId,
+      latestConfigurationOf[_projectId]
+    );
+
+    // Nothing to cache if the latest configuration doesn't have a duration or a discount rate.
+    if (
+      _latestConfiguredFundingCycle.duration == 0 || _latestConfiguredFundingCycle.discountRate == 0
+    ) return;
+
+    // Get a reference to the current cache.
+    JBFundingCycleWeightCache storage _cache = _weightCache[
+      _latestConfiguredFundingCycle.configuration
+    ];
+
+    // Determine the max start timestamp from which the cache can be set.
+    uint256 _maxStart = _latestConfiguredFundingCycle.start +
+      (_cache.discountMultiple + _DISCOUNT_MULTIPLE_CACHE_THRESHOLD) *
+      _latestConfiguredFundingCycle.duration;
+
+    // Determine the timestamp from the which the cache will be set.
+    uint256 _start = block.timestamp < _maxStart ? block.timestamp : _maxStart;
+
+    // The difference between the start of the base funding cycle and the proposed start.
+    uint256 _startDistance = _start - _latestConfiguredFundingCycle.start;
+
+    // Determine the discount multiple that'll be cached.
+    uint256 _discountMultiple;
+    unchecked {
+      _discountMultiple = _startDistance / _latestConfiguredFundingCycle.duration;
+    }
+
+    // Store the new values.
+    _cache.weight = _deriveWeightFrom(_latestConfiguredFundingCycle, _start);
+    _cache.discountMultiple = _discountMultiple;
   }
 
   //*********************************************************************//
@@ -632,7 +684,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   function _deriveWeightFrom(
     JBFundingCycle memory _baseFundingCycle,
     uint256 _start
-  ) private pure returns (uint256 weight) {
+  ) private view returns (uint256 weight) {
     // A subsequent cycle to one with a duration of 0 should have the next possible weight.
     if (_baseFundingCycle.duration == 0)
       return
@@ -655,6 +707,18 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     uint256 _discountMultiple;
     unchecked {
       _discountMultiple = _startDistance / _baseFundingCycle.duration; // Non-null duration is excluded above
+    }
+
+    // Get a cached weight for the configuration.
+    JBFundingCycleWeightCache memory _cache = _weightCache[_baseFundingCycle.configuration];
+
+    // If a cached value is available, use it.
+    if (_cache.discountMultiple > 0) {
+      // Set the starting weight to be the cached value.
+      weight = _cache.weight;
+
+      // Set the discount multiple to be the difference between the cached value and the total discount multiple that should be applied.
+      _discountMultiple -= _cache.discountMultiple;
     }
 
     for (uint256 _i; _i < _discountMultiple; ) {

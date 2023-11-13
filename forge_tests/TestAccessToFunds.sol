@@ -25,7 +25,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     address private _beneficiary;
     MockERC20 private _usdcToken;
 
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
 
@@ -40,7 +39,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _controller = jbController();
         _prices = jbPrices();
         _terminal = jbPayoutRedemptionTerminal();
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 0,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
@@ -137,7 +135,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -320,7 +318,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -534,7 +532,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -743,7 +741,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -967,7 +965,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""

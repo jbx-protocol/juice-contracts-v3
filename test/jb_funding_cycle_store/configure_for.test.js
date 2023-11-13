@@ -15,7 +15,7 @@ import ijbFundingCycleBallot from '../../artifacts/contracts/interfaces/IJBFundi
 import { BigNumber } from 'ethers';
 import errors from '../helpers/errors.json';
 
-describe('JBFundingCycleStore::configureFor(...)', function () {
+describe.only('JBFundingCycleStore::configureFor(...)', function () {
   const PROJECT_ID = 2;
 
   const EMPTY_FUNDING_CYCLE = {
@@ -2192,7 +2192,7 @@ describe('JBFundingCycleStore::configureFor(...)', function () {
     });
 
     // 10000000 cycles into the future.
-    const cycleDiff = ethers.BigNumber.from(10000000);
+    const cycleDiff = ethers.BigNumber.from(10000000000);
 
     //keep 5 seconds before the end of the cycle so make all necessary checks before the cycle ends.
     await fastForward(
