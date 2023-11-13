@@ -710,7 +710,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
     }
 
     // Get a cached weight for the configuration.
-    JBFundingCycleWeightCache storage _cache = _weightCache[_baseFundingCycle.configuration];
+    JBFundingCycleWeightCache memory _cache = _weightCache[_baseFundingCycle.configuration];
 
     // If a cached value is available, use it.
     if (_cache.discountMultiple > 0) {
