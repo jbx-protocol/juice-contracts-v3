@@ -411,9 +411,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     // There should be tokens to burn
     if (_tokenCount == 0) revert NO_BURNABLE_TOKENS();
 
-    // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
-
     // Burn the tokens.
     tokenStore.burnFrom(_holder, _projectId, _tokenCount);
 

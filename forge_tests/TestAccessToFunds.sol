@@ -1182,9 +1182,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 // Make sure the fee was paid correctly.
                 assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokens.ETH), (_ethCurrencyOverflowAllowance + _toEth(_usdCurrencyOverflowAllowance) - _beneficiaryEthBalance) + (_ethCurrencyDistributionLimit +  _toEth(_usdCurrencyDistributionLimit) - _projectOwnerEthBalance));
                 assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance);
-
-                // Make sure the project owner got the expected number of tokens.
-                // assertEq(_tokenStore.balanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(PRBMath.mulDiv(_ethCurrencyOverflowAllowance + _toEth(_usdCurrencyOverflowAllowance) - _beneficiaryEthBalance + _ethCurrencyDistributionLimit - _projectOwnerEthBalance, _data.weight, 10 ** _ETH_DECIMALS)));
             }
         }
 
@@ -1279,11 +1276,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, address(_usdcToken)), _usdcPayAmount - _usdcReclaimAmount);
 
                 uint256 _usdcFeeAmount = _usdcReclaimAmount - _usdcReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
-                // assertEq(_usdcToken.balanceOf(_beneficiary), _usdcReclaimAmount - _usdcFeeAmount);
+                assertEq(_usdcToken.balanceOf(_beneficiary), _usdcReclaimAmount - _usdcFeeAmount);
 
                 // Make sure the fee was paid correctly.
-                // assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, address(_usdcToken)), _usdcFeeAmount);
-                // assertEq(_usdcToken.balanceOf(address(_terminal)), _usdcPayAmount - _usdcReclaimAmount + _usdcFeeAmount);
+                assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, address(_usdcToken)), _usdcFeeAmount);
+                assertEq(_usdcToken.balanceOf(address(_terminal)), _usdcPayAmount - _usdcReclaimAmount + _usdcFeeAmount);
             } else {
                 // Redeem ETH from the overflow using all of the _beneficiary's tokens.
                 _terminal.redeemTokensOf({
