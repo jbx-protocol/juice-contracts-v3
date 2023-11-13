@@ -10,6 +10,13 @@ import {JBFundingCycle} from './structs/JBFundingCycle.sol';
 /// @notice Manages approving funding cycle reconfigurations automatically after a buffer period.
 contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
   //*********************************************************************//
+  // --------------------------- custom errors ------------------------- //
+  //*********************************************************************//
+
+  /// @notice Throw if the duration used to initialize this contract is too long.
+  error WrongDuration();
+
+  //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
@@ -65,6 +72,9 @@ contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
 
   /// @param _duration The number of seconds to wait until a reconfiguration can be either `Approved` or `Failed`.
   constructor(uint256 _duration) {
+    // Insure we don't underflow in state Of
+    if(duration > block.timestamp) revert WrongDuration();
+
     duration = _duration;
   }
 }
