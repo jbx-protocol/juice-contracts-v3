@@ -40,6 +40,40 @@ interface IJBPaymentTerminal is IERC165 {
     bytes calldata metadata
   ) external payable;
 
+  function distributePayoutsOf(
+    uint256 projectId,
+    address token,
+    uint256 amount,
+    uint256 currency,
+    uint256 minReturnedTokens
+  ) external returns (uint256 netLeftoverDistributionAmount);
+
+  function useAllowanceOf(
+    uint256 projectId,
+    address token,
+    uint256 amount,
+    uint256 currency,
+    uint256 minReturnedTokens,
+    address payable beneficiary,
+    string calldata memo
+  ) external returns (uint256 netDistributedAmount);
+
+  function redeemTokensOf(
+    address holder,
+    uint256 projectId,
+    address token,
+    uint256 count,
+    uint256 minReclaimed,
+    address payable beneficiary,
+    bytes calldata metadata
+  ) external returns (uint256 reclaimAmount);
+
+  function migrateBalanceOf(
+    uint256 projectId,
+    address token,
+    IJBPaymentTerminal to
+  ) external returns (uint256 balance);
+
   function setAccountingContextsFor(
     uint256 projectId,
     JBAccountingContextConfig[] calldata accountingContexts

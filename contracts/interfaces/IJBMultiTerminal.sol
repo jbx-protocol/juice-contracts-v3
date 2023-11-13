@@ -4,27 +4,19 @@ pragma solidity ^0.8.0;
 import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBFee} from './../structs/JBFee.sol';
 import {JBAccountingContext} from './../structs/JBAccountingContext.sol';
-import {IJBAllowanceTerminal3_1} from './IJBAllowanceTerminal3_1.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
-import {IJBPayoutTerminal3_1} from './IJBPayoutTerminal3_1.sol';
 import {IJBPrices} from './IJBPrices.sol';
 import {IJBProjects} from './IJBProjects.sol';
 import {IJBRedemptionDelegate3_1_1} from './IJBRedemptionDelegate3_1_1.sol';
-import {IJBRedemptionTerminal} from './IJBRedemptionTerminal.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
 import {IJBTerminalStore} from './IJBTerminalStore.sol';
 import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
 import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 
-interface IJBPayoutRedemptionTerminal is
-  IJBPaymentTerminal,
-  IJBPayoutTerminal3_1,
-  IJBAllowanceTerminal3_1,
-  IJBRedemptionTerminal
-{
+interface IJBMultiTerminal is IJBPaymentTerminal {
   event AddToBalance(
     uint256 indexed projectId,
     uint256 amount,
@@ -36,6 +28,7 @@ interface IJBPayoutRedemptionTerminal is
 
   event Migrate(
     uint256 indexed projectId,
+    address indexed token,
     IJBPaymentTerminal indexed to,
     uint256 amount,
     address caller
@@ -179,12 +172,6 @@ interface IJBPayoutRedemptionTerminal is
   function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
 
   function isFeelessAddress(address account) external view returns (bool);
-
-  function migrate(
-    uint256 projectId,
-    address token,
-    IJBPaymentTerminal to
-  ) external returns (uint256 balance);
 
   function processFees(uint256 projectId, address token) external;
 

@@ -12,17 +12,14 @@ import {PRBMath} from '@paulrberg/contracts/math/PRBMath.sol';
 import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {IAllowanceTransfer} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBDelegateMetadataLib} from '@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol';
-import {IJBAllowanceTerminal3_1} from './interfaces/IJBAllowanceTerminal3_1.sol';
 import {IJBController3_1} from './interfaces/IJBController3_1.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBPayoutRedemptionTerminal} from './interfaces/IJBPayoutRedemptionTerminal.sol';
+import {IJBMultiTerminal} from './interfaces/IJBMultiTerminal.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
 import {IJBOperatable} from './interfaces/IJBOperatable.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
-import {IJBPayoutTerminal3_1} from './interfaces/IJBPayoutTerminal3_1.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
-import {IJBRedemptionTerminal} from './interfaces/IJBRedemptionTerminal.sol';
 import {IJBTerminalStore} from './interfaces/IJBTerminalStore.sol';
 import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
@@ -47,7 +44,7 @@ import {JBTokenAmount} from './structs/JBTokenAmount.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
-contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptionTerminal {
+contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   // A library that parses the packed funding cycle metadata into a friendlier format.
   using JBFundingCycleMetadataResolver for JBFundingCycle;
 
@@ -187,10 +184,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @return A flag indicating if the provided interface ID is supported.
   function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
     return
-      _interfaceId == type(IJBPayoutRedemptionTerminal).interfaceId ||
-      _interfaceId == type(IJBPayoutTerminal3_1).interfaceId ||
-      _interfaceId == type(IJBAllowanceTerminal3_1).interfaceId ||
-      _interfaceId == type(IJBRedemptionTerminal).interfaceId ||
+      _interfaceId == type(IJBMultiTerminal).interfaceId ||
       _interfaceId == type(IJBOperatable).interfaceId ||
       _interfaceId == type(IJBPaymentTerminal).interfaceId;
   }
@@ -397,7 +391,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @param _token The address of the token being migrated.
   /// @param _to The terminal contract that will gain the project's funds.
   /// @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
-  function migrate(
+  function migrateBalanceOf(
     uint256 _projectId,
     address _token,
     IJBPaymentTerminal _to
@@ -427,7 +421,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       _to.addToBalanceOf{value: _payValue}(_projectId, _token, balance, false, '', bytes(''));
     }
 
-    emit Migrate(_projectId, _to, balance, msg.sender);
+    emit Migrate(_projectId, _token, _to, balance, msg.sender);
   }
 
   /// @notice Process any fees that are being held for the project.

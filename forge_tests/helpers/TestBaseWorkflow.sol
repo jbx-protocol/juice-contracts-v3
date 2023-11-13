@@ -20,7 +20,7 @@ import {JBSplitsStore} from '@juicebox/JBSplitsStore.sol';
 import {JBToken} from '@juicebox/JBToken.sol';
 import {JBTokenStore} from '@juicebox/JBTokenStore.sol';
 import {JBReconfigurationBufferBallot} from '@juicebox/JBReconfigurationBufferBallot.sol';
-import {JBPayoutRedemptionTerminal} from '@juicebox/JBPayoutRedemptionTerminal.sol';
+import {JBMultiTerminal} from '@juicebox/JBMultiTerminal.sol';
 import {JBCurrencyAmount} from '@juicebox/structs/JBCurrencyAmount.sol';
 import {JBAccountingContextConfig} from '@juicebox/structs/JBAccountingContextConfig.sol';
 import {JBDidPayData3_1_1} from '@juicebox/structs/JBDidPayData3_1_1.sol';
@@ -60,13 +60,10 @@ import {IJBTokenStore} from '@juicebox/interfaces/IJBTokenStore.sol';
 import {IJBSplitAllocator} from '@juicebox/interfaces/IJBSplitAllocator.sol';
 import {IJBPayDelegate3_1_1} from '@juicebox/interfaces/IJBPayDelegate3_1_1.sol';
 import {IJBFundingCycleDataSource3_1_1} from '@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol';
-import {IJBPayoutRedemptionTerminal} from '@juicebox/interfaces/IJBPayoutRedemptionTerminal.sol';
+import {IJBMultiTerminal} from '@juicebox/interfaces/IJBMultiTerminal.sol';
 import {IJBPriceFeed} from '@juicebox/interfaces/IJBPriceFeed.sol';
 import {IJBProjectPayer} from '@juicebox/interfaces/IJBProjectPayer.sol';
 import {IJBOperatable} from '@juicebox/interfaces/IJBOperatable.sol';
-import {IJBAllowanceTerminal3_1} from '@juicebox/interfaces/IJBAllowanceTerminal3_1.sol';
-import {IJBPayoutTerminal3_1} from '@juicebox/interfaces/IJBPayoutTerminal3_1.sol';
-import {IJBRedemptionTerminal} from '@juicebox/interfaces/IJBRedemptionTerminal.sol';
 import {IJBFundingCycleBallot} from '@juicebox/interfaces/IJBFundingCycleBallot.sol';
 import {IJBPrices} from '@juicebox/interfaces/IJBPrices.sol';
 import {IJBSplitsPayer} from '@juicebox/interfaces/IJBSplitsPayer.sol';
@@ -107,7 +104,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   JBController3_1 private _jbController;
   JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
   JBTerminalStore private _jbTerminalStore;
-  JBPayoutRedemptionTerminal private _jbPayoutRedemptionTerminal;
+  JBMultiTerminal private _jbMultiTerminal;
 
   function multisig() internal view returns (address) {
     return _multisig;
@@ -165,8 +162,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     return _jbTerminalStore;
   }
 
-  function jbPayoutRedemptionTerminal() internal view returns (JBPayoutRedemptionTerminal) {
-    return _jbPayoutRedemptionTerminal;
+  function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
+    return _jbMultiTerminal;
   }
 
   //*********************************************************************//
@@ -221,7 +218,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     vm.prank(_multisig);
     _permit2 = deployPermit2();
 
-    _jbPayoutRedemptionTerminal = new JBPayoutRedemptionTerminal(
+    _jbMultiTerminal = new JBMultiTerminal(
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,
@@ -231,7 +228,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _multisig
     );
 
-    vm.label(address(_jbPayoutRedemptionTerminal), 'JBPayoutRedemptionTerminal');
+    vm.label(address(_jbMultiTerminal), 'JBMultiTerminal');
   }
 
   //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so

@@ -18,7 +18,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     
     IJBController3_1 private _controller;
     IJBPrices private _prices;
-    IJBPayoutRedemptionTerminal private _terminal; 
+    IJBMultiTerminal private _terminal; 
     IJBTokenStore private _tokenStore;
     address private _multisig;
     address private _projectOwner;
@@ -217,8 +217,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             holder: _beneficiary,
             projectId: _projectId,
             token: JBTokens.ETH,
-            tokenCount: _beneficiaryTokenBalance,
-            minReturnedTokens: 0,
+            count: _beneficiaryTokenBalance,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -426,9 +426,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            tokenCount: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
-            minReturnedTokens: 0,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -642,9 +642,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            tokenCount: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
-            minReturnedTokens: 0,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -843,9 +843,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            tokenCount: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
-            minReturnedTokens: 0,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -1236,9 +1236,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _terminal.redeemTokensOf({
                     holder: _beneficiary,
                     projectId: _projectId,
-                    tokenCount: _tokenCountToRedeemForEth, 
+                    count: _tokenCountToRedeemForEth, 
                     token: JBTokens.ETH,
-                    minReturnedTokens: 0,
+                    minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
                 });
@@ -1247,9 +1247,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _terminal.redeemTokensOf({
                     holder: _beneficiary,
                     projectId: _projectId,
-                    tokenCount: _beneficiaryTokenBalance - _tokenCountToRedeemForEth, 
+                    count: _beneficiaryTokenBalance - _tokenCountToRedeemForEth, 
                     token: address(_usdcToken),
-                    minReturnedTokens: 0,
+                    minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
                 });
@@ -1289,9 +1289,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _terminal.redeemTokensOf({
                     holder: _beneficiary,
                     projectId: _projectId,
-                    tokenCount: _beneficiaryTokenBalance, 
+                    count: _beneficiaryTokenBalance, 
                     token: JBTokens.ETH,
-                    minReturnedTokens: 0,
+                    minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
                 });
@@ -1301,9 +1301,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _terminal.redeemTokensOf({
                 holder: _beneficiary,
                 projectId: _projectId,
-                tokenCount: _beneficiaryTokenBalance, 
+                count: _beneficiaryTokenBalance, 
                 token: address(_usdcToken),
-                minReturnedTokens: 0,
+                minReclaimed: 0,
                 beneficiary: payable(_beneficiary),
                 metadata: new bytes(0)
             });
