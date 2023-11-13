@@ -194,10 +194,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   //*********************************************************************//
 
   /// @notice Checks the balance of tokens in this contract.
-  /// @param _projectId The ID of the project to which the balance applies.
   /// @param _token The address of the token to which the balance applies.
   /// @return The contract's balance.
-  function _balance(uint256 _projectId, address _token) internal view virtual returns (uint256) {
+  function _balance(address _token) internal view virtual returns (uint256) {
     // If the token is ETH, assume the native token standard.
     return _token == JBTokens.ETH ? address(this).balance : IERC20(_token).balanceOf(address(this));
   }
@@ -412,7 +411,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     // Transfer the balance if needed.
     if (balance != 0) {
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferFor(_projectId, address(_to), _token, balance);
+      _beforeTransferFor(address(_to), _token, balance);
 
       // If this terminal's token is ETH, send it in msg.value.
       uint256 _payValue = _token == JBTokens.ETH ? balance : 0;
@@ -594,13 +593,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     if (_allowance.amount > 0) _permitAllowance(_allowance, _token);
 
     // Get a reference to the balance before receiving tokens.
-    uint256 _balanceBefore = _balance(_projectId, _token);
+    uint256 _balanceBefore = _balance(_token);
 
     // Transfer tokens to this terminal from the msg sender.
-    _transferFor(_projectId, msg.sender, payable(address(this)), _token, _amount);
+    _transferFor(msg.sender, payable(address(this)), _token, _amount);
 
     // The amount should reflect the change in balance.
-    return _balance(_projectId, _token) - _balanceBefore;
+    return _balance(_token) - _balanceBefore;
   }
 
   /// @notice Contribute tokens to a project.
@@ -807,8 +806,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         }
 
         // Subtract the fee from the reclaim amount.
-        if (reclaimAmount != 0)
-          _transferFor(_projectId, address(this), _beneficiary, _token, reclaimAmount);
+        if (reclaimAmount != 0) _transferFor(address(this), _beneficiary, _token, reclaimAmount);
       }
 
       // Take the fee from all outbound reclaimations.
@@ -906,7 +904,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, _feePercent));
 
       // Transfer the amount to the project owner.
-      _transferFor(_projectId, address(this), _projectOwner, _token, netLeftoverDistributionAmount);
+      _transferFor(address(this), _projectOwner, _token, netLeftoverDistributionAmount);
     }
 
     emit DistributePayouts(
@@ -981,7 +979,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     // Transfer any remaining balance to the beneficiary.
     if (netDistributedAmount != 0)
-      _transferFor(_projectId, address(this), _beneficiary, _token, netDistributedAmount);
+      _transferFor(address(this), _beneficiary, _token, netDistributedAmount);
 
     emit UseAllowance(
       _fundingCycle.configuration,
@@ -1101,7 +1099,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       }
 
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferFor(_projectId, address(_split.allocator), _token, netPayoutAmount);
+      _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
 
       // Create the data to send to the allocator.
       JBSplitAllocationData memory _data = JBSplitAllocationData(
@@ -1175,7 +1173,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         }
 
         // Trigger any inherited pre-transfer logic.
-        _beforeTransferFor(_projectId, address(_terminal), _token, netPayoutAmount);
+        _beforeTransferFor(address(_terminal), _token, netPayoutAmount);
 
         // Keep a reference to the amount that'll be paid in.
         uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
@@ -1235,7 +1233,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
       // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
       _transferFor(
-        _projectId,
         address(this),
         _split.beneficiary != address(0) ? _split.beneficiary : payable(msg.sender),
         _token,
@@ -1295,12 +1292,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       _data.dataSourceMetadata = _allocation.metadata;
 
       // Trigger any inherited pre-transfer logic.
-      _beforeTransferFor(
-        _projectId,
-        address(_allocation.delegate),
-        _tokenAmount.token,
-        _allocation.amount
-      );
+      _beforeTransferFor(address(_allocation.delegate), _tokenAmount.token, _allocation.amount);
 
       uint256 _payValue = _tokenAmount.token == JBTokens.ETH ? _allocation.amount : 0;
 
@@ -1363,7 +1355,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
       // Trigger any inherited pre-transfer logic.
       _beforeTransferFor(
-        _projectId,
         address(_allocation.delegate),
         _beneficiaryTokenAmount.token,
         _allocation.amount
@@ -1465,7 +1456,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     // Trigger any inherited pre-transfer logic if funds will be transferred.
     if (address(_feeTerminal) != address(this))
-      _beforeTransferFor(_projectId, address(_feeTerminal), _token, _amount);
+      _beforeTransferFor(address(_feeTerminal), _token, _amount);
 
     // Keep a reference to the amount that'll be paid in.
     uint256 _payValue = _token == JBTokens.ETH ? _amount : 0;
@@ -1579,13 +1570,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   }
 
   /// @notice Transfers tokens.
-  /// @param _projectId The ID of the project for which the transfer is taking place.
   /// @param _from The address from which the transfer should originate.
   /// @param _to The address to which the transfer should go.
   /// @param _token The token being transfered.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   function _transferFor(
-    uint256 _projectId,
     address _from,
     address payable _to,
     address _token,
@@ -1605,16 +1594,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   }
 
   /// @notice Logic to be triggered before transferring tokens from this terminal.
-  /// @param _projectId The ID of the project for which the transfer is taking place.
   /// @param _to The address to which the transfer is going.
   /// @param _token The token being transfered.
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
-  function _beforeTransferFor(
-    uint256 _projectId,
-    address _to,
-    address _token,
-    uint256 _amount
-  ) internal virtual {
+  function _beforeTransferFor(address _to, address _token, uint256 _amount) internal virtual {
     // If the token is ETH, assume the native token standard.
     if (_token == JBTokens.ETH) return;
     IERC20(_token).safeIncreaseAllowance(_to, _amount);
