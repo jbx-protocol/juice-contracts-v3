@@ -29,7 +29,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   //*********************************************************************//
 
   /// @notice The number of discount multiples before which cached values will be prefered.
-  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 1000000;
+  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 100000;
 
   //*********************************************************************//
   // --------------------- private stored properties ------------------- //

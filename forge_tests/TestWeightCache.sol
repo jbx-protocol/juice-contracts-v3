@@ -53,9 +53,9 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     }
     
     /// Test that caching a cycle's weight yields the same result as computing it.
-    function testWeightCaching() public {
+    function testWeightCaching(uint256 _cycleDiff) public {
         // Bound to 10x the discount multiple cache threshold.
-        uint256 _cycleDiff = 10000000;
+        _cycleDiff = bound(_cycleDiff, 0, 100000);
 
         // Keep references to the projects.
         uint256 _projectId1;
