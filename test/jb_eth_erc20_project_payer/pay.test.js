@@ -5,7 +5,7 @@ import { smock } from '@defi-wonderland/smock';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol/JBPayoutRedemptionPaymentTerminal3_1_2.json';
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import errors from '../helpers/errors.json';
 
@@ -330,7 +330,7 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
     // Eth payments should use 18 decimals.
     await mockJbTerminal.mock.decimalsForToken.withArgs(ethToken).returns(18);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, ethToken, MEMO, METADATA)
       .returns();
 
@@ -350,7 +350,7 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
       .withArgs(PROJECT_ID, mockToken.address)
       .returns(mockJbTerminal.address);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 
@@ -474,7 +474,7 @@ describe('JBETHERC20ProjectPayer::pay(...)', function () {
       true, // prefer add to balance
     );
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(INITIAL_PROJECT_ID, AMOUNT, ethToken, INITIAL_MEMO, INITIAL_METADATA)
       .returns();
 

@@ -5,7 +5,7 @@ import { smock } from '@defi-wonderland/smock';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol/JBPayoutRedemptionPaymentTerminal3_1_2.json';
 import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import errors from '../helpers/errors.json';
 
@@ -18,9 +18,6 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
   const INITIAL_PREFER_ADD_TO_BALANCE = false;
   const PROJECT_ID = 7;
   const AMOUNT = ethers.utils.parseEther('1.0');
-  const BENEFICIARY = ethers.Wallet.createRandom().address;
-  const PREFER_CLAIMED_TOKENS = true;
-  const MIN_RETURNED_TOKENS = 1;
   const MEMO = 'hi world';
   const METADATA = '0x69';
   const DECIMALS = 1;
@@ -79,7 +76,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     // Eth payments should use 18 decimals.
     await mockJbTerminal.mock.decimalsForToken.withArgs(ethToken).returns(18);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, ethToken, MEMO, METADATA)
       .returns();
 
@@ -119,7 +116,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     mockToken.allowance.whenCalledWith(jbProjectPayer.address, mockJbTerminal.address).returns(0);
     mockToken.approve.whenCalledWith(mockJbTerminal.address, AMOUNT).returns(true);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 
@@ -155,7 +152,7 @@ describe('JBETHERC20ProjectPayer::addToBalanceOf(...)', function () {
     mockToken.allowance.whenCalledWith(jbProjectPayer.address, mockJbTerminal.address).returns(0);
     mockToken.approve.whenCalledWith(mockJbTerminal.address, NET_AMOUNT).returns(true);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(PROJECT_ID, NET_AMOUNT, mockToken.address, MEMO, METADATA)
       .returns();
 

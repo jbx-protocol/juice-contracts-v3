@@ -19,7 +19,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: 1000 * 10 ** 18,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -50,16 +50,16 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     }
 
     function testLaunchProject() public {
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         uint256 projectId = jbController().launchProjectFor(
-            msg.sender,
-            _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
-            _terminals,
-            ""
+            msg.sender, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId); //, latestConfig);
@@ -72,38 +72,30 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: WEIGHT,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
         uint256 projectId;
+
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // expectRevert on the next call if weight overflowing
         if (WEIGHT > type(uint88).max) {
             vm.expectRevert(abi.encodeWithSignature("INVALID_WEIGHT()"));
 
             projectId = jbController().launchProjectFor(
-                msg.sender,
-                _projectMetadata,
-                _data,
-                _metadata,
-                block.timestamp,
-                _groupedSplits,
-                _fundAccessConstraints,
-                _terminals,
-                ""
+                msg.sender, _projectMetadata, _cycleConfig, _terminals, ""
             );
         } else {
             projectId = jbController().launchProjectFor(
-                msg.sender,
-                _projectMetadata,
-                _data,
-                _metadata,
-                block.timestamp,
-                _groupedSplits,
-                _fundAccessConstraints,
-                _terminals,
-                ""
+                msg.sender, _projectMetadata, _cycleConfig, _terminals, ""
             );
 
             JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId); //, latestConfig);

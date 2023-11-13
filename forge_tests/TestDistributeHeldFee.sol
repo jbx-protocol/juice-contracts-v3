@@ -4,8 +4,8 @@ pragma solidity ^0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDistributeHeldFee_Local is TestBaseWorkflow {
-    JBController private _controller;
-    JBETHPaymentTerminal private _terminal;
+    JBController3_1 private _controller;
+    JBETHPaymentTerminal3_1_2 private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -32,7 +32,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -43,7 +43,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: 10000, //100%
+            redemptionRate: 10_000, //100%
             ballotRedemptionRate: 0,
             pausePay: false,
             pauseDistributions: false,
@@ -76,35 +76,37 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
-    function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
+    function testHeldFeeReimburse(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount)
+        external
+    {
         // Assuming we don't revert when distributing too much and avoid rounding errors
         payAmountInWei = bound(payAmountInWei, 1, _targetInWei);
         fee = bound(fee, 0, 50_000_000);
         feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
-        
+
         address _userWallet = address(1234);
 
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(address(69_696_969));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeWithSignature("currentDiscountFor(uint256,uint8)", _projectId, uint8(0)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
@@ -138,28 +140,15 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        if (isUsingJbController3_0())
-            _terminal.distributePayoutsOf(
-                _projectId,
-                payAmountInWei,
-                jbLibraries().ETH(),
-                address(0), //token (unused)
-                /*min out*/
-                0,
-                /*LFG*/
-                "lfg"
-            );
-        else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
-               _projectId,
-                payAmountInWei,
-                jbLibraries().ETH(),
-                address(0), //token (unused)
-                /*min out*/
-                0,
-                ""
-            );
-        
+        _terminal.distributePayoutsOf(
+            _projectId,
+            payAmountInWei,
+            jbLibraries().ETH(),
+            address(0), //token (unused)
+            /*min out*/
+            0,
+            ""
+        );
 
         // verify: should have held the fee, if there is one
         if (discountedFee > 0) {
@@ -171,44 +160,37 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         // -- add to balance --
         // Will get the fee reimbursed:
         uint256 heldFee = payAmountInWei
-            - PRBMath.mulDiv(payAmountInWei, jbLibraries().MAX_FEE(), discountedFee + jbLibraries().MAX_FEE()); // no discount
-        uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
+            - PRBMath.mulDiv(
+                payAmountInWei, jbLibraries().MAX_FEE(), discountedFee + jbLibraries().MAX_FEE()
+            ); // no discount
 
-        if (isUsingJbController3_0()) 
-            _terminal.addToBalanceOf{value: payAmountInWei}(
-                _projectId,
-                payAmountInWei,
-                address(0),
-                "thanks for all the fish",
-                /* _delegateMetadata */
-                new bytes(0)
-            );
-        else 
-            IJBFeeHoldingTerminal(address(_terminal)).addToBalanceOf{value: payAmountInWei}(
-                _projectId,
-                payAmountInWei,
-                address(0),
-                /* _shouldRefundHeldFees */
-                true,
-                "thanks for all the fish",
-                /* _delegateMetadata */
-                new bytes(0)
-            );
+        _terminal.addToBalanceOf{value: payAmountInWei}(
+            _projectId,
+            payAmountInWei,
+            address(0),
+            /* _shouldRefundHeldFees */
+            true,
+            "thanks for all the fish",
+            /* _delegateMetadata */
+            new bytes(0)
+        );
 
         // verify: project should get the fee back (plus the addToBalance amount)
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + heldFee + payAmountInWei);
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(_terminal, _projectId), payAmountInWei + heldFee
+        );
     }
 
     function testFeeGetsHeldSpecialCase() public {
         uint256 feeDiscount = 0;
         uint256 fee = 50_000_000;
-        uint256 payAmountInWei = 1000000000; // The same value as 100% in the split (makes it easy to leave `1` left over)
+        uint256 payAmountInWei = 1_000_000_000; // The same value as 100% in the split (makes it easy to leave `1` left over)
 
         JBSplit[] memory _jbSplits = new JBSplit[](1);
         _jbSplits[0] = JBSplit(
             false,
             false,
-            1000000000 - 1, // We make it so there is exactly `1` left over (note: change the subtraction to be anything else than 1 for this test to pass)
+            1_000_000_000 - 1, // We make it so there is exactly `1` left over (note: change the subtraction to be anything else than 1 for this test to pass)
             0,
             payable(address(5)),
             0,
@@ -219,16 +201,16 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
 
         _groupedSplitsLocal[0] = JBGroupedSplits(_terminal.payoutSplitsGroup(), _jbSplits);
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplitsLocal;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplitsLocal,
-            _fundAccessConstraints,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         address _userWallet = address(1234);
@@ -236,11 +218,11 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge feeGauge = IJBFeeGauge(address(69696969));
+        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(address(69_696_969));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
-            abi.encodeWithSignature("currentDiscountFor(uint256)", _projectId),
+            abi.encodeWithSignature("currentDiscountFor(uint256,uint8)", _projectId, uint8(0)),
             abi.encode(feeDiscount)
         );
         vm.prank(multisig());
@@ -268,28 +250,16 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        if (isUsingJbController3_0())
-            _terminal.distributePayoutsOf(
-               _projectId,
-                payAmountInWei,
-                jbLibraries().ETH(),
-                address(0), //token (unused)
-                /*min out*/
-                0,
-                /*LFG*/
-                "lfg"
-            );
-        else 
-            IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
-               _projectId,
-                payAmountInWei,
-                jbLibraries().ETH(),
-                address(0), //token (unused)
-                /*min out*/
-                0,
-                /*LFG*/
-                "lfg"
-            );
+        _terminal.distributePayoutsOf(
+            _projectId,
+            payAmountInWei,
+            jbLibraries().ETH(),
+            address(0), //token (unused)
+            /*min out*/
+            0,
+            /*LFG*/
+            "lfg"
+        );
 
         // Verify that a fee was held
         assertEq(_terminal.heldFeesOf(_projectId).length, 1);

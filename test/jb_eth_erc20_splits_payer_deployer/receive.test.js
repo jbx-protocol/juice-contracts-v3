@@ -9,7 +9,7 @@ import ierc20 from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.so
 import jbAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.sol/IJBSplitAllocator.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal.sol/JBPayoutRedemptionPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol/JBPayoutRedemptionPaymentTerminal3_1_2.json';
 
 describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
   const DEFAULT_PROJECT_ID = 2;
@@ -165,7 +165,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
 
     await Promise.all(
       splits.map(async (split) => {
-        await mockJbTerminal.mock.addToBalanceOf
+        await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
           .withArgs(
             split.projectId,
             AMOUNT.mul(split.percent).div(maxSplitsPercent),
@@ -464,7 +464,7 @@ describe('JBETHERC20SplitsPayer with Proxy::receive()', function () {
       .withArgs(DEFAULT_PROJECT_ID, ethToken)
       .returns(mockJbTerminal.address);
 
-    await mockJbTerminal.mock.addToBalanceOf
+    await mockJbTerminal.mock["addToBalanceOf(uint256,uint256,address,string,bytes)"]
       .withArgs(DEFAULT_PROJECT_ID, AMOUNT.div('2'), ethToken, DEFAULT_MEMO, DEFAULT_METADATA)
       .returns();
 

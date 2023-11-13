@@ -8,8 +8,8 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
  * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
  */
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
-    JBController private _controller;
-    JBETHPaymentTerminal private _terminal;
+    JBController3_1 private _controller;
+    JBETHPaymentTerminal3_1_2 private _terminal;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -36,7 +36,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -47,8 +47,8 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: 10000, //100%
-            ballotRedemptionRate: 0,
+            redemptionRate: 10_000, //100%
+            ballotRedemptionRate: 10_000,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -80,16 +80,19 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
+        // Make a dummy project that'll receive fees.
+        _controller.launchProjectFor(_projectOwner, _projectMetadata, _cycleConfig, _terminals, "");
+
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
@@ -133,8 +136,6 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // burn tokens from beneficiary addr
         if (burnTokenAmount == 0) {
             vm.expectRevert(abi.encodeWithSignature("NO_BURNABLE_TOKENS()"));
-        } else if (burnTokenAmount > uint256(type(int256).max) && isUsingJbController3_0()) {
-            vm.expectRevert("SafeCast: value doesn't fit in an int256");
         } else if (burnTokenAmount > _userTokenBalance) {
             vm.expectRevert(abi.encodeWithSignature("INSUFFICIENT_FUNDS()"));
         } else {
@@ -187,6 +188,9 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance);
 
         // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(_terminal, _projectId),
+            _terminalBalanceInWei - _reclaimAmtInWei
+        );
     }
 }

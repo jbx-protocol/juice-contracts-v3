@@ -6,7 +6,7 @@ import errors from '../helpers/errors.json';
 
 import jbController3_1 from '../../artifacts/contracts/JBController3_1.sol/JBController3_1.json';
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
-import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal.sol/JBETHPaymentTerminal.json';
+import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_2.sol/JBETHPaymentTerminal3_1_2.json';
 
 function makeFundingAccessConstraints({
   terminals,

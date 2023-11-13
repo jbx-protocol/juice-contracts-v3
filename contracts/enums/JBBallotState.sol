@@ -2,7 +2,10 @@
 pragma solidity ^0.8.0;
 
 enum JBBallotState {
-  Active,
-  Approved,
-  Failed
+    Empty,
+    Standby,
+    Active,
+    ApprovalExpected,
+    Approved,
+    Failed
 }

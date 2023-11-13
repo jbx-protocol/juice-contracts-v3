@@ -11,7 +11,7 @@ import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOp
 import jbFundAccessConstraintsStore from '../../artifacts/contracts/JBFundAccessConstraintsStore.sol/JBFundAccessConstraintsStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
-import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1.sol/JBETHPaymentTerminal3_1.json';
+import jbTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_2.sol/JBETHPaymentTerminal3_1_2.json';
 import jbTokenStore from '../../artifacts/contracts/JBTokenStore.sol/JBTokenStore.json';
 
 describe('JBController3_1::launchFundingCyclesFor(...)', function () {
@@ -129,6 +129,7 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       nonOwner,
       addrs,
       jbController,
+      mockJbSplitsStore,
       mockJbDirectory,
       mockJbTokenStore,
       mockJbController,
@@ -253,11 +254,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
         .connect(projectOwner)
         .callStatic.launchFundingCyclesFor(
           EXISTING_PROJECT,
-          fundingCycleData,
-          fundingCycleMetadata.unpacked,
-          PROJECT_START,
-          groupedSplits,
-          fundAccessConstraints,
+          [{
+            mustStartAtOrAfter: PROJECT_START,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits,
+            fundAccessConstraints: fundAccessConstraints
+          }],
           terminals,
           MEMO,
         ),
@@ -267,11 +270,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -280,6 +285,113 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .to.emit(jbController, 'LaunchFundingCycles')
       .withArgs(
         /*fundingCycleData.configuration=*/ timestamp,
+        EXISTING_PROJECT,
+        MEMO,
+        projectOwner.address,
+      );
+  });
+
+  it(`Should launch multiple funding cycles for an existing project and emit events`, async function () {
+    const {
+      jbController,
+      projectOwner,
+      timestamp,
+      fundingCycleData,
+      fundingCycleMetadata,
+      splits,
+      mockJbFundingCycleStore,
+      mockJbSplitsStore,
+      mockJbTerminal1,
+      mockJbTerminal2,
+      mockJbFundAccessConstraintsStore
+    } = await setup();
+    const groupedSplits = [{ group: 1, splits }];
+    const terminals = [mockJbTerminal1.address, mockJbTerminal2.address];
+    const token = ethers.Wallet.createRandom().address;
+    const fundAccessConstraints = makeFundingAccessConstraints({ terminals, token });
+    const fundAccessConstraints2 = makeFundingAccessConstraints({ terminals, token });
+
+    await mockJbFundAccessConstraintsStore.mock.setFor
+      .withArgs(EXISTING_PROJECT, timestamp, fundAccessConstraints)
+      .returns();
+
+    await mockJbFundAccessConstraintsStore.mock.setFor
+      .withArgs(EXISTING_PROJECT, timestamp + 1, fundAccessConstraints2)
+      .returns();
+
+    await mockJbFundingCycleStore.mock.configureFor
+      .withArgs(EXISTING_PROJECT, fundingCycleData, fundingCycleMetadata.packed, PROJECT_START + 1)
+      .returns(
+        Object.assign(
+          {
+            number: EXISTING_PROJECT + 1,
+            configuration: timestamp + 1,
+            basedOn: timestamp,
+            start: timestamp,
+            metadata: fundingCycleMetadata.packed,
+          },
+          fundingCycleData,
+        ),
+      );
+
+    const groupedSplits2 = [{ group: 1, splits }];
+
+    await mockJbSplitsStore.mock.set
+      .withArgs(EXISTING_PROJECT, /*configuration=*/ timestamp + 1, groupedSplits2)
+      .returns();
+
+    expect(
+      await jbController
+        .connect(projectOwner)
+        .callStatic.launchFundingCyclesFor(
+          EXISTING_PROJECT,
+          [{
+            mustStartAtOrAfter: PROJECT_START,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits,
+            fundAccessConstraints: fundAccessConstraints
+          },
+          {
+            mustStartAtOrAfter: PROJECT_START + 1,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits2,
+            fundAccessConstraints: fundAccessConstraints2
+          }
+          ],
+          terminals,
+          MEMO,
+        ),
+    ).to.equal(timestamp + 1);
+
+    let tx = jbController
+      .connect(projectOwner)
+      .launchFundingCyclesFor(
+        EXISTING_PROJECT,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        },
+        {
+          mustStartAtOrAfter: PROJECT_START + 1,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits2,
+          fundAccessConstraints: fundAccessConstraints2
+        }
+        ],
+        terminals,
+        MEMO,
+      );
+
+    await expect(tx)
+      .to.emit(jbController, 'LaunchFundingCycles')
+      .withArgs(
+        /*fundingCycleData.configuration=*/ timestamp + 1,
         EXISTING_PROJECT,
         MEMO,
         projectOwner.address,
@@ -308,11 +420,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
         .connect(projectOwner)
         .callStatic.launchFundingCyclesFor(
           EXISTING_PROJECT,
-          fundingCycleData,
-          fundingCycleMetadata.unpacked,
-          PROJECT_START,
-          groupedSplits,
-          fundAccessConstraints,
+          [{
+            mustStartAtOrAfter: PROJECT_START,
+            data: fundingCycleData,
+            metadata: fundingCycleMetadata.unpacked,
+            groupedSplits: groupedSplits,
+            fundAccessConstraints: fundAccessConstraints
+          }],
           [],
           MEMO,
         ),
@@ -337,11 +451,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -369,11 +485,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -402,11 +520,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -442,11 +562,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .connect(nonOwner)
       .callStatic.launchFundingCyclesFor(
         EXISTING_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );
@@ -472,11 +594,13 @@ describe('JBController3_1::launchFundingCyclesFor(...)', function () {
       .connect(projectOwner)
       .callStatic.launchFundingCyclesFor(
         LAUNCHED_PROJECT,
-        fundingCycleData,
-        fundingCycleMetadata.unpacked,
-        PROJECT_START,
-        groupedSplits,
-        fundAccessConstraints,
+        [{
+          mustStartAtOrAfter: PROJECT_START,
+          data: fundingCycleData,
+          metadata: fundingCycleMetadata.unpacked,
+          groupedSplits: groupedSplits,
+          fundAccessConstraints: fundAccessConstraints
+        }],
         terminals,
         MEMO,
       );

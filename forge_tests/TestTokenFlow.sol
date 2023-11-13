@@ -5,7 +5,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /// @notice This file tests JBToken related flows
 contract TestTokenFlow_Local is TestBaseWorkflow {
-    JBController private _controller;
+    JBController3_1 private _controller;
     JBTokenStore private _tokenStore;
 
     JBProjectMetadata private _projectMetadata;
@@ -30,7 +30,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: 1000 * 10 ** 18,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -61,16 +61,16 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
+        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+
+        _cycleConfig[0].mustStartAtOrAfter = block.timestamp;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = _groupedSplits;
+        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _data,
-            _metadata,
-            block.timestamp,
-            _groupedSplits,
-            _fundAccessConstraints,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
@@ -115,7 +115,12 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         // mint tokens to beneficiary addr
         _controller.mintTokensOf(
-            _projectId, mintAmount, _beneficiary, "Mint memo", mintPreferClaimed, true /*use reserved rate*/
+            _projectId,
+            mintAmount,
+            _beneficiary,
+            "Mint memo",
+            mintPreferClaimed,
+            true /*use reserved rate*/
         );
 
         // total token balance should be half of token count due to 50% reserved rate
@@ -161,11 +166,18 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         // mint claimed tokens to beneficiary addr
         _controller.mintTokensOf(
-            _projectId, type(uint224).max / 2, _beneficiary, "Mint memo", true, false /*use reserved rate*/
+            _projectId,
+            type(uint224).max / 2,
+            _beneficiary,
+            "Mint memo",
+            true,
+            false /*use reserved rate*/
         );
 
         // mint unclaimed tokens to beneficiary addr
-        _controller.mintTokensOf(_projectId, type(uint224).max / 2, _beneficiary, "Mint memo", false, false);
+        _controller.mintTokensOf(
+            _projectId, type(uint224).max / 2, _beneficiary, "Mint memo", false, false
+        );
 
         // try to claim the unclaimed tokens
         vm.stopPrank();
