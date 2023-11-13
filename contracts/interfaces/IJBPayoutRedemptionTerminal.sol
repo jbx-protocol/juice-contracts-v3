@@ -124,8 +124,6 @@ interface IJBPayoutRedemptionTerminal is
     address caller
   );
 
-  event SetFee(uint256 fee, address caller);
-
   event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
   event SetAccountingContext(
@@ -176,9 +174,9 @@ interface IJBPayoutRedemptionTerminal is
 
   function PERMIT2() external returns (IPermit2);
 
-  function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
+  function FEE() external view returns (uint256);
 
-  function fee() external view returns (uint256);
+  function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
 
   function isFeelessAddress(address account) external view returns (bool);
 
@@ -189,8 +187,6 @@ interface IJBPayoutRedemptionTerminal is
   ) external returns (uint256 balance);
 
   function processFees(uint256 projectId, address token) external;
-
-  function setFee(uint256 fee) external;
 
   function setFeelessAddress(address account, bool flag) external;
 }

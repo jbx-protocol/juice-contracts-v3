@@ -74,10 +74,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   // --------------------- internal stored constants ------------------- //
   //*********************************************************************//
 
-  /// @notice Maximum fee that can be set for a funding cycle configuration.
-  /// @dev Out of MAX_FEE (50_000_000 / 1_000_000_000).
-  uint256 internal constant _FEE_CAP = 50_000_000;
-
   /// @notice The fee beneficiary project ID is 1, as it should be the first project launched during the deployment process.
   uint256 internal constant _FEE_BENEFICIARY_PROJECT_ID = 1;
 
@@ -114,16 +110,15 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
   /// @notice The contract that stores and manages the terminal's data.
   IJBTerminalStore public immutable override STORE;
 
+  /// @notice The platform fee percent.
+  uint256 public immutable override FEE = 25_000_000; // 2.5%
+
   /// @notice The permit2 utility.
   IPermit2 public immutable PERMIT2;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
-
-  /// @notice The platform fee percent.
-  /// @dev Out of MAX_FEE (25_000_000 / 1_000_000_000)
-  uint256 public override fee = 25_000_000; // 2.5%
 
   /// @notice Addresses that can be paid towards from this terminal without incurring a fee.
   /// @dev Only addresses that are considered to be contained within the ecosystem can be feeless. Funds sent outside the ecosystem may incur fees despite being stored as feeless.
@@ -488,19 +483,6 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
     }
   }
 
-  /// @notice Allows the fee to be updated.
-  /// @dev Only the owner of this contract can change the fee.
-  /// @param _fee The new fee, out of MAX_FEE.
-  function setFee(uint256 _fee) external virtual override onlyOwner {
-    // The provided fee must be within the max.
-    if (_fee > _FEE_CAP) revert FEE_TOO_HIGH();
-
-    // Store the new fee.
-    fee = _fee;
-
-    emit SetFee(_fee, msg.sender);
-  }
-
   /// @notice Sets whether projects operating on this terminal can pay towards the specified address without incurring a fee.
   /// @dev Only the owner of this contract can set addresses as feeless.
   /// @param _address The address that can be paid towards while still bypassing fees.
@@ -540,23 +522,21 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       // Set the accounting context being iterated on.
       _accountingContextConfig = _accountingContextConfigs[_i];
 
+      // Get a storage reference to the currency accounting context for the token.
+      JBAccountingContext storage _accountingContext = _accountingContextForTokenOf[_projectId][
+        _accountingContextConfig.token
+      ];
+
       // Make sure the token accounting context isn't already set.
-      if (
-        _accountingContextForTokenOf[_projectId][_accountingContextConfig.token].token != address(0)
-      ) revert ACCOUNTING_CONTEXT_ALREADY_SET();
+      if (_accountingContext.token != address(0)) revert ACCOUNTING_CONTEXT_ALREADY_SET();
 
       // Define the context from the config.
-      JBAccountingContext memory _accountingContext = JBAccountingContext(
-        _accountingContextConfig.token,
-        _accountingContextConfig.standard == JBTokenStandards.NATIVE
-          ? 18
-          : IERC20Metadata(_accountingContextConfig.token).decimals(),
-        uint32(uint160(_accountingContextConfig.token)),
-        _accountingContextConfig.standard
-      );
-
-      // Set the context.
-      _accountingContextForTokenOf[_projectId][_accountingContext.token] = _accountingContext;
+      _accountingContext.token = _accountingContextConfig.token;
+      _accountingContext.decimals = _accountingContextConfig.standard == JBTokenStandards.NATIVE
+        ? 18
+        : IERC20Metadata(_accountingContextConfig.token).decimals();
+      _accountingContext.currency = uint32(uint160(_accountingContextConfig.token));
+      _accountingContext.standard = _accountingContextConfig.standard;
 
       // Add the token to the list of accepted tokens of the project.
       _accountingContextsOf[_projectId].push(_accountingContext);
@@ -788,7 +768,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
       uint256 _feePercent = isFeelessAddress[_beneficiary] ||
         _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
         ? 0
-        : fee;
+        : FEE;
 
       // The amount being reclaimed must be at least as much as was expected.
       if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
@@ -897,7 +877,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     // Keep a reference to the fee.
     // The fee is 0 if the fee beneficiary doesn't accept the given token.
-    uint256 _feePercent = fee;
+    uint256 _feePercent = FEE;
 
     // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
     // Also get a reference to the amount that was distributed to splits from which fees should be taken.
@@ -984,7 +964,7 @@ contract JBPayoutRedemptionTerminal is JBOperatable, Ownable, IJBPayoutRedemptio
 
     // Keep a reference to the fee.
     // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
-    uint256 _feePercent = isFeelessAddress[msg.sender] ? 0 : fee;
+    uint256 _feePercent = isFeelessAddress[msg.sender] ? 0 : FEE;
 
     unchecked {
       // Take a fee from the `_distributedAmount`, if needed.
