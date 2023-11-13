@@ -29,7 +29,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   //*********************************************************************//
 
   /// @notice The number of discount multiples before which cached values will be prefered.
-  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 10000;
+  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 50000;
 
   //*********************************************************************//
   // --------------------- private stored properties ------------------- //
@@ -709,19 +709,16 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       _discountMultiple = _startDistance / _baseFundingCycle.duration; // Non-null duration is excluded above
     }
 
-    // If the discount multiple is greater than a reasonable threshold, check to see if there's a cached weight that'll make the calculation feasible.
-    if (_discountMultiple > _DISCOUNT_MULTIPLE_CACHE_THRESHOLD) {
-      // Get a cached weight for the configuration.
-      JBFundingCycleWeightCache storage _cache = _weightCache[_baseFundingCycle.configuration];
+    // Get a cached weight for the configuration.
+    JBFundingCycleWeightCache storage _cache = _weightCache[_baseFundingCycle.configuration];
 
-      // If a cached value is available, use it.
-      if (_cache.discountMultiple > 0) {
-        // Set the starting weight to be the cached value.
-        weight = _cache.weight;
+    // If a cached value is available, use it.
+    if (_cache.discountMultiple > 0) {
+      // Set the starting weight to be the cached value.
+      weight = _cache.weight;
 
-        // Set the discount multiple to be the difference between the cached value and the total discount multiple that should be applied.
-        _discountMultiple -= _cache.discountMultiple;
-      }
+      // Set the discount multiple to be the difference between the cached value and the total discount multiple that should be applied.
+      _discountMultiple -= _cache.discountMultiple;
     }
 
     for (uint256 _i; _i < _discountMultiple; ) {

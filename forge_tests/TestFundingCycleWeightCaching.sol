@@ -95,8 +95,8 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         JBFundingCycle memory _fundingCycle1 = jbFundingCycleStore().currentOf(_projectId1);
         JBFundingCycle memory _fundingCycle2 = jbFundingCycleStore().currentOf(_projectId2);
 
-        // Go many rolled over cycles into the future.
-        vm.warp(block.timestamp + (_DURATION * _cycleDiff));
+        // Go a few rolled over cycles into the future.
+        vm.warp(block.timestamp + (_DURATION * 10));
 
         // Keep a reference to the amount of gas before the caching call.
         uint256 _gasBeforeCache = gasleft();
@@ -109,6 +109,9 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
 
         // Make sure the diff is within the limit
         assertLe(_gasDiffCache, _GAS_LIMIT);
+
+        // Go many rolled over cycles into the future.
+        vm.warp(block.timestamp + (_DURATION * _cycleDiff));
 
         // Cache the weight in the second project again.
         _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
@@ -158,5 +161,19 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
 
         // Make sure the funding cycle's have the same weight.
         assertEq(_fundingCycle1.weight, _fundingCycle2.weight);
+
+        // Cache the weight in the second project again.
+        _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
+
+        // Go many rolled over cycles into the future.
+        vm.warp(block.timestamp + (_DURATION * _cycleDiff));
+
+        // Reconfigure the cycle.
+        vm.prank(_projectOwner);
+        _controller.reconfigureFundingCyclesOf({
+            projectId: _projectId2,
+            fundingCycleConfigurations: _cycleConfigurations,
+            memo: ""
+        });
     }
 }
