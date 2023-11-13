@@ -23,10 +23,10 @@ import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadata
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBSplitsGroups} from './libraries/JBSplitsGroups.sol';
 import {JBFundingCycle} from './structs/JBFundingCycle.sol';
-import {JBFundingCycleConfiguration} from './structs/JBFundingCycleConfiguration.sol';
+import {JBFundingCycleConfig} from './structs/JBFundingCycleConfig.sol';
 import {JBFundingCycleMetadata} from './structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './structs/JBProjectMetadata.sol';
-import {JBTerminalConfiguration} from './structs/JBTerminalConfiguration.sol';
+import {JBTerminalConfig} from './structs/JBTerminalConfig.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
 
@@ -223,8 +223,8 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   function launchProjectFor(
     address _owner,
     JBProjectMetadata calldata _projectMetadata,
-    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations,
-    JBTerminalConfiguration[] calldata _terminalConfigurations,
+    JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
+    JBTerminalConfig[] calldata _terminalConfigurations,
     string memory _memo
   ) external virtual override returns (uint256 projectId) {
     // Keep a reference to the directory.
@@ -255,8 +255,8 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function launchFundingCyclesFor(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations,
-    JBTerminalConfiguration[] calldata _terminalConfigurations,
+    JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
+    JBTerminalConfig[] calldata _terminalConfigurations,
     string memory _memo
   )
     external
@@ -293,7 +293,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function reconfigureFundingCyclesOf(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations,
+    JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
     string calldata _memo
   )
     external
@@ -318,7 +318,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @param _tokenCount The amount of tokens to mint in total, counting however many should be reserved.
   /// @param _beneficiary The account that the tokens are being minted for.
   /// @param _memo A memo to pass along to the emitted event.
-  /// @param _preferClaimedTokens A flag indicating whether a project's attached token contract should be minted if they have been issued.
   /// @param _useReservedRate Whether to use the current funding cycle's reserved rate in the mint calculation.
   /// @return beneficiaryTokenCount The amount of tokens minted for the beneficiary.
   function mintTokensOf(
@@ -326,7 +325,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     uint256 _tokenCount,
     address _beneficiary,
     string calldata _memo,
-    bool _preferClaimedTokens,
     bool _useReservedRate
   ) external virtual override returns (uint256 beneficiaryTokenCount) {
     // There should be tokens to mint.
@@ -370,7 +368,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
       );
 
       // Mint the tokens.
-      tokenStore.mintFor(_beneficiary, _projectId, beneficiaryTokenCount, _preferClaimedTokens);
+      tokenStore.mintFor(_beneficiary, _projectId, beneficiaryTokenCount);
     }
 
     // Add reserved tokens if needed
@@ -394,13 +392,11 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @param _projectId The ID of the project to which the tokens being burned belong.
   /// @param _tokenCount The number of tokens to burn.
   /// @param _memo A memo to pass along to the emitted event.
-  /// @param _preferClaimedTokens A flag indicating whether a project's attached token contract should be burned first if they have been issued.
   function burnTokensOf(
     address _holder,
     uint256 _projectId,
     uint256 _tokenCount,
-    string calldata _memo,
-    bool _preferClaimedTokens
+    string calldata _memo
   )
     external
     virtual
@@ -419,7 +415,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
     // Burn the tokens.
-    tokenStore.burnFrom(_holder, _projectId, _tokenCount, _preferClaimedTokens);
+    tokenStore.burnFrom(_holder, _projectId, _tokenCount);
 
     emit BurnTokens(_holder, _projectId, _tokenCount, _memo, msg.sender);
   }
@@ -519,8 +515,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
       );
 
     // Mint any leftover tokens to the project owner.
-    if (_leftoverTokenCount > 0)
-      _tokenStore.mintFor(_owner, _projectId, _leftoverTokenCount, false);
+    if (_leftoverTokenCount > 0) _tokenStore.mintFor(_owner, _projectId, _leftoverTokenCount);
 
     emit DistributeReservedTokens(
       _fundingCycle.configuration,
@@ -584,8 +579,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
             ? _split.beneficiary
             : msg.sender,
           _projectId,
-          _tokenCount,
-          _split.preferClaimed
+          _tokenCount
         );
 
         // If there's an allocator set, trigger its `allocate` function.
@@ -624,10 +618,10 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
   /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
   function _configureFundingCycles(
     uint256 _projectId,
-    JBFundingCycleConfiguration[] calldata _fundingCycleConfigurations
+    JBFundingCycleConfig[] calldata _fundingCycleConfigurations
   ) internal returns (uint256 configured) {
     // Keep a reference to the configuration being iterated on.
-    JBFundingCycleConfiguration memory _configuration;
+    JBFundingCycleConfig memory _configuration;
 
     // Keep a reference to the number of configurations being scheduled.
     uint256 _numberOfConfigurations = _fundingCycleConfigurations.length;
@@ -676,34 +670,32 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
 
   /// @notice Configure terminals for use.
   /// @param _projectId The ID of the project configuring the terminals for use.
-  /// @param _terminalConfigurations The configurations to enact.
+  /// @param _terminalConfigs The configurations to enact.
   function _configureTerminals(
     uint256 _projectId,
-    JBTerminalConfiguration[] calldata _terminalConfigurations
+    JBTerminalConfig[] calldata _terminalConfigs
   ) internal {
     // Keep a reference to the number of terminals being configured.
-    uint256 _numberOfTerminalConfigurations = _terminalConfigurations.length;
+    uint256 _numberOfTerminalConfigs = _terminalConfigs.length;
 
     // Set a array of terminals to populate.
-    IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](
-      _numberOfTerminalConfigurations
-    );
+    IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](_numberOfTerminalConfigs);
 
     // Keep a reference to the terminal configuration beingiterated on.
-    JBTerminalConfiguration memory _terminalConfiguration;
+    JBTerminalConfig memory _terminalConfig;
 
-    for (uint256 _i; _i < _numberOfTerminalConfigurations; ) {
+    for (uint256 _i; _i < _numberOfTerminalConfigs; ) {
       // Set the terminal configuration being iterated on.
-      _terminalConfiguration = _terminalConfigurations[_i];
+      _terminalConfig = _terminalConfigs[_i];
 
       // The the accounting contexts.
-      _terminalConfiguration.terminal.setAccountingContextsFor(
+      _terminalConfig.terminal.setAccountingContextsFor(
         _projectId,
-        _terminalConfiguration.accountingContexts
+        _terminalConfig.accountingContextConfigs
       );
 
       // Add the terminal.
-      _terminals[_i] = _terminalConfiguration.terminal;
+      _terminals[_i] = _terminalConfig.terminal;
 
       unchecked {
         ++_i;
@@ -711,6 +703,6 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
     }
 
     // Set the terminals in the directory.
-    if (_numberOfTerminalConfigurations > 0) directory.setTerminalsOf(_projectId, _terminals);
+    if (_numberOfTerminalConfigs > 0) directory.setTerminalsOf(_projectId, _terminals);
   }
 }

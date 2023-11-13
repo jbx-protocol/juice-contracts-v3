@@ -18,7 +18,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     
     IJBController3_1 private _controller;
     IJBPrices private _prices;
-    IJBPayoutRedemptionTerminal private _terminal; 
+    IJBMultiTerminal private _terminal; 
     IJBTokenStore private _tokenStore;
     address private _multisig;
     address private _projectOwner;
@@ -107,24 +107,22 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
             _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
             _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
-            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
-            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
-            _accountingContexts[0] = JBAccountingContext({
+            JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+            JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
+            _accountingContextConfigs[0] = JBAccountingContextConfig({
                 token: JBTokens.ETH,
-                currency: uint32(uint160(JBTokens.ETH)),
-                decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
-            _terminalConfigurations[0] = JBTerminalConfiguration({
+            _terminalConfigurations[0] = JBTerminalConfig({
                 terminal: _terminal,
-                accountingContexts: _accountingContexts
+                accountingContextConfigs: _accountingContextConfigs
             });
 
             // First project for fee collection
@@ -180,7 +178,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
         
         // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-        uint256 _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+        uint256 _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
         assertEq(_beneficiary.balance, _beneficiaryEthBalance);
         assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance);
 
@@ -201,7 +199,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the project owner received the distributed funds.
-        uint256 _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+        uint256 _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.FEE() + JBConstants.MAX_FEE);
 
         // Make sure the project owner received the full amount.
         assertEq(_projectOwner.balance, _projectOwnerEthBalance);
@@ -219,8 +217,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             holder: _beneficiary,
             projectId: _projectId,
             token: JBTokens.ETH,
-            tokenCount: _beneficiaryTokenBalance,
-            minReturnedTokens: 0,
+            count: _beneficiaryTokenBalance,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -241,7 +239,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         );
 
         // Calculate the fee from the redemption.
-        uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+        uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
         assertEq(_beneficiary.balance, _beneficiaryEthBalance + _ethReclaimAmount - _feeAmount);
         
         // // Make sure the fee was paid correctly.
@@ -292,24 +290,22 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
             _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
             _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
-            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
-            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
-            _accountingContexts[0] = JBAccountingContext({
+            JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+            JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
+            _accountingContextConfigs[0] = JBAccountingContextConfig({
                 token: JBTokens.ETH,
-                currency: uint32(uint160(JBTokens.ETH)),
-                decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
-            _terminalConfigurations[0] = JBTerminalConfiguration({
+            _terminalConfigurations[0] = JBTerminalConfig({
                 terminal: _terminal,
-                accountingContexts: _accountingContexts
+                accountingContextConfigs: _accountingContextConfigs
             });
 
             // First project for fee collection
@@ -375,7 +371,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_ethCurrencyOverflowAllowance + _ethCurrencyDistributionLimit <= _ethPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance);
 
@@ -413,7 +409,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected distribution if one is expected.
         if (_ethCurrencyDistributionLimit <= _ethPayAmount && _ethCurrencyDistributionLimit != 0) {
             // Make sure the project owner received the distributed funds.
-            _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+            _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerEthBalance);
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance - _ethCurrencyDistributionLimit);
 
@@ -430,9 +426,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            tokenCount: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
-            minReturnedTokens: 0,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -454,7 +450,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 JBConstants.MAX_REDEMPTION_RATE
             );
             // Calculate the fee from the redemption.
-            uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+            uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_beneficiary.balance, _beneficiaryEthBalance + _ethReclaimAmount - _feeAmount);
             
             // Make sure the fee was paid correctly.
@@ -505,32 +501,30 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _projectId;
 
         {
-            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
-            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
-            _accountingContexts[0] = JBAccountingContext({
+            JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+            JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
+            _accountingContextConfigs[0] = JBAccountingContextConfig({
                 token: JBTokens.ETH,
-                currency: uint32(uint160(JBTokens.ETH)),
-                decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
 
-            _terminalConfigurations[0] = JBTerminalConfiguration({
+            _terminalConfigurations[0] = JBTerminalConfig({
                 terminal: _terminal,
-                accountingContexts: _accountingContexts
+                accountingContextConfigs: _accountingContextConfigs
             });
 
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                fundingCycleConfigurations: new JBFundingCycleConfiguration[](0), // No cycle config will force revert when paid.
+                fundingCycleConfigurations: new JBFundingCycleConfig[](0), // No cycle config will force revert when paid.
                 // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
-                terminalConfigurations: _feeProjectAcceptsToken ? _terminalConfigurations : new JBTerminalConfiguration[](0), // set terminals where fees will be received
+                terminalConfigurations: _feeProjectAcceptsToken ? _terminalConfigurations : new JBTerminalConfig[](0), // set terminals where fees will be received
                 memo: ""
             });
 
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
@@ -591,7 +585,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_ethCurrencyOverflowAllowance + _ethCurrencyDistributionLimit <= _ethPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             // Make sure the fee stays in the treasury.
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryEthBalance);
@@ -630,7 +624,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected distribution if one is expected.
         if (_ethCurrencyDistributionLimit <= _ethPayAmount && _ethCurrencyDistributionLimit != 0) {
             // Make sure the project owner received the distributed funds.
-            _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+            _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerEthBalance);
             // Make sure the fee stays in the treasury.
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance);
@@ -648,9 +642,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            tokenCount: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
-            minReturnedTokens: 0,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -673,7 +667,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
 
             // Calculate the fee from the redemption.
-            uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+            uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_beneficiary.balance, _beneficiaryEthBalance + _ethReclaimAmount - _feeAmount);
             // Make sure the fee stays in the treasury.
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance - (_ethReclaimAmount - _feeAmount));
@@ -727,25 +721,23 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
             _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
             _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
-            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
-            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](1);
-            _accountingContexts[0] = JBAccountingContext({
+            JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+            JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
+            _accountingContextConfigs[0] = JBAccountingContextConfig({
                 token: JBTokens.ETH,
-                currency: uint32(uint160(JBTokens.ETH)),
-                decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
 
-            _terminalConfigurations[0] = JBTerminalConfiguration({
+            _terminalConfigurations[0] = JBTerminalConfig({
                 terminal: _terminal,
-                accountingContexts: _accountingContexts
+                accountingContextConfigs: _accountingContextConfigs
             });
 
             // Create the project to test.
@@ -802,7 +794,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_ethCurrencyOverflowAllowance + _ethCurrencyDistributionLimit <= _ethPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryEthBalance);
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
@@ -837,7 +829,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected distribution if one is expected.
         if (_ethCurrencyDistributionLimit <= _ethPayAmount && _ethCurrencyDistributionLimit != 0) {
             // Make sure the project owner received the distributed funds.
-            _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+            _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerEthBalance);
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance);
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance);
@@ -851,9 +843,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            tokenCount: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
-            minReturnedTokens: 0,
+            minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
@@ -876,7 +868,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 JBConstants.MAX_REDEMPTION_RATE
             );
             // Calculate the fee from the redemption.
-            uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+            uint256 _feeAmount = _ethReclaimAmount - _ethReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
 
             // Make sure the beneficiary has token from the fee just paid.
             assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), PRBMath.mulDiv(_feeAmount, _data.weight, 10 ** _ETH_DECIMALS ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE);
@@ -940,31 +932,27 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 });
 
             // Package up the configuration info.
-            JBFundingCycleConfiguration[] memory _cycleConfigurations = new JBFundingCycleConfiguration[](1);
+            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
             _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
             _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
-            JBTerminalConfiguration[] memory _terminalConfigurations = new JBTerminalConfiguration[](1);
-            JBAccountingContext[] memory _accountingContexts = new JBAccountingContext[](2);
-            _accountingContexts[0] = JBAccountingContext({
+            JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+            JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](2);
+            _accountingContextConfigs[0] = JBAccountingContextConfig({
                 token: JBTokens.ETH,
-                currency: uint32(uint160(JBTokens.ETH)),
-                decimals: _ETH_DECIMALS,
                 standard: JBTokenStandards.NATIVE
             });
-            _accountingContexts[1] = JBAccountingContext({
+            _accountingContextConfigs[1] = JBAccountingContextConfig({
                 token: address(_usdcToken),
-                currency: uint32(uint160(address(_usdcToken))),
-                decimals: _usdcToken.decimals(),
                 standard: JBTokenStandards.ERC20
             });
 
-            _terminalConfigurations[0] = JBTerminalConfiguration({
+            _terminalConfigurations[0] = JBTerminalConfig({
                 terminal: _terminal,
-                accountingContexts: _accountingContexts
+                accountingContextConfigs: _accountingContextConfigs
             });
 
             // First project for fee collection
@@ -1076,7 +1064,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_ethCurrencyOverflowAllowance + _ethCurrencyDistributionLimit + _toEth(_usdCurrencyDistributionLimit) <= _ethPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+            _beneficiaryEthBalance = PRBMath.mulDiv(_ethCurrencyOverflowAllowance, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance);
 
@@ -1114,7 +1102,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_ethCurrencyOverflowAllowance + _ethCurrencyDistributionLimit + _toEth(_usdCurrencyOverflowAllowance + _usdCurrencyDistributionLimit) <= _ethPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryEthBalance += PRBMath.mulDiv(_toEth(_usdCurrencyOverflowAllowance), JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.fee());
+            _beneficiaryEthBalance += PRBMath.mulDiv(_toEth(_usdCurrencyOverflowAllowance), JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance - _toEth(_usdCurrencyOverflowAllowance));
 
@@ -1153,7 +1141,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Check the collected distribution if one is expected.
             if (_ethCurrencyDistributionLimit <= _ethPayAmount && _ethCurrencyDistributionLimit != 0) {
                 // Make sure the project owner received the distributed funds.
-                _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+                _projectOwnerEthBalance = (_ethCurrencyDistributionLimit * JBConstants.MAX_FEE) / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerEthBalance);
                 assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance - _toEth(_usdCurrencyOverflowAllowance) - _ethCurrencyDistributionLimit);
 
@@ -1187,7 +1175,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Check the collected distribution if one is expected.
             if (_toEth(_usdCurrencyDistributionLimit) + _ethCurrencyDistributionLimit <= _ethPayAmount && _usdCurrencyDistributionLimit > 0) {
                 // Make sure the project owner received the distributed funds.
-                _projectOwnerEthBalance += (_toEth(_usdCurrencyDistributionLimit) * JBConstants.MAX_FEE) / (_terminal.fee() + JBConstants.MAX_FEE);
+                _projectOwnerEthBalance += (_toEth(_usdCurrencyDistributionLimit) * JBConstants.MAX_FEE) / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerEthBalance);
                 assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokens.ETH), _ethPayAmount - _ethCurrencyOverflowAllowance - _toEth(_usdCurrencyOverflowAllowance) - _ethCurrencyDistributionLimit - _toEth(_usdCurrencyDistributionLimit));
 
@@ -1248,9 +1236,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _terminal.redeemTokensOf({
                     holder: _beneficiary,
                     projectId: _projectId,
-                    tokenCount: _tokenCountToRedeemForEth, 
+                    count: _tokenCountToRedeemForEth, 
                     token: JBTokens.ETH,
-                    minReturnedTokens: 0,
+                    minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
                 });
@@ -1259,9 +1247,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _terminal.redeemTokensOf({
                     holder: _beneficiary,
                     projectId: _projectId,
-                    tokenCount: _beneficiaryTokenBalance - _tokenCountToRedeemForEth, 
+                    count: _beneficiaryTokenBalance - _tokenCountToRedeemForEth, 
                     token: address(_usdcToken),
-                    minReturnedTokens: 0,
+                    minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
                 });
@@ -1290,7 +1278,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
                 assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, address(_usdcToken)), _usdcPayAmount - _usdcReclaimAmount);
 
-                uint256 _usdcFeeAmount = _usdcReclaimAmount - _usdcReclaimAmount * JBConstants.MAX_FEE / (_terminal.fee() + JBConstants.MAX_FEE);
+                uint256 _usdcFeeAmount = _usdcReclaimAmount - _usdcReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
                 // assertEq(_usdcToken.balanceOf(_beneficiary), _usdcReclaimAmount - _usdcFeeAmount);
 
                 // Make sure the fee was paid correctly.
@@ -1301,9 +1289,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _terminal.redeemTokensOf({
                     holder: _beneficiary,
                     projectId: _projectId,
-                    tokenCount: _beneficiaryTokenBalance, 
+                    count: _beneficiaryTokenBalance, 
                     token: JBTokens.ETH,
-                    minReturnedTokens: 0,
+                    minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
                 });
@@ -1313,9 +1301,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _terminal.redeemTokensOf({
                 holder: _beneficiary,
                 projectId: _projectId,
-                tokenCount: _beneficiaryTokenBalance, 
+                count: _beneficiaryTokenBalance, 
                 token: address(_usdcToken),
-                minReturnedTokens: 0,
+                minReclaimed: 0,
                 beneficiary: payable(_beneficiary),
                 metadata: new bytes(0)
             });

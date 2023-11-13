@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBBallotState} from './../enums/JBBallotState.sol';
 import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
-import {JBFundingCycleConfiguration} from './../structs/JBFundingCycleConfiguration.sol';
+import {JBFundingCycleConfig} from './../structs/JBFundingCycleConfig.sol';
 import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
 import {JBProjectMetadata} from './../structs/JBProjectMetadata.sol';
-import {JBTerminalConfiguration} from './../structs/JBTerminalConfiguration.sol';
+import {JBTerminalConfig} from './../structs/JBTerminalConfig.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
 import {IJBFundAccessConstraintsStore} from './IJBFundAccessConstraintsStore.sol';
@@ -120,21 +120,21 @@ interface IJBController3_1 is IERC165 {
   function launchProjectFor(
     address owner,
     JBProjectMetadata calldata projectMetadata,
-    JBFundingCycleConfiguration[] calldata fundingCycleConfigurations,
-    JBTerminalConfiguration[] memory terminalConfigurations,
+    JBFundingCycleConfig[] calldata fundingCycleConfigurations,
+    JBTerminalConfig[] memory terminalConfigurations,
     string calldata memo
   ) external returns (uint256 projectId);
 
   function launchFundingCyclesFor(
     uint256 projectId,
-    JBFundingCycleConfiguration[] calldata fundingCycleConfigurations,
-    JBTerminalConfiguration[] memory terminalConfigurations,
+    JBFundingCycleConfig[] calldata fundingCycleConfigurations,
+    JBTerminalConfig[] memory terminalConfigurations,
     string calldata memo
   ) external returns (uint256 configured);
 
   function reconfigureFundingCyclesOf(
     uint256 projectId,
-    JBFundingCycleConfiguration[] calldata fundingCycleConfigurations,
+    JBFundingCycleConfig[] calldata fundingCycleConfigurations,
     string calldata memo
   ) external returns (uint256 configured);
 
@@ -143,7 +143,6 @@ interface IJBController3_1 is IERC165 {
     uint256 tokenCount,
     address beneficiary,
     string calldata memo,
-    bool preferClaimedTokens,
     bool useReservedRate
   ) external returns (uint256 beneficiaryTokenCount);
 
@@ -151,8 +150,7 @@ interface IJBController3_1 is IERC165 {
     address holder,
     uint256 projectId,
     uint256 tokenCount,
-    string calldata memo,
-    bool preferClaimedTokens
+    string calldata memo
   ) external;
 
   function distributeReservedTokensOf(

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 import {JBControllerUtility} from './abstract/JBControllerUtility.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
@@ -160,7 +161,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
     // Deploy the token contract.
-    token = new JBToken(_name, _symbol, _projectId);
+    token = new JBToken(_name, _symbol, _projectId, address(this));
 
     // Store the token contract.
     tokenOf[_projectId] = token;
@@ -206,18 +207,16 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   /// @param _holder The address receiving the new tokens.
   /// @param _projectId The ID of the project to which the tokens belong.
   /// @param _amount The amount of tokens to mint.
-  /// @param _preferClaimedTokens A flag indicating whether there's a preference for minted tokens to be claimed automatically into the `_holder`s wallet if the project currently has a token contract attached.
   function mintFor(
     address _holder,
     uint256 _projectId,
-    uint256 _amount,
-    bool _preferClaimedTokens
+    uint256 _amount
   ) external override onlyController(_projectId) {
     // Get a reference to the project's current token.
     IJBToken _token = tokenOf[_projectId];
 
-    // Save a reference to whether there exists a token and the caller prefers these claimed tokens.
-    bool _shouldClaimTokens = _preferClaimedTokens && _token != IJBToken(address(0));
+    // Save a reference to whether there exists a token.
+    bool _shouldClaimTokens = _token != IJBToken(address(0));
 
     if (_shouldClaimTokens)
       // If tokens should be claimed, mint tokens into the holder's wallet.
@@ -231,7 +230,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     // The total supply can't exceed the maximum value storable in a uint224.
     if (totalSupplyOf(_projectId) > type(uint224).max) revert OVERFLOW_ALERT();
 
-    emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, _preferClaimedTokens, msg.sender);
+    emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, msg.sender);
   }
 
   /// @notice Burns a project's tokens.
@@ -239,12 +238,10 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
   /// @param _holder The address that owns the tokens being burned.
   /// @param _projectId The ID of the project to which the burned tokens belong.
   /// @param _amount The amount of tokens to burn.
-  /// @param _preferClaimedTokens A flag indicating whether there's a preference for tokens to burned from the `_holder`s wallet if the project currently has a token contract attached.
   function burnFrom(
     address _holder,
     uint256 _projectId,
-    uint256 _amount,
-    bool _preferClaimedTokens
+    uint256 _amount
   ) external override onlyController(_projectId) {
     // Get a reference to the project's current token.
     IJBToken _token = tokenOf[_projectId];
@@ -264,16 +261,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     uint256 _claimedTokensToBurn;
 
     // Get a reference to how many claimed tokens should be burned
-    if (_claimedBalance != 0)
-      if (_preferClaimedTokens)
-        // If prefer converted, burn the claimed tokens before the unclaimed.
-        _claimedTokensToBurn = _claimedBalance < _amount ? _claimedBalance : _amount;
-        // Otherwise, burn unclaimed tokens before claimed tokens.
-      else {
-        unchecked {
-          _claimedTokensToBurn = _unclaimedBalance < _amount ? _amount - _unclaimedBalance : 0;
-        }
+    if (_claimedBalance != 0) {
+      // Burn unclaimed tokens before claimed tokens.
+      unchecked {
+        _claimedTokensToBurn = _unclaimedBalance < _amount ? _amount - _unclaimedBalance : 0;
       }
+    }
 
     // The amount of unclaimed tokens to burn.
     uint256 _unclaimedTokensToBurn;
@@ -301,7 +294,6 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
       _amount,
       _unclaimedBalance,
       _claimedBalance,
-      _preferClaimedTokens,
       msg.sender
     );
   }

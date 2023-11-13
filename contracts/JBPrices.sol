@@ -95,10 +95,8 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     IJBOperatorStore _operatorStore,
     IJBProjects _projects,
     address _owner
-  ) JBOperatable(_operatorStore) {
+  ) JBOperatable(_operatorStore) Ownable(_owner) {
     projects = _projects;
-    // Transfer the ownership.
-    transferOwnership(_owner);
   }
 
   //*********************************************************************//
