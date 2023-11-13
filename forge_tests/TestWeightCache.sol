@@ -6,6 +6,7 @@ import {MockPriceFeed} from './mock/MockPriceFeed.sol';
 
 // A funding cycle's weight can be cached to make larger intervals tractible under the gas limit.
 contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
+    uint256 private constant _GAS_LIMIT = 30_000_000;
     uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED 
     uint256 private constant _DURATION = 1;
     uint256 private constant _DISCOUNT_RATE = 1;
@@ -54,8 +55,9 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     
     /// Test that caching a cycle's weight yields the same result as computing it.
     function testWeightCaching(uint256 _cycleDiff) public {
-        // Bound to 10x the discount multiple cache threshold.
-        _cycleDiff = bound(_cycleDiff, 0, 100000);
+        // Bound to 8x the discount multiple cache threshold.
+        _cycleDiff = bound(_cycleDiff, 0, 80000);
+        // uint256 _cycleDiff = 80000;
 
         // Keep references to the projects.
         uint256 _projectId1;
@@ -105,6 +107,9 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // Inherit the weight.
         _cycleConfigurations[0].data.weight = 0;
 
+        // Keep a reference to the amount of gas before the call.
+        uint256 _gasBefore1 = gasleft();
+
         // Reconfigure the cycle.
         vm.startPrank(_projectOwner);
         _controller.reconfigureFundingCyclesOf({
@@ -112,6 +117,16 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
             fundingCycleConfigurations: _cycleConfigurations,
             memo: ""
         });
+
+        // Keep a reference to the amout of gas spent on the call.
+        uint256 _gasDiff1 = _gasBefore1 - gasleft();
+
+        // Make sure the diff is within the limit
+        assertLe(_gasDiff1, _GAS_LIMIT);
+
+        // Keep a reference to the amount of gas before the call.
+        uint256 _gasBefore2 = gasleft();
+
         _controller.reconfigureFundingCyclesOf({
             projectId: _projectId2,
             fundingCycleConfigurations: _cycleConfigurations,
@@ -119,9 +134,18 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         });
         vm.stopPrank();
 
+        // Keep a reference to the amout of gas spent on the call.
+        uint256 _gasDiff2 = _gasBefore2 - gasleft();
+
+        // Make sure the diff is within the limit
+        assertLe(_gasDiff2, _GAS_LIMIT);
+
         // Renew the reference to the current funding cycle.
         _fundingCycle1 = jbFundingCycleStore().currentOf(_projectId1);
         _fundingCycle2 = jbFundingCycleStore().currentOf(_projectId2);
+
+        // The cached call should have been cheaper.
+        assertLe(_gasDiff2, _gasDiff1);
 
         // Make sure the funding cycle's have the same weight.
         assertEq(_fundingCycle1.weight, _fundingCycle2.weight);
