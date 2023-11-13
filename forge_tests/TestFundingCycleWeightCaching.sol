@@ -98,8 +98,18 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // Go many rolled over cycles into the future.
         vm.warp(block.timestamp + (_DURATION * _cycleDiff));
 
+        // Keep a reference to the amount of gas before the caching call.
+        uint256 _gasBeforeCache = gasleft();
+
         // Cache the weight in the second project.
         _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
+
+        // Keep a reference to the amout of gas spent on the call.
+        uint256 _gasDiffCache = _gasBeforeCache - gasleft();
+
+        // Make sure the diff is within the limit
+        assertLe(_gasDiffCache, _GAS_LIMIT);
+
         // Cache the weight in the second project again.
         _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
 
