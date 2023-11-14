@@ -115,7 +115,12 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
     const { mockJbPrices, JBERC20PaymentTerminal, NON_ETH_TOKEN } = await setup();
 
     await mockJbPrices.mock.priceFor
-      .withArgs(ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber(), CURRENCY_ETH, 16) // 16-decimal
+      .withArgs(
+        /*slice from 36 to 42 to get the last 4 nibbles/8 bytes of the token address*/
+        ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
+        CURRENCY_ETH,
+        16,
+      ) // 16-decimal
       .returns(100);
 
     expect(await JBERC20PaymentTerminal.currentEthOverflowOf(PROJECT_ID)).to.equal(
