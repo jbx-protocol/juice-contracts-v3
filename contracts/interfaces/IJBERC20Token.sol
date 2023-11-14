@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IJBToken {
+interface IJBERC20Token {
   function projectId() external view returns (uint256);
 
   function decimals() external view returns (uint8);
