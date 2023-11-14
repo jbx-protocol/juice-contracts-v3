@@ -16,16 +16,6 @@ import "../contracts/JBController3_1.sol";
 import "../contracts/JBTerminalStore.sol";
 import "../contracts/JBMultiTerminal.sol";
 
-contract DeployGoerli is Deploy {
-    function setUp() public {}
-
-    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
-
-    function run() public {
-        _run(_manager);
-    }
-}
-
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 =
         IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
@@ -160,5 +150,80 @@ contract Deploy is Script {
             mstore(0, hash)
             _address := mload(0)
         }
+    }
+}
+
+// Ethereum
+contract DeployEthereumMainnet is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
+    }
+}
+
+contract DeployEthereumGoerli is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
+    }
+}
+
+contract DeployEthereumSepolia is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
+    }
+}
+
+// Optimism
+
+contract DeployOptimismMainnet is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
+    }
+}
+
+contract DeployOptimismTestnet is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
+    }
+}
+
+// Polygon
+
+contract DeployPolygonMainnet is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
+    }
+}
+
+contract DeployPolygonMumbai is Deploy {
+    function setUp() public {}
+
+    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function run() public {
+        _run(_manager);
     }
 }
