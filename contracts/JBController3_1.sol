@@ -234,7 +234,9 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         uint256 _configuration = _configure(projectId, _configurations);
 
         // Add the provided terminals to the list of terminals.
-        if (_terminals.length > 0) _directory.setTerminalsOf(projectId, _terminals);
+        if (_terminals.length > 0) {
+            _directory.setTerminalsOf(projectId, _terminals);
+        }
 
         emit LaunchProject(_configuration, projectId, _memo, msg.sender);
     }
@@ -271,7 +273,9 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         configured = _configure(_projectId, _configurations);
 
         // Add the provided terminals to the list of terminals.
-        if (_terminals.length > 0) directory.setTerminalsOf(_projectId, _terminals);
+        if (_terminals.length > 0) {
+            directory.setTerminalsOf(_projectId, _terminals);
+        }
 
         emit LaunchFundingCycles(configured, _projectId, _memo, msg.sender);
     }
@@ -461,16 +465,22 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         IJBDirectory _directory = directory;
 
         // This controller must be the project's current controller.
-        if (_directory.controllerOf(_projectId) != address(this)) revert NOT_CURRENT_CONTROLLER();
+        if (_directory.controllerOf(_projectId) != address(this)) {
+            revert NOT_CURRENT_CONTROLLER();
+        }
 
         // Get a reference to the project's current funding cycle.
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
         // Migration must be allowed.
-        if (!_fundingCycle.controllerMigrationAllowed()) revert MIGRATION_NOT_ALLOWED();
+        if (!_fundingCycle.controllerMigrationAllowed()) {
+            revert MIGRATION_NOT_ALLOWED();
+        }
 
         // All reserved tokens must be minted before migrating.
-        if (reservedTokenBalanceOf[_projectId] != 0) _distributeReservedTokensOf(_projectId, "");
+        if (reservedTokenBalanceOf[_projectId] != 0) {
+            _distributeReservedTokensOf(_projectId, "");
+        }
 
         // Make sure the new controller is prepped for the migration.
         _to.prepForMigrationOf(_projectId, address(this));
@@ -656,7 +666,9 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
             );
 
             // Return the configured timestamp if this is the last configuration being scheduled.
-            if (_i == _numberOfConfigurations - 1) configured = _fundingCycle.configuration;
+            if (_i == _numberOfConfigurations - 1) {
+                configured = _fundingCycle.configuration;
+            }
 
             unchecked {
                 ++_i;
