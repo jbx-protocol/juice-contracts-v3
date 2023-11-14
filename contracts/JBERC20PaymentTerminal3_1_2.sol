@@ -52,7 +52,7 @@ contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_1_2 {
     JBPayoutRedemptionPaymentTerminal3_1_2(
       address(_token),
       _token.decimals(),
-      uint256(uint24(uint160(address(_token)))), // first 24 bits used for currency.
+      uint256(uint24(uint160(address(_token)))), // last 24 bits used for currency.
       _payoutSplitsGroup,
       _operatorStore,
       _projects,
