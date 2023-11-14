@@ -17,6 +17,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
+    address private _multisig;
 
     uint256 private _projectId;
     address private _projectOwner;
@@ -27,14 +28,15 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         super.setUp();
 
         _controller = jbController();
+        _multisig = multisig();
         _terminal = new JBETHPaymentTerminal3_1_2(
-            _jbOperatorStore,
-            _jbProjects,
-            _jbDirectory,
-            _jbSplitsStore,
-            _jbPrices,
-            address(_jbPaymentTerminalStore3_1_1),
-            _multisig
+            jbOperatorStore(),
+            jbProjects(),
+            jbDirectory(),
+            jbSplitsStore(),
+            jbPrices(),
+            address(jbTokenStore()),
+            multisig()
         );
 
         _tokenStore = jbTokenStore();
