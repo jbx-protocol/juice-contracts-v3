@@ -125,8 +125,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
     event SetFee(uint256 fee, address caller);
 
-    // event SetFeeGauge(address indexed feeGauge, address caller);
-
     event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
     event PayoutReverted(

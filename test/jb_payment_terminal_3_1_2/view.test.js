@@ -118,7 +118,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::getters', function () {
 
   it('Should return the currency for the token', async function () {
     const { JBERC20PaymentTerminal, jbEthPaymentTerminal, NON_ETH_TOKEN } = await setup();
-    expect(await JBERC20PaymentTerminal.currencyForToken(NON_ETH_TOKEN)).to.equal(ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber());
+
+    // slice from 36 to 42 to get the last 6 nibbles/3 bytes of the token address
+    expect(await JBERC20PaymentTerminal.currencyForToken(NON_ETH_TOKEN)).to.equal(
+      ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
+    );
 
     expect(await jbEthPaymentTerminal.currencyForToken(ETH_ADDRESS)).to.equal(CURRENCY_ETH);
   });

@@ -684,7 +684,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     await mockJBPaymentTerminalStore.mock.recordPaymentFrom
       .withArgs(
         caller.address,
-        [/*token*/ tokenAddress, /*amount paid*/ ETH_TO_PAY, /*decimal*/ DECIMALS, ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber()],
+        [
+          /*token*/ tokenAddress,
+          /*amount paid*/ ETH_TO_PAY,
+          /*decimal*/ DECIMALS,
+          /*slice from 36 to 42 to get the last 6 nibbles/3 bytes of the token address*/
+          ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
+        ],
         PROJECT_ID,
         beneficiary.address,
         MEMO,
@@ -760,7 +766,13 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::pay(...)', function () {
     await mockJBPaymentTerminalStore.mock.recordPaymentFrom
       .withArgs(
         caller.address,
-        [/*token*/ tokenAddress, /*amount paid*/ NET_AMOUNT, /*decimal*/ DECIMALS, ethers.BigNumber.from('0x' + ethers.BigNumber.from(NON_ETH_TOKEN).toHexString().slice(NON_ETH_TOKEN.length - 6, NON_ETH_TOKEN.length)).toNumber()],
+        [
+          /*token*/ tokenAddress,
+          /*amount paid*/ NET_AMOUNT,
+          /*decimal*/ DECIMALS,
+          /*slice from 36 to 42 to get the last 6 nibbles/3 bytes of the token address*/
+          ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
+        ],
         PROJECT_ID,
         beneficiary.address,
         MEMO,
