@@ -2,19 +2,19 @@
 pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
-import {MockPriceFeed} from './mock/MockPriceFeed.sol';
+import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 // A funding cycle's weight can be cached to make larger intervals tractible under the gas limit.
 contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     uint256 private constant _GAS_LIMIT = 30_000_000;
-    uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED 
+    uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED
     uint256 private constant _DURATION = 1;
     uint256 private constant _DISCOUNT_RATE = 1;
-    
+
     IJBController3_1 private _controller;
     IJBFundingCycleStore private _fundingCycleStore;
     address private _projectOwner;
-    
+
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
 
@@ -52,7 +52,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
             metadata: 0
         });
     }
-    
+
     /// Test that caching a cycle's weight yields the same result as computing it.
     function testWeightCaching(uint256 _cycleDiff) public {
         // TODO commented out for faster test suite

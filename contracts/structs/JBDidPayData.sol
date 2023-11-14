@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBTokenAmount} from './JBTokenAmount.sol';
+import {JBTokenAmount} from "./JBTokenAmount.sol";
 
 /// @custom:member payer The address from which the payment originated.
 /// @custom:member projectId The ID of the project for which the payment was made.
@@ -14,14 +14,14 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member memo The memo that is being emitted alongside the payment.
 /// @custom:member metadata Extra data to send to the delegate.
 struct JBDidPayData {
-  address payer;
-  uint256 projectId;
-  uint256 currentFundingCycleConfiguration;
-  JBTokenAmount amount;
-  JBTokenAmount forwardedAmount;
-  uint256 projectTokenCount;
-  address beneficiary;
-  bool preferClaimedTokens;
-  string memo;
-  bytes metadata;
+    address payer;
+    uint256 projectId;
+    uint256 currentFundingCycleConfiguration;
+    JBTokenAmount amount;
+    JBTokenAmount forwardedAmount;
+    uint256 projectTokenCount;
+    address beneficiary;
+    bool preferClaimedTokens;
+    string memo;
+    bytes metadata;
 }

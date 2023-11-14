@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /// @custom:member fee The percent of the fee, out of MAX_FEE.
 /// @custom:member beneficiary The address that will receive the tokens that are minted as a result of the fee payment.
 struct JBFee {
-  uint256 amount;
-  uint32 fee;
-  address beneficiary;
+    uint256 amount;
+    uint32 fee;
+    address beneficiary;
 }
