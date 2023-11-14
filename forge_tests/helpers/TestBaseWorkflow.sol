@@ -12,7 +12,8 @@ import {ERC165, IERC165} from "@openzeppelin/contracts/utils/introspection/ERC16
 import {JBController3_1} from "@juicebox/JBController3_1.sol";
 import {JBDirectory} from "@juicebox/JBDirectory.sol";
 import {JBERC20PaymentTerminal3_1_2} from "@juicebox/JBERC20PaymentTerminal3_1_2.sol";
-import {JBSingleTokenPaymentTerminalStore3_1_1} from "@juicebox/JBSingleTokenPaymentTerminalStore3_1_1.sol";
+import {JBSingleTokenPaymentTerminalStore3_1_1} from
+    "@juicebox/JBSingleTokenPaymentTerminalStore3_1_1.sol";
 import {JBFundAccessConstraintsStore} from "@juicebox/JBFundAccessConstraintsStore.sol";
 import {JBFundingCycleStore} from "@juicebox/JBFundingCycleStore.sol";
 import {JBOperatorStore} from "@juicebox/JBOperatorStore.sol";
@@ -26,7 +27,8 @@ import {JBETHERC20SplitsPayerDeployer} from "@juicebox/JBETHERC20SplitsPayerDepl
 import {JBETHERC20SplitsPayer} from "@juicebox/JBETHERC20SplitsPayer.sol";
 import {JBETHPaymentTerminal3_1_2} from "@juicebox/JBETHPaymentTerminal3_1_2.sol";
 
-import {JBPayoutRedemptionPaymentTerminal3_1_2} from "@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol";
+import {JBPayoutRedemptionPaymentTerminal3_1_2} from
+    "@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol";
 import {JBSingleTokenPaymentTerminal} from "@juicebox/abstract/JBSingleTokenPaymentTerminal.sol";
 
 import {JBDidPayData3_1_1} from "@juicebox/structs/JBDidPayData3_1_1.sol";
@@ -55,19 +57,23 @@ import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
 import {IJBController3_1} from "@juicebox/interfaces/IJBController3_1.sol";
 import {IJBMigratable} from "@juicebox/interfaces/IJBMigratable.sol";
 import {IJBOperatorStore} from "@juicebox/interfaces/IJBOperatorStore.sol";
-import {IJBSingleTokenPaymentTerminalStore3_1_1} from "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol";
+import {IJBSingleTokenPaymentTerminalStore3_1_1} from
+    "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol";
 import {IJBProjects} from "@juicebox/interfaces/IJBProjects.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1} from "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
+import {IJBPayoutRedemptionPaymentTerminal3_1} from
+    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
 import {IJBDirectory} from "@juicebox/interfaces/IJBDirectory.sol";
 import {IJBFundingCycleStore} from "@juicebox/interfaces/IJBFundingCycleStore.sol";
 import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "@juicebox/interfaces/IJBTokenStore.sol";
 import {IJBSplitAllocator} from "@juicebox/interfaces/IJBSplitAllocator.sol";
 import {IJBPayDelegate3_1_1} from "@juicebox/interfaces/IJBPayDelegate3_1_1.sol";
-import {IJBFundingCycleDataSource3_1_1} from "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
+import {IJBFundingCycleDataSource3_1_1} from
+    "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBFeeGauge3_1} from "@juicebox/interfaces/IJBFeeGauge3_1.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1} from "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
+import {IJBPayoutRedemptionPaymentTerminal3_1} from
+    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
 import {IJBFeeHoldingTerminal} from "@juicebox/interfaces/IJBFeeHoldingTerminal.sol";
 import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
@@ -81,7 +87,8 @@ import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
 
 import {JBTokens} from "@juicebox/libraries/JBTokens.sol";
-import {JBFundingCycleMetadataResolver} from "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
+import {JBFundingCycleMetadataResolver} from
+    "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
@@ -129,8 +136,7 @@ contract TestBaseWorkflow is Test {
     JBFundAccessConstraintsStore internal _jbFundAccessConstraintsStore;
 
     // JBETHPaymentTerminalStore
-    JBSingleTokenPaymentTerminalStore3_1_1
-        internal _jbPaymentTerminalStore3_1_1;
+    JBSingleTokenPaymentTerminalStore3_1_1 internal _jbPaymentTerminalStore3_1_1;
 
     // JBETHPaymentTerminal3_1_2
     JBETHPaymentTerminal3_1_2 internal _jbETHPaymentTerminal3_1_2;
@@ -181,11 +187,7 @@ contract TestBaseWorkflow is Test {
         return _jbController;
     }
 
-    function jbAccessConstraintStore()
-        internal
-        view
-        returns (JBFundAccessConstraintsStore)
-    {
+    function jbAccessConstraintStore() internal view returns (JBFundAccessConstraintsStore) {
         return _jbFundAccessConstraintsStore;
     }
 
@@ -197,19 +199,11 @@ contract TestBaseWorkflow is Test {
         return _jbPaymentTerminalStore3_1_1;
     }
 
-    function jbETHPaymentTerminal()
-        internal
-        view
-        returns (JBETHPaymentTerminal3_1_2)
-    {
+    function jbETHPaymentTerminal() internal view returns (JBETHPaymentTerminal3_1_2) {
         return _jbETHPaymentTerminal3_1_2;
     }
 
-    function jbERC20PaymentTerminal()
-        internal
-        view
-        returns (JBERC20PaymentTerminal3_1_2)
-    {
+    function jbERC20PaymentTerminal() internal view returns (JBERC20PaymentTerminal3_1_2) {
         return _jbERC20PaymentTerminal3_1_2;
     }
 
@@ -280,10 +274,7 @@ contract TestBaseWorkflow is Test {
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(
             _jbDirectory
         );
-        vm.label(
-            address(_jbFundAccessConstraintsStore),
-            "JBFundAccessConstraintsStore"
-        );
+        vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
 
         // JBController3_1
         _jbController = new JBController3_1(
@@ -298,10 +289,7 @@ contract TestBaseWorkflow is Test {
         vm.label(address(_jbController), "JBController3_1");
 
         vm.prank(_multisig);
-        _jbDirectory.setIsAllowedToSetFirstController(
-            address(_jbController),
-            true
-        );
+        _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
         // JBETHPaymentTerminalStore
         _jbPaymentTerminalStore3_1_1 = new JBSingleTokenPaymentTerminalStore3_1_1(
@@ -309,10 +297,7 @@ contract TestBaseWorkflow is Test {
             _jbFundingCycleStore,
             _jbPrices
         );
-        vm.label(
-            address(_jbPaymentTerminalStore3_1_1),
-            "JBSingleTokenPaymentTerminalStore3_1_1"
-        );
+        vm.label(address(_jbPaymentTerminalStore3_1_1), "JBSingleTokenPaymentTerminalStore3_1_1");
 
         // AccessJBLib
         _accessJBLib = new AccessJBLib();
@@ -327,10 +312,7 @@ contract TestBaseWorkflow is Test {
             address(_jbPaymentTerminalStore3_1_1),
             _multisig
         );
-        vm.label(
-            address(_jbETHPaymentTerminal3_1_2),
-            "JBETHPaymentTerminal3_1_2"
-        );
+        vm.label(address(_jbETHPaymentTerminal3_1_2), "JBETHPaymentTerminal3_1_2");
 
         vm.prank(_multisig);
         _jbToken = new JBToken("MyToken", "MT", 1);
@@ -351,64 +333,32 @@ contract TestBaseWorkflow is Test {
             _multisig
         );
 
-        vm.label(
-            address(_jbERC20PaymentTerminal3_1_2),
-            "JBERC20PaymentTerminal3_1_2"
-        );
+        vm.label(address(_jbERC20PaymentTerminal3_1_2), "JBERC20PaymentTerminal3_1_2");
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so
-    function addressFrom(
-        address _origin,
-        uint256 _nonce
-    ) internal pure returns (address _address) {
+    function addressFrom(address _origin, uint256 _nonce)
+        internal
+        pure
+        returns (address _address)
+    {
         bytes memory data;
         if (_nonce == 0x00) {
-            data = abi.encodePacked(
-                bytes1(0xd6),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x80)
-            );
+            data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), _origin, bytes1(0x80));
         } else if (_nonce <= 0x7f) {
-            data = abi.encodePacked(
-                bytes1(0xd6),
-                bytes1(0x94),
-                _origin,
-                uint8(_nonce)
-            );
+            data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), _origin, uint8(_nonce));
         } else if (_nonce <= 0xff) {
-            data = abi.encodePacked(
-                bytes1(0xd7),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x81),
-                uint8(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xd7), bytes1(0x94), _origin, bytes1(0x81), uint8(_nonce));
         } else if (_nonce <= 0xffff) {
-            data = abi.encodePacked(
-                bytes1(0xd8),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x82),
-                uint16(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xd8), bytes1(0x94), _origin, bytes1(0x82), uint16(_nonce));
         } else if (_nonce <= 0xffffff) {
-            data = abi.encodePacked(
-                bytes1(0xd9),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x83),
-                uint24(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xd9), bytes1(0x94), _origin, bytes1(0x83), uint24(_nonce));
         } else {
-            data = abi.encodePacked(
-                bytes1(0xda),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x84),
-                uint32(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xda), bytes1(0x94), _origin, bytes1(0x84), uint32(_nonce));
         }
         bytes32 hash = keccak256(data);
         assembly {
@@ -417,10 +367,7 @@ contract TestBaseWorkflow is Test {
         }
     }
 
-    function strEqual(
-        string memory a,
-        string memory b
-    ) internal returns (bool) {
+    function strEqual(string memory a, string memory b) internal returns (bool) {
         return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
     }
 }
