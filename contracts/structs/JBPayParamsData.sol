@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
-import {JBTokenAmount} from './JBTokenAmount.sol';
+import {IJBPaymentTerminal} from "./../interfaces/IJBPaymentTerminal.sol";
+import {JBTokenAmount} from "./JBTokenAmount.sol";
 
 /// @custom:member terminal The terminal that is facilitating the payment.
 /// @custom:member payer The address from which the payment originated.
@@ -14,13 +14,13 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member reservedRate The reserved rate of the funding cycle during which the payment is being made.
 /// @custom:member metadata Extra data provided by the payer.
 struct JBPayParamsData {
-  IJBPaymentTerminal terminal;
-  address payer;
-  JBTokenAmount amount;
-  uint256 projectId;
-  uint256 currentFundingCycleConfiguration;
-  address beneficiary;
-  uint256 weight;
-  uint256 reservedRate;
-  bytes metadata;
+    IJBPaymentTerminal terminal;
+    address payer;
+    JBTokenAmount amount;
+    uint256 projectId;
+    uint256 currentFundingCycleConfiguration;
+    address beneficiary;
+    uint256 weight;
+    uint256 reservedRate;
+    bytes metadata;
 }
