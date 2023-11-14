@@ -114,13 +114,13 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     function addFeedFor(uint256 _projectId, uint256 _currency, uint256 _base, IJBPriceFeed _feed)
         external
         override
-        requirePermissionAllowingOverride(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations2.ADD_PRICE_FEED,
-            msg.sender == owner() && _projectId == 0
-        )
     {
+        if (msg.sender != owner() || _projectId != 0) {
+            _requirePermission(
+                projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
+            );
+        }
+
         // Make sure the currencies aren't 0.
         if (_currency == 0 || _base == 0) revert INVALID_CURRENCY();
 
