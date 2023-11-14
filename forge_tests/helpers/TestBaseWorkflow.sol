@@ -93,6 +93,8 @@ import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
 
+import {JBBallotState} from "@juicebox/enums/JBBallotState.sol";
+
 import "./AccessJBLib.sol";
 
 import "@paulrberg/contracts/math/PRBMath.sol";
@@ -238,40 +240,52 @@ contract TestBaseWorkflow is Test {
         address contractAtNoncePlusOne = addressFrom(address(this), 5);
 
         // JBFundingCycleStore
-        _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(contractAtNoncePlusOne));
+        _jbFundingCycleStore = new JBFundingCycleStore(
+            IJBDirectory(contractAtNoncePlusOne)
+        );
         vm.label(address(_jbFundingCycleStore), "JBFundingCycleStore");
 
         // JBDirectory
-        _jbDirectory =
-            new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
+        _jbDirectory = new JBDirectory(
+            _jbOperatorStore,
+            _jbProjects,
+            _jbFundingCycleStore,
+            _multisig
+        );
         vm.label(address(_jbDirectory), "JBDirectory");
 
         // JBTokenStore
         _jbTokenStore = new JBTokenStore(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore
+        );
         vm.label(address(_jbTokenStore), "JBTokenStore");
 
         // JBSplitsStore
-        _jbSplitsStore = new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory);
+        _jbSplitsStore = new JBSplitsStore(
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory
+        );
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
 
-        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
+        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(
+            _jbDirectory
+        );
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
 
         // JBController3_1
         _jbController = new JBController3_1(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbTokenStore,
-      _jbSplitsStore,
-      _jbFundAccessConstraintsStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbTokenStore,
+            _jbSplitsStore,
+            _jbFundAccessConstraintsStore
+        );
         vm.label(address(_jbController), "JBController3_1");
 
         vm.prank(_multisig);
@@ -279,10 +293,10 @@ contract TestBaseWorkflow is Test {
 
         // JBETHPaymentTerminalStore
         _jbPaymentTerminalStore3_1_1 = new JBSingleTokenPaymentTerminalStore3_1_1(
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbPrices
-    );
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbPrices
+        );
         vm.label(address(_jbPaymentTerminalStore3_1_1), "JBSingleTokenPaymentTerminalStore3_1_1");
 
         // AccessJBLib
@@ -290,34 +304,34 @@ contract TestBaseWorkflow is Test {
 
         // JBETHPaymentTerminal3_1_2
         _jbETHPaymentTerminal3_1_2 = new JBETHPaymentTerminal3_1_2(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbPrices,
-      address(_jbPaymentTerminalStore3_1_1),
-      _multisig
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbPrices,
+            address(_jbPaymentTerminalStore3_1_1),
+            _multisig
+        );
         vm.label(address(_jbETHPaymentTerminal3_1_2), "JBETHPaymentTerminal3_1_2");
 
         vm.prank(_multisig);
-        _jbToken = new JBToken('MyToken', 'MT', 1);
+        _jbToken = new JBToken("MyToken", "MT", 1);
 
         vm.prank(_multisig);
         _jbToken.mint(1, _multisig, 100 * 10 ** 18);
 
         // JBERC20PaymentTerminal3_1_2
         _jbERC20PaymentTerminal3_1_2 = new JBERC20PaymentTerminal3_1_2(
-      _jbToken,
-      1, // JBSplitsGroupe
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbPrices,
-      address(_jbPaymentTerminalStore3_1_1),
-      _multisig
-    );
+            _jbToken,
+            1, // JBSplitsGroupe
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbPrices,
+            address(_jbPaymentTerminalStore3_1_1),
+            _multisig
+        );
 
         vm.label(address(_jbERC20PaymentTerminal3_1_2), "JBERC20PaymentTerminal3_1_2");
     }

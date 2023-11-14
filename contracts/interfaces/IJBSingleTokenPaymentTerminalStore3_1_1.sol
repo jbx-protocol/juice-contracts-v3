@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
 import {JBPayDelegateAllocation3_1_1} from "./../structs/JBPayDelegateAllocation3_1_1.sol";
-import {JBRedemptionDelegateAllocation3_1_1} from "./../structs/JBRedemptionDelegateAllocation3_1_1.sol";
+import {JBRedemptionDelegateAllocation3_1_1} from
+    "./../structs/JBRedemptionDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "./../structs/JBTokenAmount.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
@@ -17,10 +18,10 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
 
     function prices() external view returns (IJBPrices);
 
-    function balanceOf(
-        IJBSingleTokenPaymentTerminal terminal,
-        uint256 projectId
-    ) external view returns (uint256);
+    function balanceOf(IJBSingleTokenPaymentTerminal terminal, uint256 projectId)
+        external
+        view
+        returns (uint256);
 
     function usedDistributionLimitOf(
         IJBSingleTokenPaymentTerminal terminal,
@@ -34,16 +35,15 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
         uint256 fundingCycleConfiguration
     ) external view returns (uint256);
 
-    function currentOverflowOf(
-        IJBSingleTokenPaymentTerminal terminal,
-        uint256 projectId
-    ) external view returns (uint256);
+    function currentOverflowOf(IJBSingleTokenPaymentTerminal terminal, uint256 projectId)
+        external
+        view
+        returns (uint256);
 
-    function currentTotalOverflowOf(
-        uint256 projectId,
-        uint256 decimals,
-        uint256 currency
-    ) external view returns (uint256);
+    function currentTotalOverflowOf(uint256 projectId, uint256 decimals, uint256 currency)
+        external
+        view
+        returns (uint256);
 
     function currentReclaimableOverflowOf(
         IJBSingleTokenPaymentTerminal terminal,
@@ -90,25 +90,15 @@ interface IJBSingleTokenPaymentTerminalStore3_1_1 {
             string memory outputMemo
         );
 
-    function recordDistributionFor(
-        uint256 projectId,
-        uint256 amount,
-        uint256 currency
-    )
+    function recordDistributionFor(uint256 projectId, uint256 amount, uint256 currency)
         external
         returns (JBFundingCycle memory fundingCycle, uint256 distributedAmount);
 
-    function recordUsedAllowanceOf(
-        uint256 projectId,
-        uint256 amount,
-        uint256 currency
-    )
+    function recordUsedAllowanceOf(uint256 projectId, uint256 amount, uint256 currency)
         external
         returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);
 
     function recordAddedBalanceFor(uint256 projectId, uint256 amount) external;
 
-    function recordMigration(
-        uint256 projectId
-    ) external returns (uint256 balance);
+    function recordMigration(uint256 projectId) external returns (uint256 balance);
 }
