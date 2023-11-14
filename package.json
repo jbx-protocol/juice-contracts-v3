@@ -38,12 +38,15 @@
     "solidity-coverage": "^0.8.0-beta.1"
   },
   "scripts": {
-    "chain": "hardhat node",
-    "account": "hardhat account",
-    "test": "mocha './test/**/*.test.js' -r esm --bail --timeout 20000 && FOUNDRY_PROFILE=fork foundry test",
-    "coverage": "node --require esm ./node_modules/.bin/hardhat coverage --network hardhat",
-    "clean": "rimraf ./cache && rimraf ./artifacts",
-    "compile": "yarn clean && hardhat compile",
-    "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
+    "preinstall": "if [ \"$CI\" != \"true\" ]; then forge install; fi",
+    "test": "forge test",
+    "test:fork": "FOUNDRY_PROFILE=CI forge test",
+    "size": "forge build --sizes",
+    "coverage": "forge coverage --match-path ./src/*.sol --report lcov --report summary",
+    "doc": "forge doc",
+    "tree": "forge tree",
+    "deploy:mainnet": "source .env && forge script DeployMainnet --chain-id 1 --rpc-url $RPC_MAINNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_MAINNET -vvv",
+    "deploy:goerli": "source .env && forge script DeployGoerli --chain-id 5 --rpc-url $RPC_GOERLI --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_GOERLI -vvv",
+    "lint": "forge fmt"
   }
 }
