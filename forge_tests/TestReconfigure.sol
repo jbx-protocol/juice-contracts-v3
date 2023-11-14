@@ -771,4 +771,31 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(queued.configuration, expectedTimestamp);
         assertEq(queued.weight, weightSecondReconfiguration);
     }
+
+    function testBallot(uint256 _start, uint256 _configuration, uint256 _duration) public {
+        _start = bound(_start, block.timestamp, block.timestamp + 1000 days);
+        _configuration = bound(_configuration, block.timestamp, block.timestamp + 1000 days);
+        _duration = bound(_duration, 1, block.timestamp);
+
+        JBReconfigurationBufferBallot ballot = new JBReconfigurationBufferBallot(_duration);
+
+        JBBallotState _currentState = ballot.stateOf(1, _configuration, _start); // 1 is the projectId, unused
+
+        // Configuration is after ballot starting -> ballot failed
+        if (_configuration > _start) {
+            assertEq(uint256(_currentState), uint256(JBBallotState.Failed));
+        }
+        // ballot starts less than in less than a duration away from the configuration -> failed (ie would start mid-cycle)
+        else if (_start - _duration < _configuration) {
+            assertEq(uint256(_currentState), uint256(JBBallotState.Failed));
+        }
+        // ballot starts in more than a _duration away (ie will be approved when enough time has passed) -> approval expected
+        else if (block.timestamp + _duration < _start) {
+            assertEq(uint256(_currentState), uint256(JBBallotState.ApprovalExpected));
+        }
+        // if enough time has passed since ballot start, approved
+        else if (block.timestamp + _duration > _start) {
+            assertEq(uint256(_currentState), uint256(JBBallotState.Approved));
+        }
+    }
 }
