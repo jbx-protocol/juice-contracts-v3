@@ -174,10 +174,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             // Expect an event to be emitted for every delegate
             vm.expectEmit(true, true, true, true);
             emit DelegateDidPay(
-                IJBPayDelegate3_1_1(_delegateAddress),
-                _didPayData,
-                _payDelegateAmounts[i],
-                _payer
+                IJBPayDelegate3_1_1(_delegateAddress), _didPayData, _payDelegateAmounts[i], _payer
             );
         }
 
