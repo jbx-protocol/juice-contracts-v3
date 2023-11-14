@@ -9,7 +9,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     IJBPayoutRedemptionPaymentTerminal3_1 private _terminal;
     JBTokenStore private _tokenStore;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata _metadata; 
+    JBFundingCycleMetadata _metadata;
     uint256 private _projectId;
     address private _projectOwner;
     address private _beneficiary;
@@ -60,23 +60,16 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
-         _distributionLimits[0] = JBCurrencyAmount({
-            value: 0,
-            currency: jbLibraries().ETH()
-        });  
+        _distributionLimits[0] = JBCurrencyAmount({value: 0, currency: jbLibraries().ETH()});
 
-        _overflowAllowances[0] = JBCurrencyAmount({
-            value: 0,
-            currency: jbLibraries().ETH()
+        _overflowAllowances[0] = JBCurrencyAmount({value: 0, currency: jbLibraries().ETH()});
+
+        _fundAccessConstraints[0] = JBFundAccessConstraints({
+            terminal: _terminal,
+            token: jbLibraries().ETHToken(),
+            distributionLimits: _distributionLimits,
+            overflowAllowances: _overflowAllowances
         });
-
-        _fundAccessConstraints[0] =
-            JBFundAccessConstraints({
-                terminal: _terminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimits: _distributionLimits,
-                overflowAllowances: _overflowAllowances
-            });
 
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
 
@@ -103,13 +96,13 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             memo: ""
         });
     }
-    
+
     function testFuzzPayBurnRedeemFlow(
         bool _payPreferClaimed,
         bool _burnPreferClaimed,
         uint96 _ethPayAmount,
-        uint256 _burnTokenAmount, 
-        uint256 _redeemTokenAmount 
+        uint256 _burnTokenAmount,
+        uint256 _redeemTokenAmount
     ) external {
         // Issue an ERC-20 token for project.
         vm.prank(_projectOwner);
@@ -117,13 +110,13 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         // Make a payment.
         _terminal.pay{value: _ethPayAmount}({
-            projectId: _projectId, 
-            amount: _ethPayAmount, 
-            token: address(0), //unused 
-            beneficiary: _beneficiary, 
-            minReturnedTokens: 0, 
-            preferClaimedTokens: _payPreferClaimed, 
-            memo: "Take my money!", 
+            projectId: _projectId,
+            amount: _ethPayAmount,
+            token: address(0), //unused
+            beneficiary: _beneficiary,
+            minReturnedTokens: 0,
+            preferClaimedTokens: _payPreferClaimed,
+            memo: "Take my money!",
             metadata: new bytes(0)
         });
 
@@ -133,7 +126,12 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         // Make sure the ETH balance in terminal is up to date.
         uint256 _terminalBalance = _ethPayAmount;
-        assertEq(jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(_terminal)), _projectId), _terminalBalance);
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(
+                IJBSingleTokenPaymentTerminal(address(_terminal)), _projectId
+            ),
+            _terminalBalance
+        );
 
         // Burn tokens from beneficiary.
         if (_burnTokenAmount == 0) {
@@ -179,6 +177,11 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the ETH balance in terminal is up to date.
-        assertEq(jbPaymentTerminalStore().balanceOf(IJBSingleTokenPaymentTerminal(address(_terminal)), _projectId), _terminalBalance - _reclaimAmt);
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(
+                IJBSingleTokenPaymentTerminal(address(_terminal)), _projectId
+            ),
+            _terminalBalance - _reclaimAmt
+        );
     }
 }

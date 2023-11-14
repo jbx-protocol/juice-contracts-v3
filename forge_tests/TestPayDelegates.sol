@@ -5,7 +5,12 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // Payments can be forwarded to any number of pay delegates.
 contract TestPayDelegates_Local is TestBaseWorkflow {
-    event DelegateDidPay(IJBPayDelegate3_1_1 indexed delegate, JBDidPayData3_1_1 data, uint256 delegatedAmount, address caller);
+    event DelegateDidPay(
+        IJBPayDelegate3_1_1 indexed delegate,
+        JBDidPayData3_1_1 data,
+        uint256 delegatedAmount,
+        address caller
+    );
 
     JBController3_1 private _controller;
     JBProjectMetadata private _projectMetadata;
@@ -40,7 +45,7 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
                 allowSetController: false,
                 pauseTransfers: false
             }),
-            reservedRate: 0, 
+            reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: 1,
             pausePay: false,
@@ -68,11 +73,7 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
 
         _terminals.push(jbETHPaymentTerminal());
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
@@ -84,7 +85,8 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
         _ethPayAmount = bound(_ethPayAmount, _numberOfAllocations, type(uint256).max - 1);
 
         // Package up the allocations.
-        JBPayDelegateAllocation3_1_1[] memory _allocations = new JBPayDelegateAllocation3_1_1[](_numberOfAllocations);
+        JBPayDelegateAllocation3_1_1[] memory _allocations =
+            new JBPayDelegateAllocation3_1_1[](_numberOfAllocations);
         uint256[] memory _payDelegateAmounts = new uint256[](_numberOfAllocations);
 
         {
@@ -92,7 +94,7 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             uint256 _ethToAllocate = _ethPayAmount;
 
             // Allocate small amounts to each delegate except the last one.
-            for (uint256 i ; i < _payDelegateAmounts.length - 1; i++) {
+            for (uint256 i; i < _payDelegateAmounts.length - 1; i++) {
                 uint256 _amount = _ethToAllocate / (_payDelegateAmounts.length * 2);
                 _payDelegateAmounts[i] = _amount;
                 _ethToAllocate -= _amount;
@@ -103,23 +105,25 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
         }
 
         // Keep a reference to the current funding cycle.
-        (JBFundingCycle memory _fundingCycle, ) =
-            _controller.currentFundingCycleOf(_projectId);
+        (JBFundingCycle memory _fundingCycle,) = _controller.currentFundingCycleOf(_projectId);
 
-        // Make some data to pass along to the delegate. 
+        // Make some data to pass along to the delegate.
         bytes memory _somePayerMetadata = bytes("Some payer metadata");
 
         // Iterate through each delegate expected to be called.
         for (uint256 i = 0; i < _payDelegateAmounts.length; i++) {
             // Create a delegate address.
-            address _delegateAddress = address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
+            address _delegateAddress =
+                address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
 
-            // Make some data to pass along to the delegate from the data source. 
+            // Make some data to pass along to the delegate from the data source.
             bytes memory _someData = new bytes(1);
             _someData[0] = keccak256(abi.encodePacked(i))[0];
 
             // Specify a call to the delegate, forwarding the specified amount.
-            _allocations[i] = JBPayDelegateAllocation3_1_1(IJBPayDelegate3_1_1(_delegateAddress), _payDelegateAmounts[i], _someData);
+            _allocations[i] = JBPayDelegateAllocation3_1_1(
+                IJBPayDelegate3_1_1(_delegateAddress), _payDelegateAmounts[i], _someData
+            );
 
             // Keep a reference to the data expected to be sent to the delegate being iterated on.
             JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1({
@@ -131,13 +135,13 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
                     _ethPayAmount,
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
-                ),
+                    ),
                 forwardedAmount: JBTokenAmount(
                     JBTokens.ETH,
                     _payDelegateAmounts[i],
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
                     JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
-                ),
+                    ),
                 weight: _fundingCycle.weight,
                 projectTokenCount: 0,
                 beneficiary: _beneficiary,
@@ -148,19 +152,23 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             });
 
             // Mock the delegate's didPay.
-            vm.mockCall(_delegateAddress, abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector), "");
+            vm.mockCall(
+                _delegateAddress, abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector), ""
+            );
 
             // Make sure the delegate gets called with the expected value.
             vm.expectCall(
-                _delegateAddress, _payDelegateAmounts[i], abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector, _didPayData)
+                _delegateAddress,
+                _payDelegateAmounts[i],
+                abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector, _didPayData)
             );
 
             // Expect an event to be emitted for every delegate
             vm.expectEmit(true, true, true, true);
             emit DelegateDidPay({
-                delegate: IJBPayDelegate3_1_1(_delegateAddress), 
-                data: _didPayData, 
-                delegatedAmount: _payDelegateAmounts[i], 
+                delegate: IJBPayDelegate3_1_1(_delegateAddress),
+                data: _didPayData,
+                delegatedAmount: _payDelegateAmounts[i],
                 caller: _beneficiary
             });
         }
@@ -176,11 +184,18 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             )
         );
 
-        // Make the payment. 
+        // Make the payment.
         vm.deal(_beneficiary, _ethPayAmount);
         vm.prank(_beneficiary);
         _terminals[0].pay{value: _ethPayAmount}(
-            _projectId, _ethPayAmount, address(0), _beneficiary, 0, false, "Forge test", _somePayerMetadata
+            _projectId,
+            _ethPayAmount,
+            address(0),
+            _beneficiary,
+            0,
+            false,
+            "Forge test",
+            _somePayerMetadata
         );
     }
 }

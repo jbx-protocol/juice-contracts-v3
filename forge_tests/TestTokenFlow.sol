@@ -63,11 +63,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
@@ -82,11 +78,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         if (_issueToken) {
             // Issue an ERC-20 token for project
-            _tokenStore.issueFor({
-                projectId: _projectId, 
-                name: "TestName", 
-                symbol: "TestSymbol"
-            });
+            _tokenStore.issueFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
         } else {
             // Create a new IJBToken and change it's owner to the tokenStore
             IJBToken _newToken = new JBToken({
@@ -103,25 +95,25 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             // Make sure the project's new JBToken is set.
             assertEq(address(_tokenStore.tokenOf(_projectId)), address(_newToken));
         }
-  
+
         // Expect revert if there are no tokens being minted.
         if (_mintAmount == 0) vm.expectRevert(abi.encodeWithSignature("ZERO_TOKENS_TO_MINT()"));
 
         // Mint tokens to beneficiary.
         _controller.mintTokensOf({
-            projectId: _projectId, 
-            tokenCount: _mintAmount, 
-            beneficiary: _beneficiary, 
-            memo: "Mint memo", 
-            preferClaimedTokens: _mintPreferClaimed, 
-            useReservedRate: true 
-        }
-        );
+            projectId: _projectId,
+            tokenCount: _mintAmount,
+            beneficiary: _beneficiary,
+            memo: "Mint memo",
+            preferClaimedTokens: _mintPreferClaimed,
+            useReservedRate: true
+        });
 
-        uint256 _expectedTokenBalance = _mintAmount * _metadata.reservedRate / jbLibraries().MAX_RESERVED_RATE();
+        uint256 _expectedTokenBalance =
+            _mintAmount * _metadata.reservedRate / jbLibraries().MAX_RESERVED_RATE();
 
         // Make sure the beneficiary has the correct amount of tokens.
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance );
+        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance);
 
         if (_burnAmount == 0) {
             vm.expectRevert(abi.encodeWithSignature("NO_BURNABLE_TOKENS()"));
@@ -151,29 +143,25 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         vm.startPrank(_projectOwner);
 
         // Issue an ERC-20 token for project,
-        _tokenStore.issueFor({
-            projectId: _projectId, 
-            name: "TestName", 
-            symbol: "TestSymbol"
-        });
+        _tokenStore.issueFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
 
         // Mint claimed tokens to beneficiary.
         _controller.mintTokensOf({
-            projectId: _projectId, 
-            tokenCount: type(uint224).max / 2, 
-            beneficiary: _beneficiary, 
-            memo: "Mint memo", 
-            preferClaimedTokens: true, 
-            useReservedRate: false 
+            projectId: _projectId,
+            tokenCount: type(uint224).max / 2,
+            beneficiary: _beneficiary,
+            memo: "Mint memo",
+            preferClaimedTokens: true,
+            useReservedRate: false
         });
 
         // Mint unclaimed tokens to beneficiary
         _controller.mintTokensOf({
-            projectId: _projectId, 
-            tokenCount: type(uint224).max / 2, 
-            beneficiary: _beneficiary, 
-            memo: "Mint memo", 
-            preferClaimedTokens: false, 
+            projectId: _projectId,
+            tokenCount: type(uint224).max / 2,
+            beneficiary: _beneficiary,
+            memo: "Mint memo",
+            preferClaimedTokens: false,
             useReservedRate: false
         });
 

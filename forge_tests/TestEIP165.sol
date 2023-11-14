@@ -5,7 +5,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /// Contracts are introspective about the interfaces they adhere to.
 contract TestEIP165_Local is TestBaseWorkflow {
-    bytes4 constant private _notSupportedInterface = 0xffffffff;
+    bytes4 private constant _notSupportedInterface = 0xffffffff;
 
     uint256 constant _projectId = 2;
     uint256 constant _splitsProjectId = 3;
@@ -42,7 +42,9 @@ contract TestEIP165_Local is TestBaseWorkflow {
         assertTrue(_terminal.supportsInterface(type(IJBOperatable).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId));
+        assertTrue(
+            _terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId)
+        );
 
         // Make sure it doesn't always return true
         assertTrue(!_terminal.supportsInterface(_notSupportedInterface));
@@ -60,7 +62,9 @@ contract TestEIP165_Local is TestBaseWorkflow {
 
         assertTrue(_terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId));
+        assertTrue(
+            _terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId)
+        );
         // Make sure it doesn't always return true
         assertTrue(!_terminal.supportsInterface(_notSupportedInterface));
     }
@@ -91,24 +95,26 @@ contract TestEIP165_Local is TestBaseWorkflow {
     }
 
     function testJBETHERC20SplitsPayer() public {
-      
         JBETHERC20SplitsPayerDeployer _deployer = new JBETHERC20SplitsPayerDeployer(jbSplitsStore());
 
         JBETHERC20SplitsPayer _splitsPayer = JBETHERC20SplitsPayer(
             payable(
                 address(
-                _deployer.deploySplitsPayer(
-                    _splitsProjectId,
-                    _splitsDomain,
-                    _splitsGroup,
-                    _projectId,
-                    _splitsBeneficiary,
-                    _splitsPreferClaimedTokens,
-                    _splitsMemo,
-                    _splitsMetadata,
-                    _splitsPreferAddToBalance,
-                    _splitsOwner
-        ))));
+                    _deployer.deploySplitsPayer(
+                        _splitsProjectId,
+                        _splitsDomain,
+                        _splitsGroup,
+                        _projectId,
+                        _splitsBeneficiary,
+                        _splitsPreferClaimedTokens,
+                        _splitsMemo,
+                        _splitsMetadata,
+                        _splitsPreferAddToBalance,
+                        _splitsOwner
+                    )
+                )
+            )
+        );
 
         // Should support these interfaces
         assertTrue(_splitsPayer.supportsInterface(type(IERC165).interfaceId));

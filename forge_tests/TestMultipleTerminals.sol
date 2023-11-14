@@ -20,7 +20,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBTokenStore _tokenStore;
     address _projectOwner;
 
-    address caller = address(6942069);
+    address caller = address(6_942_069);
 
     uint256 FAKE_PRICE = 10;
     uint256 WEIGHT = 1000 * 10 ** 18;
@@ -66,7 +66,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 5000, //50%
-            redemptionRate: 10000, //100%
+            redemptionRate: 10_000, //100%
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
@@ -84,7 +84,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-            ERC20terminal = new JBERC20PaymentTerminal3_1_2(
+        ERC20terminal = new JBERC20PaymentTerminal3_1_2(
                 jbToken(),
                 1, // JBSplitsGroupe
                 jbOperatorStore(),
@@ -96,7 +96,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
                 multisig(),
                 permit2()
             );
-        
+
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](2);
@@ -106,43 +106,33 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _distributionLimits2 = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances2 = new JBCurrencyAmount[](1);
 
-        _distributionLimits[0] = JBCurrencyAmount({
-            value: 10 * 10 ** 18,
-            currency: jbLibraries().USD()
-        });  
+        _distributionLimits[0] =
+            JBCurrencyAmount({value: 10 * 10 ** 18, currency: jbLibraries().USD()});
 
-        _overflowAllowances[0] = JBCurrencyAmount({
-            value: 5 * 10 ** 18,
-            currency: jbLibraries().USD()
-        });
+        _overflowAllowances[0] =
+            JBCurrencyAmount({value: 5 * 10 ** 18, currency: jbLibraries().USD()});
 
-        _distributionLimits2[0] = JBCurrencyAmount({
-            value: 10 * 10 ** 18,
-            currency: jbLibraries().ETH()
-        });  
+        _distributionLimits2[0] =
+            JBCurrencyAmount({value: 10 * 10 ** 18, currency: jbLibraries().ETH()});
 
-        _overflowAllowances2[0] = JBCurrencyAmount({
-            value: 5 * 10 ** 18,
-            currency: jbLibraries().ETH()
-        });
+        _overflowAllowances2[0] =
+            JBCurrencyAmount({value: 5 * 10 ** 18, currency: jbLibraries().ETH()});
 
         ETHterminal = jbETHPaymentTerminal();
 
-        _fundAccessConstraints[0] =
-            JBFundAccessConstraints({
-                terminal: ERC20terminal,
-                token: address(jbToken()),
-                distributionLimits: _distributionLimits,
-                overflowAllowances: _overflowAllowances
-            });
+        _fundAccessConstraints[0] = JBFundAccessConstraints({
+            terminal: ERC20terminal,
+            token: address(jbToken()),
+            distributionLimits: _distributionLimits,
+            overflowAllowances: _overflowAllowances
+        });
 
-        _fundAccessConstraints[1] = 
-            JBFundAccessConstraints({
-                terminal: ETHterminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimits: _distributionLimits2,
-                overflowAllowances: _overflowAllowances2
-            });
+        _fundAccessConstraints[1] = JBFundAccessConstraints({
+            terminal: ETHterminal,
+            token: jbLibraries().ETHToken(),
+            distributionLimits: _distributionLimits2,
+            overflowAllowances: _overflowAllowances2
+        });
 
         _terminals.push(ERC20terminal);
         _terminals.push(ETHterminal);
@@ -156,11 +146,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         projectId = controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         vm.startPrank(_projectOwner);
@@ -196,7 +182,9 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         vm.prank(caller); // back to regular msg.sender (bug?)
         jbToken().approve(address(ERC20terminal), 20 * 10 ** 18);
         vm.prank(caller); // back to regular msg.sender (bug?)
-        ERC20terminal.pay(projectId, 20 * 10 ** 18, address(0), caller, 0, false, "Forge test", new bytes(0));
+        ERC20terminal.pay(
+            projectId, 20 * 10 ** 18, address(0), caller, 0, false, "Forge test", new bytes(0)
+        );
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
         // price feed will return FAKE_PRICE; since it's an 18 decimal terminal (ie calling getPrice(18) )
@@ -207,7 +195,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(ERC20terminal, projectId), 20 * 10 ** 18);
 
         // ---- Pay in ETH ----
-        address beneficiaryTwo = address(696969);
+        address beneficiaryTwo = address(696_969);
         ETHterminal.pay{value: 20 ether}(
             projectId, 20 ether, address(0), beneficiaryTwo, 0, false, "Forge test", new bytes(0)
         ); // funding target met and 10 ETH are now in the overflow
@@ -229,16 +217,20 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             1, // Min wei out
             payable(msg.sender), // Beneficiary
             "MEMO",
-            bytes('')
+            bytes("")
         );
-        
+
         vm.stopPrank();
 
         // Funds leaving the contract -> take the fee
         assertEq(
             jbToken().balanceOf(msg.sender),
-            // Inverse price is returned, normalized to 18 decimals 
-            PRBMath.mulDiv(PRBMath.mulDiv((5 * 10 ** 18), _priceFeedJbUsd.currentPrice(18), 10 ** 18), jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee())
+            // Inverse price is returned, normalized to 18 decimals
+            PRBMath.mulDiv(
+                PRBMath.mulDiv((5 * 10 ** 18), _priceFeedJbUsd.currentPrice(18), 10 ** 18),
+                jbLibraries().MAX_FEE(),
+                jbLibraries().MAX_FEE() + ERC20terminal.fee()
+            )
         );
 
         // Distribute the funding target ETH
@@ -252,12 +244,14 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             0, // Min wei out
             "" // Memo
         );
-        
+
         // Funds leaving the ecosystem -> fee taken
         assertEq(
             caller.balance,
             initBalance
-                + PRBMath.mulDiv(10 * 10 ** 18, jbLibraries().MAX_FEE(), ETHterminal.fee() + jbLibraries().MAX_FEE())
+                + PRBMath.mulDiv(
+                    10 * 10 ** 18, jbLibraries().MAX_FEE(), ETHterminal.fee() + jbLibraries().MAX_FEE()
+                )
         );
 
         // redeem eth from the overflow by the token holder:

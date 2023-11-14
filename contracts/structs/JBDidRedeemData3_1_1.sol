@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBTokenAmount} from './JBTokenAmount.sol';
+import {JBTokenAmount} from "./JBTokenAmount.sol";
 
 /// @custom:member holder The holder of the tokens being redeemed.
 /// @custom:member projectId The ID of the project with which the redeemed tokens are associated.
@@ -15,15 +15,15 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member dataSourceMetadata Extra data to send to the delegate sent by the data source.
 /// @custom:member redeemerMetadata Extra data to send to the delegate sent by the redeemer.
 struct JBDidRedeemData3_1_1 {
-  address holder;
-  uint256 projectId;
-  uint256 currentFundingCycleConfiguration;
-  uint256 projectTokenCount;
-  JBTokenAmount reclaimedAmount;
-  JBTokenAmount forwardedAmount;
-  uint256 redemptionRate;
-  address payable beneficiary;
-  string memo;
-  bytes dataSourceMetadata;
-  bytes redeemerMetadata;
+    address holder;
+    uint256 projectId;
+    uint256 currentFundingCycleConfiguration;
+    uint256 projectTokenCount;
+    JBTokenAmount reclaimedAmount;
+    JBTokenAmount forwardedAmount;
+    uint256 redemptionRate;
+    address payable beneficiary;
+    string memo;
+    bytes dataSourceMetadata;
+    bytes redeemerMetadata;
 }

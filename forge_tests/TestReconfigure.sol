@@ -23,7 +23,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _controller = jbController();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _ballot = new JBReconfigurationBufferBallot(_BALLOT_DURATION);
-        _data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: 10000 * 10 ** 18, discountRate: 0, ballot: _ballot});
+        _data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: 10_000 * 10 ** 18,
+            discountRate: 0,
+            ballot: _ballot
+        });
         _dataWithoutBallot = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
             weight: 1000 * 10 ** 18,
@@ -96,11 +101,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         // Add a cycle.
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _cycleConfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _cycleConfig, "");
 
         // Make sure the current cycle hasn't changed.
         _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -157,36 +158,38 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Package up a reconfiguration.
         JBFundingCycleConfiguration[] memory _firstReconfig = new JBFundingCycleConfiguration[](1);
         _firstReconfig[0].mustStartAtOrAfter = 0;
-        _firstReconfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightFirstReconfiguration, discountRate: 0, ballot: _ballot}); // 3days ballot;
+        _firstReconfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightFirstReconfiguration,
+            discountRate: 0,
+            ballot: _ballot
+        }); // 3days ballot;
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].groupedSplits = _groupedSplits;
         _firstReconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Reconfigure
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _firstReconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _firstReconfig, "");
 
         // Package up another reconfiguration.
         JBFundingCycleConfiguration[] memory _secondReconfig = new JBFundingCycleConfiguration[](1);
         _secondReconfig[0].mustStartAtOrAfter = 0;
-        _secondReconfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightSecondReconfiguration, discountRate: 0, ballot: _ballot}); // 3days ballot;
+        _secondReconfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightSecondReconfiguration,
+            discountRate: 0,
+            ballot: _ballot
+        }); // 3days ballot;
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].groupedSplits = _groupedSplits;
         _secondReconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Reconfigure again
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _secondReconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _secondReconfig, "");
 
-         // Since the second reconfiguration happened during the same block as the one prior, increment the config.
+        // Since the second reconfiguration happened during the same block as the one prior, increment the config.
         uint256 secondReconfiguration = block.timestamp + 1;
 
         // The current funding cycle should not have changed, still in FC#2, rolled over from FC#1.
@@ -219,7 +222,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _ballot = new JBReconfigurationBufferBallot(_ballotDuration);
 
         // Package the funding cycle configuration data.
-        _data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: 10000 ether, discountRate: 0, ballot: _ballot});
+        _data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: 10_000 ether,
+            discountRate: 0,
+            ballot: _ballot
+        });
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
@@ -263,9 +271,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
             // Submit the reconfiguration.
             vm.prank(multisig());
-            _controller.reconfigureFundingCyclesOf(
-                projectId, _reconfig, ""
-            );
+            _controller.reconfigureFundingCyclesOf(projectId, _reconfig, "");
 
             // Get a refernce to the current and queued funding cycles.
             currentFundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -277,7 +283,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             // If the full ballot duration included in the funding cycle.
             if (
                 _ballotDuration == 0
-                    || currentFundingCycle.duration % (_ballotDuration + i * 1 days) < currentFundingCycle.duration
+                    || currentFundingCycle.duration % (_ballotDuration + i * 1 days)
+                        < currentFundingCycle.duration
             ) {
                 // Make sure the current cycle's weight is still linearly decremented.
                 assertEq(currentFundingCycle.weight, initialFundingCycle.weight - i);
@@ -328,7 +335,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Package another with a bad ballot.
         JBFundingCycleData memory _dataNew = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
-            weight: 12345 * 10 ** 18,
+            weight: 12_345 * 10 ** 18,
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(6969)) // Wrong ballot address
         });
@@ -343,18 +350,19 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _reconfig[0].groupedSplits = _groupedSplits;
         _reconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _reconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _reconfig, "");
     }
 
     function testReconfigureShortDurationProject() public {
         uint256 _shortDuration = 5 minutes;
 
         // Package a funding cycle reconfiguration.
-        _data = JBFundingCycleData({duration: _shortDuration, weight: 10000 * 10 ** 18, discountRate: 0, ballot: _ballot});
+        _data = JBFundingCycleData({
+            duration: _shortDuration,
+            weight: 10_000 * 10 ** 18,
+            discountRate: 0,
+            ballot: _ballot
+        });
         _dataReconfiguration = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
             weight: 69 * 10 ** 18,
@@ -397,13 +405,9 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         // Submit the reconfiguration.
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _reconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _reconfig, "");
 
-        // Make sure the cycle hasn't changed. 
+        // Make sure the cycle hasn't changed.
         _fundingCycle = jbFundingCycleStore().currentOf(projectId);
         assertEq(_fundingCycle.number, 1);
         assertEq(_fundingCycle.configuration, _currentConfiguration);
@@ -422,7 +426,9 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         // Make sure the reconfiguration is in effect.
         _newFundingCycle = jbFundingCycleStore().currentOf(projectId);
-        assertEq(_newFundingCycle.number, _fundingCycle.number + (_BALLOT_DURATION / _shortDuration) + 1);
+        assertEq(
+            _newFundingCycle.number, _fundingCycle.number + (_BALLOT_DURATION / _shortDuration) + 1
+        );
         assertEq(_newFundingCycle.weight, _dataReconfiguration.weight);
     }
 
@@ -430,7 +436,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Package a reconfiguration.
         _data = JBFundingCycleData({
             duration: 5 minutes,
-            weight: 10000 * 10 ** 18,
+            weight: 10_000 * 10 ** 18,
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
@@ -473,11 +479,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _reconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _reconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _reconfig, "");
 
         // Make sure the cycle hasn't changed.
         _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -503,7 +505,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Package up a reconfiguration.
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightInitial, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}); // 3days ballot;
+        _cycleConfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightInitial,
+            discountRate: 0,
+            ballot: JBReconfigurationBufferBallot(_ballot)
+        }); // 3days ballot;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
@@ -528,18 +535,19 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Package up a reconfiguration.
         JBFundingCycleConfiguration[] memory _firstReconfig = new JBFundingCycleConfiguration[](1);
         _firstReconfig[0].mustStartAtOrAfter = 0;
-        _firstReconfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightFirstReconfiguration, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}); // 3days ballot;
+        _firstReconfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightFirstReconfiguration,
+            discountRate: 0,
+            ballot: JBReconfigurationBufferBallot(_ballot)
+        }); // 3days ballot;
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].groupedSplits = _groupedSplits;
         _firstReconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Submit a reconfiguration to-be overridden (will be in ApprovalExpected status due to ballot)
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _firstReconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _firstReconfig, "");
 
         // Make sure the configuration is queued
         JBFundingCycle memory _queued = jbFundingCycleStore().queuedOf(projectId);
@@ -550,7 +558,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Package up another reconfiguration
         JBFundingCycleConfiguration[] memory _secondReconfig = new JBFundingCycleConfiguration[](1);
         _secondReconfig[0].mustStartAtOrAfter = block.timestamp + 9 days;
-        _secondReconfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightSecondReconfiguration, discountRate: 0, ballot: JBReconfigurationBufferBallot(_ballot)}); // 3days ballot;
+        _secondReconfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightSecondReconfiguration,
+            discountRate: 0,
+            ballot: JBReconfigurationBufferBallot(_ballot)
+        }); // 3days ballot;
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].groupedSplits = _groupedSplits;
         _secondReconfig[0].fundAccessConstraints = _fundAccessConstraints;
@@ -559,11 +572,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Will follow the rolledover (FC #1) cycle, after overriding the above config, bc first reconfig is in ApprovalExpected status (3 days ballot has not passed)
         // FC #1 rolls over bc our mustStartAtOrAfter occurs later than when FC #1 ends.
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _secondReconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _secondReconfig, "");
 
         // Make sure this latest reconfiguration implies a rolled over cycle of FC #1.
         JBFundingCycle memory _requeued = jbFundingCycleStore().queuedOf(projectId);
@@ -588,7 +597,6 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
     }
 
     function testSingleBlockOverwriteQueued() public {
-
         // Keep references to our different weights for assertions
         uint256 _weightFirstReconfiguration = 1234 * 10 ** 18;
         uint256 _weightSecondReconfiguration = 6969 * 10 ** 18;
@@ -619,22 +627,23 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Initial funding cycle data: will have a block.timestamp (configuration) that is 2 less than the second reconfiguration (timestamps are incremented when queued in same block now)
         assertEq(_fundingCycle.number, 1);
         assertEq(_fundingCycle.weight, _data.weight);
-        
+
         // Package up another configuration.
         JBFundingCycleConfiguration[] memory _firstReconfig = new JBFundingCycleConfiguration[](1);
         _firstReconfig[0].mustStartAtOrAfter = block.timestamp + 3 days;
-        _firstReconfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightFirstReconfiguration, discountRate: 0, ballot: _ballot}); // 3days ballot;
+        _firstReconfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightFirstReconfiguration,
+            discountRate: 0,
+            ballot: _ballot
+        }); // 3days ballot;
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].groupedSplits = _groupedSplits;
         _firstReconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Becomes queued & will be overwritten as 3 days will not pass and it's status is "ApprovalExpected"
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _firstReconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _firstReconfig, "");
 
         // Get a reference to the queued cycle.
         JBFundingCycle memory queuedToOverwrite = jbFundingCycleStore().queuedOf(projectId);
@@ -647,18 +656,19 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         JBFundingCycleConfiguration[] memory _secondReconfig = new JBFundingCycleConfiguration[](1);
 
         _secondReconfig[0].mustStartAtOrAfter = block.timestamp + _BALLOT_DURATION;
-        _secondReconfig[0].data = JBFundingCycleData({duration: _CYCLE_DURATION * 1 days, weight: _weightSecondReconfiguration, discountRate: 0, ballot: _ballot}); // 3days ballot;
+        _secondReconfig[0].data = JBFundingCycleData({
+            duration: _CYCLE_DURATION * 1 days,
+            weight: _weightSecondReconfiguration,
+            discountRate: 0,
+            ballot: _ballot
+        }); // 3days ballot;
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].groupedSplits = _groupedSplits;
         _secondReconfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Overwriting reconfiguration
         vm.prank(multisig());
-        _controller.reconfigureFundingCyclesOf(
-            projectId,
-            _secondReconfig,
-            ""
-        );
+        _controller.reconfigureFundingCyclesOf(projectId, _secondReconfig, "");
 
         // Make sure it's overwritten.
         JBFundingCycle memory queued = jbFundingCycleStore().queuedOf(projectId);

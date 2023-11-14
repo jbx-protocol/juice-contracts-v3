@@ -9,13 +9,13 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
-    JBGroupedSplits[] private _groupedSplits; 
+    JBGroupedSplits[] private _groupedSplits;
     JBFundAccessConstraints[] private _fundAccessConstraints;
-    IJBPaymentTerminal[] private _terminals; 
+    IJBPaymentTerminal[] private _terminals;
 
     function setUp() public override {
         super.setUp();
-        
+
         _controller = jbController();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
@@ -60,13 +60,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch a project.
-        uint256 projectId = _controller.launchProjectFor(
-            msg.sender,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
+        uint256 projectId =
+            _controller.launchProjectFor(msg.sender, _projectMetadata, _cycleConfig, _terminals, "");
 
         // Get a reference to the first funding cycle.
         JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -80,7 +75,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
