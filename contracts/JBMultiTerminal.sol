@@ -26,7 +26,7 @@ import {JBConstants} from './libraries/JBConstants.sol';
 import {JBFees} from './libraries/JBFees.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
-import {JBTokens} from './libraries/JBTokens.sol';
+import {JBTokenList} from './libraries/JBTokenList.sol';
 import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
 import {JBDidRedeemData3_1_1} from './structs/JBDidRedeemData3_1_1.sol';
 import {JBDidPayData3_1_1} from './structs/JBDidPayData3_1_1.sol';
@@ -197,14 +197,15 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @return The contract's balance.
   function _balance(address _token) internal view virtual returns (uint256) {
     // If the token is ETH, assume the native token standard.
-    return _token == JBTokens.ETH ? address(this).balance : IERC20(_token).balanceOf(address(this));
+    return
+      _token == JBTokenList.ETH ? address(this).balance : IERC20(_token).balanceOf(address(this));
   }
 
   //*********************************************************************//
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _permissions A contract storing operator assignments.
   /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
   /// @param _directory A contract storing directories of terminals and controllers for each project.
   /// @param _splitsStore A contract that stores splits for each project.
@@ -212,14 +213,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _permit2 A permit2 utility.
   /// @param _owner The address that will own this contract.
   constructor(
-    IJBOperatorStore _operatorStore,
+    IJBOperatorStore _permissions,
     IJBProjects _projects,
     IJBDirectory _directory,
     IJBSplitsStore _splitsStore,
     IJBTerminalStore _store,
     IPermit2 _permit2,
     address _owner
-  ) JBOperatable(_operatorStore) Ownable(_owner) {
+  ) JBOperatable(_permissions) Ownable(_owner) {
     PROJECTS = _projects;
     DIRECTORY = _directory;
     SPLITS = _splitsStore;
@@ -413,7 +414,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       _beforeTransferFor(address(_to), _token, balance);
 
       // If this terminal's token is ETH, send it in msg.value.
-      uint256 _payValue = _token == JBTokens.ETH ? balance : 0;
+      uint256 _payValue = _token == JBTokenList.ETH ? balance : 0;
 
       // Withdraw the balance to transfer to the new terminal;
       _to.addToBalanceOf{value: _payValue}(_projectId, _token, balance, false, '', bytes(''));
@@ -567,7 +568,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       revert TOKEN_NOT_ACCEPTED();
 
     // If the terminal's token is ETH, override `_amount` with msg.value.
-    if (_token == JBTokens.ETH) return msg.value;
+    if (_token == JBTokenList.ETH) return msg.value;
 
     // Amount must be greater than 0.
     if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
@@ -1120,7 +1121,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         )
       ) {
         // Keep a reference to the value that'll be paid to the allocator.
-        uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+        uint256 _payValue = _token == JBTokenList.ETH ? netPayoutAmount : 0;
 
         // If this terminal's token is ETH, send it in msg.value.
         try _split.allocator.allocate{value: _payValue}(_data) {} catch (bytes memory __reason) {
@@ -1175,7 +1176,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         _beforeTransferFor(address(_terminal), _token, netPayoutAmount);
 
         // Keep a reference to the amount that'll be paid in.
-        uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+        uint256 _payValue = _token == JBTokenList.ETH ? netPayoutAmount : 0;
 
         // Add to balance if prefered.
         if (_split.preferAddToBalance) {
@@ -1293,7 +1294,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       // Trigger any inherited pre-transfer logic.
       _beforeTransferFor(address(_allocation.delegate), _tokenAmount.token, _allocation.amount);
 
-      uint256 _payValue = _tokenAmount.token == JBTokens.ETH ? _allocation.amount : 0;
+      uint256 _payValue = _tokenAmount.token == JBTokenList.ETH ? _allocation.amount : 0;
 
       // Fulfill the allocation.
       _allocation.delegate.didPay{value: _payValue}(_data);
@@ -1377,7 +1378,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       _data.dataSourceMetadata = _allocation.metadata;
 
       // Keep a reference to the value that will be forwarded.
-      uint256 _payValue = _beneficiaryTokenAmount.token == JBTokens.ETH ? _allocation.amount : 0;
+      uint256 _payValue = _beneficiaryTokenAmount.token == JBTokenList.ETH ? _allocation.amount : 0;
 
       // Fulfill the allocation.
       _allocation.delegate.didRedeem{value: _payValue}(_data);
@@ -1458,7 +1459,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       _beforeTransferFor(address(_feeTerminal), _token, _amount);
 
     // Keep a reference to the amount that'll be paid in.
-    uint256 _payValue = _token == JBTokens.ETH ? _amount : 0;
+    uint256 _payValue = _token == JBTokenList.ETH ? _amount : 0;
 
     try
       // Send the fee.
@@ -1561,7 +1562,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     uint256 _depositAmount
   ) internal {
     // Cancel allowance if needed.
-    if (_allowanceAmount != 0 && _token != JBTokens.ETH)
+    if (_allowanceAmount != 0 && _token != JBTokenList.ETH)
       IERC20(_token).safeDecreaseAllowance(_expectedDestination, _allowanceAmount);
 
     // Add undistributed amount back to project's balance.
@@ -1580,7 +1581,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     uint256 _amount
   ) internal virtual {
     // If the token is ETH, assume the native token standard.
-    if (_token == JBTokens.ETH) return Address.sendValue(_to, _amount);
+    if (_token == JBTokenList.ETH) return Address.sendValue(_to, _amount);
 
     if (_from == address(this)) return IERC20(_token).safeTransfer(_to, _amount);
 
@@ -1598,7 +1599,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
   function _beforeTransferFor(address _to, address _token, uint256 _amount) internal virtual {
     // If the token is ETH, assume the native token standard.
-    if (_token == JBTokens.ETH) return;
+    if (_token == JBTokenList.ETH) return;
     IERC20(_token).safeIncreaseAllowance(_to, _amount);
   }
 

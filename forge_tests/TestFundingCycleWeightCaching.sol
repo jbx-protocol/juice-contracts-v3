@@ -12,7 +12,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     uint256 private constant _DISCOUNT_RATE = 1;
     
     IJBController private _controller;
-    IJBFundingCycleStore private _fundingCycleStore;
+    IJBFundingCycleStore private _rulesets;
     address private _projectOwner;
     
     JBFundingCycleData private _data;
@@ -22,7 +22,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-        _fundingCycleStore = jbFundingCycleStore();
+        _rulesets = jbFundingCycleStore();
         _controller = jbController();
         _data = JBFundingCycleData({
             duration: _DURATION,
@@ -39,7 +39,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: false,
             allowTerminalMigration: false,
@@ -103,7 +103,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // uint256 _gasBeforeCache = gasleft();
 
         // // Cache the weight in the second project.
-        // _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
+        // _rulesets.updateFundingCycleWeightCache(_projectId2);
 
         // // Keep a reference to the amout of gas spent on the call.
         // uint256 _gasDiffCache = _gasBeforeCache - gasleft();
@@ -115,7 +115,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // vm.warp(block.timestamp + (_DURATION * _cycleDiff));
 
         // // Cache the weight in the second project again.
-        // _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
+        // _rulesets.updateFundingCycleWeightCache(_projectId2);
 
         // // Inherit the weight.
         // _cycleConfigurations[0].data.weight = 0;
@@ -164,7 +164,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // assertEq(_fundingCycle1.weight, _fundingCycle2.weight);
 
         // // Cache the weight in the second project again.
-        // _fundingCycleStore.updateFundingCycleWeightCache(_projectId2);
+        // _rulesets.updateFundingCycleWeightCache(_projectId2);
 
         // // Go many rolled over cycles into the future.
         // vm.warp(block.timestamp + (_DURATION * _cycleDiff));

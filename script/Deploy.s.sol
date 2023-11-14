@@ -9,7 +9,7 @@ import "../contracts/JBProjects.sol";
 import "../contracts/JBPrices.sol";
 import "../contracts/JBFundingCycleStore.sol";
 import "../contracts/JBDirectory.sol";
-import "../contracts/JBTokenStore.sol";
+import "../contracts/JBTokens.sol";
 import "../contracts/JBSplitsStore.sol";
 import "../contracts/JBFundAccessConstraintsStore.sol";
 import "../contracts/JBController.sol";
@@ -24,7 +24,7 @@ contract Deploy is Script {
     JBPrices _prices;
     JBDirectory _directory;
     JBFundingCycleStore _fundingCycleStore;
-    JBTokenStore _tokenStore;
+    JBTokens _tokenStore;
     JBSplitsStore _splitsStore;
     JBFundAccessConstraintsStore _fundAccessConstraintsStore;
     JBController _controller;
@@ -55,7 +55,7 @@ contract Deploy is Script {
             _fundingCycleStore,
             address(this)
         );
-        _tokenStore = new JBTokenStore(
+        _tokenStore = new JBTokens(
             _operatorStore,
             _projects,
             _directory,

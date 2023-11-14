@@ -47,7 +47,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   IJBProjects public immutable override projects;
 
   /// @notice The contract storing all funding cycle configurations.
-  IJBFundingCycleStore public immutable override fundingCycleStore;
+  IJBFundingCycleStore public immutable override rulesets;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -152,18 +152,18 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _permissions A contract storing operator assignments.
   /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
+  /// @param _rulesets A contract storing all funding cycle configurations.
   /// @param _owner The address that will own the contract.
   constructor(
-    IJBOperatorStore _operatorStore,
+    IJBOperatorStore _permissions,
     IJBProjects _projects,
-    IJBFundingCycleStore _fundingCycleStore,
+    IJBFundingCycleStore _rulesets,
     address _owner
-  ) JBOperatable(_operatorStore) Ownable(_owner) {
+  ) JBOperatable(_permissions) Ownable(_owner) {
     projects = _projects;
-    fundingCycleStore = _fundingCycleStore;
+    rulesets = _rulesets;
   }
 
   //*********************************************************************//
@@ -192,7 +192,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     if (projects.count() < _projectId) revert INVALID_PROJECT_ID_IN_DIRECTORY();
 
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
 
     // Setting controller is allowed if called from the current controller, or if the project doesn't have a current controller, or if the project's funding cycle allows setting the controller. Revert otherwise.
     if (
@@ -222,7 +222,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     )
   {
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
 
     // Setting terminals must be allowed if not called from the current controller.
     if (
@@ -312,7 +312,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     if (isTerminalOf(_projectId, _terminal)) return;
 
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
 
     // Setting terminals must be allowed if not called from the current controller.
     if (

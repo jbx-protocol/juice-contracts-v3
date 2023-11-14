@@ -23,7 +23,7 @@ interface IJBDirectory {
 
   function projects() external view returns (IJBProjects);
 
-  function fundingCycleStore() external view returns (IJBFundingCycleStore);
+  function rulesets() external view returns (IJBFundingCycleStore);
 
   function controllerOf(uint256 projectId) external view returns (address);
 

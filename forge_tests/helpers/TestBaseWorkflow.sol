@@ -17,8 +17,8 @@ import {JBOperatorStore} from '@juicebox/JBOperatorStore.sol';
 import {JBPrices} from '@juicebox/JBPrices.sol';
 import {JBProjects} from '@juicebox/JBProjects.sol';
 import {JBSplitsStore} from '@juicebox/JBSplitsStore.sol';
-import {JBToken} from '@juicebox/JBToken.sol';
-import {JBTokenStore} from '@juicebox/JBTokenStore.sol';
+import {JBERC20Token} from '@juicebox/JBERC20Token.sol';
+import {JBTokens} from '@juicebox/JBTokens.sol';
 import {JBReconfigurationBufferBallot} from '@juicebox/JBReconfigurationBufferBallot.sol';
 import {JBMultiTerminal} from '@juicebox/JBMultiTerminal.sol';
 import {JBCurrencyAmount} from '@juicebox/structs/JBCurrencyAmount.sol';
@@ -45,7 +45,7 @@ import {JBPayDelegateAllocation3_1_1} from '@juicebox/structs/JBPayDelegateAlloc
 import {JBTokenAmount} from '@juicebox/structs/JBTokenAmount.sol';
 import {JBSplitAllocationData} from '@juicebox/structs/JBSplitAllocationData.sol';
 import {IJBPaymentTerminal} from '@juicebox/interfaces/IJBPaymentTerminal.sol';
-import {IJBToken} from '@juicebox/interfaces/IJBToken.sol';
+import {IJBERC20Token} from '@juicebox/interfaces/IJBERC20Token.sol';
 import {JBSingleAllowanceData} from '@juicebox/structs/JBSingleAllowanceData.sol';
 import {IJBController} from '@juicebox/interfaces/IJBController.sol';
 import {IJBMigratable} from '@juicebox/interfaces/IJBMigratable.sol';
@@ -56,7 +56,7 @@ import {IJBFundingCycleBallot} from '@juicebox/interfaces/IJBFundingCycleBallot.
 import {IJBDirectory} from '@juicebox/interfaces/IJBDirectory.sol';
 import {IJBFundingCycleStore} from '@juicebox/interfaces/IJBFundingCycleStore.sol';
 import {IJBSplitsStore} from '@juicebox/interfaces/IJBSplitsStore.sol';
-import {IJBTokenStore} from '@juicebox/interfaces/IJBTokenStore.sol';
+import {IJBTokens} from '@juicebox/interfaces/IJBTokens.sol';
 import {IJBSplitAllocator} from '@juicebox/interfaces/IJBSplitAllocator.sol';
 import {IJBPayDelegate3_1_1} from '@juicebox/interfaces/IJBPayDelegate3_1_1.sol';
 import {IJBFundingCycleDataSource3_1_1} from '@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol';
@@ -68,7 +68,7 @@ import {IJBFundingCycleBallot} from '@juicebox/interfaces/IJBFundingCycleBallot.
 import {IJBPrices} from '@juicebox/interfaces/IJBPrices.sol';
 import {IJBSplitsPayer} from '@juicebox/interfaces/IJBSplitsPayer.sol';
 
-import {JBTokens} from '@juicebox/libraries/JBTokens.sol';
+import {JBTokenList} from '@juicebox/libraries/JBTokenList.sol';
 import {JBCurrencies} from '@juicebox/libraries/JBCurrencies.sol';
 import {JBTokenStandards} from '@juicebox/libraries/JBTokenStandards.sol';
 import {JBFundingCycleMetadataResolver} from '@juicebox/libraries/JBFundingCycleMetadataResolver.sol';
@@ -98,8 +98,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
   JBPrices private _jbPrices;
   JBDirectory private _jbDirectory;
   JBFundingCycleStore private _jbFundingCycleStore;
-  //   JBToken private _jbToken;
-  JBTokenStore private _jbTokenStore;
+  //   JBERC20Token private _jbToken;
+  JBTokens private _jbTokens;
   JBSplitsStore private _jbSplitsStore;
   JBController private _jbController;
   JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
@@ -142,8 +142,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     return _jbFundingCycleStore;
   }
 
-  function jbTokenStore() internal view returns (JBTokenStore) {
-    return _jbTokenStore;
+  function jbTokens() internal view returns (JBTokens) {
+    return _jbTokens;
   }
 
   function jbSplitsStore() internal view returns (JBSplitsStore) {
@@ -187,13 +187,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     vm.label(address(_jbFundingCycleStore), 'JBFundingCycleStore');
     _jbDirectory = new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
     vm.label(address(_jbDirectory), 'JBDirectory');
-    _jbTokenStore = new JBTokenStore(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore
-    );
-    vm.label(address(_jbTokenStore), 'JBTokenStore');
+    _jbTokens = new JBTokens(_jbOperatorStore, _jbProjects, _jbDirectory, _jbFundingCycleStore);
+    vm.label(address(_jbTokens), 'JBTokens');
     _jbSplitsStore = new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory);
     vm.label(address(_jbSplitsStore), 'JBSplitsStore');
     _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
@@ -203,7 +198,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbProjects,
       _jbDirectory,
       _jbFundingCycleStore,
-      _jbTokenStore,
+      _jbTokens,
       _jbSplitsStore,
       _jbFundAccessConstraintsStore
     );

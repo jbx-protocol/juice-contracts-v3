@@ -9,7 +9,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBMultiTerminal private __terminal;
     IJBPrices private _prices;
-    JBTokenStore private _tokenStore;
+    JBTokens private _tokenStore;
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
@@ -21,13 +21,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     function setUp() public override {
         super.setUp();
 
-        _ethCurrency = uint32(uint160(JBTokens.ETH));
+        _ethCurrency = uint32(uint160(JBTokenList.ETH));
         _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _prices = jbPrices();
         __terminal = jbPayoutRedemptionTerminal();
-        _tokenStore = jbTokenStore();
+        _tokenStore = jbTokens();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 0,
@@ -43,7 +43,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: false,
             allowTerminalMigration: false,
@@ -73,7 +73,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         
         _distributionLimits[0] = JBCurrencyAmount({
             value: _ethDistributionLimit,
-            currency: uint32(uint160(JBTokens.ETH))
+            currency: uint32(uint160(JBTokenList.ETH))
         });
         _distributionLimits[1] = JBCurrencyAmount({
             value: _usdDistributionLimit,
@@ -81,12 +81,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
         _overflowAllowances[0] = JBCurrencyAmount({
             value: 1 ether,
-            currency: uint32(uint160(JBTokens.ETH))
+            currency: uint32(uint160(JBTokenList.ETH))
         });
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
                 terminal: __terminal,
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
@@ -102,7 +102,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
             _accountingContexts[0] = JBAccountingContextConfig({
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContextConfig({
@@ -137,7 +137,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _prices.addFeedFor({
             projectId: _projectId,
-            currency: uint32(uint160(JBTokens.ETH)), 
+            currency: uint32(uint160(JBTokenList.ETH)), 
             base: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedEthUsd
         });
@@ -159,7 +159,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: JBTokens.ETH,
+            token: JBTokenList.ETH,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -168,15 +168,15 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 initTerminalBalance = address(__terminal).balance;
 
-        // Make sure the beneficiary has a balance of JBTokens.
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), PRBMathUD60x18.mul(_ethPayAmount, _data.weight));
+        // Make sure the beneficiary has a balance of JBTokenList.
+        assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), PRBMathUD60x18.mul(_ethPayAmount, _data.weight));
 
         // First dist meets our ETH limit
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethDistributionLimit,
-            currency: uint32(uint160(JBTokens.ETH)),
-            token: JBTokens.ETH, // unused
+            currency: uint32(uint160(JBTokenList.ETH)),
+            token: JBTokenList.ETH, // unused
             minReturnedTokens: 0
         });
 
@@ -208,7 +208,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokens.ETH, // token
+            token: JBTokenList.ETH, // token
             minReturnedTokens: 0
         });
 
@@ -219,7 +219,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value:_ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: JBTokens.ETH, // unused 
+            token: JBTokenList.ETH, // unused 
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -236,7 +236,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokens.ETH, //token (unused)
+            token: JBTokenList.ETH, //token (unused)
             minReturnedTokens: 0
         });
     }
@@ -264,7 +264,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
                 terminal: __terminal,
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
@@ -282,7 +282,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
             _accountingContexts[0] = JBAccountingContextConfig({
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContextConfig({
@@ -330,7 +330,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
                 terminal: __terminal,
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
@@ -348,7 +348,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
             _accountingContexts[0] = JBAccountingContextConfig({
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContextConfig({
@@ -403,7 +403,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
                 terminal: __terminal,
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
@@ -417,7 +417,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
             _accountingContexts[0] = JBAccountingContextConfig({
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContextConfig({
@@ -465,7 +465,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
                 terminal: __terminal,
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
@@ -481,7 +481,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
             _accountingContexts[0] = JBAccountingContextConfig({
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContextConfig({
@@ -513,7 +513,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: JBTokens.ETH, // unused
+            token: JBTokenList.ETH, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -522,7 +522,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Make sure beneficiary has a balance of JBTokens
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _userTokenBalance);
+        assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
         uint256 initTerminalBalance = address(__terminal).balance;
 
         // First dist should be fine based on price
@@ -530,7 +530,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1800000000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokens.ETH, // unused 
+            token: JBTokenList.ETH, // unused 
             minReturnedTokens: 0
         });
 
@@ -556,7 +556,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1700000000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokens.ETH, // unused 
+            token: JBTokenList.ETH, // unused 
             minReturnedTokens: 0
         });
     }
@@ -579,7 +579,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _fundAccessConstraints[0] = 
             JBFundAccessConstraints({
                 terminal: __terminal,
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 distributionLimits: _distributionLimits,
                 overflowAllowances: new JBCurrencyAmount[](0)
             });
@@ -595,7 +595,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
             _accountingContexts[0] = JBAccountingContextConfig({
-                token: JBTokens.ETH,
+                token: JBTokenList.ETH,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContexts[1] = JBAccountingContextConfig({
@@ -618,7 +618,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: JBTokens.ETH, // unused
+            token: JBTokenList.ETH, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -639,7 +639,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary has a balance of JBTokens
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _userTokenBalance);
+        assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
 
         uint256 initTerminalBalance = address(__terminal).balance;
         uint256 ownerBalanceBeforeFirst = _projectOwner.balance;
@@ -648,7 +648,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 3000000000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokens.ETH, // unused
+            token: JBTokenList.ETH, // unused
             minReturnedTokens: 0
         });
 
@@ -681,7 +681,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1 ether,
             currency: _ethCurrency,
-            token: JBTokens.ETH, // unused
+            token: JBTokenList.ETH, // unused
             minReturnedTokens: 0
         });
 

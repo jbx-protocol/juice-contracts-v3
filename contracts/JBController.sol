@@ -17,7 +17,7 @@ import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import {IJBSplitsStore} from './interfaces/IJBSplitsStore.sol';
-import {IJBTokenStore} from './interfaces/IJBTokenStore.sol';
+import {IJBTokens} from './interfaces/IJBTokens.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
@@ -58,10 +58,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   IJBProjects public immutable override projects;
 
   /// @notice The contract storing all funding cycle configurations.
-  IJBFundingCycleStore public immutable override fundingCycleStore;
+  IJBFundingCycleStore public immutable override rulesets;
 
   /// @notice The contract that manages token minting and burning.
-  IJBTokenStore public immutable override tokenStore;
+  IJBTokens public immutable override tokenStore;
 
   /// @notice The contract that stores splits for each project.
   IJBSplitsStore public immutable override splitsStore;
@@ -96,7 +96,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     override
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
-    fundingCycle = fundingCycleStore.get(_projectId, _configuration);
+    fundingCycle = rulesets.get(_projectId, _configuration);
     metadata = fundingCycle.expandMetadata();
   }
 
@@ -117,7 +117,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
       JBBallotState ballotState
     )
   {
-    (fundingCycle, ballotState) = fundingCycleStore.latestConfiguredOf(_projectId);
+    (fundingCycle, ballotState) = rulesets.latestConfiguredOf(_projectId);
     metadata = fundingCycle.expandMetadata();
   }
 
@@ -133,7 +133,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     override
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
-    fundingCycle = fundingCycleStore.currentOf(_projectId);
+    fundingCycle = rulesets.currentOf(_projectId);
     metadata = fundingCycle.expandMetadata();
   }
 
@@ -149,7 +149,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     override
     returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
   {
-    fundingCycle = fundingCycleStore.queuedOf(_projectId);
+    fundingCycle = rulesets.queuedOf(_projectId);
     metadata = fundingCycle.expandMetadata();
   }
 
@@ -183,25 +183,25 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
   // ---------------------------- constructor -------------------------- //
   //*********************************************************************//
 
-  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _permissions A contract storing operator assignments.
   /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
   /// @param _directory A contract storing directories of terminals and controllers for each project.
-  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
+  /// @param _rulesets A contract storing all funding cycle configurations.
   /// @param _tokenStore A contract that manages token minting and burning.
   /// @param _splitsStore A contract that stores splits for each project.
   /// @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
   constructor(
-    IJBOperatorStore _operatorStore,
+    IJBOperatorStore _permissions,
     IJBProjects _projects,
     IJBDirectory _directory,
-    IJBFundingCycleStore _fundingCycleStore,
-    IJBTokenStore _tokenStore,
+    IJBFundingCycleStore _rulesets,
+    IJBTokens _tokenStore,
     IJBSplitsStore _splitsStore,
     IJBFundAccessConstraintsStore _fundAccessConstraintsStore
-  ) JBOperatable(_operatorStore) {
+  ) JBOperatable(_permissions) {
     projects = _projects;
     directory = _directory;
-    fundingCycleStore = _fundingCycleStore;
+    rulesets = _rulesets;
     tokenStore = _tokenStore;
     splitsStore = _splitsStore;
     fundAccessConstraintsStore = _fundAccessConstraintsStore;
@@ -270,8 +270,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     returns (uint256 configured)
   {
     // If there is a previous configuration, reconfigureFundingCyclesOf should be called instead
-    if (fundingCycleStore.latestConfigurationOf(_projectId) > 0)
-      revert FUNDING_CYCLE_ALREADY_LAUNCHED();
+    if (rulesets.latestConfigurationOf(_projectId) > 0) revert FUNDING_CYCLE_ALREADY_LAUNCHED();
 
     // Set this contract as the project's controller in the directory.
     directory.setControllerOf(_projectId, address(this));
@@ -337,7 +336,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     // Scoped section prevents stack too deep. `_fundingCycle` only used within scope.
     {
       // Get a reference to the project's current funding cycle.
-      JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+      JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
 
       // Minting limited to: project owner, authorized callers, project terminal and current funding cycle data source
       _requirePermissionAllowingOverride(
@@ -457,7 +456,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     if (_directory.controllerOf(_projectId) != address(this)) revert NOT_CURRENT_CONTROLLER();
 
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
 
     // Migration must be allowed.
     if (!_fundingCycle.controllerMigrationAllowed()) revert MIGRATION_NOT_ALLOWED();
@@ -487,10 +486,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     string memory _memo
   ) internal returns (uint256 tokenCount) {
     // Keep a reference to the token store.
-    IJBTokenStore _tokenStore = tokenStore;
+    IJBTokens _tokenStore = tokenStore;
 
     // Get the current funding cycle to read the reserved rate from.
-    JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
 
     // Get a reference to the number of tokens that need to be minted.
     tokenCount = reservedTokenBalanceOf[_projectId];
@@ -539,7 +538,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     uint256 _amount
   ) internal returns (uint256 leftoverAmount) {
     // Keep a reference to the token store.
-    IJBTokenStore _tokenStore = tokenStore;
+    IJBTokens _tokenStore = tokenStore;
 
     // Set the leftover amount to the initial amount.
     leftoverAmount = _amount;
@@ -639,7 +638,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
       if (_configuration.metadata.baseCurrency > type(uint32).max) revert INVALID_BASE_CURRENCY();
 
       // Configure the funding cycle's properties.
-      JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(
+      JBFundingCycle memory _fundingCycle = rulesets.configureFor(
         _projectId,
         _configuration.data,
         JBFundingCycleMetadataResolver.packFundingCycleMetadata(_configuration.metadata),

@@ -68,15 +68,15 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /// @param _operatorStore A contract storing operator assignments.
+  /// @param _permissions A contract storing operator assignments.
   /// @param _owner The owner of the contract who can set metadata.
   constructor(
-    IJBOperatorStore _operatorStore,
+    IJBOperatorStore _permissions,
     address _owner
   )
     ERC721('Juicebox Projects', 'JUICEBOX')
     EIP712('Juicebox Projects', '1')
-    JBOperatable(_operatorStore)
+    JBOperatable(_permissions)
     Ownable(_owner)
   // solhint-disable-next-line no-empty-blocks
   {

@@ -227,11 +227,11 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
   //*********************************************************************//
 
   /// @param _directory A contract storing directories of terminals and controllers for each project.
-  /// @param _fundingCycleStore A contract storing all funding cycle configurations.
+  /// @param _rulesets A contract storing all funding cycle configurations.
   /// @param _prices A contract that exposes price feeds.
-  constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore, IJBPrices _prices) {
+  constructor(IJBDirectory _directory, IJBFundingCycleStore _rulesets, IJBPrices _prices) {
     DIRECTORY = _directory;
-    FUNDING_CYCLE_STORE = _fundingCycleStore;
+    FUNDING_CYCLE_STORE = _rulesets;
     PRICES = _prices;
   }
 

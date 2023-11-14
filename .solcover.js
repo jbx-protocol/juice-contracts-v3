@@ -59,7 +59,7 @@ module.exports = {
     'interfaces/IJBSplitsStore.sol',
     'interfaces/IJBTerminalUtility.sol',
     'interfaces/IJBToken.sol',
-    'interfaces/IJBTokenStore.sol',
+    'interfaces/IJBTokens.sol',
     'interfaces/IJBTokenUriResolver.sol',
   ],
   configureYulOptimizer: true,
