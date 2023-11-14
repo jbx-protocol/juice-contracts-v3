@@ -36,7 +36,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -47,7 +47,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: 10000, //100%
+            redemptionRate: 10_000, //100%
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
@@ -89,23 +89,13 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Make a dummy project that'll receive fees.
-        _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
-        );
+        _controller.launchProjectFor(_projectOwner, _projectMetadata, _cycleConfig, _terminals, "");
 
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
-    
+
     function testFuzzPayBurnRedeemFlow(
         bool payPreferClaimed, //false
         bool burnPreferClaimed, //false
@@ -198,6 +188,9 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance);
 
         // verify: ETH balance in terminal should be up to date
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei - _reclaimAmtInWei);
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(_terminal, _projectId),
+            _terminalBalanceInWei - _reclaimAmtInWei
+        );
     }
 }

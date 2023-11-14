@@ -19,7 +19,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: 1000 * 10 ** 18,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -59,11 +59,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         uint256 projectId = jbController().launchProjectFor(
-            msg.sender,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            msg.sender, _projectMetadata, _cycleConfig, _terminals, ""
         );
 
         JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId); //, latestConfig);
@@ -76,7 +72,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: WEIGHT,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -95,19 +91,11 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INVALID_WEIGHT()"));
 
             projectId = jbController().launchProjectFor(
-                msg.sender,
-                _projectMetadata,
-                _cycleConfig,
-                _terminals,
-                ""
+                msg.sender, _projectMetadata, _cycleConfig, _terminals, ""
             );
         } else {
             projectId = jbController().launchProjectFor(
-                msg.sender,
-                _projectMetadata,
-                _cycleConfig,
-                _terminals,
-                ""
+                msg.sender, _projectMetadata, _cycleConfig, _terminals, ""
             );
 
             JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId); //, latestConfig);

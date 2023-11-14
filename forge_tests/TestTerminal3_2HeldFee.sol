@@ -44,7 +44,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
-            discountRate: 450000000,
+            discountRate: 450_000_000,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -55,7 +55,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: 10000, //100%
+            redemptionRate: 10_000, //100%
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
@@ -97,26 +97,24 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         _projectId = _controller.launchProjectFor(
-            _projectOwner,
-            _projectMetadata,
-            _cycleConfig,
-            _terminals,
-            ""
+            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
 
-    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount) external {
+    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount)
+        external
+    {
         // Assuming we don't revert when distributing too much and avoid rounding errors
         payAmountInWei = bound(payAmountInWei, 10, _targetInWei);
         fee = bound(fee, 1, 50_000_000);
         feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
 
-        address _userWallet = makeAddr('userWallet');
+        address _userWallet = makeAddr("userWallet");
 
         vm.prank(multisig());
         _terminal.setFee(fee);
 
-        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(makeAddr('FeeGauge'));
+        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(makeAddr("FeeGauge"));
         vm.etch(address(feeGauge), new bytes(0x1));
         vm.mockCall(
             address(feeGauge),
@@ -168,17 +166,25 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(_multisig.balance, _ethDistributed, "Wrong ETH distributed");
 
         // verify: should have held the fee, if there is one
-        if(discountedFee > 0) {
+        if (discountedFee > 0) {
             assertEq(_terminal.heldFeesOf(_projectId)[0].fee, _terminal.fee(), "Wrong fee");
-            assertEq(_terminal.heldFeesOf(_projectId)[0].feeDiscount, feeDiscount, "Wrong fee discount");
-            assertEq(_terminal.heldFeesOf(_projectId)[0].amount, payAmountInWei, "Wrong payout amount in held fee");
-        } else assertEq(_terminal.heldFeesOf(_projectId).length, 0, "Extranumerous held fees");
+            assertEq(
+                _terminal.heldFeesOf(_projectId)[0].feeDiscount, feeDiscount, "Wrong fee discount"
+            );
+            assertEq(
+                _terminal.heldFeesOf(_projectId)[0].amount,
+                payAmountInWei,
+                "Wrong payout amount in held fee"
+            );
+        } else {
+            assertEq(_terminal.heldFeesOf(_projectId).length, 0, "Extranumerous held fees");
+        }
 
         // -- add to balance --
         // Will get the fee reimbursed:
         uint256 heldFee = payAmountInWei * fee / jbLibraries().MAX_FEE();
         uint256 balanceBefore = jbPaymentTerminalStore().balanceOf(_terminal, _projectId);
-    
+
         IJBFeeHoldingTerminal(address(_terminal)).addToBalanceOf{value: _ethDistributed}(
             _projectId,
             _ethDistributed,
@@ -194,6 +200,10 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(_terminal.heldFeesOf(_projectId).length, 0, "Extranumerous held fees");
 
         // Check: balance made whole again
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), balanceBefore + payAmountInWei, "Wrong project end balance");
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(_terminal, _projectId),
+            balanceBefore + payAmountInWei,
+            "Wrong project end balance"
+        );
     }
 }
