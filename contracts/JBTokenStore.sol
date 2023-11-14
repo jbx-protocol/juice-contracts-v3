@@ -92,7 +92,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
         // If the project has a current token, add the holder's balance to the total.
         if (_token != IJBToken(address(0))) {
-            balance = balance + _token.balanceOf(_holder, _projectId);
+            balance = balance + _token.balanceOf(_holder);
         }
     }
 
@@ -112,7 +112,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
         // If the project has a current token, add its total supply to the total.
         if (_token != IJBToken(address(0))) {
-            totalSupply = totalSupply + _token.totalSupply(_projectId);
+            totalSupply = totalSupply + _token.totalSupply();
         }
     }
 
@@ -161,7 +161,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
         // Deploy the token contract.
-        token = new JBToken(_name, _symbol, _projectId, address(this));
+        token = new JBToken(_name, _symbol, address(this));
 
         // Store the token contract.
         tokenOf[_projectId] = token;
@@ -220,7 +220,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
         if (_shouldClaimTokens) {
             // If tokens should be claimed, mint tokens into the holder's wallet.
-            _token.mint(_projectId, _holder, _amount);
+            _token.mint(_holder, _amount);
         } else {
             // Otherwise, add the tokens to the unclaimed balance and total supply.
             unclaimedBalanceOf[_holder][_projectId] =
@@ -251,8 +251,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         uint256 _unclaimedBalance = unclaimedBalanceOf[_holder][_projectId];
 
         // Get a reference to the amount of the project's current token the holder has in their wallet.
-        uint256 _claimedBalance =
-            _token == IJBToken(address(0)) ? 0 : _token.balanceOf(_holder, _projectId);
+        uint256 _claimedBalance = _token == IJBToken(address(0)) ? 0 : _token.balanceOf(_holder);
 
         // There must be adequate tokens to burn across the holder's claimed and unclaimed balance.
         if (_amount > _claimedBalance + _unclaimedBalance) revert INSUFFICIENT_FUNDS();
@@ -284,7 +283,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         }
 
         // Burn the claimed tokens.
-        if (_claimedTokensToBurn > 0) _token.burn(_projectId, _holder, _claimedTokensToBurn);
+        if (_claimedTokensToBurn > 0) _token.burn(_holder, _claimedTokensToBurn);
 
         emit Burn(_holder, _projectId, _amount, _unclaimedBalance, _claimedBalance, msg.sender);
     }
@@ -321,7 +320,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         }
 
         // Mint the equivalent amount of the project's token for the holder.
-        _token.mint(_projectId, _beneficiary, _amount);
+        _token.mint(_beneficiary, _amount);
 
         emit Claim(_holder, _projectId, _unclaimedBalance, _amount, _beneficiary, msg.sender);
     }
