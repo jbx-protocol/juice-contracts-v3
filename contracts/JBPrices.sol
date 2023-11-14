@@ -77,7 +77,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
             return PRBMath.mulDiv(10 ** _decimals, 10 ** _decimals, _feed.currentPrice(_decimals));
         }
 
-        // Check in the defauly project if not found.
+        // Check in the default project if not found.
         if (_projectId != DEFAULT_PROJECT_ID) {
             return priceFor({
                 _projectId: DEFAULT_PROJECT_ID,
