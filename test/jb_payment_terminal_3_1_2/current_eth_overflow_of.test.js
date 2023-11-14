@@ -116,7 +116,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
 
     await mockJbPrices.mock.priceFor
       .withArgs(
-        /*slice from 36 to 42 to get the last 4 nibbles/8 bytes of the token address*/
+        /*slice from 36 to 42 to get the last 6 nibbles/3 bytes of the token address*/
         ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
         CURRENCY_ETH,
         16,
