@@ -63,11 +63,9 @@ import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
-import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
-import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
 
 import {JBTokens} from "@juicebox/libraries/JBTokens.sol";
 import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
