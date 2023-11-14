@@ -1,56 +1,29 @@
-name: juice-contracts-system-tests
+name: juice-contracts-template-tests
 on:
   pull_request:
     branches:
       - main
-      - test/system-tests
   push:
     branches:
       - main
-      - test/system-tests
 jobs:
   forge-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         with:
-          node-version: 14
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Restore cached yarn cache
-        uses: actions/cache@v2
-        id: cache-yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Restore cached node_modules
-        id: cache-node-modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./node_modules
-            ./packages/hardhat/node_modules
-          key: ${{ runner.os }}-${{ steps.nvm.outputs.NVMRC }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ steps.nvm.outputs.NVMRC }}-nodemodules-
+          node-version: 16
+      - uses: bahmutov/npm-install@v1
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
-      - name: Install JS dependencies
-        if: |
-          steps.cache-yarn-cache.outputs.cache-hit != 'true' ||
-          steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile --prefer-offline
       - name: install libraries
         run: git submodule update --init
-      - name: Run system tests (JBControllerV3)
-        run: JBX_CONTROLLER_VERSION=3_0 forge build --sizes && forge test
-      - name: Run system tests (JBControllerV3_1)
-        run: JBX_CONTROLLER_VERSION=3_1 forge build --sizes && forge test
+      - name: Run tests
+        run: FOUNDRY_PROFILE=default forge snapshot # TODO: Change to fork once fork tests can be run
+      - name: Check contract sizes
+        run: forge build --sizes

@@ -213,7 +213,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
     _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbFundingCycleStore, _jbPrices);
-    vm.label(address(_jbTerminalStore), 'JBSingleTokenPaymentTerminalStore3_1_1');
+    vm.label(address(_jbTerminalStore), 'JBSingleTokenPaymentTerminalStore');
 
     vm.prank(_multisig);
     _permit2 = deployPermit2();

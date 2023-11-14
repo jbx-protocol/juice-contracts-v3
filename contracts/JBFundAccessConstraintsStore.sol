@@ -251,7 +251,7 @@ contract JBFundAccessConstraintsStore is
     uint256 _numberOfFundAccessConstraints = _fundAccessConstraints.length;
 
     // Keep a reference to the fund access constraint being iterated on.
-    JBFundAccessConstraints memory _constraints;
+    JBFundAccessConstraints calldata _constraints;
 
     // Set distribution limits if there are any.
     for (uint256 _i; _i < _numberOfFundAccessConstraints; ) {
@@ -262,7 +262,7 @@ contract JBFundAccessConstraintsStore is
       uint256 _numberOfDistributionLimits = _constraints.distributionLimits.length;
 
       // Keep a reference to the distribution limit being iterated on.
-      JBCurrencyAmount memory _distributionLimit;
+      JBCurrencyAmount calldata _distributionLimit;
 
       // Iterate through each distribution limit to validate and store them.
       for (uint256 _j; _j < _numberOfDistributionLimits; ) {
@@ -298,7 +298,7 @@ contract JBFundAccessConstraintsStore is
       uint256 _numberOfOverflowAllowances = _constraints.overflowAllowances.length;
 
       // Keep a reference to the overflow allowances being iterated on.
-      JBCurrencyAmount memory _overflowAllowance;
+      JBCurrencyAmount calldata _overflowAllowance;
 
       // Iterate through each overflow allowance to validate and store them.
       for (uint256 _j; _j < _numberOfOverflowAllowances; ) {

@@ -28,8 +28,11 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
   // ------------------------- private constants ----------------------- //
   //*********************************************************************//
 
-  /// @notice The number of discount multiples before which cached values will be prefered.
-  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 50000;
+  /// @notice The max number of discount multiples that can be cached at a time.
+  uint256 private constant _MAX_DISCOUNT_MULTIPLE_CACHE_THRESHOLD = 50000;
+
+  /// @notice The number of discount multiples before a cached value is sought.
+  uint256 private constant _DISCOUNT_MULTIPLE_CACHE_LOOKUP_THRESHOLD = 1000;
 
   //*********************************************************************//
   // --------------------- private stored properties ------------------- //
@@ -363,7 +366,7 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
 
     // Determine the max start timestamp from which the cache can be set.
     uint256 _maxStart = _latestConfiguredFundingCycle.start +
-      (_cache.discountMultiple + _DISCOUNT_MULTIPLE_CACHE_THRESHOLD) *
+      (_cache.discountMultiple + _MAX_DISCOUNT_MULTIPLE_CACHE_THRESHOLD) *
       _latestConfiguredFundingCycle.duration;
 
     // Determine the timestamp from the which the cache will be set.
@@ -709,16 +712,19 @@ contract JBFundingCycleStore is JBControllerUtility, IJBFundingCycleStore {
       _discountMultiple = _startDistance / _baseFundingCycle.duration; // Non-null duration is excluded above
     }
 
-    // Get a cached weight for the configuration.
-    JBFundingCycleWeightCache memory _cache = _weightCache[_baseFundingCycle.configuration];
+    // Check the cache if needed.
+    if (_discountMultiple > _DISCOUNT_MULTIPLE_CACHE_LOOKUP_THRESHOLD) {
+      // Get a cached weight for the configuration.
+      JBFundingCycleWeightCache memory _cache = _weightCache[_baseFundingCycle.configuration];
 
-    // If a cached value is available, use it.
-    if (_cache.discountMultiple > 0) {
-      // Set the starting weight to be the cached value.
-      weight = _cache.weight;
+      // If a cached value is available, use it.
+      if (_cache.discountMultiple > 0) {
+        // Set the starting weight to be the cached value.
+        weight = _cache.weight;
 
-      // Set the discount multiple to be the difference between the cached value and the total discount multiple that should be applied.
-      _discountMultiple -= _cache.discountMultiple;
+        // Set the discount multiple to be the difference between the cached value and the total discount multiple that should be applied.
+        _discountMultiple -= _cache.discountMultiple;
+      }
     }
 
     for (uint256 _i; _i < _discountMultiple; ) {
