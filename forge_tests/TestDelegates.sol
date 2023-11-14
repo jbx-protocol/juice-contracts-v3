@@ -12,10 +12,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
     bytes private constant _PAYER_METADATA = bytes("Some payer metadata");
 
     IJBController3_1 private _controller;
-    IJBPrices private _prices;
-    JBTokenStore private _tokenStore;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata _metadata;
     IJBPaymentTerminal private _terminal;
     address private _projectOwner;
     address private _beneficiary;
@@ -30,18 +26,16 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _payer = address(1_234_567);
-        _prices = jbPrices();
         _terminal = jbPayoutRedemptionTerminal();
-        _tokenStore = jbTokenStore();
 
-        _data = JBFundingCycleData({
+        JBFundingCycleData memory _data = JBFundingCycleData({
             duration: 0,
             weight: _WEIGHT,
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
+        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
