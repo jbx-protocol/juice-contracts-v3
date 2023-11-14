@@ -34,6 +34,7 @@ import {JBSingleTokenPaymentTerminal} from "@juicebox/abstract/JBSingleTokenPaym
 import {JBDidPayData3_1_1} from "@juicebox/structs/JBDidPayData3_1_1.sol";
 import {JBDidRedeemData3_1_1} from "@juicebox/structs/JBDidRedeemData3_1_1.sol";
 import {JBFee} from "@juicebox/structs/JBFee.sol";
+import {JBFees} from "@juicebox/libraries/JBFees.sol";
 import {JBFundAccessConstraints} from "@juicebox/structs/JBFundAccessConstraints.sol";
 import {JBFundingCycle} from "@juicebox/structs/JBFundingCycle.sol";
 import {JBFundingCycleData} from "@juicebox/structs/JBFundingCycleData.sol";
@@ -50,9 +51,6 @@ import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCyc
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
-
-import {JBBallotState} from "@juicebox/enums/JBBallotState.sol";
-
 import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
 import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
 
@@ -63,8 +61,8 @@ import {IJBSingleTokenPaymentTerminalStore3_1_1} from
     "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol";
 import {IJBProjects} from "@juicebox/interfaces/IJBProjects.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1_1} from
-    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol";
+import {IJBPayoutRedemptionPaymentTerminal3_1} from
+    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
 import {IJBDirectory} from "@juicebox/interfaces/IJBDirectory.sol";
 import {IJBFundingCycleStore} from "@juicebox/interfaces/IJBFundingCycleStore.sol";
 import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
@@ -74,19 +72,15 @@ import {IJBPayDelegate3_1_1} from "@juicebox/interfaces/IJBPayDelegate3_1_1.sol"
 import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBFeeGauge3_1} from "@juicebox/interfaces/IJBFeeGauge3_1.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1_1} from
-    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol";
+import {IJBPayoutRedemptionPaymentTerminal3_1} from
+    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
 import {IJBFeeHoldingTerminal} from "@juicebox/interfaces/IJBFeeHoldingTerminal.sol";
 import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
 import {IJBAllowanceTerminal3_1} from "@juicebox/interfaces/IJBAllowanceTerminal3_1.sol";
 import {IJBPayoutTerminal3_1} from "@juicebox/interfaces/IJBPayoutTerminal3_1.sol";
 import {IJBRedemptionTerminal} from "@juicebox/interfaces/IJBRedemptionTerminal.sol";
-import {IJBPayoutTerminal3_1} from "@juicebox/interfaces/IJBPayoutTerminal3_1.sol";
-import {IJBAllowanceTerminal3_1} from "@juicebox/interfaces/IJBAllowanceTerminal3_1.sol";
 import {IJBSingleTokenPaymentTerminal} from "@juicebox/interfaces/IJBSingleTokenPaymentTerminal.sol";
-import {IJBSingleTokenPaymentTerminalStore3_1_1} from
-    "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
@@ -98,6 +92,8 @@ import {JBFundingCycleMetadataResolver} from
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
+
+import {JBBallotState} from "@juicebox/enums/JBBallotState.sol";
 
 import "./AccessJBLib.sol";
 
@@ -150,13 +146,6 @@ contract TestBaseWorkflow is Test {
 
     // AccessJBLib
     AccessJBLib internal _accessJBLib;
-
-    // Default funding cycle data
-    mapping(uint256 => JBFundingCycleConfiguration) public defaultCycles;
-    JBFundingCycleData _defaultData;
-    JBFundingCycleMetadata _defaultMetaData;
-    JBGroupedSplits[] _defaultSplits;
-    JBFundAccessConstraints[] _defaultFundAccess;
 
     //*********************************************************************//
     // ------------------------- internal views -------------------------- //
@@ -226,14 +215,6 @@ contract TestBaseWorkflow is Test {
         return _accessJBLib;
     }
 
-    function getDefaultCycleConfig(uint256 index)
-        internal
-        view
-        returns (JBFundingCycleConfiguration memory)
-    {
-        return defaultCycles[index];
-    }
-
     //*********************************************************************//
     // --------------------------- test setup ---------------------------- //
     //*********************************************************************//
@@ -259,40 +240,52 @@ contract TestBaseWorkflow is Test {
         address contractAtNoncePlusOne = addressFrom(address(this), 5);
 
         // JBFundingCycleStore
-        _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(contractAtNoncePlusOne));
+        _jbFundingCycleStore = new JBFundingCycleStore(
+            IJBDirectory(contractAtNoncePlusOne)
+        );
         vm.label(address(_jbFundingCycleStore), "JBFundingCycleStore");
 
         // JBDirectory
-        _jbDirectory =
-            new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
+        _jbDirectory = new JBDirectory(
+            _jbOperatorStore,
+            _jbProjects,
+            _jbFundingCycleStore,
+            _multisig
+        );
         vm.label(address(_jbDirectory), "JBDirectory");
 
         // JBTokenStore
         _jbTokenStore = new JBTokenStore(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore
+        );
         vm.label(address(_jbTokenStore), "JBTokenStore");
 
         // JBSplitsStore
-        _jbSplitsStore = new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory);
+        _jbSplitsStore = new JBSplitsStore(
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory
+        );
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
 
-        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
+        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(
+            _jbDirectory
+        );
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
 
         // JBController3_1
         _jbController = new JBController3_1(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbTokenStore,
-      _jbSplitsStore,
-      _jbFundAccessConstraintsStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbTokenStore,
+            _jbSplitsStore,
+            _jbFundAccessConstraintsStore
+        );
         vm.label(address(_jbController), "JBController3_1");
 
         vm.prank(_multisig);
@@ -300,10 +293,10 @@ contract TestBaseWorkflow is Test {
 
         // JBETHPaymentTerminalStore
         _jbPaymentTerminalStore3_1_1 = new JBSingleTokenPaymentTerminalStore3_1_1(
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbPrices
-    );
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbPrices
+        );
         vm.label(address(_jbPaymentTerminalStore3_1_1), "JBSingleTokenPaymentTerminalStore3_1_1");
 
         // AccessJBLib
@@ -311,37 +304,34 @@ contract TestBaseWorkflow is Test {
 
         // JBETHPaymentTerminal3_1_2
         _jbETHPaymentTerminal3_1_2 = new JBETHPaymentTerminal3_1_2(
-      _accessJBLib.ETH(),
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbPrices,
-      address(_jbPaymentTerminalStore3_1_1),
-      _multisig
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbPrices,
+            address(_jbPaymentTerminalStore3_1_1),
+            _multisig
+        );
         vm.label(address(_jbETHPaymentTerminal3_1_2), "JBETHPaymentTerminal3_1_2");
 
         vm.prank(_multisig);
-        _jbToken = new JBToken('MyToken', 'MT', 1);
+        _jbToken = new JBToken("MyToken", "MT", 1);
 
         vm.prank(_multisig);
         _jbToken.mint(1, _multisig, 100 * 10 ** 18);
 
         // JBERC20PaymentTerminal3_1_2
         _jbERC20PaymentTerminal3_1_2 = new JBERC20PaymentTerminal3_1_2(
-      _jbToken,
-      _accessJBLib.ETH(), // currency
-      _accessJBLib.ETH(), // base weight currency
-      1, // JBSplitsGroupe
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbPrices,
-      address(_jbPaymentTerminalStore3_1_1),
-      _multisig
-    );
+            _jbToken,
+            1, // JBSplitsGroupe
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbPrices,
+            address(_jbPaymentTerminalStore3_1_1),
+            _multisig
+        );
 
         vm.label(address(_jbERC20PaymentTerminal3_1_2), "JBERC20PaymentTerminal3_1_2");
     }

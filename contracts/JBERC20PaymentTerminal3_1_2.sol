@@ -31,8 +31,6 @@ contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_1_2 {
     //*********************************************************************//
 
     /// @param _token The token that this terminal manages.
-    /// @param _currency The currency that this terminal's token adheres to for price feeds.
-    /// @param _baseWeightCurrency The currency to base token issuance on.
     /// @param _payoutSplitsGroup The group that denotes payout splits from this terminal in the splits store.
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
@@ -43,8 +41,6 @@ contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_1_2 {
     /// @param _owner The address that will own this contract.
     constructor(
         IERC20Metadata _token,
-        uint256 _currency,
-        uint256 _baseWeightCurrency,
         uint256 _payoutSplitsGroup,
         IJBOperatorStore _operatorStore,
         IJBProjects _projects,
@@ -57,8 +53,7 @@ contract JBERC20PaymentTerminal3_1_2 is JBPayoutRedemptionPaymentTerminal3_1_2 {
         JBPayoutRedemptionPaymentTerminal3_1_2(
             address(_token),
             _token.decimals(),
-            _currency,
-            _baseWeightCurrency,
+            uint256(uint24(uint160(address(_token)))), // last 24 bits used for currency.
             _payoutSplitsGroup,
             _operatorStore,
             _projects,

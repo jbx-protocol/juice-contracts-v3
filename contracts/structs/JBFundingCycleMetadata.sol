@@ -6,7 +6,7 @@ import {JBGlobalFundingCycleMetadata} from "./JBGlobalFundingCycleMetadata.sol";
 /// @custom:member global Data used globally in non-migratable ecosystem contracts.
 /// @custom:member reservedRate The reserved rate of the funding cycle. This number is a percentage calculated out of `JBConstants.MAX_RESERVED_RATE`.
 /// @custom:member redemptionRate The redemption rate of the funding cycle. This number is a percentage calculated out of `JBConstants.MAX_REDEMPTION_RATE`.
-/// @custom:member ballotRedemptionRate The redemption rate to use during an active ballot of the funding cycle. This number is a percentage calculated out of `JBConstants.MAX_REDEMPTION_RATE`.
+/// @custom:member baseCurrency The currency on which to base the funding cycle's weight.
 /// @custom:member pausePay A flag indicating if the pay functionality should be paused during the funding cycle.
 /// @custom:member pauseDistributions A flag indicating if the distribute functionality should be paused during the funding cycle.
 /// @custom:member pauseRedeem A flag indicating if the redeem functionality should be paused during the funding cycle.
@@ -25,7 +25,7 @@ struct JBFundingCycleMetadata {
     JBGlobalFundingCycleMetadata global;
     uint256 reservedRate;
     uint256 redemptionRate;
-    uint256 ballotRedemptionRate;
+    uint256 baseCurrency;
     bool pausePay;
     bool pauseDistributions;
     bool pauseRedeem;

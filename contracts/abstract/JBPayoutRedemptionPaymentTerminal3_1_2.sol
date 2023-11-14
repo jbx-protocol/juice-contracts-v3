@@ -11,8 +11,6 @@ import {IJBController3_1} from "./../interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./../interfaces/IJBDirectory.sol";
 import {IJBPayoutRedemptionPaymentTerminal3_1} from
     "./../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1_1} from
-    "./../interfaces/IJBPayoutRedemptionPaymentTerminal3_1_1.sol";
 import {IJBSplitsStore} from "./../interfaces/IJBSplitsStore.sol";
 import {IJBFeeGauge3_1} from "./../interfaces/IJBFeeGauge3_1.sol";
 import {IJBOperatable} from "./../interfaces/IJBOperatable.sol";
@@ -50,7 +48,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     JBSingleTokenPaymentTerminal,
     JBOperatable,
     Ownable,
-    IJBPayoutRedemptionPaymentTerminal3_1_1
+    IJBPayoutRedemptionPaymentTerminal3_1
 {
     // A library that parses the packed funding cycle metadata into a friendlier format.
     using JBFundingCycleMetadataResolver for JBFundingCycle;
@@ -64,7 +62,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     error INADEQUATE_TOKEN_COUNT();
     error NO_MSG_VALUE_ALLOWED();
     error PAY_TO_ZERO_ADDRESS();
-    error PROJECT_TERMINAL_MISMATCH();
     error REDEEM_TO_ZERO_ADDRESS();
     error TERMINAL_TOKENS_INCOMPATIBLE();
 
@@ -105,10 +102,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
 
     /// @notice The contract that stores and manages the terminal's data.
     address public immutable override store;
-
-    /// @notice The currency to base token issuance on.
-    /// @dev If this differs from `currency`, there must be a price feed available to convert `currency` to `baseWeightCurrency`.
-    uint256 public immutable override baseWeightCurrency;
 
     /// @notice The group that payout splits coming from this terminal are identified by.
     uint256 public immutable override payoutSplitsGroup;
@@ -183,8 +176,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         override(JBSingleTokenPaymentTerminal, IERC165)
         returns (bool)
     {
-        return _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1_1).interfaceId
-            || _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId
+        return _interfaceId == type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId
             || _interfaceId == type(IJBPayoutTerminal3_1).interfaceId
             || _interfaceId == type(IJBAllowanceTerminal3_1).interfaceId
             || _interfaceId == type(IJBRedemptionTerminal).interfaceId
@@ -206,7 +198,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     /// @param _token The token that this terminal manages.
     /// @param _decimals The number of decimals the token fixed point amounts are expected to have.
     /// @param _currency The currency that this terminal's token adheres to for price feeds.
-    /// @param _baseWeightCurrency The currency to base token issuance on.
     /// @param _payoutSplitsGroup The group that denotes payout splits from this terminal in the splits store.
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
@@ -220,7 +211,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         address _token,
         uint256 _decimals,
         uint256 _currency,
-        uint256 _baseWeightCurrency,
         uint256 _payoutSplitsGroup,
         IJBOperatorStore _operatorStore,
         IJBProjects _projects,
@@ -234,7 +224,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         JBSingleTokenPaymentTerminal(_token, _decimals, _currency)
         JBOperatable(_operatorStore)
     {
-        baseWeightCurrency = _baseWeightCurrency;
         payoutSplitsGroup = _payoutSplitsGroup;
         projects = _projects;
         directory = _directory;
@@ -647,10 +636,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
 
                 // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
                 _feeDiscount = isFeelessAddress[_beneficiary]
-                    || (
-                        _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
-                            && _fundingCycle.ballotRedemptionRate() == JBConstants.MAX_REDEMPTION_RATE
-                    ) || _feePercent == 0
+                    || _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
+                    || _feePercent == 0
                     ? JBConstants.MAX_FEE_DISCOUNT
                     : _currentFeeDiscount(_projectId, JBFeeType.REDEMPTION);
 
@@ -1237,10 +1224,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // Trigger any inherited pre-transfer logic if funds will be transferred.
         if (address(_terminal) != address(this)) _beforeTransferTo(address(_terminal), _amount);
 
-        try _terminal
+        try _terminal.pay{value: token == JBTokens.ETH ? _amount : 0}(
             // Send the fee.
             // If this terminal's token is ETH, send it in msg.value.
-            .pay{value: token == JBTokens.ETH ? _amount : 0}(
             _FEE_BENEFICIARY_PROJECT_ID,
             _amount,
             token,
@@ -1319,13 +1305,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
             // Record the payment.
             (_fundingCycle, _tokenCount, _delegateAllocations, _memo) =
             IJBSingleTokenPaymentTerminalStore3_1_1(store).recordPaymentFrom(
-                _payer,
-                _bundledAmount,
-                _projectId,
-                baseWeightCurrency,
-                _beneficiary,
-                _memo,
-                _metadata
+                _payer, _bundledAmount, _projectId, _beneficiary, _memo, _metadata
             );
 
             // Mint the tokens if needed.

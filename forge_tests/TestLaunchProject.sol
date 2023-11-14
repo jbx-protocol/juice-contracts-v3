@@ -31,7 +31,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 5000, //50%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,

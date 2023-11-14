@@ -14,7 +14,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -48,7 +48,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10_000, //100%
-            ballotRedemptionRate: 10_000,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,

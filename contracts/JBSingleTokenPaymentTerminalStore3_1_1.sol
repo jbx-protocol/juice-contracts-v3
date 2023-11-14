@@ -169,9 +169,8 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
         if (_tokenCount > _totalSupply) return 0;
 
         // Return the reclaimable overflow amount.
-        return _reclaimableOverflowDuring(
-            _projectId, _fundingCycle, _tokenCount, _totalSupply, _currentOverflow
-        );
+        return
+            _reclaimableOverflowDuring(_fundingCycle, _tokenCount, _totalSupply, _currentOverflow);
     }
 
     /// @notice The current amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens, using the specified total token supply and overflow amounts.
@@ -197,9 +196,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
         // Return the reclaimable overflow amount.
-        return _reclaimableOverflowDuring(
-            _projectId, _fundingCycle, _tokenCount, _totalSupply, _overflow
-        );
+        return _reclaimableOverflowDuring(_fundingCycle, _tokenCount, _totalSupply, _overflow);
     }
 
     //*********************************************************************//
@@ -229,7 +226,6 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
     /// @param _payer The original address that sent the payment to the terminal.
     /// @param _amount The amount of tokens being paid. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
     /// @param _projectId The ID of the project being paid.
-    /// @param _baseWeightCurrency The currency to base token issuance on.
     /// @param _beneficiary The specified address that should be the beneficiary of anything that results from the payment.
     /// @param _memo A memo to pass along to the emitted event, and passed along to the funding cycle's data source.
     /// @param _metadata Bytes to send along to the data source, if one is provided.
@@ -241,7 +237,6 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
         address _payer,
         JBTokenAmount calldata _amount,
         uint256 _projectId,
-        uint256 _baseWeightCurrency,
         address _beneficiary,
         string calldata _memo,
         bytes memory _metadata
@@ -338,9 +333,9 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
 
         // If the terminal should base its weight on a different currency from the terminal's currency, determine the factor.
         // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
-        uint256 _weightRatio = _amount.currency == _baseWeightCurrency
+        uint256 _weightRatio = _amount.currency == fundingCycle.baseCurrency()
             ? 10 ** _decimals
-            : prices.priceFor(_amount.currency, _baseWeightCurrency, _decimals);
+            : prices.priceFor(_amount.currency, fundingCycle.baseCurrency(), _decimals);
 
         // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
         tokenCount = PRBMath.mulDiv(_amount.value, _weight, _weightRatio);
@@ -417,7 +412,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
                 if (_currentOverflow != 0) {
                     // Calculate reclaim amount using the current overflow amount.
                     reclaimAmount = _reclaimableOverflowDuring(
-                        _projectId, fundingCycle, _tokenCount, _totalSupply, _currentOverflow
+                        fundingCycle, _tokenCount, _totalSupply, _currentOverflow
                     );
                 }
 
@@ -428,9 +423,6 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
             if (fundingCycle.useDataSourceForRedeem() && fundingCycle.dataSource() != address(0)) {
                 // Yet another scoped section prevents stack too deep. `_state`  only used within scope.
                 {
-                    // Get a reference to the ballot state.
-                    JBBallotState _state = fundingCycleStore.currentBallotStateOf(_projectId);
-
                     // Create the params that'll be sent to the data source.
                     JBRedeemParamsData memory _data = JBRedeemParamsData(
                         IJBSingleTokenPaymentTerminal(msg.sender),
@@ -442,9 +434,7 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
                         _currentOverflow,
                         _reclaimedTokenAmount,
                         fundingCycle.useTotalOverflowForRedemptions(),
-                        _state == JBBallotState.Active
-                            ? fundingCycle.ballotRedemptionRate()
-                            : fundingCycle.redemptionRate(),
+                        fundingCycle.redemptionRate(),
                         _memo,
                         _metadata
                     );
@@ -674,27 +664,22 @@ contract JBSingleTokenPaymentTerminalStore3_1_1 is
 
     /// @notice The amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens when measured from the specified.
     /// @dev If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
-    /// @param _projectId The ID of the project to get the reclaimable overflow amount for.
     /// @param _fundingCycle The funding cycle during which reclaimable overflow is being calculated.
     /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
     /// @param _totalSupply The total supply of tokens to make the calculation with, as a fixed point number with 18 decimals.
     /// @param _overflow The amount of overflow to make the calculation with.
     /// @return The amount of overflowed tokens that can be reclaimed.
     function _reclaimableOverflowDuring(
-        uint256 _projectId,
         JBFundingCycle memory _fundingCycle,
         uint256 _tokenCount,
         uint256 _totalSupply,
         uint256 _overflow
-    ) private view returns (uint256) {
+    ) private pure returns (uint256) {
         // If the amount being redeemed is the total supply, return the rest of the overflow.
         if (_tokenCount == _totalSupply) return _overflow;
 
         // Use the ballot redemption rate if the queued cycle is pending approval according to the previous funding cycle's ballot.
-        uint256 _redemptionRate = fundingCycleStore.currentBallotStateOf(_projectId)
-            == JBBallotState.Active
-            ? _fundingCycle.ballotRedemptionRate()
-            : _fundingCycle.redemptionRate();
+        uint256 _redemptionRate = _fundingCycle.redemptionRate();
 
         // If the redemption rate is 0, nothing is claimable.
         if (_redemptionRate == 0) return 0;

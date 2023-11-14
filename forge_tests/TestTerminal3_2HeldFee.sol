@@ -13,7 +13,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -28,7 +28,6 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
 
         _controller = jbController();
         _terminal = new JBETHPaymentTerminal3_1_2(
-            _accessJBLib.ETH(),
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
@@ -57,7 +56,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10_000, //100%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -153,7 +152,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
 
         // -- distribute --
-        IJBPayoutRedemptionPaymentTerminal3_1_1(address(_terminal)).distributePayoutsOf(
+        IJBPayoutRedemptionPaymentTerminal3_1(address(_terminal)).distributePayoutsOf(
             _projectId,
             payAmountInWei,
             jbLibraries().ETH(),

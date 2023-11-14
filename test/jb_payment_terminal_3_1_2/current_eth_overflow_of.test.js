@@ -15,13 +15,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
   const AMOUNT = ethers.utils.parseEther('10');
   const PRICE = ethers.BigNumber.from('100');
   let CURRENCY_ETH;
-  let CURRENCY_USD;
 
   before(async function () {
     const jbCurrenciesFactory = await ethers.getContractFactory('JBCurrencies');
     const jbCurrencies = await jbCurrenciesFactory.deploy();
     CURRENCY_ETH = await jbCurrencies.ETH();
-    CURRENCY_USD = await jbCurrencies.USD();
   });
 
   async function setup() {
@@ -60,7 +58,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
     let jbEthPaymentTerminal = await jbTerminalFactory
       .connect(deployer)
       .deploy(
-        /*base weight currency*/ CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -79,8 +76,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
       .connect(deployer)
       .deploy(
         NON_ETH_TOKEN,
-        CURRENCY_USD,
-        CURRENCY_USD,
         SPLITS_GROUP,
         mockJbOperatorStore.address,
         mockJbProjects.address,
@@ -104,6 +99,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
       caller,
       jbEthPaymentTerminal,
       JBERC20PaymentTerminal,
+      NON_ETH_TOKEN,
       mockJbDirectory,
       mockJbPrices,
       mockJBPaymentTerminalStore,
@@ -116,10 +112,15 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::currentEthOverflowOf(...)', fu
   });
 
   it('Should return the current terminal overflow quoted in eth if the terminal uses another currency than eth', async function () {
-    const { mockJbPrices, JBERC20PaymentTerminal } = await setup();
+    const { mockJbPrices, JBERC20PaymentTerminal, NON_ETH_TOKEN } = await setup();
 
     await mockJbPrices.mock.priceFor
-      .withArgs(CURRENCY_USD, CURRENCY_ETH, 16) // 16-decimal
+      .withArgs(
+        /*slice from 36 to 42 to get the last 6 nibbles/3 bytes of the token address*/
+        ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
+        CURRENCY_ETH,
+        16,
+      ) // 16-decimal
       .returns(100);
 
     expect(await JBERC20PaymentTerminal.currentEthOverflowOf(PROJECT_ID)).to.equal(

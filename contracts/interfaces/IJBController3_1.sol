@@ -3,12 +3,9 @@ pragma solidity ^0.8.0;
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JBBallotState} from "./../enums/JBBallotState.sol";
-import {JBFundAccessConstraints} from "./../structs/JBFundAccessConstraints.sol";
 import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
-import {JBFundingCycleData} from "./../structs/JBFundingCycleData.sol";
-import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
 import {JBFundingCycleConfiguration} from "./../structs/JBFundingCycleConfiguration.sol";
-import {JBGroupedSplits} from "./../structs/JBGroupedSplits.sol";
+import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
 import {JBProjectMetadata} from "./../structs/JBProjectMetadata.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";

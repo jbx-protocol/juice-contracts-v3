@@ -45,7 +45,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::setFeeGauge(...)', function ()
     let jbEthPaymentTerminal = await jbTerminalFactory
       .connect(deployer)
       .deploy(
-        CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,

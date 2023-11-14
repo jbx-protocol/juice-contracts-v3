@@ -5,16 +5,16 @@ import {JBFee} from "./../structs/JBFee.sol";
 import {IJBAllowanceTerminal3_1} from "./IJBAllowanceTerminal3_1.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBFeeHoldingTerminal} from "./IJBFeeHoldingTerminal.sol";
-import {IJBPayDelegate} from "./IJBPayDelegate.sol";
+import {IJBPayDelegate3_1_1} from "./IJBPayDelegate3_1_1.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IJBPayoutTerminal3_1} from "./IJBPayoutTerminal3_1.sol";
 import {IJBPrices} from "./IJBPrices.sol";
 import {IJBProjects} from "./IJBProjects.sol";
-import {IJBRedemptionDelegate} from "./IJBRedemptionDelegate.sol";
+import {IJBRedemptionDelegate3_1_1} from "./IJBRedemptionDelegate3_1_1.sol";
 import {IJBRedemptionTerminal} from "./IJBRedemptionTerminal.sol";
 import {IJBSplitsStore} from "./IJBSplitsStore.sol";
-import {JBDidPayData} from "./../structs/JBDidPayData.sol";
-import {JBDidRedeemData} from "./../structs/JBDidRedeemData.sol";
+import {JBDidPayData3_1_1} from "./../structs/JBDidPayData3_1_1.sol";
+import {JBDidRedeemData3_1_1} from "./../structs/JBDidRedeemData3_1_1.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
 
 interface IJBPayoutRedemptionPaymentTerminal3_1 is
@@ -142,6 +142,21 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
         address caller
     );
 
+    event DelegateDidRedeem(
+        IJBRedemptionDelegate3_1_1 indexed delegate,
+        JBDidRedeemData3_1_1 data,
+        uint256 delegatedAmount,
+        uint256 fee,
+        address caller
+    );
+
+    event DelegateDidPay(
+        IJBPayDelegate3_1_1 indexed delegate,
+        JBDidPayData3_1_1 data,
+        uint256 delegatedAmount,
+        address caller
+    );
+
     function projects() external view returns (IJBProjects);
 
     function splitsStore() external view returns (IJBSplitsStore);
@@ -151,8 +166,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     function prices() external view returns (IJBPrices);
 
     function store() external view returns (address);
-
-    function baseWeightCurrency() external view returns (uint256);
 
     function payoutSplitsGroup() external view returns (uint256);
 

@@ -62,7 +62,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::getters', function () {
     let jbEthPaymentTerminal = await jbTerminalFactory
       .connect(deployer)
       .deploy(
-        /*base weight currency*/ CURRENCY_ETH,
         mockJbOperatorStore.address,
         mockJbProjects.address,
         mockJbDirectory.address,
@@ -80,8 +79,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::getters', function () {
       .connect(deployer)
       .deploy(
         NON_ETH_TOKEN,
-        CURRENCY_ETH,
-        CURRENCY_ETH,
         SPLITS_GROUP,
         mockJbOperatorStore.address,
         mockJbProjects.address,
@@ -120,7 +117,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::getters', function () {
 
   it('Should return the currency for the token', async function () {
     const { JBERC20PaymentTerminal, jbEthPaymentTerminal, NON_ETH_TOKEN } = await setup();
-    expect(await JBERC20PaymentTerminal.currencyForToken(NON_ETH_TOKEN)).to.equal(CURRENCY_ETH);
+
+    // slice from 36 to 42 to get the last 6 nibbles/3 bytes of the token address
+    expect(await JBERC20PaymentTerminal.currencyForToken(NON_ETH_TOKEN)).to.equal(
+      ethers.BigNumber.from('0x' + NON_ETH_TOKEN.slice(36, 42)).toNumber(),
+    );
 
     expect(await jbEthPaymentTerminal.currencyForToken(ETH_ADDRESS)).to.equal(CURRENCY_ETH);
   });

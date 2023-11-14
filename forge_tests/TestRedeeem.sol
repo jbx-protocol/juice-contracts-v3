@@ -14,7 +14,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -49,7 +49,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 5000,
-            ballotRedemptionRate: 5000,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -96,8 +96,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
             _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
         );
     }
-
-    event K(uint256 q, uint256 w, uint256 e, uint256 j, uint256 k, uint256 l, uint256 n);
 
     function testRedeem(uint256 _tokenAmountToRedeem) external {
         bool payPreferClaimed = true; //false

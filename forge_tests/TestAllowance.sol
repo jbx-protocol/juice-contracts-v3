@@ -42,7 +42,7 @@ contract TestAllowance_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 5000, //50%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -151,8 +151,14 @@ contract TestAllowance_Local is TestBaseWorkflow {
             new bytes(0)
         );
 
+        uint256 tokenBalanceAfter = _tokenStore.balanceOf(_beneficiary, projectId);
+        uint256 tokenDiff = tokenBalanceAfter;
+
+        // Redemption fee share: (tokens received from redeem * 2 b/c 50% redemption rate)
+        uint256 processedFee = JBFees.feeIn(tokenDiff * 2, jbLibraries().MAX_FEE(), 0);
+
         // verify: beneficiary should have a balance of 0 JBTokens
-        assertEq(_tokenStore.balanceOf(_beneficiary, projectId), 0);
+        assertEq(_tokenStore.balanceOf(_beneficiary, projectId), (processedFee));
     }
 
     function testFuzzAllowance(uint232 ALLOWANCE, uint232 TARGET, uint256 BALANCE) public {

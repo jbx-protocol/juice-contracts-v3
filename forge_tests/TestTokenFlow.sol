@@ -10,7 +10,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
     JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
@@ -42,7 +42,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: _reservedRate,
             redemptionRate: 5000, //50%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,

@@ -12,6 +12,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] _groupedSplits;
     JBFundAccessConstraints[] _fundAccessConstraints;
+    MockPriceFeed _priceFeedJbUsd;
 
     IJBPaymentTerminal[] _terminals;
     JBERC20PaymentTerminal3_1_2 ERC20terminal;
@@ -67,7 +68,7 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
             }),
             reservedRate: 5000, //50%
             redemptionRate: 10_000, //100%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
@@ -86,8 +87,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
 
         ERC20terminal = new JBERC20PaymentTerminal3_1_2(
             jbToken(),
-            jbLibraries().USD(), // currency
-            jbLibraries().ETH(), // base weight currency
             1, // JBSplitsGroupe
             jbOperatorStore(),
             jbProjects(),
@@ -140,14 +139,22 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         );
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeed = new MockPriceFeed(FAKE_PRICE);
-        MockPriceFeed _priceFeedUsdEth = new MockPriceFeed(FAKE_PRICE);
-        vm.label(address(_priceFeed), "MockPrice Feed");
+        MockPriceFeed _priceFeedJbEth = new MockPriceFeed(FAKE_PRICE, 18);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-ETH");
+
+        _priceFeedJbUsd = new MockPriceFeed(FAKE_PRICE, 18);
+        vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-USD");
 
         jbPrices().addFeedFor(
-            jbLibraries().USD(), // currency
+            uint256(uint24(uint160(address(jbToken())))), // currency
             jbLibraries().ETH(), // base weight currency
-            _priceFeedUsdEth
+            _priceFeedJbEth
+        );
+
+        jbPrices().addFeedFor(
+            uint256(uint24(uint160(address(jbToken())))), // currency
+            jbLibraries().USD(), // base weight currency
+            _priceFeedJbUsd
         );
 
         vm.stopPrank();
@@ -167,8 +174,8 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         );
 
         // verify: beneficiary should have a balance of JBTokens (divided by 2 -> reserved rate = 50%)
-        // price feed will return FAKE_PRICE*18 (for curr usd/base eth); since it's an 18 decimal terminal (ie calling getPrice(18) )
-        uint256 _userTokenBalance = PRBMath.mulDiv(20 * 10 ** 18, WEIGHT, 36 * FAKE_PRICE);
+        // price feed will return FAKE_PRICE; since it's an 18 decimal terminal (ie calling getPrice(18) )
+        uint256 _userTokenBalance = PRBMath.mulDiv(20 * 10 ** 18, WEIGHT, FAKE_PRICE) / 2;
         assertEq(_tokenStore.balanceOf(caller, projectId), _userTokenBalance);
 
         // verify: balance in terminal should be up to date
@@ -205,8 +212,11 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         // Funds leaving the contract -> take the fee
         assertEq(
             jbToken().balanceOf(msg.sender),
+            // Inverse price is returned, normalized to 18 decimals
             PRBMath.mulDiv(
-                5 * 10 ** 18, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + ERC20terminal.fee()
+                PRBMath.mulDiv((5 * 10 ** 18), _priceFeedJbUsd.currentPrice(18), 10 ** 18),
+                jbLibraries().MAX_FEE(),
+                jbLibraries().MAX_FEE() + ERC20terminal.fee()
             )
         );
 

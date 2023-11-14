@@ -3,6 +3,9 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
+import {JBFeeType} from "../contracts/enums/JBFeeType.sol";
+import {IJBFeeGauge3_1} from "../contracts/interfaces/IJBFeeGauge3_1.sol";
+
 contract TestDistributeHeldFee_Local is TestBaseWorkflow {
     JBController3_1 private _controller;
     JBETHPaymentTerminal3_1_2 private _terminal;
@@ -25,6 +28,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
 
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
+
         _tokenStore = jbTokenStore();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
@@ -44,7 +48,7 @@ contract TestDistributeHeldFee_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 10_000, //100%
-            ballotRedemptionRate: 0,
+            baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
             pauseRedeem: false,
