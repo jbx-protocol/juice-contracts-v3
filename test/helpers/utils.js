@@ -1,4 +1,4 @@
-import { ethers, network } from "hardhat";
+import { ethers, network } from 'hardhat';
 
 /**
  * Grabs timestamp from Block or latest
@@ -6,9 +6,7 @@ import { ethers, network } from "hardhat";
  * @returns
  */
 export async function getTimestamp(block) {
-  return ethers.BigNumber.from(
-    (await ethers.provider.getBlock(block || "latest")).timestamp
-  );
+  return ethers.BigNumber.from((await ethers.provider.getBlock(block || 'latest')).timestamp);
 }
 
 /**
@@ -20,8 +18,8 @@ export async function fastForward(block, seconds) {
   const now = await getTimestamp();
   const timeSinceTimemark = now.sub(await getTimestamp(block));
   const fastforwardAmount = seconds.toNumber() - timeSinceTimemark;
-  await ethers.provider.send("evm_increaseTime", [fastforwardAmount]);
-  await ethers.provider.send("evm_mine");
+  await ethers.provider.send('evm_increaseTime', [fastforwardAmount]);
+  await ethers.provider.send('evm_mine');
 }
 
 /**
@@ -32,7 +30,7 @@ export async function fastForward(block, seconds) {
 export function makePackedPermissions(permissionIndexes) {
   return permissionIndexes.reduce(
     (sum, i) => sum.add(ethers.BigNumber.from(2).pow(i)),
-    ethers.BigNumber.from(0)
+    ethers.BigNumber.from(0),
   );
 }
 
@@ -44,17 +42,14 @@ export function makePackedPermissions(permissionIndexes) {
  */
 export async function impersonateAccount(
   address,
-  balance = ethers.BigNumber.from("0x1000000000000000000000")
+  balance = ethers.BigNumber.from('0x1000000000000000000000'),
 ) {
   await network.provider.request({
-    method: "hardhat_impersonateAccount",
+    method: 'hardhat_impersonateAccount',
     params: [address],
   });
 
-  await network.provider.send("hardhat_setBalance", [
-    address,
-    balance.toHexString(),
-  ]);
+  await network.provider.send('hardhat_setBalance', [address, balance.toHexString()]);
 
   return await ethers.getSigner(address);
 }
@@ -66,13 +61,10 @@ export async function impersonateAccount(
  */
 export async function setBalance(
   address,
-  balance = ethers.BigNumber.from("0x1000000000000000000000")
+  balance = ethers.BigNumber.from('0x1000000000000000000000'),
 ) {
   balance = ethers.BigNumber.from(balance);
-  await network.provider.send("hardhat_setBalance", [
-    address,
-    balance.toHexString(),
-  ]);
+  await network.provider.send('hardhat_setBalance', [address, balance.toHexString()]);
 }
 
 /**
@@ -82,7 +74,7 @@ export async function setBalance(
  * @return {ethers.Contract}
  */
 export async function deployJbToken(name, symbol, projectId) {
-  const jbTokenFactory = await ethers.getContractFactory("JBToken");
+  const jbTokenFactory = await ethers.getContractFactory('JBToken');
   return await jbTokenFactory.deploy(name, symbol, projectId);
 }
 
@@ -131,7 +123,7 @@ export function packFundingCycleMetadata({
   } = {
     allowSetTerminals: 0, // boolean
     allowSetController: 0, // boolean
-    pauseTransfer: 0,
+    pauseTransfer: 0
   },
   reservedRate = 0, // percentage
   redemptionRate = 10000, // percentage
@@ -210,20 +202,20 @@ export function makeSplits({
 /**
  * Returns a mock FundingCyleData struct
  * @summary Should create a struct based on the definition in structs/JBFundingCycleData.sol.
- * @param {custom obj} e.g. createFundingCycleData({ duration: 604800, weight: 1000000000000000000000000, decayRate: 0, ballot: constants.AddressZero })
+ * @param {custom obj} e.g. createFundingCycleData({ duration: 604800, weight: 1000000000000000000000000, discountRate: 0, ballot: constants.AddressZero })
  * @return {custom obj}
  * @note Passing in an empty obj will use default values below
  */
 export function createFundingCycleData({
   duration = ethers.BigNumber.from(604800), // 1 week
   weight = ethers.BigNumber.from(10).pow(24), // 1 million with 18 decimals
-  decayRate = ethers.BigNumber.from(0),
+  discountRate = ethers.BigNumber.from(0),
   ballot = ethers.constants.AddressZero,
 } = {}) {
   return {
     duration,
     weight,
-    decayRate,
+    discountRate,
     ballot,
   };
 }
