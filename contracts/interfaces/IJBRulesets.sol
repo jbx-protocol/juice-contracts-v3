@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBBallotState} from "./../enums/JBBallotState.sol";
+import {JBApprovalStatus} from "./../enums/JBApprovalStatus.sol";
 import {JBRuleset} from "./../structs/JBRuleset.sol";
 import {JBFundingCycleData} from "./../structs/JBFundingCycleData.sol";
 
@@ -35,7 +35,7 @@ interface IJBRulesets {
     )
         external
         view
-        returns (JBRuleset memory ruleset, JBBallotState ballotState);
+        returns (JBRuleset memory ruleset, JBApprovalStatus approvalStatus);
 
     function queuedOf(
         uint256 projectId
@@ -45,9 +45,9 @@ interface IJBRulesets {
         uint256 projectId
     ) external view returns (JBRuleset memory ruleset);
 
-    function currentBallotStateOf(
+    function currentApprovalStatusOf(
         uint256 projectId
-    ) external view returns (JBBallotState);
+    ) external view returns (JBApprovalStatus);
 
     function configureFor(
         uint256 projectId,

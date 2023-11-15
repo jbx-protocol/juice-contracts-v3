@@ -52,7 +52,7 @@ import {IJBMigratable} from "@juicebox/interfaces/IJBMigratable.sol";
 import {IJBOperatorStore} from "@juicebox/interfaces/IJBOperatorStore.sol";
 import {IJBTerminalStore} from "@juicebox/interfaces/IJBTerminalStore.sol";
 import {IJBProjects} from "@juicebox/interfaces/IJBProjects.sol";
-import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
+import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";
 import {IJBDirectory} from "@juicebox/interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "@juicebox/interfaces/IJBRulesets.sol";
 import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
@@ -64,7 +64,7 @@ import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
-import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
+import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
 import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
 

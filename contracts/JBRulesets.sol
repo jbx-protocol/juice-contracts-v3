@@ -3,10 +3,10 @@ pragma solidity ^0.8.16;
 
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
-import {JBBallotState} from "./enums/JBBallotState.sol";
+import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBFundingCycleBallot} from "./interfaces/IJBFundingCycleBallot.sol";
+import {IJBRulesetApprovalHook} from "./interfaces/IJBRulesetApprovalHook.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBFundingCycleData} from "./structs/JBFundingCycleData.sol";
@@ -85,26 +85,26 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         return _getStructFor(_projectId, _rulesetId);
     }
 
-    /// @notice The latest funding cycle to be configured for the specified project, and its current ballot state.
+    /// @notice The latest funding cycle to be configured for the specified project, and its current approval status.
     /// @param _projectId The ID of the project to get the latest configured funding cycle of.
     /// @return ruleset The project's queued funding cycle.
-    /// @return ballotState The state of the ballot for the reconfiguration.
+    /// @return approvalStatus The state of the approval hook for the reconfiguration.
     function latestConfiguredOf(
         uint256 _projectId
     )
         external
         view
         override
-        returns (JBRuleset memory ruleset, JBBallotState ballotState)
+        returns (JBRuleset memory ruleset, JBApprovalStatus approvalStatus)
     {
         // Get a reference to the latest funding cycle configuration.
-        uint256 _fundingCycleConfiguration = latestRulesetOf[_projectId];
+        uint256 _rulesetConfiguration = latestRulesetOf[_projectId];
 
         // Resolve the funding cycle for the latest configuration.
-        ruleset = _getStructFor(_projectId, _fundingCycleConfiguration);
+        ruleset = _getStructFor(_projectId, _rulesetConfiguration);
 
-        // Resolve the ballot state.
-        ballotState = _ballotStateOf(
+        // Resolve the approval status.
+        approvalStatus = _approvalStatusOf(
             _projectId,
             ruleset.rulesetId,
             ruleset.start,
@@ -123,26 +123,26 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (latestRulesetOf[_projectId] == 0) return _getStructFor(0, 0);
 
         // Get a reference to the rulesetId of the standby funding cycle.
-        uint256 _standbyFundingCycleConfiguration = _standbyOf(_projectId);
+        uint256 _standbyRulesetConfiguration = _standbyOf(_projectId);
 
-        // Keep a reference to the ballot state.
-        JBBallotState _ballotState;
+        // Keep a reference to the approval status.
+        JBApprovalStatus _approvalStatus;
 
         // If it exists, return its funding cycle if it is approved.
-        if (_standbyFundingCycleConfiguration != 0) {
+        if (_standbyRulesetConfiguration != 0) {
             ruleset = _getStructFor(
                 _projectId,
-                _standbyFundingCycleConfiguration
+                _standbyRulesetConfiguration
             );
 
-            // Get a reference to the ballot state.
-            _ballotState = _ballotStateOf(_projectId, ruleset);
+            // Get a reference to the approval status.
+            _approvalStatus = _approvalStatusOf(_projectId, ruleset);
 
-            // If the ballot hasn't failed, return it.
+            // If the approval hook hasn't failed, return it.
             if (
-                _ballotState == JBBallotState.Approved ||
-                _ballotState == JBBallotState.ApprovalExpected ||
-                _ballotState == JBBallotState.Empty
+                _approvalStatus == JBApprovalStatus.Approved ||
+                _approvalStatus == JBApprovalStatus.ApprovalExpected ||
+                _approvalStatus == JBApprovalStatus.Empty
             ) return ruleset;
 
             // Resolve the funding cycle for the latest configured funding cycle.
@@ -164,14 +164,14 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         // There's no queued if the current has a duration of 0.
         if (ruleset.duration == 0) return _getStructFor(0, 0);
 
-        // Get a reference to the ballot state.
-        _ballotState = _ballotStateOf(_projectId, ruleset);
+        // Get a reference to the approval status.
+        _approvalStatus = _approvalStatusOf(_projectId, ruleset);
 
-        // Check to see if this funding cycle's ballot hasn't failed.
+        // Check to see if this funding cycle's approval hook hasn't failed.
         // If so, return a funding cycle based on it.
         if (
-            _ballotState == JBBallotState.Approved ||
-            _ballotState == JBBallotState.Empty
+            _approvalStatus == JBApprovalStatus.Approved ||
+            _approvalStatus == JBApprovalStatus.Empty
         ) return _mockFundingCycleBasedOn(ruleset, false);
 
         // Get the funding cycle of its base funding cycle, which carries the last approved configuration.
@@ -195,70 +195,70 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (latestRulesetOf[_projectId] == 0) return _getStructFor(0, 0);
 
         // Get a reference to the rulesetId of the eligible funding cycle.
-        uint256 _fundingCycleConfiguration = _eligibleOf(_projectId);
+        uint256 _rulesetConfiguration = _eligibleOf(_projectId);
 
         // Keep a reference to the eligible funding cycle.
         JBRuleset memory _ruleset;
 
         // If an eligible funding cycle exists...
-        if (_fundingCycleConfiguration != 0) {
+        if (_rulesetConfiguration != 0) {
             // Resolve the funding cycle for the eligible configuration.
             _ruleset = _getStructFor(
                 _projectId,
-                _fundingCycleConfiguration
+                _rulesetConfiguration
             );
 
-            // Get a reference to the ballot state.
-            JBBallotState _ballotState = _ballotStateOf(
+            // Get a reference to the approval status.
+            JBApprovalStatus _approvalStatus = _approvalStatusOf(
                 _projectId,
                 _ruleset
             );
 
-            // Check to see if this funding cycle's ballot is approved if it exists.
+            // Check to see if this funding cycle's approval hook is approved if it exists.
             // If so, return it.
             if (
-                _ballotState == JBBallotState.Approved ||
-                _ballotState == JBBallotState.Empty
+                _approvalStatus == JBApprovalStatus.Approved ||
+                _approvalStatus == JBApprovalStatus.Empty
             ) return _ruleset;
 
             // If it hasn't been approved, set the funding cycle configuration to be the configuration of the funding cycle that it's based on,
             // which carries the last approved configuration.
-            _fundingCycleConfiguration = _ruleset.basedOn;
+            _rulesetConfiguration = _ruleset.basedOn;
 
             // Keep a reference to its funding cycle.
             _ruleset = _getStructFor(
                 _projectId,
-                _fundingCycleConfiguration
+                _rulesetConfiguration
             );
         } else {
             // No upcoming funding cycle found that is eligible to become active,
             // so use the last configuration.
-            _fundingCycleConfiguration = latestRulesetOf[_projectId];
+            _rulesetConfiguration = latestRulesetOf[_projectId];
 
             // Get the funding cycle for the latest ID.
             _ruleset = _getStructFor(
                 _projectId,
-                _fundingCycleConfiguration
+                _rulesetConfiguration
             );
 
-            // Get a reference to the ballot state.
-            JBBallotState _ballotState = _ballotStateOf(
+            // Get a reference to the approval status.
+            JBApprovalStatus _approvalStatus = _approvalStatusOf(
                 _projectId,
                 _ruleset
             );
 
-            // While the cycle has a ballot that isn't approved or if it hasn't yet started, get a reference to the funding cycle that the latest is based on, which has the latest approved configuration.
+            // While the cycle has a approval hook that isn't approved or if it hasn't yet started, get a reference to the funding cycle that the latest is based on, which has the latest approved configuration.
             while (
-                (_ballotState != JBBallotState.Approved &&
-                    _ballotState != JBBallotState.Empty) ||
+                (_approvalStatus != JBApprovalStatus.Approved &&
+                    _approvalStatus != JBApprovalStatus.Empty) ||
                 block.timestamp < _ruleset.start
             ) {
-                _fundingCycleConfiguration = _ruleset.basedOn;
+                _rulesetConfiguration = _ruleset.basedOn;
                 _ruleset = _getStructFor(
                     _projectId,
-                    _fundingCycleConfiguration
+                    _rulesetConfiguration
                 );
-                _ballotState = _ballotStateOf(_projectId, _ruleset);
+                _approvalStatus = _approvalStatusOf(_projectId, _ruleset);
             }
         }
 
@@ -269,23 +269,23 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         return _mockFundingCycleBasedOn(_ruleset, true);
     }
 
-    /// @notice The current ballot state of the project.
-    /// @param _projectId The ID of the project to check the ballot state of.
-    /// @return The project's current ballot's state.
-    function currentBallotStateOf(
+    /// @notice The current approval status of the project.
+    /// @param _projectId The ID of the project to check the approval status of.
+    /// @return The project's current approval status.
+    function currentApprovalStatusOf(
         uint256 _projectId
-    ) external view override returns (JBBallotState) {
+    ) external view override returns (JBApprovalStatus) {
         // Get a reference to the latest funding cycle configuration.
-        uint256 _fundingCycleConfiguration = latestRulesetOf[_projectId];
+        uint256 _rulesetConfiguration = latestRulesetOf[_projectId];
 
         // Resolve the funding cycle for the latest configuration.
         JBRuleset memory _ruleset = _getStructFor(
             _projectId,
-            _fundingCycleConfiguration
+            _rulesetConfiguration
         );
 
         return
-            _ballotStateOf(
+            _approvalStatusOf(
                 _projectId,
                 _ruleset.rulesetId,
                 _ruleset.start,
@@ -341,17 +341,17 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (_mustStartAtOrAfter + _data.duration > type(uint56).max)
             revert INVALID_RULESET_END_TIME();
 
-        // Ballot should be a valid contract, supporting the correct interface
-        if (_data.ballot != IJBFundingCycleBallot(address(0))) {
-            address _ballot = address(_data.ballot);
+        // approval hook should be a valid contract, supporting the correct interface
+        if (_data.approvalHook != IJBRulesetApprovalHook(address(0))) {
+            address _approvalHook = address(_data.approvalHook);
 
             // No contract at the address ?
-            if (_ballot.code.length == 0) revert INVALID_RULESET_APPROVAL_HOOK();
+            if (_approvalHook.code.length == 0) revert INVALID_RULESET_APPROVAL_HOOK();
 
-            // Make sure the ballot supports the expected interface.
+            // Make sure the approval hook supports the expected interface.
             try
-                _data.ballot.supportsInterface(
-                    type(IJBFundingCycleBallot).interfaceId
+                _data.approvalHook.supportsInterface(
+                    type(IJBRulesetApprovalHook).interfaceId
                 )
             returns (bool _supports) {
                 if (!_supports) revert INVALID_RULESET_APPROVAL_HOOK(); // Contract exists at the address but with the wrong interface
@@ -379,12 +379,12 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         // Efficiently stores a funding cycles provided user defined properties.
         // If all user config properties are zero, no need to store anything as the default value will have the same outcome.
         if (
-            _data.ballot != IJBFundingCycleBallot(address(0)) ||
+            _data.approvalHook != IJBRulesetApprovalHook(address(0)) ||
             _data.duration > 0 ||
             _data.decayRate > 0
         ) {
-            // ballot in bits 0-159 bytes.
-            uint256 packed = uint160(address(_data.ballot));
+            // approval hook in bits 0-159 bytes.
+            uint256 packed = uint160(address(_data.approvalHook));
 
             // duration in bits 160-191 bytes.
             packed |= _data.duration << 160;
@@ -499,28 +499,28 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             _latestConfiguration
         );
 
-        // Get a reference to the ballot state.
-        JBBallotState _ballotState = _ballotStateOf(
+        // Get a reference to the approval status.
+        JBApprovalStatus _approvalStatus = _approvalStatusOf(
             _projectId,
             _baseFundingCycle
         );
 
-        // If the base funding cycle has started but wasn't approved if a ballot exists OR it hasn't started but is currently approved OR it hasn't started but it is likely to be approved and takes place before the proposed one, set the ID to be the funding cycle it's based on,
+        // If the base funding cycle has started but wasn't approved if a approval hook exists OR it hasn't started but is currently approved OR it hasn't started but it is likely to be approved and takes place before the proposed one, set the ID to be the funding cycle it's based on,
         // which carries the latest approved configuration.
         if (
             (block.timestamp >= _baseFundingCycle.start &&
-                _ballotState != JBBallotState.Approved &&
-                _ballotState != JBBallotState.Empty) ||
+                _approvalStatus != JBApprovalStatus.Approved &&
+                _approvalStatus != JBApprovalStatus.Empty) ||
             (block.timestamp < _baseFundingCycle.start &&
                 _mustStartAtOrAfter <
                 _baseFundingCycle.start + _baseFundingCycle.duration &&
-                _ballotState != JBBallotState.Approved) ||
+                _approvalStatus != JBApprovalStatus.Approved) ||
             (block.timestamp < _baseFundingCycle.start &&
                 _mustStartAtOrAfter >=
                 _baseFundingCycle.start + _baseFundingCycle.duration &&
-                _ballotState != JBBallotState.Approved &&
-                _ballotState != JBBallotState.ApprovalExpected &&
-                _ballotState != JBBallotState.Empty)
+                _approvalStatus != JBApprovalStatus.Approved &&
+                _approvalStatus != JBApprovalStatus.ApprovalExpected &&
+                _approvalStatus != JBApprovalStatus.Empty)
         )
             _baseFundingCycle = _getStructFor(
                 _projectId,
@@ -531,18 +531,18 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (_baseFundingCycle.rulesetId == _rulesetId)
             revert BLOCK_ALREADY_CONTAINS_RULESET();
 
-        // The time after the ballot of the provided funding cycle has expired.
-        // If the provided funding cycle has no ballot, return the current timestamp.
-        uint256 _timestampAfterBallot = _baseFundingCycle.ballot ==
-            IJBFundingCycleBallot(address(0))
+        // The time after the approval hook of the provided funding cycle has expired.
+        // If the provided funding cycle has no approval hook, return the current timestamp.
+        uint256 _timestampAfterBallot = _baseFundingCycle.approvalHook ==
+            IJBRulesetApprovalHook(address(0))
             ? 0
-            : _rulesetId + _baseFundingCycle.ballot.duration();
+            : _rulesetId + _baseFundingCycle.approvalHook.duration();
 
         _initFor(
             _projectId,
             _baseFundingCycle,
             _rulesetId,
-            // Can only start after the ballot.
+            // Can only start after the approval hook.
             _timestampAfterBallot > _mustStartAtOrAfter
                 ? _timestampAfterBallot
                 : _mustStartAtOrAfter,
@@ -764,7 +764,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
                 _baseFundingCycle.duration,
                 _deriveWeightFrom(_baseFundingCycle, _start),
                 _baseFundingCycle.decayRate,
-                _baseFundingCycle.ballot,
+                _baseFundingCycle.approvalHook,
                 _baseFundingCycle.metadata
             );
     }
@@ -889,16 +889,16 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             (_startDistance / _baseFundingCycle.duration);
     }
 
-    /// @notice Checks to see if the provided funding cycle is approved according to the correct ballot.
+    /// @notice Checks to see if the provided funding cycle is approved according to the correct approval hook.
     /// @param _projectId The ID of the project to which the funding cycle belongs.
     /// @param _ruleset The funding cycle to get an approval flag for.
-    /// @return The ballot state of the project.
-    function _ballotStateOf(
+    /// @return The approval status of the project.
+    function _approvalStatusOf(
         uint256 _projectId,
         JBRuleset memory _ruleset
-    ) private view returns (JBBallotState) {
+    ) private view returns (JBApprovalStatus) {
         return
-            _ballotStateOf(
+            _approvalStatusOf(
                 _projectId,
                 _ruleset.rulesetId,
                 _ruleset.start,
@@ -908,32 +908,32 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
 
     /// @notice A project's latest funding cycle configuration approval status.
     /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @param _rulesetId The funding cycle configuration to get the ballot state of.
-    /// @param _start The start time of the funding cycle configuration to get the ballot state of.
-    /// @param _ballotFundingCycleConfiguration The configuration of the funding cycle which is configured with the ballot that should be used.
-    /// @return The ballot state of the project.
-    function _ballotStateOf(
+    /// @param _rulesetId The funding cycle configuration to get the approval status of.
+    /// @param _start The start time of the funding cycle configuration to get the approval status of.
+    /// @param _ballotRulesetConfiguration The configuration of the funding cycle which is configured with the approval hook that should be used.
+    /// @return The approval status of the project.
+    function _approvalStatusOf(
         uint256 _projectId,
         uint256 _rulesetId,
         uint256 _start,
-        uint256 _ballotFundingCycleConfiguration
-    ) private view returns (JBBallotState) {
-        // If there is no ballot funding cycle, the ballot is empty.
-        if (_ballotFundingCycleConfiguration == 0) return JBBallotState.Empty;
+        uint256 _ballotRulesetConfiguration
+    ) private view returns (JBApprovalStatus) {
+        // If there is no approval hook funding cycle, the approval hook is empty.
+        if (_ballotRulesetConfiguration == 0) return JBApprovalStatus.Empty;
 
-        // Get the ballot funding cycle.
+        // Get the approval hook funding cycle.
         JBRuleset memory _ballotFundingCycle = _getStructFor(
             _projectId,
-            _ballotFundingCycleConfiguration
+            _ballotRulesetConfiguration
         );
 
-        // If there is no ballot, it's considered empty.
-        if (_ballotFundingCycle.ballot == IJBFundingCycleBallot(address(0)))
-            return JBBallotState.Empty;
+        // If there is no approval hook, it's considered empty.
+        if (_ballotFundingCycle.approvalHook == IJBRulesetApprovalHook(address(0)))
+            return JBApprovalStatus.Empty;
 
-        // Return the ballot's state
+        // Return the approval hook's state
         return
-            _ballotFundingCycle.ballot.stateOf(
+            _ballotFundingCycle.approvalHook.stateOf(
                 _projectId,
                 _rulesetId,
                 _start
@@ -974,8 +974,8 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             _rulesetId
         ];
 
-        // ballot in bits 0-159 bits.
-        ruleset.ballot = IJBFundingCycleBallot(
+        // approval hook in bits 0-159 bits.
+        ruleset.approvalHook = IJBRulesetApprovalHook(
             address(uint160(_packedUserProperties))
         );
         // duration in bits 160-191 bits.

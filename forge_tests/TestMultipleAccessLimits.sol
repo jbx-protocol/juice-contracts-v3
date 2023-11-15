@@ -33,7 +33,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             duration: 0,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
         _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
@@ -118,7 +118,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: address(420), //random
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -126,7 +126,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -301,7 +301,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -367,7 +367,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -432,7 +432,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -497,7 +497,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -505,7 +505,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -610,7 +610,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _projectId =  _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });

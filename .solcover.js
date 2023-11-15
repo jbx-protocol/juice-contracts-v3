@@ -41,7 +41,7 @@ module.exports = {
     "interfaces/IJBDirectory.sol",
     "interfaces/IJBETHERC20ProjectPayerDeployer.sol",
     "interfaces/IJBFeeGauge.sol",
-    "interfaces/IJBFundingCycleBallot.sol",
+    "interfaces/IJBRulesetApprovalHook.sol",
     "interfaces/IJBFundingCycleDataSource.sol",
     "interfaces/IJBRulesets.sol",
     "interfaces/IJBOperatable.sol",

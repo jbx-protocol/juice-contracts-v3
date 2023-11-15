@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {JBBallotState} from "./../enums/JBBallotState.sol";
+import {JBApprovalStatus} from "./../enums/JBApprovalStatus.sol";
 import {JBRuleset} from "./../structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./../structs/JBRulesetConfig.sol";
 import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
@@ -41,7 +41,7 @@ interface IJBController is IERC165 {
     );
 
     event DistributeReservedTokens(
-        uint256 indexed fundingCycleConfiguration,
+        uint256 indexed rulesetConfiguration,
         uint256 indexed fundingCycleNumber,
         uint256 indexed projectId,
         address beneficiary,
@@ -128,7 +128,7 @@ interface IJBController is IERC165 {
         returns (
             JBRuleset memory,
             JBFundingCycleMetadata memory metadata,
-            JBBallotState
+            JBApprovalStatus
         );
 
     function currentFundingCycleOf(
@@ -154,21 +154,21 @@ interface IJBController is IERC165 {
     function launchProjectFor(
         address owner,
         JBProjectMetadata calldata projectMetadata,
-        JBRulesetConfig[] calldata fundingCycleConfigurations,
+        JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
     ) external returns (uint256 projectId);
 
     function launchFundingCyclesFor(
         uint256 projectId,
-        JBRulesetConfig[] calldata fundingCycleConfigurations,
+        JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
     ) external returns (uint256 configured);
 
     function reconfigureFundingCyclesOf(
         uint256 projectId,
-        JBRulesetConfig[] calldata fundingCycleConfigurations,
+        JBRulesetConfig[] calldata rulesetConfigurations,
         string calldata memo
     ) external returns (uint256 configured);
 

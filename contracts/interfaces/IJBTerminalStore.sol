@@ -36,7 +36,7 @@ interface IJBTerminalStore {
         IJBPaymentTerminal terminal,
         uint256 projectId,
         address token,
-        uint256 fundingCycleConfiguration,
+        uint256 rulesetConfiguration,
         uint256 currency
     ) external view returns (uint256);
 

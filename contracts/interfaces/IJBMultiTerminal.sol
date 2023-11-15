@@ -35,7 +35,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event DistributePayouts(
-    uint256 indexed fundingCycleConfiguration,
+    uint256 indexed rulesetConfiguration,
     uint256 indexed fundingCycleNumber,
     uint256 indexed projectId,
     address beneficiary,
@@ -47,7 +47,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event UseAllowance(
-    uint256 indexed fundingCycleConfiguration,
+    uint256 indexed rulesetConfiguration,
     uint256 indexed fundingCycleNumber,
     uint256 indexed projectId,
     address beneficiary,
@@ -83,7 +83,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event Pay(
-    uint256 indexed fundingCycleConfiguration,
+    uint256 indexed rulesetConfiguration,
     uint256 indexed fundingCycleNumber,
     uint256 indexed projectId,
     address payer,
@@ -96,7 +96,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event RedeemTokens(
-    uint256 indexed fundingCycleConfiguration,
+    uint256 indexed rulesetConfiguration,
     uint256 indexed fundingCycleNumber,
     uint256 indexed projectId,
     address holder,

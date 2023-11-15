@@ -759,7 +759,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     //*********************************************************************//
 
     /// @notice The amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens when measured from the specified.
-    /// @dev If the project has an active funding cycle reconfiguration ballot, the project's ballot redemption rate is used.
+    /// @dev If the project has an active funding cycle reconfiguration approval hook, the project's approval hook redemption rate is used.
     /// @param _ruleset The funding cycle during which reclaimable overflow is being calculated.
     /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
     /// @param _totalSupply The total supply of tokens to make the calculation with, as a fixed point number with 18 decimals.

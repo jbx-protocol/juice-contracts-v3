@@ -3,12 +3,12 @@ pragma solidity ^0.8.16;
 
 import {ERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import {JBBallotState} from './enums/JBBallotState.sol';
-import {IJBFundingCycleBallot} from './interfaces/IJBFundingCycleBallot.sol';
+import {JBApprovalStatus} from './enums/JBApprovalStatus.sol';
+import {IJBRulesetApprovalHook} from './interfaces/IJBRulesetApprovalHook.sol';
 import {JBRuleset} from './structs/JBRuleset.sol';
 
 /// @notice Manages approving funding cycle reconfigurations automatically after a buffer period.
-contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
+contract JBReconfigurationBufferBallot is ERC165, IJBRulesetApprovalHook {
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
@@ -24,26 +24,26 @@ contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
   /// @param _projectId The ID of the project to which the funding cycle being checked belongs.
   /// @param _configured The configuration of the funding cycle to check the state of.
   /// @param _start The start timestamp of the funding cycle to check the state of.
-  /// @return The state of the provided ballot.
+  /// @return The state of the provided approval hook.
   function stateOf(
     uint256 _projectId,
     uint256 _configured,
     uint256 _start
-  ) public view override returns (JBBallotState) {
+  ) public view override returns (JBApprovalStatus) {
     _projectId; // Prevents unused var compiler and natspec complaints.
 
-    // If the provided configured timestamp is after the start timestamp, the ballot is Failed.
-    if (_configured > _start) return JBBallotState.Failed;
+    // If the provided configured timestamp is after the start timestamp, the approval hook is Failed.
+    if (_configured > _start) return JBApprovalStatus.Failed;
 
     unchecked {
       // If there was sufficient time between configuration and the start of the cycle, it is approved. Otherwise, it is failed.
-      // If the ballot hasn't yet started, it's state is ApprovalExpected.
+      // If the approval hook hasn't yet started, it's state is ApprovalExpected.
       return
         (_start - _configured < duration)
-          ? JBBallotState.Failed
+          ? JBApprovalStatus.Failed
           : (block.timestamp < _start - duration)
-          ? JBBallotState.ApprovalExpected
-          : JBBallotState.Approved;
+          ? JBApprovalStatus.ApprovalExpected
+          : JBApprovalStatus.Approved;
     }
   }
 
@@ -55,7 +55,7 @@ contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {
     bytes4 _interfaceId
   ) public view virtual override(ERC165, IERC165) returns (bool) {
     return
-      _interfaceId == type(IJBFundingCycleBallot).interfaceId ||
+      _interfaceId == type(IJBRulesetApprovalHook).interfaceId ||
       super.supportsInterface(_interfaceId);
   }
 

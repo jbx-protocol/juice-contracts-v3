@@ -43,7 +43,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             duration: 0,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
             decayRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
         _metadata = JBFundingCycleMetadata({
@@ -105,12 +105,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
-            _cycleConfigurations[0].mustStartAtOrAfter = 0;
-            _cycleConfigurations[0].data = _data;
-            _cycleConfigurations[0].metadata = _metadata;
-            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+            JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
+            _rulesetConfigurations[0].mustStartAtOrAfter = 0;
+            _rulesetConfigurations[0].data = _data;
+            _rulesetConfigurations[0].metadata = _metadata;
+            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
@@ -127,7 +127,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                fundingCycleConfigurations: _cycleConfigurations,
+                rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
@@ -136,7 +136,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-                fundingCycleConfigurations: _cycleConfigurations,
+                rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
@@ -288,12 +288,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
-            _cycleConfigurations[0].mustStartAtOrAfter = 0;
-            _cycleConfigurations[0].data = _data;
-            _cycleConfigurations[0].metadata = _metadata;
-            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+            JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
+            _rulesetConfigurations[0].mustStartAtOrAfter = 0;
+            _rulesetConfigurations[0].data = _data;
+            _rulesetConfigurations[0].metadata = _metadata;
+            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
@@ -310,7 +310,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
+                rulesetConfigurations: _rulesetConfigurations, // use the same cycle configs
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
@@ -319,7 +319,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-                fundingCycleConfigurations: _cycleConfigurations,
+                rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
@@ -515,25 +515,25 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                fundingCycleConfigurations: new JBRulesetConfig[](0), // No cycle config will force revert when paid.
+                rulesetConfigurations: new JBRulesetConfig[](0), // No cycle config will force revert when paid.
                 // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
                 terminalConfigurations: _feeProjectAcceptsToken ? _terminalConfigurations : new JBTerminalConfig[](0), // set terminals where fees will be received
                 memo: ""
             });
 
             // Package up the configuration info.
-            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
-            _cycleConfigurations[0].mustStartAtOrAfter = 0;
-            _cycleConfigurations[0].data = _data;
-            _cycleConfigurations[0].metadata = _metadata;
-            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+            JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
+            _rulesetConfigurations[0].mustStartAtOrAfter = 0;
+            _rulesetConfigurations[0].data = _data;
+            _rulesetConfigurations[0].metadata = _metadata;
+            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-                fundingCycleConfigurations: _cycleConfigurations,
+                rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
@@ -719,12 +719,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
-            _cycleConfigurations[0].mustStartAtOrAfter = 0;
-            _cycleConfigurations[0].data = _data;
-            _cycleConfigurations[0].metadata = _metadata;
-            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+            JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
+            _rulesetConfigurations[0].mustStartAtOrAfter = 0;
+            _rulesetConfigurations[0].data = _data;
+            _rulesetConfigurations[0].metadata = _metadata;
+            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
@@ -742,7 +742,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-                fundingCycleConfigurations: _cycleConfigurations,
+                rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
@@ -930,12 +930,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 });
 
             // Package up the configuration info.
-            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
-            _cycleConfigurations[0].mustStartAtOrAfter = 0;
-            _cycleConfigurations[0].data = _data;
-            _cycleConfigurations[0].metadata = _metadata;
-            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
-            _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
+            JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
+            _rulesetConfigurations[0].mustStartAtOrAfter = 0;
+            _rulesetConfigurations[0].data = _data;
+            _rulesetConfigurations[0].metadata = _metadata;
+            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](2);
@@ -957,7 +957,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
+                rulesetConfigurations: _rulesetConfigurations, // use the same cycle configs
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
@@ -966,7 +966,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-                fundingCycleConfigurations: _cycleConfigurations,
+                rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });

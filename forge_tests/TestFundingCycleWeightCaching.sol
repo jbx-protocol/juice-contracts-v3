@@ -28,7 +28,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
             duration: _DURATION,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
             decayRate: _DECAY_RATE,
-            ballot: IJBFundingCycleBallot(address(0))
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
         _metadata = JBFundingCycleMetadata({
@@ -64,20 +64,20 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // uint256 _projectId2;
 
         // // Package up the configuration info.
-        // JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
+        // JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
 
         // {
-        //     _cycleConfigurations[0].mustStartAtOrAfter = 0;
-        //     _cycleConfigurations[0].data = _data;
-        //     _cycleConfigurations[0].metadata = _metadata;
-        //     _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
-        //     _cycleConfigurations[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        //     _rulesetConfigurations[0].mustStartAtOrAfter = 0;
+        //     _rulesetConfigurations[0].data = _data;
+        //     _rulesetConfigurations[0].metadata = _metadata;
+        //     _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+        //     _rulesetConfigurations[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
 
         //     // Create the project to test.
         //     _projectId1 = _controller.launchProjectFor({
         //         owner: _projectOwner,
         //         projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-        //         fundingCycleConfigurations: _cycleConfigurations,
+        //         rulesetConfigurations: _rulesetConfigurations,
         //         terminalConfigurations: new JBTerminalConfig[](0),
         //         memo: ""
         //     });
@@ -86,7 +86,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         //     _projectId2 = _controller.launchProjectFor({
         //         owner: _projectOwner,
         //         projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-        //         fundingCycleConfigurations: _cycleConfigurations,
+        //         rulesetConfigurations: _rulesetConfigurations,
         //         terminalConfigurations: new JBTerminalConfig[](0),
         //         memo: ""
         //     });
@@ -118,7 +118,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // _rulesets.updateFundingCycleWeightCache(_projectId2);
 
         // // Inherit the weight.
-        // _cycleConfigurations[0].data.weight = 0;
+        // _rulesetConfigurations[0].data.weight = 0;
 
         // // Keep a reference to the amount of gas before the call.
         // uint256 _gasBefore1 = gasleft();
@@ -127,7 +127,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // vm.startPrank(_projectOwner);
         // _controller.reconfigureFundingCyclesOf({
         //     projectId: _projectId1,
-        //     fundingCycleConfigurations: _cycleConfigurations,
+        //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
         // });
 
@@ -142,7 +142,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
 
         // _controller.reconfigureFundingCyclesOf({
         //     projectId: _projectId2,
-        //     fundingCycleConfigurations: _cycleConfigurations,
+        //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
         // });
         // vm.stopPrank();
@@ -173,7 +173,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // vm.prank(_projectOwner);
         // _controller.reconfigureFundingCyclesOf({
         //     projectId: _projectId2,
-        //     fundingCycleConfigurations: _cycleConfigurations,
+        //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
         // });
     }

@@ -8,7 +8,7 @@ import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 
 interface IJBFundAccessConstraintsStore is IERC165 {
   event SetFundAccessConstraints(
-    uint256 indexed fundingCycleConfiguration,
+    uint256 indexed rulesetConfiguration,
     uint256 indexed projectId,
     JBFundAccessConstraints constraints,
     address caller

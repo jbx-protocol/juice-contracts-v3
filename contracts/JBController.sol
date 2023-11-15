@@ -5,7 +5,7 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
-import {JBBallotState} from "./enums/JBBallotState.sol";
+import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
@@ -105,11 +105,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's latest configured funding cycle along with its metadata and the ballot state of the configuration.
+    /// @notice A project's latest configured funding cycle along with its metadata and the approval status of the configuration.
     /// @param _projectId The ID of the project to which the funding cycle belongs.
     /// @return ruleset The latest configured funding cycle.
     /// @return metadata The latest configured funding cycle's metadata.
-    /// @return ballotState The state of the configuration.
+    /// @return approvalStatus The state of the configuration.
     function latestConfiguredFundingCycleOf(
         uint256 _projectId
     )
@@ -119,10 +119,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         returns (
             JBRuleset memory ruleset,
             JBFundingCycleMetadata memory metadata,
-            JBBallotState ballotState
+            JBApprovalStatus approvalStatus
         )
     {
-        (ruleset, ballotState) = rulesets.latestConfiguredOf(_projectId);
+        (ruleset, approvalStatus) = rulesets.latestConfiguredOf(_projectId);
         metadata = ruleset.expandMetadata();
     }
 
@@ -231,14 +231,14 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
     /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return projectId The ID of the project.
     function launchProjectFor(
         address _owner,
         JBProjectMetadata calldata _projectMetadata,
-        JBRulesetConfig[] calldata _fundingCycleConfigurations,
+        JBRulesetConfig[] calldata _rulesetConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
     ) external virtual override returns (uint256 projectId) {
@@ -254,7 +254,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Configure the first funding cycle.
         uint256 _rulesetId = _configureFundingCycles(
             projectId,
-            _fundingCycleConfigurations
+            _rulesetConfigurations
         );
 
         // Configure the terminals.
@@ -267,13 +267,13 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Only a project owner or operator can launch its funding cycles.
     /// @param _projectId The ID of the project to launch funding cycles for.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return configured The rulesetId timestamp of the funding cycle that was successfully reconfigured.
     function launchFundingCyclesFor(
         uint256 _projectId,
-        JBRulesetConfig[] calldata _fundingCycleConfigurations,
+        JBRulesetConfig[] calldata _rulesetConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
     )
@@ -297,7 +297,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Configure the first funding cycle.
         configured = _configureFundingCycles(
             _projectId,
-            _fundingCycleConfigurations
+            _rulesetConfigurations
         );
 
         // Configure the terminals.
@@ -306,15 +306,15 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         emit LaunchFundingCycles(configured, _projectId, _memo, msg.sender);
     }
 
-    /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's ballot.
+    /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's approval hook.
     /// @dev Only a project's owner or a designated operator can configure its funding cycles.
     /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return configured The rulesetId timestamp of the funding cycle that was successfully reconfigured.
     function reconfigureFundingCyclesOf(
         uint256 _projectId,
-        JBRulesetConfig[] calldata _fundingCycleConfigurations,
+        JBRulesetConfig[] calldata _rulesetConfigurations,
         string calldata _memo
     )
         external
@@ -330,7 +330,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Configure the next funding cycle.
         configured = _configureFundingCycles(
             _projectId,
-            _fundingCycleConfigurations
+            _rulesetConfigurations
         );
 
         emit ReconfigureFundingCycles(
@@ -671,21 +671,21 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
 
     /// @notice Configures a funding cycle and stores information pertinent to the configuration.
     /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
     /// @return configured The rulesetId timestamp of the funding cycle that was successfully reconfigured.
     function _configureFundingCycles(
         uint256 _projectId,
-        JBRulesetConfig[] calldata _fundingCycleConfigurations
+        JBRulesetConfig[] calldata _rulesetConfigurations
     ) internal returns (uint256 configured) {
         // Keep a reference to the configuration being iterated on.
         JBRulesetConfig memory _rulesetId;
 
         // Keep a reference to the number of configurations being scheduled.
-        uint256 _numberOfConfigurations = _fundingCycleConfigurations.length;
+        uint256 _numberOfConfigurations = _rulesetConfigurations.length;
 
         for (uint256 _i; _i < _numberOfConfigurations; ) {
             // Get a reference to the rulesetId being iterated on.
-            _rulesetId = _fundingCycleConfigurations[_i];
+            _rulesetId = _rulesetConfigurations[_i];
 
             // Make sure the provided reserved rate is valid.
             if (
