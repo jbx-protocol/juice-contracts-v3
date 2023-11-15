@@ -80,7 +80,6 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
     }
 
     function testFuzzTokenFlow(
-        // Note: Not sure why the totalsupply seems capped at uint160
         uint208 _mintAmount,
         uint256 _burnAmount,
         bool _issueToken,
