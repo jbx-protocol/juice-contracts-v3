@@ -33,30 +33,6 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
-        /* _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
-            reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
-            redemptionRate: 0,
-            baseCurrency: 1,
-            pausePay: false,
-            pauseDistributions: false,
-            pauseRedeem: false,
-            pauseBurn: false,
-            allowMinting: true,
-            allowTerminalMigration: false,
-            allowControllerMigration: false,
-            holdFees: false,
-            preferClaimedTokenOverride: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
-            metadata: 0
-        }); */
         _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
@@ -105,7 +81,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
     function testFuzzTokenFlow(
         // Note: Not sure why the totalsupply seems capped at uint160
-        uint160 _mintAmount,
+        uint208 _mintAmount,
         uint256 _burnAmount,
         bool _issueToken,
         bool _mintPreferClaimed,
@@ -173,39 +149,34 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance);
     }
 
-    function testLargeTokenClaimFlow() public {
+    function testMintUnclaimedAtLimit() public {
+        // Pay the project such that the _beneficiary receives 1000 "unclaimed" project tokens.
+        vm.deal(_beneficiary, 1 ether);
+        _terminal.pay{value: 1 ether}({
+            projectId: _projectId,
+            amount: 1 ether,
+            token: JBTokens.ETH,
+            beneficiary: _beneficiary,
+            minReturnedTokens: 0,
+            memo: "",
+            metadata: new bytes(0)
+        });
+
         // Calls will originate from project
         vm.startPrank(_projectOwner);
 
         // Issue an ERC-20 token for project,
         _tokenStore.issueFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
 
-        // Mint claimed tokens to beneficiary.
+        // Mint claimed tokens to beneficiary: since this is 1000 over uint(208) it will revert.
+        vm.expectRevert(abi.encodeWithSignature("OVERFLOW_ALERT()"));
+
         _controller.mintTokensOf({
             projectId: _projectId,
-            tokenCount: type(uint160).max / 2,
+            tokenCount: type(uint208).max,
             beneficiary: _beneficiary,
             memo: "Mint memo",
             useReservedRate: false
-        });
-
-        // Mint unclaimed tokens to beneficiary
-        _controller.mintTokensOf({
-            projectId: _projectId,
-            tokenCount: type(uint160).max / 2,
-            beneficiary: _beneficiary,
-            memo: "Mint memo",
-            useReservedRate: false
-        });
-
-        // Try to claim the unclaimed tokens
-        vm.stopPrank();
-        vm.prank(_beneficiary);
-        _tokenStore.claimFor({
-            holder: _beneficiary,
-            projectId: _projectId,
-            amount: 1,
-            beneficiary: _beneficiary
         });
     }
 }
