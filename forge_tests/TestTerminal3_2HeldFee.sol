@@ -79,19 +79,13 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         _terminals.push(_terminal);
 
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
-        _distributionLimits[0] = JBCurrencyAmount({
-            value: _targetInWei,
-            currency: JBCurrencies.ETH
-        });
+        _distributionLimits[0] = JBCurrencyAmount({value: _targetInWei, currency: JBCurrencies.ETH});
 
         JBCurrencyAmount[] memory _overflowAllowance = new JBCurrencyAmount[](1);
-        _overflowAllowance[0] = JBCurrencyAmount({
-            value: 5 ether,
-            currency: JBCurrencies.ETH
-        });
+        _overflowAllowance[0] = JBCurrencyAmount({value: 5 ether, currency: JBCurrencies.ETH});
 
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        _fundAccessConstraints[0] =  JBFundAccessConstraints({
+        _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: _terminal,
             token: jbLibraries().ETHToken(),
             distributionLimits: _distributionLimits,
@@ -113,9 +107,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         );
     }
 
-    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee)
-        external
-    {
+    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee) external {
         // Assuming we don't revert when distributing too much and avoid rounding errors
         payAmountInWei = bound(payAmountInWei, 10, _targetInWei);
         fee = bound(fee, 1, 50_000_000);
