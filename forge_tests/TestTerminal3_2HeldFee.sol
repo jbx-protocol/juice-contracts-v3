@@ -5,6 +5,8 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 import {JBETHPaymentTerminal3_1_2} from "../contracts/JBETHPaymentTerminal3_1_2.sol";
 import {IJBFeeGauge3_1, JBFeeType} from "../contracts/interfaces/IJBFeeGauge3_1.sol";
+import {JBCurrencyAmount} from "../contracts/structs/JBCurrencyAmount.sol";
+import {JBCurrencies} from "../contracts/libraries/JBCurrencies.sol";
 
 contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
     JBController3_1 private _controller;
@@ -15,7 +17,6 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits; // Default empty
-    JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
     IJBPaymentTerminal[] private _terminals; // Default empty
     address private _multisig;
 
@@ -35,7 +36,7 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
             jbDirectory(),
             jbSplitsStore(),
             jbPrices(),
-            address(jbTokenStore()),
+            address(jbPaymentTerminalStore()),
             multisig()
         );
 
@@ -77,16 +78,25 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
 
         _terminals.push(_terminal);
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: _terminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimit: _targetInWei, // 10 ETH target
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
-                overflowAllowanceCurrency: 1
-            })
-        );
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        _distributionLimits[0] = JBCurrencyAmount({
+            value: _targetInWei,
+            currency: JBCurrencies.ETH
+        });
+
+        JBCurrencyAmount[] memory _overflowAllowance = new JBCurrencyAmount[](1);
+        _overflowAllowance[0] = JBCurrencyAmount({
+            value: 5 ether,
+            currency: JBCurrencies.ETH
+        });
+
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
+        _fundAccessConstraints[0] =  JBFundAccessConstraints({
+            terminal: _terminal,
+            token: jbLibraries().ETHToken(),
+            distributionLimits: _distributionLimits,
+            overflowAllowances: _overflowAllowance
+        });
 
         _projectOwner = multisig();
 
@@ -103,30 +113,17 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         );
     }
 
-    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee, uint256 feeDiscount)
+    function testHeldFeeReimburse_simple(uint256 payAmountInWei, uint256 fee)
         external
     {
         // Assuming we don't revert when distributing too much and avoid rounding errors
         payAmountInWei = bound(payAmountInWei, 10, _targetInWei);
         fee = bound(fee, 1, 50_000_000);
-        feeDiscount = bound(feeDiscount, 0, jbLibraries().MAX_FEE());
 
         address _userWallet = makeAddr("userWallet");
 
         vm.prank(multisig());
         _terminal.setFee(fee);
-
-        IJBFeeGauge3_1 feeGauge = IJBFeeGauge3_1(makeAddr("FeeGauge"));
-        vm.etch(address(feeGauge), new bytes(0x1));
-        vm.mockCall(
-            address(feeGauge),
-            abi.encodeCall(IJBFeeGauge3_1.currentDiscountFor, (_projectId, JBFeeType.PAYOUT)),
-            abi.encode(feeDiscount)
-        );
-        vm.prank(multisig());
-        _terminal.setFeeGauge(address(feeGauge));
-
-        uint256 discountedFee = fee - PRBMath.mulDiv(fee, feeDiscount, jbLibraries().MAX_FEE());
 
         // -- pay --
         _terminal.pay{value: payAmountInWei}(
@@ -168,11 +165,8 @@ contract TestTerminal312HeldFee_Local is TestBaseWorkflow {
         assertEq(_multisig.balance, _ethDistributed, "Wrong ETH distributed");
 
         // verify: should have held the fee, if there is one
-        if (discountedFee > 0) {
+        if (fee > 0) {
             assertEq(_terminal.heldFeesOf(_projectId)[0].fee, _terminal.fee(), "Wrong fee");
-            assertEq(
-                _terminal.heldFeesOf(_projectId)[0].feeDiscount, feeDiscount, "Wrong fee discount"
-            );
             assertEq(
                 _terminal.heldFeesOf(_projectId)[0].amount,
                 payAmountInWei,

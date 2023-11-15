@@ -123,7 +123,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
         // Otherwise, only the project owner or an operator can add a feed for the project.
         if (msg.sender != owner() || _projectId != DEFAULT_PROJECT_ID) {
             _requirePermission(
-                projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
+                projects.ownerOf(_projectId), _projectId, JBOperations2.ADD_PRICE_FEED
             );
         }
 
