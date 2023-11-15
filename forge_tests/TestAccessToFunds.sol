@@ -2146,7 +2146,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     && _usdCurrencyDistributionLimit != 0
             ) {
                 // Make sure the project owner received the distributed funds.
-                _projectOwnerUsdcBalance += (_usdCurrencyDistributionLimit * JBConstants.MAX_FEE)
+                _projectOwnerUsdcBalance = (_usdCurrencyDistributionLimit * JBConstants.MAX_FEE)
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_usdcToken.balanceOf(_projectOwner), _projectOwnerUsdcBalance);
                 assertEq(
@@ -2184,19 +2184,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             : _usdcPayAmount - _usdCurrencyDistributionLimit - _usdCurrencyOverflowAllowance;
 
         // Keep a reference to the eth balance left.
-        uint256 _usdcBalanceInTerminal = _usdcPayAmount
-            - PRBMath.mulDiv(
-                _usdCurrencyOverflowAllowance,
-                JBConstants.MAX_FEE,
-                JBConstants.MAX_FEE + _terminal.FEE()
-            );
+        uint256 _usdcBalanceInTerminal = _usdcPayAmount - _usdCurrencyOverflowAllowance;
+
         if (_usdCurrencyDistributionLimit <= _usdcPayAmount) {
-            _usdcBalanceInTerminal -= PRBMath.mulDiv(
-                _usdCurrencyDistributionLimit,
-                JBConstants.MAX_FEE,
-                JBConstants.MAX_FEE + _terminal.FEE()
-            );
+            _usdcBalanceInTerminal -= _usdCurrencyDistributionLimit;
         }
+
+        assertEq(_usdcToken.balanceOf(address(_terminal2)), _usdcBalanceInTerminal);
 
         // Make sure the total token supply is correct.
         assertEq(
@@ -2341,15 +2335,19 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 uint256 _usdcFeeAmount = _usdcReclaimAmount
                     - _usdcReclaimAmount * JBConstants.MAX_FEE / (_terminal.FEE() + JBConstants.MAX_FEE);
 
-                assertEq(
-                    _usdcToken.balanceOf(_beneficiary),
-                    _beneficiaryUsdcBalance + _usdcReclaimAmount - _usdcFeeAmount
-                );
+                _beneficiaryUsdcBalance += _usdcReclaimAmount - _usdcFeeAmount;
+                assertEq(_usdcToken.balanceOf(_beneficiary), _beneficiaryUsdcBalance);
 
                 assertEq(
                     _usdcToken.balanceOf(address(_terminal2)),
-                    _usdcPayAmount - _usdCurrencyOverflowAllowance - _usdCurrencyDistributionLimit
-                        - _usdcReclaimAmount
+                    _usdcBalanceInTerminal - _usdcReclaimAmount
+                );
+
+                // Only the fees left
+                assertEq(
+                    _usdcToken.balanceOf(address(_terminal)),
+                    _usdcPayAmount - _usdcToken.balanceOf(address(_terminal2))
+                        - _usdcToken.balanceOf(_beneficiary) - _usdcToken.balanceOf(_projectOwner)
                 );
             } else {
                 // Redeem ETH from the overflow using all of the _beneficiary's tokens.
