@@ -31,7 +31,7 @@ import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
 import {JBDidRedeemData3_1_1} from './structs/JBDidRedeemData3_1_1.sol';
 import {JBDidPayData3_1_1} from './structs/JBDidPayData3_1_1.sol';
 import {JBFee} from './structs/JBFee.sol';
-import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBRuleset} from './structs/JBRuleset.sol';
 import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1_1.sol';
 import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
 import {JBSingleAllowanceData} from './structs/JBSingleAllowanceData.sol';
@@ -45,7 +45,7 @@ import {JBOperatable} from './abstract/JBOperatable.sol';
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBRuleset;
 
   // A library that adds default safety checks to ERC20 functionality.
   using SafeERC20 for IERC20;
@@ -627,7 +627,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     // Define variables that will be needed outside the scoped section below.
     // Keep a reference to the funding cycle during which the payment is being made.
-    JBFundingCycle memory _fundingCycle;
+    JBRuleset memory _ruleset;
 
     // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
     {
@@ -643,7 +643,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
 
       // Record the payment.
-      (_fundingCycle, _tokenCount, _delegateAllocations) = STORE.recordPaymentFrom(
+      (_ruleset, _tokenCount, _delegateAllocations) = STORE.recordPaymentFrom(
         _payer,
         _tokenAmount,
         _projectId,
@@ -672,7 +672,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
           _delegateAllocations,
           _tokenAmount,
           _payer,
-          _fundingCycle,
+          _ruleset,
           _beneficiary,
           beneficiaryTokenCount,
           _metadata
@@ -680,8 +680,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     }
 
     emit Pay(
-      _fundingCycle.configuration,
-      _fundingCycle.number,
+      _ruleset.rulesetId,
+      _ruleset.cycleNumber,
       _projectId,
       _payer,
       _beneficiary,
@@ -741,14 +741,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     // Define variables that will be needed outside the scoped section below.
     // Keep a reference to the funding cycle during which the redemption is being made.
-    JBFundingCycle memory _fundingCycle;
+    JBRuleset memory _ruleset;
 
     // Scoped section prevents stack too deep.
     {
       JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
 
       // Record the redemption.
-      (_fundingCycle, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
+      (_ruleset, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
         _holder,
         _projectId,
         _accountingContextForTokenOf[_projectId][_token],
@@ -759,7 +759,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
       // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
       uint256 _feePercent = isFeelessAddress[_beneficiary] ||
-        _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
+        _ruleset.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
         ? 0
         : FEE;
 
@@ -790,7 +790,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
           _holder,
           _tokenCount,
           _metadata,
-          _fundingCycle,
+          _ruleset,
           _beneficiary,
           _delegateAllocations,
           _feePercent
@@ -823,8 +823,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     }
 
     emit RedeemTokens(
-      _fundingCycle.configuration,
-      _fundingCycle.number,
+      _ruleset.rulesetId,
+      _ruleset.cycleNumber,
       _projectId,
       _holder,
       _beneficiary,
@@ -853,7 +853,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     uint256 _minReturnedTokens
   ) internal returns (uint256 netLeftoverDistributionAmount) {
     // Record the distribution.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = STORE.recordDistributionFor(
+    (JBRuleset memory _ruleset, uint256 _distributedAmount) = STORE.recordDistributionFor(
       _projectId,
       _accountingContextForTokenOf[_projectId][_token],
       _amount,
@@ -879,7 +879,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     ) = _distributeToPayoutSplitsOf(
         _projectId,
         _token,
-        _fundingCycle.configuration,
+        _ruleset.rulesetId,
         _distributedAmount,
         _feePercent
       );
@@ -892,7 +892,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         _feeEligibleDistributionAmount + _leftoverDistributionAmount,
         _feePercent,
         _projectOwner,
-        _fundingCycle.shouldHoldFees()
+        _ruleset.shouldHoldFees()
       )
       : 0;
 
@@ -908,8 +908,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     }
 
     emit DistributePayouts(
-      _fundingCycle.configuration,
-      _fundingCycle.number,
+      _ruleset.rulesetId,
+      _ruleset.cycleNumber,
       _projectId,
       _projectOwner,
       _amount,
@@ -941,7 +941,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     string memory _memo
   ) internal returns (uint256 netDistributedAmount) {
     // Record the use of the allowance.
-    (JBFundingCycle memory _fundingCycle, uint256 _distributedAmount) = STORE.recordUsedAllowanceOf(
+    (JBRuleset memory _ruleset, uint256 _distributedAmount) = STORE.recordUsedAllowanceOf(
       _projectId,
       _accountingContextForTokenOf[_projectId][_token],
       _amount,
@@ -972,7 +972,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
               _distributedAmount,
               _feePercent,
               _projectOwner,
-              _fundingCycle.shouldHoldFees()
+              _ruleset.shouldHoldFees()
             )
         );
     }
@@ -982,8 +982,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       _transferFor(address(this), _beneficiary, _token, netDistributedAmount);
 
     emit UseAllowance(
-      _fundingCycle.configuration,
-      _fundingCycle.number,
+      _ruleset.rulesetId,
+      _ruleset.cycleNumber,
       _projectId,
       _beneficiary,
       _amount,
@@ -1246,7 +1246,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _allocations The allocations being fulfilled.
   /// @param _tokenAmount The amount of tokens that were paid in to the project.
   /// @param _payer The address that sent the payment.
-  /// @param _fundingCycle The funding cycle during which the payment is being accepted during.
+  /// @param _ruleset The funding cycle during which the payment is being accepted during.
   /// @param _beneficiary The address receiving tokens that result from the payment.
   /// @param _beneficiaryTokenCount The amount of tokens that are being minted for the beneificary.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
@@ -1255,7 +1255,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     JBPayDelegateAllocation3_1_1[] memory _allocations,
     JBTokenAmount memory _tokenAmount,
     address _payer,
-    JBFundingCycle memory _fundingCycle,
+    JBRuleset memory _ruleset,
     address _beneficiary,
     uint256 _beneficiaryTokenCount,
     bytes memory _metadata
@@ -1264,10 +1264,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     JBDidPayData3_1_1 memory _data = JBDidPayData3_1_1(
       _payer,
       _projectId,
-      _fundingCycle.configuration,
+      _ruleset.rulesetId,
       _tokenAmount,
       _tokenAmount,
-      _fundingCycle.weight,
+      _ruleset.weight,
       _beneficiaryTokenCount,
       _beneficiary,
       bytes(''),
@@ -1313,7 +1313,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _holder The address that is redeeming.
   /// @param _tokenCount The amount of tokens that are being redeemed by the holder.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-  /// @param _fundingCycle The funding cycle during which the redemption is being made during.
+  /// @param _ruleset The funding cycle during which the redemption is being made during.
   /// @param _beneficiary The address receiving reclaimed treasury tokens that result from the redemption.
   /// @param _allocations The allocations being fulfilled.
   /// @param _feePercent The percent fee that will apply to funds allocated to delegates.
@@ -1324,7 +1324,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     address _holder,
     uint256 _tokenCount,
     bytes memory _metadata,
-    JBFundingCycle memory _fundingCycle,
+    JBRuleset memory _ruleset,
     address payable _beneficiary,
     JBRedemptionDelegateAllocation3_1_1[] memory _allocations,
     uint256 _feePercent
@@ -1333,11 +1333,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
       _holder,
       _projectId,
-      _fundingCycle.configuration,
+      _ruleset.rulesetId,
       _tokenCount,
       _beneficiaryTokenAmount,
       _beneficiaryTokenAmount,
-      _fundingCycle.redemptionRate(),
+      _ruleset.redemptionRate(),
       _beneficiary,
       '',
       _metadata

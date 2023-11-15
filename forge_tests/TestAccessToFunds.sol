@@ -42,7 +42,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 0,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
-            discountRate: 0,
+            decayRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -105,7 +105,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
+            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
@@ -288,7 +288,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
+            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
@@ -515,14 +515,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                fundingCycleConfigurations: new JBFundingCycleConfig[](0), // No cycle config will force revert when paid.
+                fundingCycleConfigurations: new JBRulesetConfig[](0), // No cycle config will force revert when paid.
                 // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
                 terminalConfigurations: _feeProjectAcceptsToken ? _terminalConfigurations : new JBTerminalConfig[](0), // set terminals where fees will be received
                 memo: ""
             });
 
             // Package up the configuration info.
-            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
+            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
@@ -719,7 +719,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Package up the configuration info.
-            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
+            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
@@ -930,7 +930,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 });
 
             // Package up the configuration info.
-            JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
+            JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;

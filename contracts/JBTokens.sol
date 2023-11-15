@@ -5,14 +5,14 @@ import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 import {JBControllerUtility} from './abstract/JBControllerUtility.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {IJBRulesets} from './interfaces/IJBRulesets.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBERC20Token} from './interfaces/IJBERC20Token.sol';
 import {IJBTokens} from './interfaces/IJBTokens.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
-import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBRuleset} from './structs/JBRuleset.sol';
 import {JBERC20Token} from './JBERC20Token.sol';
 
 /// @notice Manages minting, burning, and balances of projects' tokens and token credits.
@@ -21,7 +21,7 @@ import {JBERC20Token} from './JBERC20Token.sol';
 /// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBERC20Token if they prefer.
 contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
   // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBRuleset;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -47,7 +47,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
   IJBProjects public immutable override projects;
 
   /// @notice The contract storing all rulesets.
-  IJBFundingCycleStore public immutable override rulesets;
+  IJBRulesets public immutable override rulesets;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -124,7 +124,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     IJBOperatorStore _permissions,
     IJBProjects _projects,
     IJBDirectory _directory,
-    IJBFundingCycleStore _rulesets
+    IJBRulesets _rulesets
   ) JBOperatable(_permissions) JBControllerUtility(_directory) {
     projects = _projects;
     rulesets = _rulesets;
@@ -349,7 +349,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     uint256 _amount
   ) external override requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS) {
     // Get a reference to the project's current ruleset.
-    JBFundingCycle memory _ruleset = rulesets.currentOf(_projectId);
+    JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
     // Credit transfers must not be paused.
     if (_ruleset.global().pauseTransfers) revert CREDIT_TRANSFERS_PAUSED();

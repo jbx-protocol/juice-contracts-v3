@@ -7,7 +7,7 @@ import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import "../contracts/JBOperatorStore.sol";
 import "../contracts/JBProjects.sol";
 import "../contracts/JBPrices.sol";
-import "../contracts/JBFundingCycleStore.sol";
+import "../contracts/JBRulesets.sol";
 import "../contracts/JBDirectory.sol";
 import "../contracts/JBTokens.sol";
 import "../contracts/JBSplitsStore.sol";
@@ -23,7 +23,7 @@ contract Deploy is Script {
     JBProjects _projects;
     JBPrices _prices;
     JBDirectory _directory;
-    JBFundingCycleStore _fundingCycleStore;
+    JBRulesets _fundingCycleStore;
     JBTokens _tokenStore;
     JBSplitsStore _splitsStore;
     JBFundAccessConstraintsStore _fundAccessConstraintsStore;
@@ -45,9 +45,7 @@ contract Deploy is Script {
         _prices = new JBPrices(_operatorStore, _projects, _manager);
         address _directoryAddress = addressFrom(address(this), 5);
         //4
-        _fundingCycleStore = new JBFundingCycleStore(
-            IJBDirectory(_directoryAddress)
-        );
+        _fundingCycleStore = new JBRulesets(IJBDirectory(_directoryAddress));
         // 5
         _directory = new JBDirectory(
             _operatorStore,

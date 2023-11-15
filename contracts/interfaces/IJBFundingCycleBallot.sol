@@ -9,7 +9,7 @@ interface IJBFundingCycleBallot is IERC165 {
 
   function stateOf(
     uint256 projectId,
-    uint256 configuration,
+    uint256 rulesetId,
     uint256 start
   ) external view returns (JBBallotState);
 }

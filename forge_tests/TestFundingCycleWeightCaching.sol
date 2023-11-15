@@ -9,10 +9,10 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     uint256 private constant _GAS_LIMIT = 30_000_000;
     uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED 
     uint256 private constant _DURATION = 1;
-    uint256 private constant _DISCOUNT_RATE = 1;
+    uint256 private constant _DECAY_RATE = 1;
     
     IJBController private _controller;
-    IJBFundingCycleStore private _rulesets;
+    IJBRulesets private _rulesets;
     address private _projectOwner;
     
     JBFundingCycleData private _data;
@@ -27,7 +27,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: _DURATION,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
-            discountRate: _DISCOUNT_RATE,
+            decayRate: _DECAY_RATE,
             ballot: IJBFundingCycleBallot(address(0))
         });
 
@@ -56,7 +56,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     /// Test that caching a cycle's weight yields the same result as computing it.
     function testWeightCaching(uint256 _cycleDiff) public {
         // TODO temporarily removed for faster test suite
-        // // Bound to 8x the discount multiple cache threshold.
+        // // Bound to 8x the decay multiple cache threshold.
         // _cycleDiff = bound(_cycleDiff, 0, 80000);
 
         // // Keep references to the projects.
@@ -64,7 +64,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // uint256 _projectId2;
 
         // // Package up the configuration info.
-        // JBFundingCycleConfig[] memory _cycleConfigurations = new JBFundingCycleConfig[](1);
+        // JBRulesetConfig[] memory _cycleConfigurations = new JBRulesetConfig[](1);
 
         // {
         //     _cycleConfigurations[0].mustStartAtOrAfter = 0;
@@ -93,8 +93,8 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // }
 
         // // Keep a reference to the current funding cycles.
-        // JBFundingCycle memory _fundingCycle1 = jbFundingCycleStore().currentOf(_projectId1);
-        // JBFundingCycle memory _fundingCycle2 = jbFundingCycleStore().currentOf(_projectId2);
+        // JBRuleset memory _fundingCycle1 = jbFundingCycleStore().currentOf(_projectId1);
+        // JBRuleset memory _fundingCycle2 = jbFundingCycleStore().currentOf(_projectId2);
 
         // // Go a few rolled over cycles into the future.
         // vm.warp(block.timestamp + (_DURATION * 10));

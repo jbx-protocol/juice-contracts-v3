@@ -4,18 +4,18 @@ pragma solidity ^0.8.16;
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {JBOperatable} from './abstract/JBOperatable.sol';
 import {IJBDirectory} from './interfaces/IJBDirectory.sol';
-import {IJBFundingCycleStore} from './interfaces/IJBFundingCycleStore.sol';
+import {IJBRulesets} from './interfaces/IJBRulesets.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
-import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBRuleset} from './structs/JBRuleset.sol';
 
 /// @notice Keeps a reference of which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and funding cycles.
 contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver for JBFundingCycle;
+  using JBFundingCycleMetadataResolver for JBRuleset;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -47,7 +47,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   IJBProjects public immutable override projects;
 
   /// @notice The contract storing all funding cycle configurations.
-  IJBFundingCycleStore public immutable override rulesets;
+  IJBRulesets public immutable override rulesets;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
@@ -159,7 +159,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   constructor(
     IJBOperatorStore _permissions,
     IJBProjects _projects,
-    IJBFundingCycleStore _rulesets,
+    IJBRulesets _rulesets,
     address _owner
   ) JBOperatable(_permissions) Ownable(_owner) {
     projects = _projects;
@@ -192,13 +192,13 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     if (projects.count() < _projectId) revert INVALID_PROJECT_ID_IN_DIRECTORY();
 
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
+    JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
     // Setting controller is allowed if called from the current controller, or if the project doesn't have a current controller, or if the project's funding cycle allows setting the controller. Revert otherwise.
     if (
       msg.sender != address(controllerOf[_projectId]) &&
       controllerOf[_projectId] != address(0) &&
-      !_fundingCycle.global().allowSetController
+      !_ruleset.global().allowSetController
     ) revert SET_CONTROLLER_NOT_ALLOWED();
 
     // Set the new controller.
@@ -222,11 +222,11 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     )
   {
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
+    JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
     // Setting terminals must be allowed if not called from the current controller.
     if (
-      msg.sender != address(controllerOf[_projectId]) && !_fundingCycle.global().allowSetTerminals
+      msg.sender != address(controllerOf[_projectId]) && !_ruleset.global().allowSetTerminals
     ) revert SET_TERMINALS_NOT_ALLOWED();
 
     // Set the stored terminals for the project.
@@ -312,11 +312,11 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     if (isTerminalOf(_projectId, _terminal)) return;
 
     // Get a reference to the project's current funding cycle.
-    JBFundingCycle memory _fundingCycle = rulesets.currentOf(_projectId);
+    JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
     // Setting terminals must be allowed if not called from the current controller.
     if (
-      msg.sender != address(controllerOf[_projectId]) && !_fundingCycle.global().allowSetTerminals
+      msg.sender != address(controllerOf[_projectId]) && !_ruleset.global().allowSetTerminals
     ) revert SET_TERMINALS_NOT_ALLOWED();
 
     // Add the new terminal.

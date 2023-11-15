@@ -5,7 +5,7 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 
 /// @custom:member payer The address from which the payment originated.
 /// @custom:member projectId The ID of the project for which the payment was made.
-/// @custom:member currentFundingCycleConfiguration The configuration of the funding cycle during which the payment is being made.
+/// @custom:member currentFundingCycleConfiguration The rulesetId of the funding cycle during which the payment is being made.
 /// @custom:member amount The amount of the payment. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member forwardedAmount The amount of the payment that is being sent to the delegate. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member weight The current funding cycle's weight used to determine how many tokens are being minted.

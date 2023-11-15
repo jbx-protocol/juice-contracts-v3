@@ -5,7 +5,7 @@ import {ERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBBallotState} from './enums/JBBallotState.sol';
 import {IJBFundingCycleBallot} from './interfaces/IJBFundingCycleBallot.sol';
-import {JBFundingCycle} from './structs/JBFundingCycle.sol';
+import {JBRuleset} from './structs/JBRuleset.sol';
 
 /// @notice Manages approving funding cycle reconfigurations automatically after a buffer period.
 contract JBReconfigurationBufferBallot is ERC165, IJBFundingCycleBallot {

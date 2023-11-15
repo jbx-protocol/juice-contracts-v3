@@ -1,89 +1,89 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {JBFundingCycle} from './../structs/JBFundingCycle.sol';
+import {JBRuleset} from './../structs/JBRuleset.sol';
 import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
 import {JBGlobalFundingCycleMetadata} from './../structs/JBGlobalFundingCycleMetadata.sol';
 import {JBConstants} from './JBConstants.sol';
 import {JBGlobalFundingCycleMetadataResolver} from './JBGlobalFundingCycleMetadataResolver.sol';
 
 library JBFundingCycleMetadataResolver {
-  function global(JBFundingCycle memory _fundingCycle)
+  function global(JBRuleset memory _ruleset)
     internal
     pure
     returns (JBGlobalFundingCycleMetadata memory)
   {
-    return JBGlobalFundingCycleMetadataResolver.expandMetadata(uint8(_fundingCycle.metadata >> 8));
+    return JBGlobalFundingCycleMetadataResolver.expandMetadata(uint8(_ruleset.metadata >> 8));
   }
 
-  function reservedRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
-    return uint256(uint16(_fundingCycle.metadata >> 16));
+  function reservedRate(JBRuleset memory _ruleset) internal pure returns (uint256) {
+    return uint256(uint16(_ruleset.metadata >> 16));
   }
 
-  function redemptionRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
+  function redemptionRate(JBRuleset memory _ruleset) internal pure returns (uint256) {
     // Redemption rate is a number 0-10000.
-    return uint256(uint16(_fundingCycle.metadata >> 32));
+    return uint256(uint16(_ruleset.metadata >> 32));
   }
 
-  function baseCurrency(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
+  function baseCurrency(JBRuleset memory _ruleset) internal pure returns (uint256) {
     // Currency is a number 0-4294967296.
-    return uint256(uint32(_fundingCycle.metadata >> 48));
+    return uint256(uint32(_ruleset.metadata >> 48));
   }
 
-  function payPaused(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-    return ((_fundingCycle.metadata >> 80) & 1) == 1;
+  function payPaused(JBRuleset memory _ruleset) internal pure returns (bool) {
+    return ((_ruleset.metadata >> 80) & 1) == 1;
   }
 
-  function mintingAllowed(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-    return ((_fundingCycle.metadata >> 81) & 1) == 1;
+  function mintingAllowed(JBRuleset memory _ruleset) internal pure returns (bool) {
+    return ((_ruleset.metadata >> 81) & 1) == 1;
   }
 
-  function terminalMigrationAllowed(JBFundingCycle memory _fundingCycle)
+  function terminalMigrationAllowed(JBRuleset memory _ruleset)
     internal
     pure
     returns (bool)
   {
-    return ((_fundingCycle.metadata >> 82) & 1) == 1;
+    return ((_ruleset.metadata >> 82) & 1) == 1;
   }
 
-  function controllerMigrationAllowed(JBFundingCycle memory _fundingCycle)
+  function controllerMigrationAllowed(JBRuleset memory _ruleset)
     internal
     pure
     returns (bool)
   {
-    return ((_fundingCycle.metadata >> 83) & 1) == 1;
+    return ((_ruleset.metadata >> 83) & 1) == 1;
   }
 
-  function shouldHoldFees(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-    return ((_fundingCycle.metadata >> 84) & 1) == 1;
+  function shouldHoldFees(JBRuleset memory _ruleset) internal pure returns (bool) {
+    return ((_ruleset.metadata >> 84) & 1) == 1;
   }
 
-  function useTotalOverflowForRedemptions(JBFundingCycle memory _fundingCycle)
+  function useTotalOverflowForRedemptions(JBRuleset memory _ruleset)
     internal
     pure
     returns (bool)
   {
-    return ((_fundingCycle.metadata >> 85) & 1) == 1;
+    return ((_ruleset.metadata >> 85) & 1) == 1;
   }
 
-  function useDataSourceForPay(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-    return (_fundingCycle.metadata >> 86) & 1 == 1;
+  function useDataSourceForPay(JBRuleset memory _ruleset) internal pure returns (bool) {
+    return (_ruleset.metadata >> 86) & 1 == 1;
   }
 
-  function useDataSourceForRedeem(JBFundingCycle memory _fundingCycle)
+  function useDataSourceForRedeem(JBRuleset memory _ruleset)
     internal
     pure
     returns (bool)
   {
-    return (_fundingCycle.metadata >> 87) & 1 == 1;
+    return (_ruleset.metadata >> 87) & 1 == 1;
   }
 
-  function dataSource(JBFundingCycle memory _fundingCycle) internal pure returns (address) {
-    return address(uint160(_fundingCycle.metadata >> 88));
+  function dataSource(JBRuleset memory _ruleset) internal pure returns (address) {
+    return address(uint160(_ruleset.metadata >> 88));
   }
 
-  function metadata(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
-    return uint256(uint8(_fundingCycle.metadata >> 248));
+  function metadata(JBRuleset memory _ruleset) internal pure returns (uint256) {
+    return uint256(uint8(_ruleset.metadata >> 248));
   }
 
   /// @notice Pack the funding cycle metadata.
@@ -131,29 +131,29 @@ library JBFundingCycleMetadataResolver {
   }
 
   /// @notice Expand the funding cycle metadata.
-  /// @param _fundingCycle The funding cycle having its metadata expanded.
+  /// @param _ruleset The funding cycle having its metadata expanded.
   /// @return metadata The metadata object.
-  function expandMetadata(JBFundingCycle memory _fundingCycle)
+  function expandMetadata(JBRuleset memory _ruleset)
     internal
     pure
     returns (JBFundingCycleMetadata memory)
   {
     return
       JBFundingCycleMetadata(
-        global(_fundingCycle),
-        reservedRate(_fundingCycle),
-        redemptionRate(_fundingCycle),
-        baseCurrency(_fundingCycle),
-        payPaused(_fundingCycle),
-        mintingAllowed(_fundingCycle),
-        terminalMigrationAllowed(_fundingCycle),
-        controllerMigrationAllowed(_fundingCycle),
-        shouldHoldFees(_fundingCycle),
-        useTotalOverflowForRedemptions(_fundingCycle),
-        useDataSourceForPay(_fundingCycle),
-        useDataSourceForRedeem(_fundingCycle),
-        dataSource(_fundingCycle),
-        metadata(_fundingCycle)
+        global(_ruleset),
+        reservedRate(_ruleset),
+        redemptionRate(_ruleset),
+        baseCurrency(_ruleset),
+        payPaused(_ruleset),
+        mintingAllowed(_ruleset),
+        terminalMigrationAllowed(_ruleset),
+        controllerMigrationAllowed(_ruleset),
+        shouldHoldFees(_ruleset),
+        useTotalOverflowForRedemptions(_ruleset),
+        useDataSourceForPay(_ruleset),
+        useDataSourceForRedeem(_ruleset),
+        dataSource(_ruleset),
+        metadata(_ruleset)
       );
   }
 }

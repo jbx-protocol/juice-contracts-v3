@@ -34,7 +34,7 @@ contract JBFundAccessConstraintsStore is
   /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
   /// @dev bits 224-255: The currency of amount that a project can distribute.
   /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
-  /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
+  /// @custom:param _rulesetId The configuration during which the packed distribution limit data applies.
   /// @custom:param _terminal The terminal from which distributions are being limited.
   /// @custom:param _token The token for which distributions are being limited.
   mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[]))))
@@ -44,7 +44,7 @@ contract JBFundAccessConstraintsStore is
   /// @dev bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
   /// @dev bits 224-255: The currency of the amount of overflow that a project is allowed to tap.
   /// @custom:param _projectId The ID of the project to get the packed overflow allowance data of.
-  /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
+  /// @custom:param _rulesetId The configuration during which the packed overflow allowance data applies.
   /// @custom:param _terminal The terminal managing the overflow.
   /// @custom:param _token The token for which overflow is being allowed.
   mapping(uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[]))))
@@ -57,19 +57,19 @@ contract JBFundAccessConstraintsStore is
   /// @notice The amounts of token that a project can distribute per funding cycle, and the currencies they're in terms of.
   /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
   /// @param _projectId The ID of the project to get the distribution limit of.
-  /// @param _configuration The configuration during which the distribution limit applies.
+  /// @param _rulesetId The configuration during which the distribution limit applies.
   /// @param _terminal The terminal from which distributions are being limited.
   /// @param _token The token for which the distribution limit applies.
   /// @return distributionLimits The distribution limits.
   function distributionLimitsOf(
     uint256 _projectId,
-    uint256 _configuration,
+    uint256 _rulesetId,
     IJBPaymentTerminal _terminal,
     address _token
   ) external view override returns (JBCurrencyAmount[] memory distributionLimits) {
     // Get a reference to the packed data.
     uint256[] memory _packedDistributionLimitsData = _packedDistributionLimitsDataOf[_projectId][
-      _configuration
+      _rulesetId
     ][_terminal][_token];
 
     // Get a reference to the number of distribution limits.
@@ -101,20 +101,20 @@ contract JBFundAccessConstraintsStore is
   /// @notice The amounts of token that a project can distribute per funding cycle, for any currency.
   /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
   /// @param _projectId The ID of the project to get the distribution limit of.
-  /// @param _configuration The configuration during which the distribution limit applies.
+  /// @param _rulesetId The configuration during which the distribution limit applies.
   /// @param _terminal The terminal from which distributions are being limited.
   /// @param _token The token for which the distribution limit applies.
   /// @param _currency The currency to get the distribution limit of.
   /// @return distributionLimit The distribution limit, as a fixed point number with the same number of decimals as the provided terminal.
   function distributionLimitOf(
     uint256 _projectId,
-    uint256 _configuration,
+    uint256 _rulesetId,
     IJBPaymentTerminal _terminal,
     address _token,
     uint256 _currency
   ) external view override returns (uint256 distributionLimit) {
     // Get a reference to the packed data.
-    uint256[] memory _data = _packedDistributionLimitsDataOf[_projectId][_configuration][_terminal][
+    uint256[] memory _data = _packedDistributionLimitsDataOf[_projectId][_rulesetId][_terminal][
       _token
     ];
 
@@ -142,19 +142,19 @@ contract JBFundAccessConstraintsStore is
   /// @notice The amounts of overflow that a project is allowed to tap into on-demand throughout a configuration, and the currencies they're in terms of.
   /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
   /// @param _projectId The ID of the project to get the overflow allowance of.
-  /// @param _configuration The configuration of the during which the allowance applies.
+  /// @param _rulesetId The configuration of the during which the allowance applies.
   /// @param _terminal The terminal managing the overflow.
   /// @param _token The token for which the overflow allowance applies.
   /// @return overflowAllowances The overflow allowances.
   function overflowAllowancesOf(
     uint256 _projectId,
-    uint256 _configuration,
+    uint256 _rulesetId,
     IJBPaymentTerminal _terminal,
     address _token
   ) external view override returns (JBCurrencyAmount[] memory overflowAllowances) {
     // Get a reference to the packed data.
     uint256[] memory _packedOverflowAllowancesData = _packedOverflowAllowancesDataOf[_projectId][
-      _configuration
+      _rulesetId
     ][_terminal][_token];
 
     // Get a reference to the number of overflow allowances.
@@ -186,20 +186,20 @@ contract JBFundAccessConstraintsStore is
   /// @notice The amounts of overflow that a project is allowed to tap into on-demand throughout a configuration, for any currency.
   /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
   /// @param _projectId The ID of the project to get the overflow allowance of.
-  /// @param _configuration The configuration of the during which the allowance applies.
+  /// @param _rulesetId The configuration of the during which the allowance applies.
   /// @param _terminal The terminal managing the overflow.
   /// @param _token The token for which the overflow allowance applies.
   /// @param _currency The currency to get the overflow allowance of.
   /// @return overflowAllowance The overflow allowance, as a fixed point number with the same number of decimals as the provided terminal.
   function overflowAllowanceOf(
     uint256 _projectId,
-    uint256 _configuration,
+    uint256 _rulesetId,
     IJBPaymentTerminal _terminal,
     address _token,
     uint256 _currency
   ) external view override returns (uint256 overflowAllowance) {
     // Get a reference to the packed data.
-    uint256[] memory _data = _packedOverflowAllowancesDataOf[_projectId][_configuration][_terminal][
+    uint256[] memory _data = _packedOverflowAllowancesDataOf[_projectId][_rulesetId][_terminal][
       _token
     ];
 
@@ -240,11 +240,11 @@ contract JBFundAccessConstraintsStore is
   /// @dev Only a project's current controller can set its fund access constraints.
   /// @dev Distribution limits and overflow allowances must be specified in increasing order by currencies to prevent duplicates.
   /// @param _projectId The ID of the project whose fund access constraints are being set.
-  /// @param _configuration The funding cycle configuration the constraints apply within.
+  /// @param _rulesetId The funding cycle configuration the constraints apply within.
   /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint224`.
   function setFor(
     uint256 _projectId,
-    uint256 _configuration,
+    uint256 _rulesetId,
     JBFundAccessConstraints[] calldata _fundAccessConstraints
   ) external override onlyController(_projectId) {
     // Save the number of constraints.
@@ -283,7 +283,7 @@ contract JBFundAccessConstraintsStore is
 
         // Set the distribution limit if there is one.
         if (_distributionLimit.value > 0)
-          _packedDistributionLimitsDataOf[_projectId][_configuration][
+          _packedDistributionLimitsDataOf[_projectId][_rulesetId][
             _fundAccessConstraints[_i].terminal
           ][_fundAccessConstraints[_i].token].push(
               _distributionLimit.value | (_distributionLimit.currency << 224)
@@ -319,7 +319,7 @@ contract JBFundAccessConstraintsStore is
 
         // Set the overflow allowance if there is one.
         if (_overflowAllowance.value > 0)
-          _packedOverflowAllowancesDataOf[_projectId][_configuration][
+          _packedOverflowAllowancesDataOf[_projectId][_rulesetId][
             _fundAccessConstraints[_i].terminal
           ][_fundAccessConstraints[_i].token].push(
               _overflowAllowance.value | (_overflowAllowance.currency << 224)
@@ -330,7 +330,7 @@ contract JBFundAccessConstraintsStore is
         }
       }
 
-      emit SetFundAccessConstraints(_configuration, _projectId, _constraints, msg.sender);
+      emit SetFundAccessConstraints(_rulesetId, _projectId, _constraints, msg.sender);
 
       unchecked {
         ++_i;

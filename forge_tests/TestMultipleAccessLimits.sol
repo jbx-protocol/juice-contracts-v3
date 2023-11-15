@@ -32,7 +32,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _data = JBFundingCycleData({
             duration: 0,
             weight: 1000 * 10 ** 18,
-            discountRate: 0,
+            decayRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
         _metadata = JBFundingCycleMetadata({
@@ -92,7 +92,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -269,7 +269,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: _overflowAllowances
             });
 
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
 
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
@@ -335,7 +335,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: _overflowAllowances
             });
 
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
 
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
@@ -407,7 +407,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -471,7 +471,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -584,7 +584,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: new JBCurrencyAmount[](0)
             });
 
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
 
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
