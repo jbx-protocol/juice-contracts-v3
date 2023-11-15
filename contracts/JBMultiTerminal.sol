@@ -779,7 +779,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
                 if (_feePercent != 0) {
                     _feeEligibleDistributionAmount += reclaimAmount;
                     // Subtract the fee for the reclaimed amount.
-                    reclaimAmount -= _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
+                    reclaimAmount -= JBFees.feeIn(reclaimAmount, _feePercent);
                 }
 
                 // Subtract the fee from the reclaim amount.
