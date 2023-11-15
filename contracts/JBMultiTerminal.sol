@@ -615,16 +615,16 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
         // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
         {
+            // Keep a references to the delegate allocations to fulfill and the number of tokens that should be minted to the beneficiary.
             JBPayDelegateAllocation3_1_1[] memory _delegateAllocations;
-            JBTokenAmount memory _tokenAmount;
-
             uint256 _tokenCount;
 
             // Get a reference to the token's accounting context.
             JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
 
             // Bundle the amount info into a JBTokenAmount struct.
-            _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
+            JBTokenAmount memory _tokenAmount =
+                JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
 
             // Record the payment.
             (_fundingCycle, _tokenCount, _delegateAllocations) =
@@ -1065,14 +1065,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
 
             // Create the data to send to the allocator.
-            JBSplitAllocationData memory _data = JBSplitAllocationData(
-                _token,
-                netPayoutAmount,
-                _accountingContextForTokenOf[_projectId][_token].decimals,
-                _projectId,
-                uint256(uint160(_token)),
-                _split
-            );
+            JBSplitAllocationData memory _data = JBSplitAllocationData({
+                token: _token,
+                amount: netPayoutAmount,
+                decimals: _accountingContextForTokenOf[_projectId][_token].decimals,
+                projectId: _projectId,
+                group: uint256(uint160(_token)),
+                split: _split
+            });
 
             // Trigger the allocator's `allocate` function.
             bytes memory _reason;
