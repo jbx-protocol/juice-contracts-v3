@@ -1714,6 +1714,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         );
     }
 
+    // Project 2 accepts ETH into _terminal and USDC into _terminal2.
+    // Project 1 accepts USDC and ETH fees into _terminal.
     function testFuzzMultiTerminalAllowance(
         uint224 _ethCurrencyOverflowAllowance,
         uint224 _ethCurrencyDistributionLimit,
@@ -1735,8 +1737,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the values don't overflow the registry.
         unchecked {
-            // vm.assume(_ethCurrencyOverflowAllowance + _cumulativeDistributionLimit  >= _ethCurrencyOverflowAllowance && _ethCurrencyOverflowAllowance + _cumulativeDistributionLimit >= _cumulativeDistributionLimit);
-            // vm.assume(_usdCurrencyOverflowAllowance + (_usdCurrencyDistributionLimit + PRBMath.mulDiv(_ethCurrencyDistributionLimit, _USD_PRICE_PER_ETH, 10**_PRICE_FEED_DECIMALS))*2 >= _usdCurrencyOverflowAllowance && _usdCurrencyOverflowAllowance + _usdCurrencyDistributionLimit >= _usdCurrencyDistributionLimit);
             vm.assume(
                 _ethCurrencyOverflowAllowance + _ethCurrencyDistributionLimit
                     >= _ethCurrencyOverflowAllowance
