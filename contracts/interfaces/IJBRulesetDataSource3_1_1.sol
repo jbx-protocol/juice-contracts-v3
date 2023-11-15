@@ -9,10 +9,10 @@ import {JBRedemptionDelegateAllocation3_1_1} from './../structs/JBRedemptionDele
 
 /// @title Datasource
 /// @notice The datasource is called by JBPayoutRedemptionPaymentTerminals on pay and redemption, and provide an extra layer of logic to use a custom weight, a custom memo and/or a pay/redeem delegate
-interface IJBFundingCycleDataSource3_1_1 is IERC165 {
+interface IJBRulesetDataSource3_1_1 is IERC165 {
   /// @notice The datasource implementation for JBPaymentTerminal.pay(..)
   /// @param data the data passed to the data source in terminal.pay(..), as a JBPayParamsData struct:
-  /// @return weight the weight to use to override the funding cycle weight
+  /// @return weight the weight to use to override the ruleset weight
   /// @return delegateAllocations The amount to send to delegates instead of adding to the local balance.
   function payParams(
     JBPayParamsData calldata data

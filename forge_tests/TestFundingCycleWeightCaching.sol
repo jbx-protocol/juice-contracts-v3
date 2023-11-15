@@ -4,8 +4,8 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {MockPriceFeed} from './mock/MockPriceFeed.sol';
 
-// A funding cycle's weight can be cached to make larger intervals tractible under the gas limit.
-contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
+// A ruleset's weight can be cached to make larger intervals tractible under the gas limit.
+contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
     uint256 private constant _GAS_LIMIT = 30_000_000;
     uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED 
     uint256 private constant _DURATION = 1;
@@ -15,24 +15,24 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
     IJBRulesets private _rulesets;
     address private _projectOwner;
     
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata private _metadata;
 
     function setUp() public override {
         super.setUp();
 
         _projectOwner = multisig();
-        _rulesets = jbFundingCycleStore();
+        _rulesets = jbRulesetStore();
         _controller = jbController();
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: _DURATION,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
             decayRate: _DECAY_RATE,
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
@@ -53,11 +53,11 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         });
     }
     
-    /// Test that caching a cycle's weight yields the same result as computing it.
-    function testWeightCaching(uint256 _cycleDiff) public {
+    /// Test that caching a ruleset's weight yields the same result as computing it.
+    function testWeightCaching(uint256 _rulesetDiff) public {
         // TODO temporarily removed for faster test suite
         // // Bound to 8x the decay multiple cache threshold.
-        // _cycleDiff = bound(_cycleDiff, 0, 80000);
+        // _rulesetDiff = bound(_rulesetDiff, 0, 80000);
 
         // // Keep references to the projects.
         // uint256 _projectId1;
@@ -92,18 +92,18 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         //     });
         // }
 
-        // // Keep a reference to the current funding cycles.
-        // JBRuleset memory _fundingCycle1 = jbFundingCycleStore().currentOf(_projectId1);
-        // JBRuleset memory _fundingCycle2 = jbFundingCycleStore().currentOf(_projectId2);
+        // // Keep a reference to the current rulesets.
+        // JBRuleset memory _ruleset1 = jbRulesetStore().currentOf(_projectId1);
+        // JBRuleset memory _ruleset2 = jbRulesetStore().currentOf(_projectId2);
 
-        // // Go a few rolled over cycles into the future.
+        // // Go a few rolled over rulesets into the future.
         // vm.warp(block.timestamp + (_DURATION * 10));
 
         // // Keep a reference to the amount of gas before the caching call.
         // uint256 _gasBeforeCache = gasleft();
 
         // // Cache the weight in the second project.
-        // _rulesets.updateFundingCycleWeightCache(_projectId2);
+        // _rulesets.updateRulesetWeightCache(_projectId2);
 
         // // Keep a reference to the amout of gas spent on the call.
         // uint256 _gasDiffCache = _gasBeforeCache - gasleft();
@@ -111,11 +111,11 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // // Make sure the diff is within the limit
         // assertLe(_gasDiffCache, _GAS_LIMIT);
 
-        // // Go many rolled over cycles into the future.
-        // vm.warp(block.timestamp + (_DURATION * _cycleDiff));
+        // // Go many rolled over rulesets into the future.
+        // vm.warp(block.timestamp + (_DURATION * _rulesetDiff));
 
         // // Cache the weight in the second project again.
-        // _rulesets.updateFundingCycleWeightCache(_projectId2);
+        // _rulesets.updateRulesetWeightCache(_projectId2);
 
         // // Inherit the weight.
         // _rulesetConfigurations[0].data.weight = 0;
@@ -123,9 +123,9 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amount of gas before the call.
         // uint256 _gasBefore1 = gasleft();
 
-        // // Reconfigure the cycle.
+        // // Reconfigure the ruleset.
         // vm.startPrank(_projectOwner);
-        // _controller.reconfigureFundingCyclesOf({
+        // _controller.reconfigureRulesetsOf({
         //     projectId: _projectId1,
         //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
@@ -140,7 +140,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amount of gas before the call.
         // uint256 _gasBefore2 = gasleft();
 
-        // _controller.reconfigureFundingCyclesOf({
+        // _controller.reconfigureRulesetsOf({
         //     projectId: _projectId2,
         //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
@@ -153,25 +153,25 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         // // Make sure the diff is within the limit
         // assertLe(_gasDiff2, _GAS_LIMIT);
 
-        // // Renew the reference to the current funding cycle.
-        // _fundingCycle1 = jbFundingCycleStore().currentOf(_projectId1);
-        // _fundingCycle2 = jbFundingCycleStore().currentOf(_projectId2);
+        // // Renew the reference to the current ruleset.
+        // _ruleset1 = jbRulesetStore().currentOf(_projectId1);
+        // _ruleset2 = jbRulesetStore().currentOf(_projectId2);
 
         // // The cached call should have been cheaper.
         // assertLe(_gasDiff2, _gasDiff1);
 
-        // // Make sure the funding cycle's have the same weight.
-        // assertEq(_fundingCycle1.weight, _fundingCycle2.weight);
+        // // Make sure the rulesets have the same weight.
+        // assertEq(_ruleset1.weight, _ruleset2.weight);
 
         // // Cache the weight in the second project again.
-        // _rulesets.updateFundingCycleWeightCache(_projectId2);
+        // _rulesets.updateRulesetWeightCache(_projectId2);
 
-        // // Go many rolled over cycles into the future.
-        // vm.warp(block.timestamp + (_DURATION * _cycleDiff));
+        // // Go many rolled over rulesets into the future.
+        // vm.warp(block.timestamp + (_DURATION * _rulesetDiff));
 
-        // // Reconfigure the cycle.
+        // // Reconfigure the ruleset.
         // vm.prank(_projectOwner);
-        // _controller.reconfigureFundingCyclesOf({
+        // _controller.reconfigureRulesetsOf({
         //     projectId: _projectId2,
         //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""

@@ -25,8 +25,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     address private _beneficiary;
     MockERC20 private _usdcToken;
 
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata private _metadata;
 
     function setUp() public override {
         super.setUp();
@@ -39,15 +39,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _controller = jbController();
         _prices = jbPrices();
         _terminal = jbPayoutRedemptionTerminal();
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 0,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
             decayRate: 0,
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
@@ -310,7 +310,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                rulesetConfigurations: _rulesetConfigurations, // use the same cycle configs
+                rulesetConfigurations: _rulesetConfigurations, // use the same ruleset configs
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });
@@ -515,7 +515,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                rulesetConfigurations: new JBRulesetConfig[](0), // No cycle config will force revert when paid.
+                rulesetConfigurations: new JBRulesetConfig[](0), // No ruleset config will force revert when paid.
                 // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
                 terminalConfigurations: _feeProjectAcceptsToken ? _terminalConfigurations : new JBTerminalConfig[](0), // set terminals where fees will be received
                 memo: ""
@@ -957,7 +957,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _controller.launchProjectFor({
                 owner: address(420), // random
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
-                rulesetConfigurations: _rulesetConfigurations, // use the same cycle configs
+                rulesetConfigurations: _rulesetConfigurations, // use the same ruleset configs
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
             });

@@ -19,7 +19,7 @@ import {JBProjects} from "@juicebox/JBProjects.sol";
 import {JBSplitsStore} from "@juicebox/JBSplitsStore.sol";
 import {JBERC20Token} from "@juicebox/JBERC20Token.sol";
 import {JBTokens} from "@juicebox/JBTokens.sol";
-import {JBReconfigurationBufferBallot} from "@juicebox/JBReconfigurationBufferBallot.sol";
+import {JBDeadline} from "@juicebox/JBDeadline.sol";
 import {JBMultiTerminal} from "@juicebox/JBMultiTerminal.sol";
 import {JBCurrencyAmount} from "@juicebox/structs/JBCurrencyAmount.sol";
 import {JBAccountingContextConfig} from "@juicebox/structs/JBAccountingContextConfig.sol";
@@ -29,8 +29,8 @@ import {JBFee} from "@juicebox/structs/JBFee.sol";
 import {JBFees} from "@juicebox/libraries/JBFees.sol";
 import {JBFundAccessConstraints} from "@juicebox/structs/JBFundAccessConstraints.sol";
 import {JBRuleset} from "@juicebox/structs/JBRuleset.sol";
-import {JBFundingCycleData} from "@juicebox/structs/JBFundingCycleData.sol";
-import {JBFundingCycleMetadata} from "@juicebox/structs/JBFundingCycleMetadata.sol";
+import {JBRulesetData} from "@juicebox/structs/JBRulesetData.sol";
+import {JBRulesetMetadata} from "@juicebox/structs/JBRulesetMetadata.sol";
 import {JBRulesetConfig} from "@juicebox/structs/JBRulesetConfig.sol";
 import {JBGroupedSplits} from "@juicebox/structs/JBGroupedSplits.sol";
 import {JBOperatorData} from "@juicebox/structs/JBOperatorData.sol";
@@ -40,7 +40,7 @@ import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
 import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
-import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
+import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalRulesetMetadata.sol";
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
@@ -59,7 +59,7 @@ import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
 import {IJBTokens} from "@juicebox/interfaces/IJBTokens.sol";
 import {IJBSplitAllocator} from "@juicebox/interfaces/IJBSplitAllocator.sol";
 import {IJBPayDelegate3_1_1} from "@juicebox/interfaces/IJBPayDelegate3_1_1.sol";
-import {IJBFundingCycleDataSource3_1_1} from "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
+import {IJBRulesetDataSource3_1_1} from "@juicebox/interfaces/IJBRulesetDataSource3_1_1.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
@@ -71,7 +71,7 @@ import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
 import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
 import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
 import {JBTokenStandards} from "@juicebox/libraries/JBTokenStandards.sol";
-import {JBFundingCycleMetadataResolver} from "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
+import {JBRulesetMetadataResolver} from "@juicebox/libraries/JBRulesetMetadataResolver.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
@@ -97,7 +97,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBProjects private _jbProjects;
     JBPrices private _jbPrices;
     JBDirectory private _jbDirectory;
-    JBRulesets private _jbFundingCycleStore;
+    JBRulesets private _jbRulesetStore;
     //   JBERC20Token private _jbToken;
     JBTokens private _jbTokens;
     JBSplitsStore private _jbSplitsStore;
@@ -138,8 +138,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbDirectory;
     }
 
-    function jbFundingCycleStore() internal view returns (JBRulesets) {
-        return _jbFundingCycleStore;
+    function jbRulesetStore() internal view returns (JBRulesets) {
+        return _jbRulesetStore;
     }
 
     function jbTokens() internal view returns (JBTokens) {
@@ -191,14 +191,14 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
         vm.label(address(_jbPrices), "JBPrices");
         address contractAtNoncePlusOne = addressFrom(address(this), 6);
-        _jbFundingCycleStore = new JBRulesets(
+        _jbRulesetStore = new JBRulesets(
             IJBDirectory(contractAtNoncePlusOne)
         );
-        vm.label(address(_jbFundingCycleStore), "JBRulesets");
+        vm.label(address(_jbRulesetStore), "JBRulesets");
         _jbDirectory = new JBDirectory(
             _jbOperatorStore,
             _jbProjects,
-            _jbFundingCycleStore,
+            _jbRulesetStore,
             _multisig
         );
         vm.label(address(_jbDirectory), "JBDirectory");
@@ -206,7 +206,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
-            _jbFundingCycleStore
+            _jbRulesetStore
         );
         vm.label(address(_jbTokens), "JBTokens");
         _jbSplitsStore = new JBSplitsStore(
@@ -226,7 +226,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbOperatorStore,
             _jbProjects,
             _jbDirectory,
-            _jbFundingCycleStore,
+            _jbRulesetStore,
             _jbTokens,
             _jbSplitsStore,
             _jbFundAccessConstraintsStore
@@ -241,7 +241,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
         _jbTerminalStore = new JBTerminalStore(
             _jbDirectory,
-            _jbFundingCycleStore,
+            _jbRulesetStore,
             _jbPrices
         );
         vm.label(

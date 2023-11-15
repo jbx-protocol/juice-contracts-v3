@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBFundingCycleData} from './JBFundingCycleData.sol';
-import {JBFundingCycleMetadata} from './JBFundingCycleMetadata.sol';
+import {JBRulesetData} from './JBRulesetData.sol';
+import {JBRulesetMetadata} from './JBRulesetMetadata.sol';
 import {JBGroupedSplits} from './JBGroupedSplits.sol';
 import {JBFundAccessConstraints} from './JBFundAccessConstraints.sol';
 
@@ -13,8 +13,8 @@ import {JBFundAccessConstraints} from './JBFundAccessConstraints.sol';
 /// @custom:member fundAccessConstraints An array of structs which dictate the amount of funds a project can access from its balance in each payment terminal while the ruleset is active. Amounts are fixed point numbers using the same number of decimals as the corresponding terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint232`.
 struct JBRulesetConfig {
   uint256 mustStartAtOrAfter;
-  JBFundingCycleData data;
-  JBFundingCycleMetadata metadata;
+  JBRulesetData data;
+  JBRulesetMetadata metadata;
   JBGroupedSplits[] groupedSplits;
   JBFundAccessConstraints[] fundAccessConstraints;
 }

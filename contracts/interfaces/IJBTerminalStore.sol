@@ -12,7 +12,7 @@ import {IJBPrices} from "./IJBPrices.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 
 interface IJBTerminalStore {
-    function FUNDING_CYCLE_STORE() external view returns (IJBRulesets);
+    function RULESET_STORE() external view returns (IJBRulesets);
 
     function DIRECTORY() external view returns (IJBDirectory);
 
@@ -28,7 +28,7 @@ interface IJBTerminalStore {
         IJBPaymentTerminal terminal,
         uint256 projectId,
         address token,
-        uint256 fundingCycleNumber,
+        uint256 rulesetNumber,
         uint256 currency
     ) external view returns (uint256);
 

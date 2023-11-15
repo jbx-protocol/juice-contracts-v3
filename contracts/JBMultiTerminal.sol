@@ -24,7 +24,7 @@ import {IJBTerminalStore} from './interfaces/IJBTerminalStore.sol';
 import {IJBSplitAllocator} from './interfaces/IJBSplitAllocator.sol';
 import {JBConstants} from './libraries/JBConstants.sol';
 import {JBFees} from './libraries/JBFees.sol';
-import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBRulesetMetadataResolver} from './libraries/JBRulesetMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBTokenList} from './libraries/JBTokenList.sol';
 import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
@@ -44,8 +44,8 @@ import {JBOperatable} from './abstract/JBOperatable.sol';
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
-  // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver for JBRuleset;
+  // A library that parses the packed ruleset metadata into a friendlier format.
+  using JBRulesetMetadataResolver for JBRuleset;
 
   // A library that adds default safety checks to ERC20 functionality.
   using SafeERC20 for IERC20;
@@ -236,7 +236,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _projectId The ID of the project being paid.
   /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
   /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
-  /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
+  /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data source and delegate.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
   /// @param _memo A memo to pass along to the emitted event.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
@@ -289,7 +289,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     );
   }
 
-  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
+  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current ruleset's data source.
   /// @dev Only a token holder or a designated operator can redeem its tokens.
   /// @param _holder The account to redeem tokens for.
   /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -326,14 +326,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
       );
   }
 
-  /// @notice Distributes payouts for a project with the distribution limit of its current funding cycle.
+  /// @notice Distributes payouts for a project with the distribution limit of its current ruleset.
   /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
   /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
   /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
   /// @param _projectId The ID of the project having its payouts distributed.
   /// @param _token The token being distributed. This terminal ignores this property since it only manages one token.
   /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's distribution limit currency.
   /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
   /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
   function distributePayoutsOf(
@@ -352,7 +352,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _projectId The ID of the project to use the allowance of.
   /// @param _token The token being distributed. This terminal ignores this property since it only manages one token.
   /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's overflow allowance currency.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's overflow allowance currency.
   /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
   /// @param _beneficiary The address to send the funds to.
   /// @param _memo A memo to pass along to the emitted event.
@@ -607,7 +607,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
   /// @param _payer The address making the payment.
   /// @param _projectId The ID of the project being paid.
-  /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
+  /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data source and delegate.
   /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
   /// @param _memo A memo to pass along to the emitted event.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
@@ -626,7 +626,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     if (_beneficiary == address(0)) revert PAY_TO_ZERO_ADDRESS();
 
     // Define variables that will be needed outside the scoped section below.
-    // Keep a reference to the funding cycle during which the payment is being made.
+    // Keep a reference to the ruleset during which the payment is being made.
     JBRuleset memory _ruleset;
 
     // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
@@ -717,7 +717,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
   }
 
-  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
+  /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current ruleset's data source.
   /// @dev Only a token holder or a designated operator can redeem its tokens.
   /// @param _holder The account to redeem tokens for.
   /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -740,7 +740,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     if (_beneficiary == address(0)) revert REDEEM_TO_ZERO_ADDRESS();
 
     // Define variables that will be needed outside the scoped section below.
-    // Keep a reference to the funding cycle during which the redemption is being made.
+    // Keep a reference to the ruleset during which the redemption is being made.
     JBRuleset memory _ruleset;
 
     // Scoped section prevents stack too deep.
@@ -835,14 +835,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     );
   }
 
-  /// @notice Distributes payouts for a project with the distribution limit of its current funding cycle.
+  /// @notice Distributes payouts for a project with the distribution limit of its current ruleset.
   /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
   /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
   /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
   /// @param _projectId The ID of the project having its payouts distributed.
   /// @param _token The token being distributed.
   /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's distribution limit currency.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's distribution limit currency.
   /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
   /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
   function _distributePayoutsOf(
@@ -926,7 +926,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _projectId The ID of the project to use the allowance of.
   /// @param _token The address of the token who's allowance is being used.
   /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-  /// @param _currency The expected currency of the amount being distributed. Must match the project's current funding cycle's overflow allowance currency.
+  /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's overflow allowance currency.
   /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
   /// @param _beneficiary The address to send the funds to.
   /// @param _memo A memo to pass along to the emitted event.
@@ -994,7 +994,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     );
   }
 
-  /// @notice Pays out splits for a project's funding cycle configuration.
+  /// @notice Pays out splits for a project's ruleset configuration.
   /// @param _projectId The ID of the project for which payout splits are being distributed.
   /// @param _token The address of the token being distributed.
   /// @param _domain The domain of the splits to distribute the payout between.
@@ -1072,7 +1072,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     return (_amount, feeEligibleDistributionAmount);
   }
 
-  /// @notice Pays out a split for a project's funding cycle configuration.
+  /// @notice Pays out a split for a project's ruleset configuration.
   /// @param _split The split to distribute payouts to.
   /// @param _projectId The ID of the project to which the split is originating.
   /// @param _token The address of the token being paid out.
@@ -1246,7 +1246,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _allocations The allocations being fulfilled.
   /// @param _tokenAmount The amount of tokens that were paid in to the project.
   /// @param _payer The address that sent the payment.
-  /// @param _ruleset The funding cycle during which the payment is being accepted during.
+  /// @param _ruleset The ruleset during which the payment is being accepted during.
   /// @param _beneficiary The address receiving tokens that result from the payment.
   /// @param _beneficiaryTokenCount The amount of tokens that are being minted for the beneificary.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
@@ -1313,7 +1313,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _holder The address that is redeeming.
   /// @param _tokenCount The amount of tokens that are being redeemed by the holder.
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-  /// @param _ruleset The funding cycle during which the redemption is being made during.
+  /// @param _ruleset The ruleset during which the redemption is being made during.
   /// @param _beneficiary The address receiving reclaimed treasury tokens that result from the redemption.
   /// @param _allocations The allocations being fulfilled.
   /// @param _feePercent The percent fee that will apply to funds allocated to delegates.

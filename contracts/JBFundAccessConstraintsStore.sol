@@ -31,7 +31,7 @@ contract JBFundAccessConstraintsStore is
   //*********************************************************************//
 
   /// @notice Data regarding the distribution limits of a project during a configuration.
-  /// @dev bits 0-231: The amount of token that a project can distribute per funding cycle.
+  /// @dev bits 0-231: The amount of token that a project can distribute per ruleset.
   /// @dev bits 224-255: The currency of amount that a project can distribute.
   /// @custom:param _projectId The ID of the project to get the packed distribution limit data of.
   /// @custom:param _rulesetId The configuration during which the packed distribution limit data applies.
@@ -54,7 +54,7 @@ contract JBFundAccessConstraintsStore is
   // ------------------------- external views -------------------------- //
   //*********************************************************************//
 
-  /// @notice The amounts of token that a project can distribute per funding cycle, and the currencies they're in terms of.
+  /// @notice The amounts of token that a project can distribute per ruleset, and the currencies they're in terms of.
   /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
   /// @param _projectId The ID of the project to get the distribution limit of.
   /// @param _rulesetId The configuration during which the distribution limit applies.
@@ -98,7 +98,7 @@ contract JBFundAccessConstraintsStore is
     }
   }
 
-  /// @notice The amounts of token that a project can distribute per funding cycle, for any currency.
+  /// @notice The amounts of token that a project can distribute per ruleset, for any currency.
   /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
   /// @param _projectId The ID of the project to get the distribution limit of.
   /// @param _rulesetId The configuration during which the distribution limit applies.
@@ -240,7 +240,7 @@ contract JBFundAccessConstraintsStore is
   /// @dev Only a project's current controller can set its fund access constraints.
   /// @dev Distribution limits and overflow allowances must be specified in increasing order by currencies to prevent duplicates.
   /// @param _projectId The ID of the project whose fund access constraints are being set.
-  /// @param _rulesetId The funding cycle configuration the constraints apply within.
+  /// @param _rulesetId The ruleset configuration the constraints apply within.
   /// @param _fundAccessConstraints An array containing amounts that a project can use from its treasury for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal. The `_distributionLimit` and `_overflowAllowance` parameters must fit in a `uint224`.
   function setFor(
     uint256 _projectId,

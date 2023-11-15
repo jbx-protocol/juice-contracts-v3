@@ -19,28 +19,28 @@ import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
-import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
+import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBSplitsGroups} from "./libraries/JBSplitsGroups.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
-import {JBFundingCycleMetadata} from "./structs/JBFundingCycleMetadata.sol";
+import {JBRulesetMetadata} from "./structs/JBRulesetMetadata.sol";
 import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
 
-/// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
+/// @notice Stitches together rulesets and project tokens, making sure all activity is accounted for and correct.
 contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
-    // A library that parses the packed funding cycle metadata into a more friendly format.
-    using JBFundingCycleMetadataResolver for JBRuleset;
+    // A library that parses the packed ruleset metadata into a more friendly format.
+    using JBRulesetMetadataResolver for JBRuleset;
 
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
     error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_DELEGATE();
-    error FUNDING_CYCLE_ALREADY_LAUNCHED();
+    error RULESET_ALREADY_LAUNCHED();
     error INVALID_BASE_CURRENCY();
     error INVALID_REDEMPTION_RATE();
     error INVALID_RESERVED_RATE();
@@ -57,7 +57,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @notice Mints ERC-721's that represent project ownership.
     IJBProjects public immutable override projects;
 
-    /// @notice The contract storing all funding cycle configurations.
+    /// @notice The contract storing all ruleset configurations.
     IJBRulesets public immutable override rulesets;
 
     /// @notice The contract that manages token minting and burning.
@@ -85,11 +85,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
-    /// @notice A project's funding cycle for the specified rulesetId along with its metadata.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return ruleset The funding cycle.
-    /// @return metadata The funding cycle's metadata.
-    function getFundingCycleOf(
+    /// @notice A project's ruleset for the specified rulesetId along with its metadata.
+    /// @param _projectId The ID of the project to which the ruleset belongs.
+    /// @return ruleset The ruleset.
+    /// @return metadata The ruleset's metadata.
+    function getRulesetOf(
         uint256 _projectId,
         uint256 _rulesetId
     )
@@ -98,19 +98,19 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         override
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata
+            JBRulesetMetadata memory metadata
         )
     {
         ruleset = rulesets.get(_projectId, _rulesetId);
         metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's latest configured funding cycle along with its metadata and the approval status of the configuration.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return ruleset The latest configured funding cycle.
-    /// @return metadata The latest configured funding cycle's metadata.
-    /// @return approvalStatus The state of the configuration.
-    function latestConfiguredFundingCycleOf(
+    /// @notice A project's latest configured ruleset along with its metadata and the approval status of the configuration.
+    /// @param _projectId The ID of the project to which the ruleset belongs.
+    /// @return ruleset The latest configured ruleset.
+    /// @return metadata The latest configured ruleset's metadata.
+    /// @return approvalStatus The approval status of the configuration.
+    function latestConfiguredRulesetOf(
         uint256 _projectId
     )
         external
@@ -118,7 +118,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         override
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata,
+            JBRulesetMetadata memory metadata,
             JBApprovalStatus approvalStatus
         )
     {
@@ -126,11 +126,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's current funding cycle along with its metadata.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return ruleset The current funding cycle.
-    /// @return metadata The current funding cycle's metadata.
-    function currentFundingCycleOf(
+    /// @notice A project's current ruleset along with its metadata.
+    /// @param _projectId The ID of the project to which the ruleset belongs.
+    /// @return ruleset The current ruleset.
+    /// @return metadata The current ruleset's metadata.
+    function currentRulesetOf(
         uint256 _projectId
     )
         external
@@ -138,18 +138,18 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         override
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata
+            JBRulesetMetadata memory metadata
         )
     {
         ruleset = rulesets.currentOf(_projectId);
         metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's queued funding cycle along with its metadata.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return ruleset The queued funding cycle.
-    /// @return metadata The queued funding cycle's metadata.
-    function queuedFundingCycleOf(
+    /// @notice A project's queued ruleset along with its metadata.
+    /// @param _projectId The ID of the project to which the ruleset belongs.
+    /// @return ruleset The queued ruleset.
+    /// @return metadata The queued ruleset's metadata.
+    function queuedRulesetOf(
         uint256 _projectId
     )
         external
@@ -157,7 +157,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         override
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata
+            JBRulesetMetadata memory metadata
         )
     {
         ruleset = rulesets.queuedOf(_projectId);
@@ -201,7 +201,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _permissions A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _rulesets A contract storing all funding cycle configurations.
+    /// @param _rulesets A contract storing all ruleset configurations.
     /// @param _tokenStore A contract that manages token minting and burning.
     /// @param _splitsStore A contract that stores splits for each project.
     /// @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
@@ -226,12 +226,12 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     // --------------------- external transactions ----------------------- //
     //*********************************************************************//
 
-    /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first funding cycle, and set up any splits.
+    /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first ruleset, and set up any splits.
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
     /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
-    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
+    /// @param _rulesetConfigurations The ruleset configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return projectId The ID of the project.
@@ -251,8 +251,8 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Set this contract as the project's controller in the directory.
         _directory.setControllerOf(projectId, address(this));
 
-        // Configure the first funding cycle.
-        uint256 _rulesetId = _configureFundingCycles(
+        // Configure the first ruleset.
+        uint256 _rulesetId = _configureRulesets(
             projectId,
             _rulesetConfigurations
         );
@@ -263,15 +263,15 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         emit LaunchProject(_rulesetId, projectId, _memo, msg.sender);
     }
 
-    /// @notice Creates a funding cycle for an already existing project ERC-721.
+    /// @notice Creates a ruleset for an already existing project ERC-721.
     /// @dev Each operation within this transaction can be done in sequence separately.
-    /// @dev Only a project owner or operator can launch its funding cycles.
-    /// @param _projectId The ID of the project to launch funding cycles for.
-    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
+    /// @dev Only a project owner or operator can launch its rulesets.
+    /// @param _projectId The ID of the project to launch rulesets for.
+    /// @param _rulesetConfigurations The ruleset configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return configured The rulesetId timestamp of the funding cycle that was successfully reconfigured.
-    function launchFundingCyclesFor(
+    /// @return configured The rulesetId timestamp of the ruleset that was successfully reconfigured.
+    function launchRulesetsFor(
         uint256 _projectId,
         JBRulesetConfig[] calldata _rulesetConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
@@ -283,19 +283,19 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         requirePermission(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.RECONFIGURE_FUNDING_CYCLES
+            JBOperations.RECONFIGURE_RULESETS
         )
         returns (uint256 configured)
     {
-        // If there is a previous configuration, reconfigureFundingCyclesOf should be called instead
+        // If there is a previous configuration, reconfigureRulesetsOf should be called instead
         if (rulesets.latestRulesetOf(_projectId) > 0)
-            revert FUNDING_CYCLE_ALREADY_LAUNCHED();
+            revert RULESET_ALREADY_LAUNCHED();
 
         // Set this contract as the project's controller in the directory.
         directory.setControllerOf(_projectId, address(this));
 
-        // Configure the first funding cycle.
-        configured = _configureFundingCycles(
+        // Configure the first ruleset.
+        configured = _configureRulesets(
             _projectId,
             _rulesetConfigurations
         );
@@ -303,16 +303,16 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Configure the terminals.
         _configureTerminals(_projectId, _terminalConfigurations);
 
-        emit LaunchFundingCycles(configured, _projectId, _memo, msg.sender);
+        emit LaunchRulesets(configured, _projectId, _memo, msg.sender);
     }
 
-    /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's approval hook.
-    /// @dev Only a project's owner or a designated operator can configure its funding cycles.
-    /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
+    /// @notice Proposes a configuration of a subsequent ruleset that will take effect once the current one expires if it is approved by the current ruleset's approval hook.
+    /// @dev Only a project's owner or a designated operator can configure its rulesets.
+    /// @param _projectId The ID of the project whose rulesets are being reconfigured.
+    /// @param _rulesetConfigurations The ruleset configurations to schedule.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return configured The rulesetId timestamp of the funding cycle that was successfully reconfigured.
-    function reconfigureFundingCyclesOf(
+    /// @return configured The rulesetId timestamp of the ruleset that was successfully reconfigured.
+    function reconfigureRulesetsOf(
         uint256 _projectId,
         JBRulesetConfig[] calldata _rulesetConfigurations,
         string calldata _memo
@@ -323,17 +323,17 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         requirePermission(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.RECONFIGURE_FUNDING_CYCLES
+            JBOperations.RECONFIGURE_RULESETS
         )
         returns (uint256 configured)
     {
-        // Configure the next funding cycle.
-        configured = _configureFundingCycles(
+        // Configure the next ruleset.
+        configured = _configureRulesets(
             _projectId,
             _rulesetConfigurations
         );
 
-        emit ReconfigureFundingCycles(
+        emit ReconfigureRulesets(
             configured,
             _projectId,
             _memo,
@@ -341,13 +341,13 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         );
     }
 
-    /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current funding cycle configuration.
+    /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current ruleset configuration.
     /// @dev Only a project's owner, a designated operator, one of its terminals, or the current data source can mint its tokens.
     /// @param _projectId The ID of the project to which the tokens being minted belong.
     /// @param _tokenCount The amount of tokens to mint in total, counting however many should be reserved.
     /// @param _beneficiary The account that the tokens are being minted for.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @param _useReservedRate Whether to use the current funding cycle's reserved rate in the mint calculation.
+    /// @param _useReservedRate Whether to use the current ruleset's reserved rate in the mint calculation.
     /// @return beneficiaryTokenCount The amount of tokens minted for the beneficiary.
     function mintTokensOf(
         uint256 _projectId,
@@ -365,12 +365,12 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
 
         // Scoped section prevents stack too deep. `_ruleset` only used within scope.
         {
-            // Get a reference to the project's current funding cycle.
+            // Get a reference to the project's current ruleset.
             JBRuleset memory _ruleset = rulesets.currentOf(
                 _projectId
             );
 
-            // Minting limited to: project owner, authorized callers, project terminal and current funding cycle data source
+            // Minting limited to: project owner, authorized callers, project terminal and current ruleset data source
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
@@ -381,7 +381,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
                 ) || msg.sender == address(_ruleset.dataSource())
             );
 
-            // If the message sender is not a terminal or a datasource, the current funding cycle must allow minting.
+            // If the message sender is not a terminal or a datasource, the current ruleset must allow minting.
             if (
                 !_ruleset.mintingAllowed() &&
                 !directory.isTerminalOf(
@@ -502,7 +502,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         if (_directory.controllerOf(_projectId) != address(this))
             revert NOT_CURRENT_CONTROLLER();
 
-        // Get a reference to the project's current funding cycle.
+        // Get a reference to the project's current ruleset.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Migration must be allowed.
@@ -537,7 +537,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Keep a reference to the token store.
         IJBTokens _tokenStore = tokenStore;
 
-        // Get the current funding cycle to read the reserved rate from.
+        // Get the current ruleset to read the reserved rate from.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Get a reference to the number of tokens that need to be minted.
@@ -575,7 +575,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         );
     }
 
-    /// @notice Distribute tokens to the splits according to the specified funding cycle rulesetId.
+    /// @notice Distribute tokens to the splits according to the specified ruleset.
     /// @param _projectId The ID of the project for which reserved token splits are being distributed.
     /// @param _domain The domain of the splits to distribute the reserved tokens between.
     /// @param _group The group of the splits to distribute the reserved tokens between.
@@ -669,11 +669,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         }
     }
 
-    /// @notice Configures a funding cycle and stores information pertinent to the configuration.
-    /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    /// @param _rulesetConfigurations The funding cycle configurations to schedule.
-    /// @return configured The rulesetId timestamp of the funding cycle that was successfully reconfigured.
-    function _configureFundingCycles(
+    /// @notice Configures a ruleset and stores information pertinent to the configuration.
+    /// @param _projectId The ID of the project whose rulesets are being reconfigured.
+    /// @param _rulesetConfigurations The ruleset configurations to schedule.
+    /// @return configured The rulesetId of the ruleset that was successfully reconfigured.
+    function _configureRulesets(
         uint256 _projectId,
         JBRulesetConfig[] calldata _rulesetConfigurations
     ) internal returns (uint256 configured) {
@@ -703,11 +703,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             if (_rulesetId.metadata.baseCurrency > type(uint32).max)
                 revert INVALID_BASE_CURRENCY();
 
-            // Configure the funding cycle's properties.
+            // Configure the ruleset's properties.
             JBRuleset memory _ruleset = rulesets.configureFor(
                 _projectId,
                 _rulesetId.data,
-                JBFundingCycleMetadataResolver.packFundingCycleMetadata(
+                JBRulesetMetadataResolver.packRulesetMetadata(
                     _rulesetId.metadata
                 ),
                 _rulesetId.mustStartAtOrAfter

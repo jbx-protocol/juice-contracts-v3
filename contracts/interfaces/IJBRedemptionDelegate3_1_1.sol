@@ -5,7 +5,7 @@ import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
 
 /// @title Redemption delegate
-/// @notice Delegate called after JBTerminal.redeemTokensOf(..) logic completion (if passed by the funding cycle datasource)
+/// @notice Delegate called after JBTerminal.redeemTokensOf(..) logic completion (if passed by the ruleset datasource)
 interface IJBRedemptionDelegate3_1_1 is IERC165 {
   /// @notice This function is called by JBPaymentTerminal.redeemTokensOf(..), after the execution of its logic
   /// @dev Critical business logic should be protected by an appropriate access control

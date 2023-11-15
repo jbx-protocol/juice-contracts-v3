@@ -5,7 +5,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBFundingCycleDataSource3_1_1} from "./interfaces/IJBFundingCycleDataSource3_1_1.sol";
+import {IJBRulesetDataSource3_1_1} from "./interfaces/IJBRulesetDataSource3_1_1.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
@@ -15,7 +15,7 @@ import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFixedPointNumber} from "./libraries/JBFixedPointNumber.sol";
 import {JBCurrencyAmount} from "./structs/JBCurrencyAmount.sol";
-import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
+import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBPayDelegateAllocation3_1_1} from "./structs/JBPayDelegateAllocation3_1_1.sol";
 import {JBPayParamsData} from "./structs/JBPayParamsData.sol";
@@ -27,8 +27,8 @@ import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 /// @notice Manages all bookkeeping for inflows and outflows of funds from any ISingleTokenPaymentTerminal.
 /// @dev This Store expects a project's controller to be an IJBController.
 contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
-    // A library that parses the packed funding cycle metadata into a friendlier format.
-    using JBFundingCycleMetadataResolver for JBRuleset;
+    // A library that parses the packed ruleset metadata into a friendlier format.
+    using JBRulesetMetadataResolver for JBRuleset;
 
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
@@ -36,13 +36,13 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     error INVALID_AMOUNT_TO_SEND_DELEGATE();
     error CURRENCY_MISMATCH();
     error DISTRIBUTION_AMOUNT_LIMIT_REACHED();
-    error FUNDING_CYCLE_PAYMENT_PAUSED();
-    error FUNDING_CYCLE_DISTRIBUTION_PAUSED();
-    error FUNDING_CYCLE_REDEEM_PAUSED();
+    error RULESET_PAYMENT_PAUSED();
+    error RULESET_DISTRIBUTION_PAUSED();
+    error RULESET_REDEEM_PAUSED();
     error INADEQUATE_CONTROLLER_ALLOWANCE();
     error INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
     error INSUFFICIENT_TOKENS();
-    error INVALID_FUNDING_CYCLE();
+    error INVALID_RULESET();
     error PAYMENT_TERMINAL_MIGRATION_NOT_ALLOWED();
 
     //*********************************************************************//
@@ -59,8 +59,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override DIRECTORY;
 
-    /// @notice The contract storing all funding cycle configurations.
-    IJBRulesets public immutable override FUNDING_CYCLE_STORE;
+    /// @notice The contract storing all ruleset configurations.
+    IJBRulesets public immutable override RULESET_STORE;
 
     /// @notice The contract that exposes price feeds.
     IJBPrices public immutable override PRICES;
@@ -79,19 +79,19 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         public
         override balanceOf;
 
-    /// @notice The currency-denominated amounts of funds that a project has distributed from its limit during the current funding cycle for each terminal.
+    /// @notice The currency-denominated amounts of funds that a project has distributed from its limit during the current ruleset for each terminal.
     /// @dev Increases as projects use their preconfigured distribution limits.
     /// @dev The used distribution limit is represented as a fixed point number with the same amount of decimals as its relative terminal.
     /// @custom:param _terminal The terminal to which the used distribution limit applies.
     /// @custom:param _projectId The ID of the project to get the used distribution limit of.
     /// @custom:param _token The token to which the used distribution limit applies.
-    /// @custom:param _fundingCycleNumber The number of the funding cycle during which the distribution limit was used.
+    /// @custom:param _rulesetNumber The number of the ruleset during which the distribution limit was used.
     /// @custom:param _currency The currency for which the distribution limit applies.
     mapping(IJBPaymentTerminal => mapping(uint256 => mapping(address => mapping(uint256 => mapping(uint256 => uint256)))))
         public
         override usedDistributionLimitOf;
 
-    /// @notice The currency-denominated amounts of funds that a project has used from its allowance during the current funding cycle configuration for each terminal, in terms of the overflow allowance's currency.
+    /// @notice The currency-denominated amounts of funds that a project has used from its allowance during the current ruleset configuration for each terminal, in terms of the overflow allowance's currency.
     /// @dev Increases as projects use their allowance.
     /// @dev The used allowance is represented as a fixed point number with the same amount of decimals as its relative terminal.
     /// @custom:param _terminal The terminal to which the used overflow allowance applies.
@@ -122,13 +122,13 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         uint256 _decimals,
         uint256 _currency
     ) external view override returns (uint256) {
-        // Return the overflow during the project's current funding cycle.
+        // Return the overflow during the project's current ruleset.
         return
             _overflowFrom(
                 _terminal,
                 _projectId,
                 _accountingContexts,
-                FUNDING_CYCLE_STORE.currentOf(_projectId),
+                RULESET_STORE.currentOf(_projectId),
                 _decimals,
                 _currency
             );
@@ -167,8 +167,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         uint256 _tokenCount,
         bool _useTotalOverflow
     ) external view override returns (uint256) {
-        // Get a reference to the project's current funding cycle.
-        JBRuleset memory _ruleset = FUNDING_CYCLE_STORE.currentOf(
+        // Get a reference to the project's current ruleset.
+        JBRuleset memory _ruleset = RULESET_STORE.currentOf(
             _projectId
         );
 
@@ -223,8 +223,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Can't redeem more tokens that is in the supply.
         if (_tokenCount > _totalSupply) return 0;
 
-        // Get a reference to the project's current funding cycle.
-        JBRuleset memory _ruleset = FUNDING_CYCLE_STORE.currentOf(
+        // Get a reference to the project's current ruleset.
+        JBRuleset memory _ruleset = RULESET_STORE.currentOf(
             _projectId
         );
 
@@ -243,7 +243,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     //*********************************************************************//
 
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _rulesets A contract storing all funding cycle configurations.
+    /// @param _rulesets A contract storing all ruleset configurations.
     /// @param _prices A contract that exposes price feeds.
     constructor(
         IJBDirectory _directory,
@@ -251,7 +251,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         IJBPrices _prices
     ) {
         DIRECTORY = _directory;
-        FUNDING_CYCLE_STORE = _rulesets;
+        RULESET_STORE = _rulesets;
         PRICES = _prices;
     }
 
@@ -267,7 +267,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param _projectId The ID of the project being paid.
     /// @param _beneficiary The specified address that should be the beneficiary of anything that results from the payment.
     /// @param _metadata Bytes to send along to the data source, if one is provided.
-    /// @return ruleset The project's funding cycle during which payment was made.
+    /// @return ruleset The project's ruleset during which payment was made.
     /// @return tokenCount The number of project tokens that were minted, as a fixed point number with 18 decimals.
     /// @return delegateAllocations The amount to send to delegates instead of adding to the local balance.
     function recordPaymentFrom(
@@ -286,19 +286,19 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             JBPayDelegateAllocation3_1_1[] memory delegateAllocations
         )
     {
-        // Get a reference to the current funding cycle for the project.
-        ruleset = FUNDING_CYCLE_STORE.currentOf(_projectId);
+        // Get a reference to the current ruleset for the project.
+        ruleset = RULESET_STORE.currentOf(_projectId);
 
-        // The project must have a funding cycle configured.
-        if (ruleset.cycleNumber == 0) revert INVALID_FUNDING_CYCLE();
+        // The project must have a ruleset configured.
+        if (ruleset.cycleNumber == 0) revert INVALID_RULESET();
 
         // Must not be paused.
-        if (ruleset.payPaused()) revert FUNDING_CYCLE_PAYMENT_PAUSED();
+        if (ruleset.payPaused()) revert RULESET_PAYMENT_PAUSED();
 
         // The weight according to which new token supply is to be minted, as a fixed point number with 18 decimals.
         uint256 _weight;
 
-        // If the funding cycle has configured a data source, use it to derive a weight and memo.
+        // If the ruleset has configured a data source, use it to derive a weight and memo.
         if (
             ruleset.useDataSourceForPay() &&
             ruleset.dataSource() != address(0)
@@ -315,11 +315,11 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 ruleset.reservedRate(),
                 _metadata
             );
-            (_weight, delegateAllocations) = IJBFundingCycleDataSource3_1_1(
+            (_weight, delegateAllocations) = IJBRulesetDataSource3_1_1(
                 ruleset.dataSource()
             ).payParams(_data);
         }
-        // Otherwise use the funding cycle's weight
+        // Otherwise use the ruleset's weight
         else {
             _weight = ruleset.weight;
         }
@@ -395,7 +395,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param _balanceTokenContexts The token contexts whose balances should contribute to the overflow being reclaimed from.
     /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
     /// @param _metadata Bytes to send along to the data source, if one is provided.
-    /// @return ruleset The funding cycle during which the redemption was made.
+    /// @return ruleset The ruleset during which the redemption was made.
     /// @return reclaimAmount The amount of terminal tokens reclaimed, as a fixed point number with 18 decimals.
     /// @return delegateAllocations The amount to send to delegates instead of sending to the beneficiary.
     function recordRedemptionFor(
@@ -415,11 +415,11 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
         )
     {
-        // Get a reference to the project's current funding cycle.
-        ruleset = FUNDING_CYCLE_STORE.currentOf(_projectId);
+        // Get a reference to the project's current ruleset.
+        ruleset = RULESET_STORE.currentOf(_projectId);
 
         // Get the amount of current overflow.
-        // Use the local overflow if the funding cycle specifies that it should be used. Otherwise, use the project's total overflow across all of its terminals.
+        // Use the local overflow if the ruleset specifies that it should be used. Otherwise, use the project's total overflow across all of its terminals.
         uint256 _currentOverflow = ruleset.useTotalOverflowForRedemptions()
             ? _currentTotalOverflowOf(
                 _projectId,
@@ -459,7 +459,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             _accountingContext.currency
         );
 
-        // If the funding cycle has configured a data source, use it to derive a claim amount and memo.
+        // If the ruleset has configured a data source, use it to derive a claim amount and memo.
         if (
             ruleset.useDataSourceForRedeem() &&
             ruleset.dataSource() != address(0)
@@ -483,7 +483,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 (
                     reclaimAmount,
                     delegateAllocations
-                ) = IJBFundingCycleDataSource3_1_1(ruleset.dataSource())
+                ) = IJBRulesetDataSource3_1_1(ruleset.dataSource())
                     .redeemParams(_data);
             }
         }
@@ -535,8 +535,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param _projectId The ID of the project that is having funds distributed.
     /// @param _accountingContext The context of the token being distributed.
     /// @param _amount The amount to use from the distribution limit, as a fixed point number.
-    /// @param _currency The currency of the `_amount`. This must match the project's current funding cycle's currency.
-    /// @return ruleset The funding cycle during which the distribution was made.
+    /// @param _currency The currency of the `_amount`. This must match the project's current ruleset's currency.
+    /// @return ruleset The ruleset during which the distribution was made.
     /// @return distributedAmount The amount of terminal tokens distributed, as a fixed point number with the same amount of decimals as its relative terminal.
     function recordDistributionFor(
         uint256 _projectId,
@@ -549,10 +549,10 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         nonReentrant
         returns (JBRuleset memory ruleset, uint256 distributedAmount)
     {
-        // Get a reference to the project's current funding cycle.
-        ruleset = FUNDING_CYCLE_STORE.currentOf(_projectId);
+        // Get a reference to the project's current ruleset.
+        ruleset = RULESET_STORE.currentOf(_projectId);
 
-        // The new total amount that has been distributed during this funding cycle.
+        // The new total amount that has been distributed during this ruleset.
         uint256 _newUsedDistributionLimitOf = usedDistributionLimitOf[
             IJBPaymentTerminal(msg.sender)
         ][_projectId][_accountingContext.token][ruleset.cycleNumber][
@@ -626,7 +626,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param _accountingContext The accounting context of the token whose balances should contribute to the overflow being reclaimed from.
     /// @param _amount The amount to use from the allowance, as a fixed point number.
     /// @param _currency The currency of the `_amount`. Must match the currency of the overflow allowance.
-    /// @return ruleset The funding cycle during which the overflow allowance is being used.
+    /// @return ruleset The ruleset during which the overflow allowance is being used.
     /// @return usedAmount The amount of terminal tokens used, as a fixed point number with the same amount of decimals as its relative terminal.
     function recordUsedAllowanceOf(
         uint256 _projectId,
@@ -639,10 +639,10 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         nonReentrant
         returns (JBRuleset memory ruleset, uint256 usedAmount)
     {
-        // Get a reference to the project's current funding cycle.
-        ruleset = FUNDING_CYCLE_STORE.currentOf(_projectId);
+        // Get a reference to the project's current ruleset.
+        ruleset = RULESET_STORE.currentOf(_projectId);
 
-        // Get a reference to the new used overflow allowance for this funding cycle rulesetId.
+        // Get a reference to the new used overflow allowance for this ruleset rulesetId.
         uint256 _newUsedOverflowAllowanceOf = usedOverflowAllowanceOf[
             IJBPaymentTerminal(msg.sender)
         ][_projectId][_accountingContext.token][ruleset.rulesetId][
@@ -738,8 +738,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         uint256 _projectId,
         address _token
     ) external override nonReentrant returns (uint256 balance) {
-        // Get a reference to the project's current funding cycle.
-        JBRuleset memory _ruleset = FUNDING_CYCLE_STORE.currentOf(
+        // Get a reference to the project's current ruleset.
+        JBRuleset memory _ruleset = RULESET_STORE.currentOf(
             _projectId
         );
 
@@ -759,8 +759,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     //*********************************************************************//
 
     /// @notice The amount of overflowed tokens from a terminal that can be reclaimed by the specified number of tokens when measured from the specified.
-    /// @dev If the project has an active funding cycle reconfiguration approval hook, the project's approval hook redemption rate is used.
-    /// @param _ruleset The funding cycle during which reclaimable overflow is being calculated.
+    /// @dev If the project has an active ruleset reconfiguration approval hook, the project's approval hook redemption rate is used.
+    /// @param _ruleset The ruleset during which reclaimable overflow is being calculated.
     /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
     /// @param _totalSupply The total supply of tokens to make the calculation with, as a fixed point number with 18 decimals.
     /// @param _overflow The amount of overflow to make the calculation with.
@@ -798,12 +798,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
     }
 
-    /// @notice Gets the amount that is overflowing when measured from the specified funding cycle.
+    /// @notice Gets the amount that is overflowing when measured from the specified ruleset.
     /// @dev This amount changes as the value of the balance changes in relation to the currency being used to measure the distribution limit.
     /// @param _terminal The terminal for which the overflow is being calculated.
     /// @param _projectId The ID of the project to get overflow for.
     /// @param _accountingContexts The accounting contexts of tokens whose balances should contribute to the overflow being measured.
-    /// @param _ruleset The ID of the funding cycle to base the overflow on.
+    /// @param _ruleset The ID of the ruleset to base the overflow on.
     /// @param _targetDecimals The number of decimals to include in the resulting fixed point number.
     /// @param _targetCurrency The currency that the reported overflow is expected to be in terms of.
     /// @return overflow The overflow of funds, as a fixed point number with 18 decimals.
@@ -837,12 +837,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         }
     }
 
-    /// @notice Gets the amount that is overflowing for a token when measured from the specified funding cycle.
+    /// @notice Gets the amount that is overflowing for a token when measured from the specified ruleset.
     /// @dev This amount changes as the value of the balance changes in relation to the currency being used to measure the distribution limit.
     /// @param _terminal The terminal for which the overflow is being calculated.
     /// @param _projectId The ID of the project to get overflow for.
     /// @param _accountingContext The accounting context of the token whose balance should contribute to the overflow being measured.
-    /// @param _ruleset The ID of the funding cycle to base the overflow on.
+    /// @param _ruleset The ID of the ruleset to base the overflow on.
     /// @param _targetDecimals The number of decimals to include in the resulting fixed point number.
     /// @param _targetCurrency The currency that the reported overflow is expected to be in terms of.
     /// @return overflow The overflow of funds, as a fixed point number with 18 decimals.
@@ -881,7 +881,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 )
             );
 
-        // Get a reference to the distribution limit during the funding cycle for the token.
+        // Get a reference to the distribution limit during the ruleset for the token.
         JBCurrencyAmount[] memory _distributionLimits = IJBController(
             DIRECTORY.controllerOf(_projectId)
         ).fundAccessConstraintsStore().distributionLimitsOf(
@@ -901,7 +901,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         for (uint256 _i; _i < _numberOfDistributionLimits; ) {
             _distributionLimit = _distributionLimits[_i];
 
-            // Set the distribution limit value to the amount still distributable during the funding cycle.
+            // Set the distribution limit value to the amount still distributable during the ruleset.
             _distributionLimit.value =
                 _distributionLimit.value -
                 usedDistributionLimitOf[_terminal][_projectId][

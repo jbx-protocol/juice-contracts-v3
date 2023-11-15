@@ -7,25 +7,25 @@ import {JBApprovalStatus} from './enums/JBApprovalStatus.sol';
 import {IJBRulesetApprovalHook} from './interfaces/IJBRulesetApprovalHook.sol';
 import {JBRuleset} from './structs/JBRuleset.sol';
 
-/// @notice Manages approving funding cycle reconfigurations automatically after a buffer period.
-contract JBReconfigurationBufferBallot is ERC165, IJBRulesetApprovalHook {
+/// @notice Ruleset approval hook which rejects rulesets if they are not queued `duration` seconds before the current ruleset ends.
+contract JBDeadline is ERC165, IJBRulesetApprovalHook {
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /// @notice The number of seconds that must pass for a funding cycle reconfiguration to become either `Approved` or `Failed`.
+  /// @notice The number of seconds that must pass for a ruleset reconfiguration to become either `Approved` or `Failed`.
   uint256 public immutable override duration;
 
   //*********************************************************************//
   // -------------------------- public views --------------------------- //
   //*********************************************************************//
 
-  /// @notice The approval state of a particular funding cycle.
-  /// @param _projectId The ID of the project to which the funding cycle being checked belongs.
-  /// @param _configured The configuration of the funding cycle to check the state of.
-  /// @param _start The start timestamp of the funding cycle to check the state of.
-  /// @return The state of the provided approval hook.
-  function stateOf(
+  /// @notice The approval status of a particular ruleset.
+  /// @param _projectId The ID of the project to which the ruleset being checked belongs.
+  /// @param _configured The configuration of the ruleset to check the status of.
+  /// @param _start The start timestamp of the ruleset to check the status of.
+  /// @return The status of the provided approval hook.
+  function approvalStatusOf(
     uint256 _projectId,
     uint256 _configured,
     uint256 _start
@@ -37,7 +37,7 @@ contract JBReconfigurationBufferBallot is ERC165, IJBRulesetApprovalHook {
 
     unchecked {
       // If there was sufficient time between configuration and the start of the cycle, it is approved. Otherwise, it is failed.
-      // If the approval hook hasn't yet started, it's state is ApprovalExpected.
+      // If the approval hook hasn't yet started, its approval status is ApprovalExpected.
       return
         (_start - _configured < duration)
           ? JBApprovalStatus.Failed

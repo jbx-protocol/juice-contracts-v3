@@ -5,7 +5,7 @@ import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {JBDidPayData} from './../structs/JBDidPayData.sol';
 
 /// @title Pay delegate
-/// @notice Delegate called after JBTerminal.pay(..) logic completion (if passed by the funding cycle datasource)
+/// @notice Delegate called after JBTerminal.pay(..) logic completion (if passed by the ruleset datasource)
 interface IJBPayDelegate is IERC165 {
   /// @notice This function is called by JBPaymentTerminal.pay(..), after the execution of its logic
   /// @dev Critical business logic should be protected by an appropriate access control

@@ -11,8 +11,8 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     IJBPrices private _prices;
     JBTokens private _tokenStore;
     JBProjectMetadata private _projectMetadata;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits;
     IJBPaymentTerminal[] private _terminals;
     address private _projectOwner;
@@ -29,14 +29,14 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal = jbPayoutRedemptionTerminal();
         _tokenStore = jbTokens();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 0,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
@@ -91,13 +91,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: _overflowAllowances
             });
 
-        // Package up cycle config.
-        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        // Package up ruleset config.
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].groupedSplits = _groupedSplits;
+        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -118,7 +118,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: address(420), //random
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -126,7 +126,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -269,13 +269,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: _overflowAllowances
             });
 
-        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
 
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].groupedSplits = _groupedSplits;
+        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         _projectOwner = multisig();
 
@@ -301,7 +301,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -335,13 +335,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: _overflowAllowances
             });
 
-        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
 
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].groupedSplits = _groupedSplits;
+        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         _projectOwner = multisig();
 
@@ -367,7 +367,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -407,12 +407,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 distributionLimits: _distributionLimits,
                 overflowAllowances: _overflowAllowances
             });
-        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].groupedSplits = _groupedSplits;
+        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -432,7 +432,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -470,13 +470,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: _overflowAllowances
             });
 
-        // Package up cycle config.
-        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        // Package up ruleset config.
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].groupedSplits = _groupedSplits;
+        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -497,7 +497,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -505,7 +505,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -584,13 +584,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 overflowAllowances: new JBCurrencyAmount[](0)
             });
 
-        JBRulesetConfig[] memory _cycleConfig = new JBRulesetConfig[](1);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
 
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].groupedSplits = _groupedSplits;
+        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -610,7 +610,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _projectId =  _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            rulesetConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });

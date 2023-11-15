@@ -10,7 +10,7 @@ import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
 import {IJBERC20Token} from './interfaces/IJBERC20Token.sol';
 import {IJBTokens} from './interfaces/IJBTokens.sol';
-import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBRulesetMetadataResolver} from './libraries/JBRulesetMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBRuleset} from './structs/JBRuleset.sol';
 import {JBERC20Token} from './JBERC20Token.sol';
@@ -20,8 +20,8 @@ import {JBERC20Token} from './JBERC20Token.sol';
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBERC20Token if they prefer.
 contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
-  // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver for JBRuleset;
+  // A library that parses the packed ruleset metadata into a friendlier format.
+  using JBRulesetMetadataResolver for JBRuleset;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //

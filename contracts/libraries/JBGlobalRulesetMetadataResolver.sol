@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
-import {JBGlobalFundingCycleMetadata} from './../structs/JBGlobalFundingCycleMetadata.sol';
+import {JBRulesetMetadata} from './../structs/JBRulesetMetadata.sol';
+import {JBGlobalRulesetMetadata} from './../structs/JBGlobalRulesetMetadata.sol';
 
-library JBGlobalFundingCycleMetadataResolver {
+library JBGlobalRulesetMetadataResolver {
   function setTerminalsAllowed(uint8 _data) internal pure returns (bool) {
     return (_data & 1) == 1;
   }
@@ -17,11 +17,11 @@ library JBGlobalFundingCycleMetadataResolver {
     return ((_data >> 2) & 1) == 1;
   }
 
-  /// @notice Pack the global funding cycle metadata.
+  /// @notice Pack the global ruleset metadata.
   /// @param _metadata The metadata to validate and pack.
   /// @return packed The packed uint256 of all global metadata params. The first 8 bits specify the version.
-  function packFundingCycleGlobalMetadata(
-    JBGlobalFundingCycleMetadata memory _metadata
+  function packRulesetGlobalMetadata(
+    JBGlobalRulesetMetadata memory _metadata
   ) internal pure returns (uint256 packed) {
     // allow set terminals in bit 0.
     if (_metadata.allowSetTerminals) packed |= 1;
@@ -31,14 +31,14 @@ library JBGlobalFundingCycleMetadataResolver {
     if (_metadata.pauseTransfers) packed |= 1 << 2;
   }
 
-  /// @notice Expand the global funding cycle metadata.
+  /// @notice Expand the global ruleset metadata.
   /// @param _packedMetadata The packed metadata to expand.
   /// @return metadata The global metadata object.
   function expandMetadata(
     uint8 _packedMetadata
-  ) internal pure returns (JBGlobalFundingCycleMetadata memory metadata) {
+  ) internal pure returns (JBGlobalRulesetMetadata memory metadata) {
     return
-      JBGlobalFundingCycleMetadata(
+      JBGlobalRulesetMetadata(
         setTerminalsAllowed(_packedMetadata),
         setControllerAllowed(_packedMetadata),
         transfersPaused(_packedMetadata)

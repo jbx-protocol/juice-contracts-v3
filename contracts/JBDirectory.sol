@@ -8,14 +8,14 @@ import {IJBRulesets} from './interfaces/IJBRulesets.sol';
 import {IJBOperatorStore} from './interfaces/IJBOperatorStore.sol';
 import {IJBPaymentTerminal} from './interfaces/IJBPaymentTerminal.sol';
 import {IJBProjects} from './interfaces/IJBProjects.sol';
-import {JBFundingCycleMetadataResolver} from './libraries/JBFundingCycleMetadataResolver.sol';
+import {JBRulesetMetadataResolver} from './libraries/JBRulesetMetadataResolver.sol';
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBRuleset} from './structs/JBRuleset.sol';
 
-/// @notice Keeps a reference of which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and funding cycles.
+/// @notice Keeps a reference of which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and rulesets.
 contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
-  // A library that parses the packed funding cycle metadata into a friendlier format.
-  using JBFundingCycleMetadataResolver for JBRuleset;
+  // A library that parses the packed ruleset metadata into a friendlier format.
+  using JBRulesetMetadataResolver for JBRuleset;
 
   //*********************************************************************//
   // --------------------------- custom errors ------------------------- //
@@ -46,14 +46,14 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   /// @notice Mints ERC-721's that represent project ownership and transfers.
   IJBProjects public immutable override projects;
 
-  /// @notice The contract storing all funding cycle configurations.
+  /// @notice The contract storing all ruleset configurations.
   IJBRulesets public immutable override rulesets;
 
   //*********************************************************************//
   // --------------------- public stored properties -------------------- //
   //*********************************************************************//
 
-  /// @notice For each project ID, the controller that manages how terminals interact with tokens and funding cycles.
+  /// @notice For each project ID, the controller that manages how terminals interact with tokens and rulesets.
   /// @custom:member _projectId The ID of the project to get the controller of.
   mapping(uint256 => address) public override controllerOf;
 
@@ -154,7 +154,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
   /// @param _permissions A contract storing operator assignments.
   /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
-  /// @param _rulesets A contract storing all funding cycle configurations.
+  /// @param _rulesets A contract storing all ruleset configurations.
   /// @param _owner The address that will own the contract.
   constructor(
     IJBOperatorStore _permissions,
@@ -191,10 +191,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     // The project must exist.
     if (projects.count() < _projectId) revert INVALID_PROJECT_ID_IN_DIRECTORY();
 
-    // Get a reference to the project's current funding cycle.
+    // Get a reference to the project's current ruleset.
     JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
-    // Setting controller is allowed if called from the current controller, or if the project doesn't have a current controller, or if the project's funding cycle allows setting the controller. Revert otherwise.
+    // Setting controller is allowed if called from the current controller, or if the project doesn't have a current controller, or if the project's ruleset allows setting the controller. Revert otherwise.
     if (
       msg.sender != address(controllerOf[_projectId]) &&
       controllerOf[_projectId] != address(0) &&
@@ -221,7 +221,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
       msg.sender == address(controllerOf[_projectId])
     )
   {
-    // Get a reference to the project's current funding cycle.
+    // Get a reference to the project's current ruleset.
     JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
     // Setting terminals must be allowed if not called from the current controller.
@@ -257,7 +257,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
   /// @notice Project's can set which terminal should be their primary for a particular token. 
   /// @dev This is useful in case a project has several terminals connected for a particular token.
   /// @dev The terminal will be set as the primary terminal where ecosystem contracts should route tokens.
-  /// @dev If setting a newly added terminal and the funding cycle doesn't allow new terminals, the caller must be the current controller.
+  /// @dev If setting a newly added terminal and the ruleset doesn't allow new terminals, the caller must be the current controller.
   /// @param _projectId The ID of the project for which a primary token is being set.
   /// @param _token The token to set the primary terminal of.
   /// @param _terminal The terminal to make primary.
@@ -311,7 +311,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     // Check that the terminal has not already been added.
     if (isTerminalOf(_projectId, _terminal)) return;
 
-    // Get a reference to the project's current funding cycle.
+    // Get a reference to the project's current ruleset.
     JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
     // Setting terminals must be allowed if not called from the current controller.

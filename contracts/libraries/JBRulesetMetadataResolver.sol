@@ -2,18 +2,18 @@
 pragma solidity ^0.8.16;
 
 import {JBRuleset} from './../structs/JBRuleset.sol';
-import {JBFundingCycleMetadata} from './../structs/JBFundingCycleMetadata.sol';
-import {JBGlobalFundingCycleMetadata} from './../structs/JBGlobalFundingCycleMetadata.sol';
+import {JBRulesetMetadata} from './../structs/JBRulesetMetadata.sol';
+import {JBGlobalRulesetMetadata} from './../structs/JBGlobalRulesetMetadata.sol';
 import {JBConstants} from './JBConstants.sol';
-import {JBGlobalFundingCycleMetadataResolver} from './JBGlobalFundingCycleMetadataResolver.sol';
+import {JBGlobalRulesetMetadataResolver} from './JBGlobalRulesetMetadataResolver.sol';
 
-library JBFundingCycleMetadataResolver {
+library JBRulesetMetadataResolver {
   function global(JBRuleset memory _ruleset)
     internal
     pure
-    returns (JBGlobalFundingCycleMetadata memory)
+    returns (JBGlobalRulesetMetadata memory)
   {
-    return JBGlobalFundingCycleMetadataResolver.expandMetadata(uint8(_ruleset.metadata >> 8));
+    return JBGlobalRulesetMetadataResolver.expandMetadata(uint8(_ruleset.metadata >> 8));
   }
 
   function reservedRate(JBRuleset memory _ruleset) internal pure returns (uint256) {
@@ -86,10 +86,10 @@ library JBFundingCycleMetadataResolver {
     return uint256(uint8(_ruleset.metadata >> 248));
   }
 
-  /// @notice Pack the funding cycle metadata.
+  /// @notice Pack the ruleset metadata.
   /// @param _metadata The metadata to validate and pack.
   /// @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.
-  function packFundingCycleMetadata(JBFundingCycleMetadata memory _metadata)
+  function packRulesetMetadata(JBRulesetMetadata memory _metadata)
     internal
     pure
     returns (uint256 packed)
@@ -98,7 +98,7 @@ library JBFundingCycleMetadataResolver {
     packed = 1;
     // global metadata in bits 8-15 (8 bits).
     packed |=
-      JBGlobalFundingCycleMetadataResolver.packFundingCycleGlobalMetadata(_metadata.global) <<
+      JBGlobalRulesetMetadataResolver.packRulesetGlobalMetadata(_metadata.global) <<
       8;
     // reserved rate in bits 16-31 (16 bits).
     packed |= _metadata.reservedRate << 16;
@@ -130,16 +130,16 @@ library JBFundingCycleMetadataResolver {
     packed |= _metadata.metadata << 248;
   }
 
-  /// @notice Expand the funding cycle metadata.
-  /// @param _ruleset The funding cycle having its metadata expanded.
+  /// @notice Expand the ruleset metadata.
+  /// @param _ruleset The ruleset having its metadata expanded.
   /// @return metadata The metadata object.
   function expandMetadata(JBRuleset memory _ruleset)
     internal
     pure
-    returns (JBFundingCycleMetadata memory)
+    returns (JBRulesetMetadata memory)
   {
     return
-      JBFundingCycleMetadata(
+      JBRulesetMetadata(
         global(_ruleset),
         reservedRate(_ruleset),
         redemptionRate(_ruleset),

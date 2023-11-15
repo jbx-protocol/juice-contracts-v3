@@ -5,7 +5,7 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JBApprovalStatus} from "./../enums/JBApprovalStatus.sol";
 import {JBRuleset} from "./../structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./../structs/JBRulesetConfig.sol";
-import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
+import {JBRulesetMetadata} from "./../structs/JBRulesetMetadata.sol";
 import {JBProjectMetadata} from "./../structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./../structs/JBTerminalConfig.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
@@ -26,14 +26,14 @@ interface IJBController is IERC165 {
         address caller
     );
 
-    event LaunchFundingCycles(
+    event LaunchRulesets(
         uint256 rulesetId,
         uint256 projectId,
         string memo,
         address caller
     );
 
-    event ReconfigureFundingCycles(
+    event ReconfigureRulesets(
         uint256 rulesetId,
         uint256 projectId,
         string memo,
@@ -42,7 +42,7 @@ interface IJBController is IERC165 {
 
     event DistributeReservedTokens(
         uint256 indexed rulesetConfiguration,
-        uint256 indexed fundingCycleNumber,
+        uint256 indexed rulesetNumber,
         uint256 indexed projectId,
         address beneficiary,
         uint256 tokenCount,
@@ -109,7 +109,7 @@ interface IJBController is IERC165 {
         uint256 projectId
     ) external view returns (uint256);
 
-    function getFundingCycleOf(
+    function getRulesetOf(
         uint256 projectId,
         uint256 rulesetId
     )
@@ -117,38 +117,38 @@ interface IJBController is IERC165 {
         view
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata
+            JBRulesetMetadata memory metadata
         );
 
-    function latestConfiguredFundingCycleOf(
+    function latestConfiguredRulesetOf(
         uint256 projectId
     )
         external
         view
         returns (
             JBRuleset memory,
-            JBFundingCycleMetadata memory metadata,
+            JBRulesetMetadata memory metadata,
             JBApprovalStatus
         );
 
-    function currentFundingCycleOf(
+    function currentRulesetOf(
         uint256 projectId
     )
         external
         view
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata
+            JBRulesetMetadata memory metadata
         );
 
-    function queuedFundingCycleOf(
+    function queuedRulesetOf(
         uint256 projectId
     )
         external
         view
         returns (
             JBRuleset memory ruleset,
-            JBFundingCycleMetadata memory metadata
+            JBRulesetMetadata memory metadata
         );
 
     function launchProjectFor(
@@ -159,14 +159,14 @@ interface IJBController is IERC165 {
         string calldata memo
     ) external returns (uint256 projectId);
 
-    function launchFundingCyclesFor(
+    function launchRulesetsFor(
         uint256 projectId,
         JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
     ) external returns (uint256 configured);
 
-    function reconfigureFundingCyclesOf(
+    function reconfigureRulesetsOf(
         uint256 projectId,
         JBRulesetConfig[] calldata rulesetConfigurations,
         string calldata memo
