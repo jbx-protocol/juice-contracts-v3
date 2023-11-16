@@ -21,8 +21,6 @@ module.exports = {
     "libraries/JBOperations.sol",
     "libraries/JBSplitsGroups.sol",
     "libraries/JBTokens.sol",
-    "structs/JBDidPayData.sol",
-    "structs/JBDidRedeemData.sol",
     "structs/JBFee.sol",
     "structs/JBFundAccessConstraints.sol",
     "structs/JBRuleset.sol",

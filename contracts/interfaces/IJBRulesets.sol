@@ -6,7 +6,7 @@ import {JBRuleset} from "./../structs/JBRuleset.sol";
 import {JBRulesetData} from "./../structs/JBRulesetData.sol";
 
 interface IJBRulesets {
-    event Configure(
+    event RulesetQueued(
         uint256 indexed rulesetId,
         uint256 indexed projectId,
         JBRulesetData data,
@@ -15,7 +15,7 @@ interface IJBRulesets {
         address caller
     );
 
-    event Init(
+    event InitializeRuleset(
         uint256 indexed rulesetId,
         uint256 indexed projectId,
         uint256 indexed basedOn
@@ -30,7 +30,7 @@ interface IJBRulesets {
         uint256 rulesetId
     ) external view returns (JBRuleset memory);
 
-    function latestConfiguredOf(
+    function latestQueuedOf(
         uint256 projectId
     )
         external
@@ -49,7 +49,7 @@ interface IJBRulesets {
         uint256 projectId
     ) external view returns (JBApprovalStatus);
 
-    function configureFor(
+    function queueFor(
         uint256 projectId,
         JBRulesetData calldata data,
         uint256 metadata,

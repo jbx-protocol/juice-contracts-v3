@@ -105,12 +105,12 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's latest configured ruleset along with its metadata and the approval status of the configuration.
+    /// @notice A project's latest queued ruleset along with its metadata and the approval status of the configuration.
     /// @param _projectId The ID of the project to which the ruleset belongs.
-    /// @return ruleset The latest configured ruleset.
-    /// @return metadata The latest configured ruleset's metadata.
+    /// @return ruleset The latest queued ruleset.
+    /// @return metadata The latest queued ruleset's metadata.
     /// @return approvalStatus The approval status of the configuration.
-    function latestConfiguredRulesetOf(
+    function latestQueuedRulesetOf(
         uint256 _projectId
     )
         external
@@ -122,7 +122,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             JBApprovalStatus approvalStatus
         )
     {
-        (ruleset, approvalStatus) = rulesets.latestConfiguredOf(_projectId);
+        (ruleset, approvalStatus) = rulesets.latestQueuedOf(_projectId);
         metadata = ruleset.expandMetadata();
     }
 
@@ -226,7 +226,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     // --------------------- external transactions ----------------------- //
     //*********************************************************************//
 
-    /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first ruleset, and set up any splits.
+    /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, queue a first ruleset, and set up any splits.
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
@@ -251,8 +251,8 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Set this contract as the project's controller in the directory.
         _directory.setControllerOf(projectId, address(this));
 
-        // Configure the first ruleset.
-        uint256 _rulesetId = _configureRulesets(
+        // Queue the first ruleset.
+        uint256 _rulesetId = _queueRulesets(
             projectId,
             _rulesetConfigurations
         );
@@ -270,7 +270,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _rulesetConfigurations The ruleset configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return configured The rulesetId timestamp of the ruleset that was successfully reconfigured.
+    /// @return rulesetId The ID of the ruleset that was successfully launched.
     function launchRulesetsFor(
         uint256 _projectId,
         JBRulesetConfig[] calldata _rulesetConfigurations,
@@ -283,19 +283,19 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         requirePermission(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.RECONFIGURE_RULESETS
+            JBOperations.QUEUE_RULESETS
         )
-        returns (uint256 configured)
+        returns (uint256 rulesetId)
     {
-        // If there is a previous configuration, reconfigureRulesetsOf should be called instead
+        // If there is a previous configuration, queueRulesetsOf should be called instead
         if (rulesets.latestRulesetOf(_projectId) > 0)
             revert RULESET_ALREADY_LAUNCHED();
 
         // Set this contract as the project's controller in the directory.
         directory.setControllerOf(_projectId, address(this));
 
-        // Configure the first ruleset.
-        configured = _configureRulesets(
+        // Queue the first ruleset.
+        rulesetId = _queueRulesets(
             _projectId,
             _rulesetConfigurations
         );
@@ -303,16 +303,16 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Configure the terminals.
         _configureTerminals(_projectId, _terminalConfigurations);
 
-        emit LaunchRulesets(configured, _projectId, _memo, msg.sender);
+        emit LaunchRulesets(rulesetId, _projectId, _memo, msg.sender);
     }
 
-    /// @notice Proposes a configuration of a subsequent ruleset that will take effect once the current one expires if it is approved by the current ruleset's approval hook.
-    /// @dev Only a project's owner or a designated operator can configure its rulesets.
-    /// @param _projectId The ID of the project whose rulesets are being reconfigured.
-    /// @param _rulesetConfigurations The ruleset configurations to schedule.
+    /// @notice Queues one or more rulesets that will take effect once the current ruleset expires. Rulesets only take effect if they are approved by the previous ruleset's approval hook.
+    /// @dev Only a project's owner or a designated operator can queue rulesets for it.
+    /// @param _projectId The ID of the project which rulesets are being queued for.
+    /// @param _rulesetConfigurations The configurations of the rulesets to queue.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return configured The rulesetId timestamp of the ruleset that was successfully reconfigured.
-    function reconfigureRulesetsOf(
+    /// @return rulesetId The rulesetId of the final ruleset which was successfully queued.
+    function queueRulesetsOf(
         uint256 _projectId,
         JBRulesetConfig[] calldata _rulesetConfigurations,
         string calldata _memo
@@ -323,18 +323,18 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         requirePermission(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.RECONFIGURE_RULESETS
+            JBOperations.QUEUE_RULESETS
         )
-        returns (uint256 configured)
+        returns (uint256 rulesetId)
     {
-        // Configure the next ruleset.
-        configured = _configureRulesets(
+        // Queue the next ruleset.
+        rulesetId = _queueRulesets(
             _projectId,
             _rulesetConfigurations
         );
 
-        emit ReconfigureRulesets(
-            configured,
+        emit QueueRulesets(
+            rulesetId,
             _projectId,
             _memo,
             msg.sender
@@ -669,14 +669,14 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         }
     }
 
-    /// @notice Configures a ruleset and stores information pertinent to the configuration.
-    /// @param _projectId The ID of the project whose rulesets are being reconfigured.
+    /// @notice Queues a ruleset and stores information pertinent to the configuration.
+    /// @param _projectId The ID of the project whose rulesets are being queued.
     /// @param _rulesetConfigurations The ruleset configurations to schedule.
-    /// @return configured The rulesetId of the ruleset that was successfully reconfigured.
-    function _configureRulesets(
+    /// @return rulesetId The rulesetId of the ruleset that was successfully queued.
+    function _queueRulesets(
         uint256 _projectId,
         JBRulesetConfig[] calldata _rulesetConfigurations
-    ) internal returns (uint256 configured) {
+    ) internal returns (uint256 rulesetId) {
         // Keep a reference to the configuration being iterated on.
         JBRulesetConfig memory _rulesetId;
 
@@ -703,8 +703,8 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             if (_rulesetId.metadata.baseCurrency > type(uint32).max)
                 revert INVALID_BASE_CURRENCY();
 
-            // Configure the ruleset's properties.
-            JBRuleset memory _ruleset = rulesets.configureFor(
+            // Queue the ruleset's properties.
+            JBRuleset memory _ruleset = rulesets.queueFor(
                 _projectId,
                 _rulesetId.data,
                 JBRulesetMetadataResolver.packRulesetMetadata(
@@ -727,9 +727,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
                 _rulesetId.fundAccessConstraints
             );
 
-            // Return the configured timestamp if this is the last configuration being scheduled.
+            // Return the rulesetId timestamp if this is the last configuration being scheduled.
             if (_i == _numberOfConfigurations - 1)
-                configured = _ruleset.rulesetId;
+                rulesetId = _ruleset.rulesetId;
 
             unchecked {
                 ++_i;

@@ -8,7 +8,7 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member payer The address from which the payment originated.
 /// @custom:member amount The amount of the payment. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member projectId The ID of the project being paid.
-/// @custom:member currentRulesetConfiguration The rulesetId of the ruleset during which the payment is being made.
+/// @custom:member currentRulesetId The rulesetId of the ruleset during which the payment is being made.
 /// @custom:member beneficiary The specified address that should be the beneficiary of anything that results from the payment.
 /// @custom:member weight The weight of the ruleset during which the payment is being made.
 /// @custom:member reservedRate The reserved rate of the ruleset during which the payment is being made.
@@ -18,7 +18,7 @@ struct JBPayParamsData {
   address payer;
   JBTokenAmount amount;
   uint256 projectId;
-  uint256 currentRulesetConfiguration;
+  uint256 currentRulesetId;
   address beneficiary;
   uint256 weight;
   uint256 reservedRate;

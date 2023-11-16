@@ -33,7 +33,7 @@ interface IJBController is IERC165 {
         address caller
     );
 
-    event ReconfigureRulesets(
+    event QueueRulesets(
         uint256 rulesetId,
         uint256 projectId,
         string memo,
@@ -41,7 +41,7 @@ interface IJBController is IERC165 {
     );
 
     event DistributeReservedTokens(
-        uint256 indexed rulesetConfiguration,
+        uint256 indexed rulesetId,
         uint256 indexed rulesetNumber,
         uint256 indexed projectId,
         address beneficiary,
@@ -120,7 +120,7 @@ interface IJBController is IERC165 {
             JBRulesetMetadata memory metadata
         );
 
-    function latestConfiguredRulesetOf(
+    function latestQueuedRulesetOf(
         uint256 projectId
     )
         external
@@ -164,13 +164,13 @@ interface IJBController is IERC165 {
         JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
-    ) external returns (uint256 configured);
+    ) external returns (uint256 rulesetId);
 
-    function reconfigureRulesetsOf(
+    function queueRulesetsOf(
         uint256 projectId,
         JBRulesetConfig[] calldata rulesetConfigurations,
         string calldata memo
-    ) external returns (uint256 configured);
+    ) external returns (uint256 rulesetId);
 
     function mintTokensOf(
         uint256 projectId,

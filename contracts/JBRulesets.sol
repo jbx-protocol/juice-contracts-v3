@@ -85,11 +85,11 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         return _getStructFor(_projectId, _rulesetId);
     }
 
-    /// @notice The latest ruleset to be configured for the specified project, and its current approval status.
-    /// @param _projectId The ID of the project to get the latest configured ruleset of.
+    /// @notice The latest ruleset to be queued for the specified project, and its current approval status.
+    /// @param _projectId The ID of the project to get the latest queued ruleset of.
     /// @return ruleset The project's queued ruleset.
     /// @return approvalStatus The approval hook's status for the ruleset.
-    function latestConfiguredOf(
+    function latestQueuedOf(
         uint256 _projectId
     )
         external
@@ -98,10 +98,10 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         returns (JBRuleset memory ruleset, JBApprovalStatus approvalStatus)
     {
         // Get a reference to the latest ruleset configuration.
-        uint256 _rulesetConfiguration = latestRulesetOf[_projectId];
+        uint256 _rulesetId = latestRulesetOf[_projectId];
 
         // Resolve the ruleset for the latest configuration.
-        ruleset = _getStructFor(_projectId, _rulesetConfiguration);
+        ruleset = _getStructFor(_projectId, _rulesetId);
 
         // Resolve the approval status.
         approvalStatus = _approvalStatusOf(
@@ -123,16 +123,16 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (latestRulesetOf[_projectId] == 0) return _getStructFor(0, 0);
 
         // Get a reference to the rulesetId of the standby ruleset.
-        uint256 _standbyRulesetConfiguration = _standbyOf(_projectId);
+        uint256 _standbyRulesetId = _standbyOf(_projectId);
 
         // Keep a reference to the approval status.
         JBApprovalStatus _approvalStatus;
 
         // If it exists, return its ruleset if it is approved.
-        if (_standbyRulesetConfiguration != 0) {
+        if (_standbyRulesetId != 0) {
             ruleset = _getStructFor(
                 _projectId,
-                _standbyRulesetConfiguration
+                _standbyRulesetId
             );
 
             // Get a reference to the approval status.
@@ -145,10 +145,10 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
                 _approvalStatus == JBApprovalStatus.Empty
             ) return ruleset;
 
-            // Resolve the ruleset for the latest configured ruleset.
+            // Resolve the ruleset for the latest queued ruleset.
             ruleset = _getStructFor(_projectId, ruleset.basedOn);
         } else {
-            // Resolve the ruleset for the latest configured ruleset.
+            // Resolve the ruleset for the latest queued ruleset.
             ruleset = _getStructFor(
                 _projectId,
                 latestRulesetOf[_projectId]
@@ -195,17 +195,17 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (latestRulesetOf[_projectId] == 0) return _getStructFor(0, 0);
 
         // Get a reference to the rulesetId of the eligible ruleset.
-        uint256 _rulesetConfiguration = _eligibleOf(_projectId);
+        uint256 _rulesetId = _eligibleOf(_projectId);
 
         // Keep a reference to the eligible ruleset.
         JBRuleset memory _ruleset;
 
         // If an eligible ruleset exists...
-        if (_rulesetConfiguration != 0) {
+        if (_rulesetId != 0) {
             // Resolve the ruleset for the eligible configuration.
             _ruleset = _getStructFor(
                 _projectId,
-                _rulesetConfiguration
+                _rulesetId
             );
 
             // Get a reference to the approval status.
@@ -223,22 +223,22 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
 
             // If it hasn't been approved, set the ruleset configuration to be the configuration of the ruleset that it's based on,
             // which carries the last approved configuration.
-            _rulesetConfiguration = _ruleset.basedOn;
+            _rulesetId = _ruleset.basedOn;
 
             // Keep a reference to its ruleset.
             _ruleset = _getStructFor(
                 _projectId,
-                _rulesetConfiguration
+                _rulesetId
             );
         } else {
             // No upcoming ruleset found that is eligible to become active,
             // so use the last configuration.
-            _rulesetConfiguration = latestRulesetOf[_projectId];
+            _rulesetId = latestRulesetOf[_projectId];
 
             // Get the ruleset for the latest ID.
             _ruleset = _getStructFor(
                 _projectId,
-                _rulesetConfiguration
+                _rulesetId
             );
 
             // Get a reference to the approval status.
@@ -253,10 +253,10 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
                     _approvalStatus != JBApprovalStatus.Empty) ||
                 block.timestamp < _ruleset.start
             ) {
-                _rulesetConfiguration = _ruleset.basedOn;
+                _rulesetId = _ruleset.basedOn;
                 _ruleset = _getStructFor(
                     _projectId,
-                    _rulesetConfiguration
+                    _rulesetId
                 );
                 _approvalStatus = _approvalStatusOf(_projectId, _ruleset);
             }
@@ -276,12 +276,12 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         uint256 _projectId
     ) external view override returns (JBApprovalStatus) {
         // Get a reference to the latest ruleset configuration.
-        uint256 _rulesetConfiguration = latestRulesetOf[_projectId];
+        uint256 _rulesetId = latestRulesetOf[_projectId];
 
         // Resolve the ruleset for the latest configuration.
         JBRuleset memory _ruleset = _getStructFor(
             _projectId,
-            _rulesetConfiguration
+            _rulesetId
         );
 
         return
@@ -305,14 +305,14 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Configures the next eligible ruleset for the specified project.
-    /// @dev Only a project's current controller can configure its rulesets.
-    /// @param _projectId The ID of the project being configured.
+    /// @notice Queues the next eligible ruleset for the specified project.
+    /// @dev Only a project's current controller can queue its rulesets.
+    /// @param _projectId The ID of the project being queued.
     /// @param _data The ruleset configuration data.
     /// @param _metadata Arbitrary extra data to associate with this ruleset configuration that's not used within.
     /// @param _mustStartAtOrAfter The time before which the initialized ruleset cannot start.
     /// @return The ruleset that the configuration will take effect during.
-    function configureFor(
+    function queueFor(
         uint256 _projectId,
         JBRulesetData calldata _data,
         uint256 _metadata,
@@ -361,11 +361,11 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         }
 
         // Get a reference to the latest configration.
-        uint256 _latestConfiguration = latestRulesetOf[_projectId];
+        uint256 _latestId = latestRulesetOf[_projectId];
 
         // The rulesetId timestamp is now, or an increment from now if the current timestamp is taken.
-        uint256 _rulesetId = _latestConfiguration >= block.timestamp
-            ? _latestConfiguration + 1
+        uint256 _rulesetId = _latestId >= block.timestamp
+            ? _latestId + 1
             : block.timestamp;
 
         // Set up a reconfiguration by configuring intrinsic properties.
@@ -399,7 +399,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         // Set the metadata if needed.
         if (_metadata > 0) _metadataOf[_projectId][_rulesetId] = _metadata;
 
-        emit Configure(
+        emit RulesetQueued(
             _rulesetId,
             _projectId,
             _data,
@@ -417,27 +417,27 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
     function updateRulesetWeightCache(
         uint256 _projectId
     ) external override {
-        // Keep a reference to the latest configured ruleset, from which the cached value will be based.
-        JBRuleset memory _latestConfiguredRuleset = _getStructFor(
+        // Keep a reference to the latest queued ruleset, from which the cached value will be based.
+        JBRuleset memory _latestQueuedRuleset = _getStructFor(
             _projectId,
             latestRulesetOf[_projectId]
         );
 
         // Nothing to cache if the latest configuration doesn't have a duration or a decay rate.
         if (
-            _latestConfiguredRuleset.duration == 0 ||
-            _latestConfiguredRuleset.decayRate == 0
+            _latestQueuedRuleset.duration == 0 ||
+            _latestQueuedRuleset.decayRate == 0
         ) return;
 
         // Get a reference to the current cache.
         JBRulesetWeightCache storage _cache = _weightCache[
-            _latestConfiguredRuleset.rulesetId
+            _latestQueuedRuleset.rulesetId
         ];
 
         // Determine the max start timestamp from which the cache can be set.
-        uint256 _maxStart = _latestConfiguredRuleset.start +
+        uint256 _maxStart = _latestQueuedRuleset.start +
             (_cache.decayMultiple + _MAX_DECAY_MULTIPLE_CACHE_THRESHOLD) *
-            _latestConfiguredRuleset.duration;
+            _latestQueuedRuleset.duration;
 
         // Determine the timestamp from the which the cache will be set.
         uint256 _start = block.timestamp < _maxStart
@@ -445,19 +445,19 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             : _maxStart;
 
         // The difference between the start of the base ruleset and the proposed start.
-        uint256 _startDistance = _start - _latestConfiguredRuleset.start;
+        uint256 _startDistance = _start - _latestQueuedRuleset.start;
 
         // Determine the decay multiple that'll be cached.
         uint256 _decayMultiple;
         unchecked {
             _decayMultiple =
                 _startDistance /
-                _latestConfiguredRuleset.duration;
+                _latestQueuedRuleset.duration;
         }
 
         // Store the new values.
         _cache.weight = _deriveWeightFrom(
-            _latestConfiguredRuleset,
+            _latestQueuedRuleset,
             _start
         );
         _cache.decayMultiple = _decayMultiple;
@@ -469,8 +469,8 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
 
     /// @notice Updates the configurable ruleset for this project if it exists, otherwise creates one.
     /// @param _projectId The ID of the project to find a configurable ruleset for.
-    /// @param _rulesetId The time at which the ruleset was configured.
-    /// @param _weight The weight to store in the configured ruleset.
+    /// @param _rulesetId The time at which the ruleset was queued.
+    /// @param _weight The weight to store in the queued ruleset.
     /// @param _mustStartAtOrAfter The time before which the initialized ruleset can't start.
     function _configureIntrinsicPropertiesFor(
         uint256 _projectId,
@@ -479,13 +479,13 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         uint256 _mustStartAtOrAfter
     ) private {
         // Keep a reference to the project's latest configuration.
-        uint256 _latestConfiguration = latestRulesetOf[_projectId];
+        uint256 _latestId = latestRulesetOf[_projectId];
 
         // If there's not yet a ruleset for the project, initialize one.
-        if (_latestConfiguration == 0)
+        if (_latestId == 0)
             // Use an empty ruleset as the base.
             return
-                _initFor(
+                _initializeRulesetFor(
                     _projectId,
                     _getStructFor(0, 0),
                     _rulesetId,
@@ -496,7 +496,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         // Get a reference to the ruleset.
         JBRuleset memory _baseRuleset = _getStructFor(
             _projectId,
-            _latestConfiguration
+            _latestId
         );
 
         // Get a reference to the approval status.
@@ -538,7 +538,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             ? 0
             : _rulesetId + _baseRuleset.approvalHook.duration();
 
-        _initFor(
+        _initializeRulesetFor(
             _projectId,
             _baseRuleset,
             _rulesetId,
@@ -556,7 +556,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
     /// @param _rulesetId The rulesetId of the ruleset being initialized.
     /// @param _mustStartAtOrAfter The time before which the initialized ruleset cannot start.
     /// @param _weight The weight to give the newly initialized ruleset.
-    function _initFor(
+    function _initializeRulesetFor(
         uint256 _projectId,
         JBRuleset memory _baseRuleset,
         uint256 _rulesetId,
@@ -607,7 +607,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         // Set the project's latest ruleset configuration.
         latestRulesetOf[_projectId] = _rulesetId;
 
-        emit Init(_rulesetId, _projectId, _baseRuleset.rulesetId);
+        emit InitializeRuleset(_rulesetId, _projectId, _baseRuleset.rulesetId);
     }
 
     /// @notice Efficiently stores a ruleset's provided intrinsic properties.
@@ -665,7 +665,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         if (_ruleset.cycleNumber == 1) return rulesetId;
 
         // Get a reference to the base rulesetId.
-        uint256 _basedOnConfiguration = _ruleset.basedOn;
+        uint256 _basedOnId = _ruleset.basedOn;
 
         // Get the necessary properties for the base ruleset.
         JBRuleset memory _baseRuleset;
@@ -674,14 +674,14 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
         while (true) {
             _baseRuleset = _getStructFor(
                 _projectId,
-                _basedOnConfiguration
+                _basedOnId
             );
 
             if (block.timestamp < _baseRuleset.start) {
                 // Set the rulesetId to the one found.
                 rulesetId = _baseRuleset.rulesetId;
                 // Prepare the next ruleset's configuration to check in the next iteration.
-                _basedOnConfiguration = _baseRuleset.basedOn;
+                _basedOnId = _baseRuleset.basedOn;
                 // Break out of the loop when a started base ruleset is found.
             } else break;
         }
@@ -711,7 +711,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             _rulesetId
         );
 
-        // Loop through all most recently configured rulesets until an eligible one is found, or we've proven one can't exist.
+        // Loop through all most recently queued rulesets until an eligible one is found, or we've proven one can't exist.
         do {
             // If the latest is expired, return an empty ruleset.
             // A duration of 0 cannot be expired.
@@ -910,21 +910,21 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
     /// @param _projectId The ID of the project to which the ruleset belongs.
     /// @param _rulesetId The ruleset configuration to get the approval status of.
     /// @param _start The start time of the ruleset configuration to get the approval status of.
-    /// @param _approvalHookRulesetConfiguration The configuration of the ruleset which is configured with the approval hook that should be used.
+    /// @param _approvalHookRulesetId The configuration of the ruleset which is queued with the approval hook that should be used.
     /// @return The approval status of the project.
     function _approvalStatusOf(
         uint256 _projectId,
         uint256 _rulesetId,
         uint256 _start,
-        uint256 _approvalHookRulesetConfiguration
+        uint256 _approvalHookRulesetId
     ) private view returns (JBApprovalStatus) {
         // If there is no approval hook ruleset, the approval hook is empty.
-        if (_approvalHookRulesetConfiguration == 0) return JBApprovalStatus.Empty;
+        if (_approvalHookRulesetId == 0) return JBApprovalStatus.Empty;
 
         // Get the approval hook ruleset.
         JBRuleset memory _approvalHookRuleset = _getStructFor(
             _projectId,
-            _approvalHookRulesetConfiguration
+            _approvalHookRulesetId
         );
 
         // If there is no approval hook, it's considered empty.

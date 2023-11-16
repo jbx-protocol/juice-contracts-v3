@@ -7,7 +7,7 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member terminal The terminal that is facilitating the redemption.
 /// @custom:member holder The holder of the tokens being redeemed.
 /// @custom:member projectId The ID of the project whos tokens are being redeemed.
-/// @custom:member currentRulesetConfiguration The rulesetId of the ruleset during which the redemption is being made.
+/// @custom:member currentRulesetId The rulesetId of the ruleset during which the redemption is being made.
 /// @custom:member tokenCount The proposed number of tokens being redeemed, as a fixed point number with 18 decimals.
 /// @custom:member totalSupply The total supply of tokens used in the calculation, as a fixed point number with 18 decimals.
 /// @custom:member overflow The amount of overflow used in the reclaim amount calculation.
@@ -19,7 +19,7 @@ struct JBRedeemParamsData {
   IJBPaymentTerminal terminal;
   address holder;
   uint256 projectId;
-  uint256 currentRulesetConfiguration;
+  uint256 currentRulesetId;
   uint256 tokenCount;
   uint256 totalSupply;
   uint256 overflow;

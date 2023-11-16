@@ -5,7 +5,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBRulesetDataSource3_1_1} from "./interfaces/IJBRulesetDataSource3_1_1.sol";
+import {IJBRulesetDataSource} from "./interfaces/IJBRulesetDataSource.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
@@ -17,10 +17,10 @@ import {JBFixedPointNumber} from "./libraries/JBFixedPointNumber.sol";
 import {JBCurrencyAmount} from "./structs/JBCurrencyAmount.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
-import {JBPayDelegateAllocation3_1_1} from "./structs/JBPayDelegateAllocation3_1_1.sol";
+import {JBPayDelegateAllocation} from "./structs/JBPayDelegateAllocation.sol";
 import {JBPayParamsData} from "./structs/JBPayParamsData.sol";
 import {JBRedeemParamsData} from "./structs/JBRedeemParamsData.sol";
-import {JBRedemptionDelegateAllocation3_1_1} from "./structs/JBRedemptionDelegateAllocation3_1_1.sol";
+import {JBRedeemDelegateAllocation} from "./structs/JBRedeemDelegateAllocation.sol";
 import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 
@@ -283,7 +283,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         returns (
             JBRuleset memory ruleset,
             uint256 tokenCount,
-            JBPayDelegateAllocation3_1_1[] memory delegateAllocations
+            JBPayDelegateAllocation[] memory delegateAllocations
         )
     {
         // Get a reference to the current ruleset for the project.
@@ -315,7 +315,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 ruleset.reservedRate(),
                 _metadata
             );
-            (_weight, delegateAllocations) = IJBRulesetDataSource3_1_1(
+            (_weight, delegateAllocations) = IJBRulesetDataSource(
                 ruleset.dataSource()
             ).payParams(_data);
         }
@@ -412,7 +412,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         returns (
             JBRuleset memory ruleset,
             uint256 reclaimAmount,
-            JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
+            JBRedeemDelegateAllocation[] memory delegateAllocations
         )
     {
         // Get a reference to the project's current ruleset.
@@ -483,7 +483,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 (
                     reclaimAmount,
                     delegateAllocations
-                ) = IJBRulesetDataSource3_1_1(ruleset.dataSource())
+                ) = IJBRulesetDataSource(ruleset.dataSource())
                     .redeemParams(_data);
             }
         }

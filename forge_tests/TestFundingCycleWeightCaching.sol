@@ -123,9 +123,9 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amount of gas before the call.
         // uint256 _gasBefore1 = gasleft();
 
-        // // Reconfigure the ruleset.
+        // // Queue the ruleset.
         // vm.startPrank(_projectOwner);
-        // _controller.reconfigureRulesetsOf({
+        // _controller.queueRulesetsOf({
         //     projectId: _projectId1,
         //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
@@ -140,7 +140,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amount of gas before the call.
         // uint256 _gasBefore2 = gasleft();
 
-        // _controller.reconfigureRulesetsOf({
+        // _controller.queueRulesetsOf({
         //     projectId: _projectId2,
         //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""
@@ -169,9 +169,9 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // // Go many rolled over rulesets into the future.
         // vm.warp(block.timestamp + (_DURATION * _rulesetDiff));
 
-        // // Reconfigure the ruleset.
+        // // Queue the ruleset.
         // vm.prank(_projectOwner);
-        // _controller.reconfigureRulesetsOf({
+        // _controller.queueRulesetsOf({
         //     projectId: _projectId2,
         //     rulesetConfigurations: _rulesetConfigurations,
         //     memo: ""

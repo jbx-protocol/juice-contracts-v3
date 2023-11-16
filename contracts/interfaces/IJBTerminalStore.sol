@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {JBRuleset} from "./../structs/JBRuleset.sol";
-import {JBPayDelegateAllocation3_1_1} from "./../structs/JBPayDelegateAllocation3_1_1.sol";
-import {JBRedemptionDelegateAllocation3_1_1} from "./../structs/JBRedemptionDelegateAllocation3_1_1.sol";
+import {JBPayDelegateAllocation} from "./../structs/JBPayDelegateAllocation.sol";
+import {JBRedeemDelegateAllocation} from "./../structs/JBRedeemDelegateAllocation.sol";
 import {JBAccountingContext} from "./../structs/JBAccountingContext.sol";
 import {JBTokenAmount} from "./../structs/JBTokenAmount.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
@@ -36,7 +36,7 @@ interface IJBTerminalStore {
         IJBPaymentTerminal terminal,
         uint256 projectId,
         address token,
-        uint256 rulesetConfiguration,
+        uint256 rulesetId,
         uint256 currency
     ) external view returns (uint256);
 
@@ -82,7 +82,7 @@ interface IJBTerminalStore {
         returns (
             JBRuleset memory ruleset,
             uint256 tokenCount,
-            JBPayDelegateAllocation3_1_1[] memory delegateAllocations
+            JBPayDelegateAllocation[] memory delegateAllocations
         );
 
     function recordRedemptionFor(
@@ -97,7 +97,7 @@ interface IJBTerminalStore {
         returns (
             JBRuleset memory ruleset,
             uint256 reclaimAmount,
-            JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
+            JBRedeemDelegateAllocation[] memory delegateAllocations
         );
 
     function recordDistributionFor(

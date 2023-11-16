@@ -7,13 +7,13 @@ import {JBApprovalStatus} from './enums/JBApprovalStatus.sol';
 import {IJBRulesetApprovalHook} from './interfaces/IJBRulesetApprovalHook.sol';
 import {JBRuleset} from './structs/JBRuleset.sol';
 
-/// @notice Ruleset approval hook which rejects rulesets if they are not queued `duration` seconds before the current ruleset ends.
+/// @notice Ruleset approval hook which rejects rulesets if they are not queued at least `duration` seconds before the current ruleset ends. In other words, rulesets must be queued before the deadline to take effect.
 contract JBDeadline is ERC165, IJBRulesetApprovalHook {
   //*********************************************************************//
   // ---------------- public immutable stored properties --------------- //
   //*********************************************************************//
 
-  /// @notice The number of seconds that must pass for a ruleset reconfiguration to become either `Approved` or `Failed`.
+  /// @notice The minimum difference between the time a ruleset is queued and the time it starts, as a number of seconds. If the difference is greater than this number, the ruleset is `Approved`.
   uint256 public immutable override duration;
 
   //*********************************************************************//
@@ -22,24 +22,24 @@ contract JBDeadline is ERC165, IJBRulesetApprovalHook {
 
   /// @notice The approval status of a particular ruleset.
   /// @param _projectId The ID of the project to which the ruleset being checked belongs.
-  /// @param _configured The configuration of the ruleset to check the status of.
+  /// @param _rulesetId The `rulesetId` of the ruleset to check the status of. The `rulesetId` is the timestamp for when ruleset was queued.
   /// @param _start The start timestamp of the ruleset to check the status of.
-  /// @return The status of the provided approval hook.
+  /// @return The status of the approval hook.
   function approvalStatusOf(
     uint256 _projectId,
-    uint256 _configured,
+    uint256 _rulesetId,
     uint256 _start
   ) public view override returns (JBApprovalStatus) {
     _projectId; // Prevents unused var compiler and natspec complaints.
 
-    // If the provided configured timestamp is after the start timestamp, the approval hook is Failed.
-    if (_configured > _start) return JBApprovalStatus.Failed;
+    // If the provided rulesetId timestamp is after the start timestamp, the approval hook is Failed.
+    if (_rulesetId > _start) return JBApprovalStatus.Failed;
 
     unchecked {
-      // If there was sufficient time between configuration and the start of the cycle, it is approved. Otherwise, it is failed.
+      // If there was sufficient time between queuing and the start of the ruleset, it is approved. Otherwise, it is failed.
       // If the approval hook hasn't yet started, its approval status is ApprovalExpected.
       return
-        (_start - _configured < duration)
+        (_start - _rulesetId < duration)
           ? JBApprovalStatus.Failed
           : (block.timestamp < _start - duration)
           ? JBApprovalStatus.ApprovalExpected
@@ -63,7 +63,7 @@ contract JBDeadline is ERC165, IJBRulesetApprovalHook {
   // -------------------------- constructor ---------------------------- //
   //*********************************************************************//
 
-  /// @param _duration The number of seconds to wait until a reconfiguration can be either `Approved` or `Failed`.
+  /// @param _duration The minimum number of seconds between the time a ruleset is queued and that ruleset's `start` for it to be `Approved`.
   constructor(uint256 _duration) {
     duration = _duration;
   }

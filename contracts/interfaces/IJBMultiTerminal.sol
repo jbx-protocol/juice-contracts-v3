@@ -5,15 +5,15 @@ import {IPermit2} from '@permit2/src/src/interfaces/IPermit2.sol';
 import {JBFee} from './../structs/JBFee.sol';
 import {JBAccountingContext} from './../structs/JBAccountingContext.sol';
 import {IJBDirectory} from './IJBDirectory.sol';
-import {IJBPayDelegate3_1_1} from './IJBPayDelegate3_1_1.sol';
+import {IJBPayDelegate} from './IJBPayDelegate.sol';
 import {IJBPaymentTerminal} from './IJBPaymentTerminal.sol';
 import {IJBPrices} from './IJBPrices.sol';
 import {IJBProjects} from './IJBProjects.sol';
-import {IJBRedemptionDelegate3_1_1} from './IJBRedemptionDelegate3_1_1.sol';
+import {IJBRedeemDelegate} from './IJBRedeemDelegate.sol';
 import {IJBSplitsStore} from './IJBSplitsStore.sol';
 import {IJBTerminalStore} from './IJBTerminalStore.sol';
-import {JBDidPayData3_1_1} from './../structs/JBDidPayData3_1_1.sol';
-import {JBDidRedeemData3_1_1} from './../structs/JBDidRedeemData3_1_1.sol';
+import {JBDidPayData} from './../structs/JBDidPayData.sol';
+import {JBDidRedeemData} from './../structs/JBDidRedeemData.sol';
 import {JBSplit} from './../structs/JBSplit.sol';
 
 interface IJBMultiTerminal is IJBPaymentTerminal {
@@ -35,7 +35,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event DistributePayouts(
-    uint256 indexed rulesetConfiguration,
+    uint256 indexed rulesetId,
     uint256 indexed rulesetNumber,
     uint256 indexed projectId,
     address beneficiary,
@@ -47,7 +47,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event UseAllowance(
-    uint256 indexed rulesetConfiguration,
+    uint256 indexed rulesetId,
     uint256 indexed rulesetNumber,
     uint256 indexed projectId,
     address beneficiary,
@@ -83,7 +83,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event Pay(
-    uint256 indexed rulesetConfiguration,
+    uint256 indexed rulesetId,
     uint256 indexed rulesetNumber,
     uint256 indexed projectId,
     address payer,
@@ -96,7 +96,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event RedeemTokens(
-    uint256 indexed rulesetConfiguration,
+    uint256 indexed rulesetId,
     uint256 indexed rulesetNumber,
     uint256 indexed projectId,
     address holder,
@@ -143,16 +143,16 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
   );
 
   event DelegateDidRedeem(
-    IJBRedemptionDelegate3_1_1 indexed delegate,
-    JBDidRedeemData3_1_1 data,
+    IJBRedeemDelegate indexed delegate,
+    JBDidRedeemData data,
     uint256 delegatedAmount,
     uint256 fee,
     address caller
   );
 
   event DelegateDidPay(
-    IJBPayDelegate3_1_1 indexed delegate,
-    JBDidPayData3_1_1 data,
+    IJBPayDelegate indexed delegate,
+    JBDidPayData data,
     uint256 delegatedAmount,
     address caller
   );

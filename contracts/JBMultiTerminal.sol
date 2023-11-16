@@ -28,12 +28,12 @@ import {JBRulesetMetadataResolver} from './libraries/JBRulesetMetadataResolver.s
 import {JBOperations} from './libraries/JBOperations.sol';
 import {JBTokenList} from './libraries/JBTokenList.sol';
 import {JBTokenStandards} from './libraries/JBTokenStandards.sol';
-import {JBDidRedeemData3_1_1} from './structs/JBDidRedeemData3_1_1.sol';
-import {JBDidPayData3_1_1} from './structs/JBDidPayData3_1_1.sol';
+import {JBDidRedeemData} from './structs/JBDidRedeemData.sol';
+import {JBDidPayData} from './structs/JBDidPayData.sol';
 import {JBFee} from './structs/JBFee.sol';
 import {JBRuleset} from './structs/JBRuleset.sol';
-import {JBPayDelegateAllocation3_1_1} from './structs/JBPayDelegateAllocation3_1_1.sol';
-import {JBRedemptionDelegateAllocation3_1_1} from './structs/JBRedemptionDelegateAllocation3_1_1.sol';
+import {JBPayDelegateAllocation} from './structs/JBPayDelegateAllocation.sol';
+import {JBRedeemDelegateAllocation} from './structs/JBRedeemDelegateAllocation.sol';
 import {JBSingleAllowanceData} from './structs/JBSingleAllowanceData.sol';
 import {JBSplit} from './structs/JBSplit.sol';
 import {JBSplitAllocationData} from './structs/JBSplitAllocationData.sol';
@@ -631,7 +631,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
     {
-      JBPayDelegateAllocation3_1_1[] memory _delegateAllocations;
+      JBPayDelegateAllocation[] memory _delegateAllocations;
       JBTokenAmount memory _tokenAmount;
 
       uint256 _tokenCount;
@@ -745,7 +745,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     // Scoped section prevents stack too deep.
     {
-      JBRedemptionDelegateAllocation3_1_1[] memory _delegateAllocations;
+      JBRedeemDelegateAllocation[] memory _delegateAllocations;
 
       // Record the redemption.
       (_ruleset, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
@@ -1252,7 +1252,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
   /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
   function _fulfillPayDelegateAllocationsFor(
     uint256 _projectId,
-    JBPayDelegateAllocation3_1_1[] memory _allocations,
+    JBPayDelegateAllocation[] memory _allocations,
     JBTokenAmount memory _tokenAmount,
     address _payer,
     JBRuleset memory _ruleset,
@@ -1261,7 +1261,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     bytes memory _metadata
   ) internal {
     // The accounting context.
-    JBDidPayData3_1_1 memory _data = JBDidPayData3_1_1(
+    JBDidPayData memory _data = JBDidPayData(
       _payer,
       _projectId,
       _ruleset.rulesetId,
@@ -1275,7 +1275,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     );
 
     // Keep a reference to the allocation being iterated on.
-    JBPayDelegateAllocation3_1_1 memory _allocation;
+    JBPayDelegateAllocation memory _allocation;
 
     // Keep a reference to the number of allocations there are.
     uint256 _numberOfAllocations = _allocations.length;
@@ -1326,11 +1326,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     bytes memory _metadata,
     JBRuleset memory _ruleset,
     address payable _beneficiary,
-    JBRedemptionDelegateAllocation3_1_1[] memory _allocations,
+    JBRedeemDelegateAllocation[] memory _allocations,
     uint256 _feePercent
   ) internal returns (uint256 feeEligibleDistributionAmount) {
     // Keep a reference to the data that'll get send to delegates.
-    JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
+    JBDidRedeemData memory _data = JBDidRedeemData(
       _holder,
       _projectId,
       _ruleset.rulesetId,
@@ -1344,7 +1344,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     );
 
     // Keep a reference to the allocation being iterated on.
-    JBRedemptionDelegateAllocation3_1_1 memory _allocation;
+    JBRedeemDelegateAllocation memory _allocation;
 
     // Keep a reference to the number of allocations there are.
     uint256 _numberOfAllocations = _allocations.length;

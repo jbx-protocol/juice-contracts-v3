@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 library JBOperations {
   uint256 public constant ROOT = 1;
-  uint256 public constant RECONFIGURE_RULESETS = 2;
+  uint256 public constant QUEUE_RULESETS = 2;
   uint256 public constant REDEEM_TOKENS = 3;
   uint256 public constant MIGRATE_CONTROLLER = 4;
   uint256 public constant MIGRATE_TERMINAL = 5;
