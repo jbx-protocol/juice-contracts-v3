@@ -108,7 +108,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
             IJBTerminal _terminal = _terminalsOf[_projectId][_i];
 
             // If the terminal accepts the specified token, return it.
-            if (_isPaymentTerminal(_terminal) && _terminal.accountingContextForTokenOf(_projectId, _token).token != address(0)) {
+            if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0) && _isPaymentTerminal(_terminal)) {
                 return IJBPaymentTerminal(address(_terminal));
             }
 
@@ -336,6 +336,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     /// @notice Performs a quick check to see if the terminal support receiving payments, assuming a honest terminal.
     /// @dev This function can be tricked or missreport, it should be used as a guide not as prevention. 
     /// @param _terminal The terminal to check.
+    /// @return A bool indicating if the terminal supports IJBPaymentTerminal or not.
     function _isPaymentTerminal(IJBTerminal _terminal) internal view returns (bool) {
         try _terminal.supportsInterface{gas: 30_000}(type(IJBPaymentTerminal).interfaceId) returns (bool _supports) {
             return _supports;
