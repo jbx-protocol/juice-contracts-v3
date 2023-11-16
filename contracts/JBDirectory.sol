@@ -337,7 +337,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     /// @dev This function can be tricked or missreport, it should be used as a guide not as prevention. 
     /// @param _terminal The terminal to check.
     function _isPaymentTerminal(IJBTerminal _terminal) internal view returns (bool) {
-        try _terminal.supportsInterface{gas: 30_000}(type(IJBPaymentTerminal).interfaceId) returns (bool _isPaymentTerminal) {
+        try _terminal.supportsInterface{gas: 30_000}(type(IJBPaymentTerminal).interfaceId) returns (bool _supports) {
             return _supports;
         } catch  {
             return false;
