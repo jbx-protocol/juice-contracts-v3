@@ -13,7 +13,8 @@ import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
+import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
@@ -658,7 +659,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         uint256 _numberOfTerminalConfigs = _terminalConfigs.length;
 
         // Set a array of terminals to populate.
-        IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](_numberOfTerminalConfigs);
+        IJBTerminal[] memory _terminals = new IJBTerminal[](_numberOfTerminalConfigs);
 
         // Keep a reference to the terminal configuration beingiterated on.
         JBTerminalConfig memory _terminalConfig;

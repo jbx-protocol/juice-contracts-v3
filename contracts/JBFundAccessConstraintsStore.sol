@@ -5,7 +5,7 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
 import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
+import {IJBPayoutTerminal} from "./interfaces/terminal/IJBPayoutTerminal.sol";
 import {JBFundAccessConstraints} from "./structs/JBFundAccessConstraints.sol";
 import {JBCurrencyAmount} from "./structs/JBCurrencyAmount.sol";
 
@@ -38,7 +38,7 @@ contract JBFundAccessConstraintsStore is
     /// @custom:param _terminal The terminal from which distributions are being limited.
     /// @custom:param _token The token for which distributions are being limited.
     mapping(
-        uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[])))
+        uint256 => mapping(uint256 => mapping(IJBPayoutTerminal => mapping(address => uint256[])))
     ) internal _packedDistributionLimitsDataOf;
 
     /// @notice Data regarding the overflow allowance of a project during a configuration.
@@ -49,7 +49,7 @@ contract JBFundAccessConstraintsStore is
     /// @custom:param _terminal The terminal managing the overflow.
     /// @custom:param _token The token for which overflow is being allowed.
     mapping(
-        uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[])))
+        uint256 => mapping(uint256 => mapping(IJBPayoutTerminal => mapping(address => uint256[])))
     ) internal _packedOverflowAllowancesDataOf;
 
     //*********************************************************************//
@@ -66,7 +66,7 @@ contract JBFundAccessConstraintsStore is
     function distributionLimitsOf(
         uint256 _projectId,
         uint256 _configuration,
-        IJBPaymentTerminal _terminal,
+        IJBPayoutTerminal _terminal,
         address _token
     ) external view override returns (JBCurrencyAmount[] memory distributionLimits) {
         // Get a reference to the packed data.
@@ -110,7 +110,7 @@ contract JBFundAccessConstraintsStore is
     function distributionLimitOf(
         uint256 _projectId,
         uint256 _configuration,
-        IJBPaymentTerminal _terminal,
+        IJBPayoutTerminal _terminal,
         address _token,
         uint256 _currency
     ) external view override returns (uint256 distributionLimit) {
@@ -150,7 +150,7 @@ contract JBFundAccessConstraintsStore is
     function overflowAllowancesOf(
         uint256 _projectId,
         uint256 _configuration,
-        IJBPaymentTerminal _terminal,
+        IJBPayoutTerminal _terminal,
         address _token
     ) external view override returns (JBCurrencyAmount[] memory overflowAllowances) {
         // Get a reference to the packed data.
@@ -194,7 +194,7 @@ contract JBFundAccessConstraintsStore is
     function overflowAllowanceOf(
         uint256 _projectId,
         uint256 _configuration,
-        IJBPaymentTerminal _terminal,
+        IJBPayoutTerminal _terminal,
         address _token,
         uint256 _currency
     ) external view override returns (uint256 overflowAllowance) {

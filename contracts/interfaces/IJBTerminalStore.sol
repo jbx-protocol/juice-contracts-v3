@@ -10,7 +10,7 @@ import {JBTokenAmount} from "./../structs/JBTokenAmount.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBPrices} from "./IJBPrices.sol";
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
+import {IJBMultiTerminal} from "./terminal/IJBMultiTerminal.sol";
 
 interface IJBTerminalStore {
     function FUNDING_CYCLE_STORE() external view returns (IJBFundingCycleStore);
@@ -19,13 +19,13 @@ interface IJBTerminalStore {
 
     function PRICES() external view returns (IJBPrices);
 
-    function balanceOf(IJBPaymentTerminal terminal, uint256 projectId, address token)
+    function balanceOf(IJBMultiTerminal terminal, uint256 projectId, address token)
         external
         view
         returns (uint256);
 
     function usedDistributionLimitOf(
-        IJBPaymentTerminal terminal,
+        IJBMultiTerminal terminal,
         uint256 projectId,
         address token,
         uint256 fundingCycleNumber,
@@ -33,7 +33,7 @@ interface IJBTerminalStore {
     ) external view returns (uint256);
 
     function usedOverflowAllowanceOf(
-        IJBPaymentTerminal terminal,
+        IJBMultiTerminal terminal,
         uint256 projectId,
         address token,
         uint256 fundingCycleConfiguration,
@@ -41,7 +41,7 @@ interface IJBTerminalStore {
     ) external view returns (uint256);
 
     function currentOverflowOf(
-        IJBPaymentTerminal terminal,
+        IJBMultiTerminal terminal,
         uint256 projectId,
         JBAccountingContext[] calldata tokenContexts,
         uint256 decimals,
@@ -54,7 +54,7 @@ interface IJBTerminalStore {
         returns (uint256);
 
     function currentReclaimableOverflowOf(
-        IJBPaymentTerminal terminal,
+        IJBMultiTerminal terminal,
         uint256 projectId,
         JBAccountingContext[] calldata tokenContexts,
         uint256 _decimals,

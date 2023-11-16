@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from "./../interfaces/IJBPaymentTerminal.sol";
+import {IJBRedemptionTerminal} from "./../interfaces/terminal/IJBRedemptionTerminal.sol";
 import {JBTokenAmount} from "./JBTokenAmount.sol";
 
 /// @custom:member terminal The terminal that is facilitating the redemption.
@@ -16,7 +16,7 @@ import {JBTokenAmount} from "./JBTokenAmount.sol";
 /// @custom:member redemptionRate The redemption rate of the funding cycle during which the redemption is being made.
 /// @custom:member metadata Extra data provided by the redeemer.
 struct JBRedeemParamsData {
-    IJBPaymentTerminal terminal;
+    IJBRedemptionTerminal terminal;
     address holder;
     uint256 projectId;
     uint256 currentFundingCycleConfiguration;
