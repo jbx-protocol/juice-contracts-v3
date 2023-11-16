@@ -101,7 +101,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             JBRulesetMetadata memory metadata
         )
     {
-        ruleset = rulesets.get(_projectId, _rulesetId);
+        ruleset = rulesets.getRulesetStruct(_projectId, _rulesetId);
         metadata = ruleset.expandMetadata();
     }
 
@@ -160,7 +160,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             JBRulesetMetadata memory metadata
         )
     {
-        ruleset = rulesets.queuedOf(_projectId);
+        ruleset = rulesets.upcomingRulesetOf(_projectId);
         metadata = ruleset.expandMetadata();
     }
 
@@ -288,7 +288,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         returns (uint256 rulesetId)
     {
         // If there is a previous configuration, queueRulesetsOf should be called instead
-        if (rulesets.latestRulesetOf(_projectId) > 0)
+        if (rulesets.latestRulesetIdOf(_projectId) > 0)
             revert RULESET_ALREADY_LAUNCHED();
 
         // Set this contract as the project's controller in the directory.

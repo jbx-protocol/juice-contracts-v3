@@ -15,17 +15,17 @@ interface IJBRulesets {
         address caller
     );
 
-    event InitializeRuleset(
+    event RulesetInitialized(
         uint256 indexed rulesetId,
         uint256 indexed projectId,
         uint256 indexed basedOn
     );
 
-    function latestRulesetOf(
+    function latestRulesetIdOf(
         uint256 projectId
     ) external view returns (uint256);
 
-    function get(
+    function getRulesetStruct(
         uint256 projectId,
         uint256 rulesetId
     ) external view returns (JBRuleset memory);
@@ -37,7 +37,7 @@ interface IJBRulesets {
         view
         returns (JBRuleset memory ruleset, JBApprovalStatus approvalStatus);
 
-    function queuedOf(
+    function upcomingRulesetOf(
         uint256 projectId
     ) external view returns (JBRuleset memory ruleset);
 
