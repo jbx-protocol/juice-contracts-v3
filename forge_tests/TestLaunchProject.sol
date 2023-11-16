@@ -9,8 +9,6 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
-    JBGroupedSplits[] private _groupedSplits;
-    JBFundAccessConstraints[] private _fundAccessConstraints;
     IJBPaymentTerminal private _terminal;
 
     address private _projectOwner;

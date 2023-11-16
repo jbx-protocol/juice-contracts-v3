@@ -9,7 +9,6 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleData private _dataReconfiguration;
-    JBFundingCycleData private _dataWithoutBallot;
     JBFundingCycleMetadata private _metadata;
     JBReconfigurationBufferBallot private _ballot;
     JBGroupedSplits[] private _groupedSplits;
@@ -32,12 +31,6 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             weight: 1000 * 10 ** 18,
             discountRate: 0,
             ballot: _ballot
-        });
-        _dataWithoutBallot = JBFundingCycleData({
-            duration: _CYCLE_DURATION * 1 days,
-            weight: 1000 * 10 ** 18,
-            discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(address(0))
         });
         _dataReconfiguration = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
@@ -495,7 +488,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightInitial,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(_ballot)
+            ballot: _ballot
         }); // 3days ballot;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
@@ -519,7 +512,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightFirstReconfiguration,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(_ballot)
+            ballot: _ballot
         }); // 3days ballot;
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].groupedSplits = _groupedSplits;
@@ -542,7 +535,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightSecondReconfiguration,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(_ballot)
+            ballot: _ballot
         }); // 3days ballot;
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].groupedSplits = _groupedSplits;

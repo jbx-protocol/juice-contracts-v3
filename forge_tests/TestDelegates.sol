@@ -4,8 +4,8 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDelegates_Local is TestBaseWorkflow {
-    uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED
-    uint8 private constant _NATIVE_TOKEN_DECIMALS = 18; // FIXED
+    uint8 private constant _WEIGHT_DECIMALS = 18;
+    uint8 private constant _NATIVE_TOKEN_DECIMALS = 18;
     uint256 private constant _WEIGHT = 1000 * 10 ** _WEIGHT_DECIMALS;
     uint256 private constant _DATA_SOURCE_WEIGHT = 2000 * 10 ** _WEIGHT_DECIMALS;
     address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));

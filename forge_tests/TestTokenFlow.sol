@@ -10,9 +10,6 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
-    JBGroupedSplits[] private _groupedSplits;
-    JBFundAccessConstraints[] private _fundAccessConstraints;
-    IJBPaymentTerminal[] private _terminals;
     IJBPaymentTerminal private _terminal;
     uint256 private _projectId;
     address private _projectOwner;
@@ -71,8 +68,8 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         _projectId = _controller.launchProjectFor({
-            owner: address(multisig()),
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            owner: address(_projectOwner),
+            projectMetadata: _projectMetadata,
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

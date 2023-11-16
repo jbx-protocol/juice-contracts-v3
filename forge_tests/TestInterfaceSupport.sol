@@ -7,17 +7,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 contract TestEIP165_Local is TestBaseWorkflow {
     bytes4 private constant _notSupportedInterface = 0xffffffff;
 
-    uint256 constant _projectId = 2;
-    uint256 constant _splitsProjectId = 3;
-    address payable constant _splitsBeneficiary = payable(address(420));
-    uint256 constant _splitsDomain = 1;
-    uint256 constant _splitsGroup = 1;
-    bool constant _splitsPreferClaimedTokens = false;
-    string constant _splitsMemo = "";
-    bytes constant _splitsMetadata = "";
-    bool constant _splitsPreferAddToBalance = true;
-    address constant _splitsOwner = address(420);
-
     function testJBController3_1() public {
         JBController3_1 _controller = jbController();
 

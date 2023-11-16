@@ -98,7 +98,6 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBPrices private _jbPrices;
     JBDirectory private _jbDirectory;
     JBFundingCycleStore private _jbFundingCycleStore;
-    //   JBToken private _jbToken;
     JBTokenStore private _jbTokenStore;
     JBSplitsStore private _jbSplitsStore;
     JBController3_1 private _jbController;

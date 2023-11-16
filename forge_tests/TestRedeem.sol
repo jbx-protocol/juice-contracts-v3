@@ -10,7 +10,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
     JBTokenStore private _tokenStore;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
-    IJBPaymentTerminal[] private _terminals;
     uint256 private _projectId;
     address private _projectOwner;
     address private _beneficiary;
@@ -49,8 +48,6 @@ contract TestRedeem_Local is TestBaseWorkflow {
             dataSource: address(0),
             metadata: 0
         });
-
-        _terminals.push(_terminal);
 
         JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;

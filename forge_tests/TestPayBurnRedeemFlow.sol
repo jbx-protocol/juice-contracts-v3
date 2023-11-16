@@ -70,7 +70,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         // dummy project that will receive fees
         _controller.launchProjectFor({
-            owner: address(multisig()),
+            owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
@@ -78,7 +78,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         _projectId = _controller.launchProjectFor({
-            owner: address(multisig()),
+            owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
