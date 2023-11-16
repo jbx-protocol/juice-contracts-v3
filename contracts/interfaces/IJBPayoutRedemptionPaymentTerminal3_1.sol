@@ -67,7 +67,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
         uint256 indexed projectId,
         uint256 indexed amount,
         uint256 indexed fee,
-        uint256 feeDiscount,
         address beneficiary,
         address caller
     );
@@ -126,8 +125,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
     event SetFee(uint256 fee, address caller);
 
-    event SetFeeGauge(address indexed feeGauge, address caller);
-
     event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
 
     event PayoutReverted(
@@ -173,8 +170,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
 
     function fee() external view returns (uint256);
 
-    function feeGauge() external view returns (address);
-
     function isFeelessAddress(address account) external view returns (bool);
 
     function migrate(uint256 projectId, IJBPaymentTerminal to) external returns (uint256 balance);
@@ -182,8 +177,6 @@ interface IJBPayoutRedemptionPaymentTerminal3_1 is
     function processFees(uint256 projectId) external;
 
     function setFee(uint256 fee) external;
-
-    function setFeeGauge(address feeGauge) external;
 
     function setFeelessAddress(address account, bool flag) external;
 }

@@ -3,44 +3,32 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-/**
- * This system test file verifies the following flow:
- * launch project → issue token → pay project (claimed tokens) →  burn some of the claimed tokens → redeem rest of tokens
- */
+// Projects can issue a token, be paid to receieve claimed tokens,  burn some of the claimed tokens, redeem rest of tokens
 contract TestRedeem_Local is TestBaseWorkflow {
-    JBController3_1 private _controller;
-    JBETHPaymentTerminal3_1_2 private _terminal;
+    IJBController3_1 private _controller;
+    IJBPayoutRedemptionPaymentTerminal3_1 private _terminal;
     JBTokenStore private _tokenStore;
-
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
-    JBGroupedSplits[] private _groupedSplits; // Default empty
-    JBFundAccessConstraints[] private _fundAccessConstraints; // Default empty
-    IJBPaymentTerminal[] private _terminals; // Default empty
-
+    IJBPaymentTerminal[] private _terminals;
     uint256 private _projectId;
     address private _projectOwner;
-    uint256 private _weight = 1000 * 10 ** 18;
-    uint256 private _targetInWei = 1 * 10 ** 18;
+    address private _beneficiary;
 
     function setUp() public override {
         super.setUp();
 
+        _projectOwner = multisig();
+        _beneficiary = beneficiary();
         _controller = jbController();
         _terminal = jbETHPaymentTerminal();
-
         _tokenStore = jbTokenStore();
-
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-
         _data = JBFundingCycleData({
-            duration: 14,
-            weight: _weight,
-            discountRate: 450_000_000,
+            duration: 0,
+            weight: 1000 * 10 ** 18,
+            discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
-
         _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
@@ -48,7 +36,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: 5000,
+            redemptionRate: jbLibraries().MAX_REDEMPTION_RATE() / 2,
             baseCurrency: 1,
             pausePay: false,
             pauseDistributions: false,
@@ -68,126 +56,118 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         _terminals.push(_terminal);
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: _terminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimit: 0, // only overflow
-                overflowAllowance: 5 ether,
-                distributionLimitCurrency: 1, // Currency = ETH
-                overflowAllowanceCurrency: 1
-            })
-        );
-
-        _projectOwner = multisig();
-
         JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-
-        _cycleConfig[0].mustStartAtOrAfter = block.timestamp;
+        _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
+        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
 
-        // Launch a protocol project first
-        _controller.launchProjectFor(_projectOwner, _projectMetadata, _cycleConfig, _terminals, "");
+        // Dummy project that collects fees.
+        _controller.launchProjectFor({
+            owner: address(420), // random
+            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            configurations: _cycleConfig,
+            terminals: _terminals,
+            memo: ""
+        });
 
-        _projectId = _controller.launchProjectFor(
-            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
-        );
+        _projectId = _controller.launchProjectFor({
+            owner: _projectOwner,
+            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            configurations: _cycleConfig,
+            terminals: _terminals,
+            memo: ""
+        });
     }
 
     function testRedeem(uint256 _tokenAmountToRedeem) external {
-        bool payPreferClaimed = true; //false
-        uint96 payAmountInWei = 10 ether;
+        bool _payPreferClaimed = true;
+        uint96 _ethPayAmount = 10 ether;
 
-        // issue an ERC-20 token for project
+        // Issue the project's tokens.
         vm.prank(_projectOwner);
         _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
 
-        address _userWallet = address(1234);
+        // Pay the project.
+        _terminal.pay{value: _ethPayAmount}({
+            projectId: _projectId,
+            amount: _ethPayAmount,
+            token: address(0),
+            beneficiary: _beneficiary,
+            minReturnedTokens: 0,
+            preferClaimedTokens: _payPreferClaimed,
+            memo: "Take my money!",
+            metadata: new bytes(0)
+        });
 
-        // pay terminal
-        _terminal.pay{value: payAmountInWei}(
-            _projectId,
-            payAmountInWei,
-            address(0),
-            _userWallet,
-            /* _minReturnedTokens */
-            0,
-            /* _preferClaimedTokens */
-            payPreferClaimed,
-            /* _memo */
-            "Take my money!",
-            /* _delegateMetadata */
-            new bytes(0)
+        // Make sure the beneficiary has a balance of tokens.
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
+        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+
+        // Make sure the ETH balance in terminal is up to date.
+        uint256 _ethTerminalBalance = _ethPayAmount;
+        assertEq(
+            jbPaymentTerminalStore().balanceOf(
+                IJBSingleTokenPaymentTerminal(address(_terminal)), _projectId
+            ),
+            _ethTerminalBalance
         );
 
-        // verify: beneficiary should have a balance of JBTokens
-        uint256 _userTokenBalance = PRBMathUD60x18.mul(payAmountInWei, _weight);
-        assertEq(_tokenStore.balanceOf(_userWallet, _projectId), _userTokenBalance);
-
-        // verify: ETH balance in terminal should be up to date
-        uint256 _terminalBalanceInWei = payAmountInWei;
-        assertEq(jbPaymentTerminalStore().balanceOf(_terminal, _projectId), _terminalBalanceInWei);
-
-        // Fuzz 1 to full balance redemption
-        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1, _userTokenBalance);
+        // Fuzz 1 to full balance redemption.
+        _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1, _beneficiaryTokenBalance);
 
         // Test: redeem
-        vm.prank(_userWallet);
-        uint256 _reclaimAmtInWei = _terminal.redeemTokensOf(
-            /* _holder */
-            _userWallet,
-            /* _projectId */
-            _projectId,
-            /* _tokenCount */
-            _tokenAmountToRedeem,
-            /* token (unused) */
-            address(0),
-            /* _minReturnedWei */
-            0,
-            /* _beneficiary */
-            payable(_userWallet),
-            /* _memo */
-            "Refund me now!",
-            /* _delegateMetadata */
-            new bytes(0)
-        );
+        vm.prank(_beneficiary);
+        uint256 _ethReclaimAmt = _terminal.redeemTokensOf({
+            holder: _beneficiary,
+            projectId: _projectId,
+            tokenCount: _tokenAmountToRedeem,
+            token: address(0), // unused
+            minReturnedTokens: 0,
+            beneficiary: payable(_beneficiary),
+            memo: "Refund me now!",
+            metadata: new bytes(0)
+        });
 
+        // Keep a reference to the expected amount redeemed.
         uint256 _grossRedeemed = PRBMath.mulDiv(
-            PRBMath.mulDiv(_terminalBalanceInWei, _tokenAmountToRedeem, _userTokenBalance),
-            5000
+            PRBMath.mulDiv(_ethTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
+            _metadata.redemptionRate
                 + PRBMath.mulDiv(
-                    _tokenAmountToRedeem, JBConstants.MAX_REDEMPTION_RATE - 5000, _userTokenBalance
+                    _tokenAmountToRedeem,
+                    JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
+                    _beneficiaryTokenBalance
                 ),
             JBConstants.MAX_REDEMPTION_RATE
         );
 
-        // Compute the fee taken
+        // Compute the fee taken.
         uint256 _fee = _grossRedeemed
             - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
 
         // Compute the net amount received, still in $project
         uint256 _netReceived = _grossRedeemed - _fee;
 
-        // Verify: correct amount returned (2 wei precision)
-        assertApproxEqAbs(_reclaimAmtInWei, _netReceived, 2, "incorrect amount returned");
+        // Make sure the correct amount was returned (2 wei precision)
+        assertApproxEqAbs(_ethReclaimAmt, _netReceived, 2, "incorrect amount returned");
 
-        // Verify: beneficiary received correct amount of ETH
-        assertEq(payable(_userWallet).balance, _reclaimAmtInWei);
+        // Make sure the beneficiary received correct amount of ETH.
+        assertEq(payable(_beneficiary).balance, _ethReclaimAmt);
 
-        // verify: beneficiary has correct amount of token
+        // Make sure the beneficiary has correct amount of tokens.
         assertEq(
-            _tokenStore.balanceOf(_userWallet, _projectId),
-            _userTokenBalance - _tokenAmountToRedeem,
+            _tokenStore.balanceOf(_beneficiary, _projectId),
+            _beneficiaryTokenBalance - _tokenAmountToRedeem,
             "incorrect beneficiary balance"
         );
 
-        // verify: ETH balance in terminal should be up to date (with 1 wei precision)
+        // Make sure the ETH balance in terminal should be up to date (with 1 wei precision).
         assertApproxEqAbs(
-            jbPaymentTerminalStore().balanceOf(_terminal, _projectId),
-            _terminalBalanceInWei - _reclaimAmtInWei - (_reclaimAmtInWei * 25 / 1000),
+            jbPaymentTerminalStore().balanceOf(
+                IJBSingleTokenPaymentTerminal(address(_terminal)), _projectId
+            ),
+            _ethTerminalBalance - _ethReclaimAmt - (_ethReclaimAmt * 25 / 1000),
             1
         );
     }

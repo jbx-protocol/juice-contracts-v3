@@ -124,9 +124,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -208,9 +208,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -290,7 +290,7 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
     await mockJbTerminal.mock.decimals.returns(20); // Will divide by 100 to get to 18 decimals
 
     // Price for eth in currency 2, with 18decimals (will mult by 100)
-    await mockJbPrices.mock.priceFor.withArgs(1, 2, 18).returns(ethers.FixedNumber.from(100));
+    await mockJbPrices.mock.priceFor.withArgs(PROJECT_ID, 1, 2, 18).returns(ethers.FixedNumber.from(100));
 
     await mockJbFundingCycleStore.mock.currentOf.withArgs(PROJECT_ID).returns({
       number: 1,
@@ -306,9 +306,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -385,9 +385,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -439,9 +439,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -537,9 +537,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -619,9 +619,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -701,9 +701,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()
@@ -787,9 +787,9 @@ describe('JBSingleTokenPaymentTerminalStore3_1_1::currentReclaimableOverflowOf(.
 
     await mockJbDirectory.mock.controllerOf.withArgs(PROJECT_ID).returns(mockJbController.address);
 
-    await mockJbFundAccessConstraintsStore.mock.distributionLimitOf
+    await mockJbFundAccessConstraintsStore.mock.distributionLimitsOf
       .withArgs(PROJECT_ID, timestamp, mockJbTerminal.address, token)
-      .returns(overflowAmt, CURRENCY_ETH);
+      .returns([{ value: overflowAmt, currency: CURRENCY_ETH }]);
 
     await mockJbController.mock.fundAccessConstraintsStore
       .withArgs()

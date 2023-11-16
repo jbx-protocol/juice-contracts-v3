@@ -193,10 +193,14 @@ describe('JBController3_1::reconfigureFundingCycleOf(...)', function () {
       constraints.push({
         terminal,
         token,
-        distributionLimit,
-        distributionLimitCurrency,
-        overflowAllowance,
-        overflowAllowanceCurrency,
+        distributionLimits: [{
+          value: distributionLimit,
+          currency: distributionLimitCurrency
+        }],
+        overflowAllowances: [{
+          value: overflowAllowance,
+          currency: overflowAllowanceCurrency
+        }]
       });
     }
     return constraints;

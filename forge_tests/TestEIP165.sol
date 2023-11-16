@@ -3,132 +3,125 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
+/// Contracts are introspective about the interfaces they adhere to.
 contract TestEIP165_Local is TestBaseWorkflow {
-    bytes4 constant notSupportedInterface = 0xffffffff;
+    bytes4 private constant _notSupportedInterface = 0xffffffff;
 
-    uint256 constant projectId = 2;
-    uint256 constant splitsProjectID = 3;
-    address payable constant splitsBeneficiary = payable(address(420));
-    uint256 constant splitsDomain = 1;
-    uint256 constant splitsGroup = 1;
-    bool constant splitsPreferClaimedTokens = false;
-    string constant splitsMemo = "";
-    bytes constant splitsMetadata = "";
-    bool constant splitsPreferAddToBalance = true;
-    address constant splitsOwner = address(420);
+    uint256 constant _projectId = 2;
+    uint256 constant _splitsProjectId = 3;
+    address payable constant _splitsBeneficiary = payable(address(420));
+    uint256 constant _splitsDomain = 1;
+    uint256 constant _splitsGroup = 1;
+    bool constant _splitsPreferClaimedTokens = false;
+    string constant _splitsMemo = "";
+    bytes constant _splitsMetadata = "";
+    bool constant _splitsPreferAddToBalance = true;
+    address constant _splitsOwner = address(420);
 
     function testJBController3_1() public {
-        JBController3_1 controller = jbController();
+        JBController3_1 _controller = jbController();
 
         // Should support these interfaces
-        assertTrue(controller.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(controller.supportsInterface(type(IJBMigratable).interfaceId));
-        assertTrue(controller.supportsInterface(type(IJBOperatable).interfaceId));
-
-        /* if (isUsingJbController3_0()) {
-            assertTrue(controller.supportsInterface(type(IJBController3_1).interfaceId));
-        } else {
-            assertTrue(controller.supportsInterface(type(IJBController3_1).interfaceId));
-        } */
+        assertTrue(_controller.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBMigratable).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBOperatable).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBController3_1).interfaceId));
 
         // Make sure it doesn't always return true
-        assertTrue(!controller.supportsInterface(notSupportedInterface));
+        assertTrue(!_controller.supportsInterface(_notSupportedInterface));
     }
 
     function testJBERC20PaymentTerminal() public {
-        JBERC20PaymentTerminal3_1_2 terminal = jbERC20PaymentTerminal();
+        JBERC20PaymentTerminal3_1_2 _terminal = jbERC20PaymentTerminal();
 
         // Should support these interfaces
-        assertTrue(terminal.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBPaymentTerminal).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBRedemptionTerminal).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBSingleTokenPaymentTerminal).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBOperatable).interfaceId));
-
-        assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBPaymentTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBRedemptionTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBSingleTokenPaymentTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBOperatable).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
         assertTrue(
-            terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId)
+            _terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId)
         );
 
         // Make sure it doesn't always return true
-        assertTrue(!terminal.supportsInterface(notSupportedInterface));
+        assertTrue(!_terminal.supportsInterface(_notSupportedInterface));
     }
 
     function testJBETHPaymentTerminal() public {
-        JBETHPaymentTerminal3_1_2 terminal = jbETHPaymentTerminal();
+        JBETHPaymentTerminal3_1_2 _terminal = jbETHPaymentTerminal();
 
         // Should support these interfaces
-        assertTrue(terminal.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBPaymentTerminal).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBRedemptionTerminal).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBSingleTokenPaymentTerminal).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBOperatable).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBPaymentTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBRedemptionTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBSingleTokenPaymentTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBOperatable).interfaceId));
 
-        assertTrue(terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
-        assertTrue(terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBPayoutTerminal3_1).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBAllowanceTerminal3_1).interfaceId));
         assertTrue(
-            terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId)
+            _terminal.supportsInterface(type(IJBPayoutRedemptionPaymentTerminal3_1).interfaceId)
         );
         // Make sure it doesn't always return true
-        assertTrue(!terminal.supportsInterface(notSupportedInterface));
+        assertTrue(!_terminal.supportsInterface(_notSupportedInterface));
     }
 
     function testJBProjects() public {
-        JBProjects projects = jbProjects();
+        JBProjects _projects = jbProjects();
 
         // Should support these interfaces
-        assertTrue(projects.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(projects.supportsInterface(type(IERC721).interfaceId));
-        assertTrue(projects.supportsInterface(type(IERC721Metadata).interfaceId));
-        assertTrue(projects.supportsInterface(type(IJBProjects).interfaceId));
-        assertTrue(projects.supportsInterface(type(IJBOperatable).interfaceId));
+        assertTrue(_projects.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_projects.supportsInterface(type(IERC721).interfaceId));
+        assertTrue(_projects.supportsInterface(type(IERC721Metadata).interfaceId));
+        assertTrue(_projects.supportsInterface(type(IJBProjects).interfaceId));
+        assertTrue(_projects.supportsInterface(type(IJBOperatable).interfaceId));
 
         // Make sure it doesn't always return true
-        assertTrue(!projects.supportsInterface(notSupportedInterface));
+        assertTrue(!_projects.supportsInterface(_notSupportedInterface));
     }
 
     function testJBReconfigurationBufferBallot() public {
-        JBReconfigurationBufferBallot ballot = new JBReconfigurationBufferBallot(3000);
+        JBReconfigurationBufferBallot _ballot = new JBReconfigurationBufferBallot(3000);
 
         // Should support these interfaces
-        assertTrue(ballot.supportsInterface(type(IERC165).interfaceId));
-        // TODO: Add interface
-        //assertTrue(ballot.supportsInterface(type(IJBReconfigurationBufferBallot).interfaceId));
-        assertTrue(ballot.supportsInterface(type(IJBFundingCycleBallot).interfaceId));
+        assertTrue(_ballot.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_ballot.supportsInterface(type(IJBFundingCycleBallot).interfaceId));
 
         // Make sure it doesn't always return true
-        assertTrue(!ballot.supportsInterface(notSupportedInterface));
+        assertTrue(!_ballot.supportsInterface(_notSupportedInterface));
     }
 
     function testJBETHERC20SplitsPayer() public {
-        JBETHERC20SplitsPayerDeployer deployer = new JBETHERC20SplitsPayerDeployer(jbSplitsStore());
+        JBETHERC20SplitsPayerDeployer _deployer = new JBETHERC20SplitsPayerDeployer(jbSplitsStore());
 
-        JBETHERC20SplitsPayer splitsPayer = JBETHERC20SplitsPayer(
+        JBETHERC20SplitsPayer _splitsPayer = JBETHERC20SplitsPayer(
             payable(
                 address(
-                    deployer.deploySplitsPayer(
-                        splitsProjectID,
-                        splitsDomain,
-                        splitsGroup,
-                        projectId,
-                        splitsBeneficiary,
-                        splitsPreferClaimedTokens,
-                        splitsMemo,
-                        splitsMetadata,
-                        splitsPreferAddToBalance,
-                        splitsOwner
+                    _deployer.deploySplitsPayer(
+                        _splitsProjectId,
+                        _splitsDomain,
+                        _splitsGroup,
+                        _projectId,
+                        _splitsBeneficiary,
+                        _splitsPreferClaimedTokens,
+                        _splitsMemo,
+                        _splitsMetadata,
+                        _splitsPreferAddToBalance,
+                        _splitsOwner
                     )
                 )
             )
         );
 
         // Should support these interfaces
-        assertTrue(splitsPayer.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(splitsPayer.supportsInterface(type(IJBSplitsPayer).interfaceId));
-        assertTrue(splitsPayer.supportsInterface(type(IJBProjectPayer).interfaceId));
+        assertTrue(_splitsPayer.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_splitsPayer.supportsInterface(type(IJBSplitsPayer).interfaceId));
+        assertTrue(_splitsPayer.supportsInterface(type(IJBProjectPayer).interfaceId));
 
         // Make sure it doesn't always return true
-        assertTrue(!splitsPayer.supportsInterface(notSupportedInterface));
+        assertTrue(!_splitsPayer.supportsInterface(_notSupportedInterface));
     }
 }

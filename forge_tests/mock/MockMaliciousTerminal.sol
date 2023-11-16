@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
-contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2 {
+contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2, DeployPermit2 {
     error NopeNotGonnaDoIt();
 
     uint256 revertMode;
@@ -43,7 +43,8 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2 {
             _splitsStore,
             _prices,
             address(_store),
-            _owner
+            _owner,
+            IPermit2(deployPermit2())
         )
     // solhint-disable-next-line no-empty-blocks
     {}
@@ -57,7 +58,12 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2 {
         bool _preferClaimedTokens,
         string calldata _memo,
         bytes calldata _metadata
-    ) external payable override returns (uint256) {
+    )
+        public
+        payable
+        override(IJBPaymentTerminal, JBPayoutRedemptionPaymentTerminal3_1_2)
+        returns (uint256)
+    {
         _projectId;
         _amount;
         _token;
@@ -87,7 +93,7 @@ contract MockMaliciousTerminal is JBERC20PaymentTerminal3_1_2 {
         address _token,
         string calldata _memo,
         bytes calldata _metadata
-    ) external payable override {
+    ) external payable override(IJBPaymentTerminal, JBPayoutRedemptionPaymentTerminal3_1_2) {
         _projectId;
         _amount;
         _token;

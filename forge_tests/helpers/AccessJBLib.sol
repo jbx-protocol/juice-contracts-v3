@@ -4,6 +4,7 @@ pragma solidity ^0.8.6;
 import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBTokens} from "@juicebox/libraries/JBTokens.sol";
+import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 
 contract AccessJBLib {
     function ETH() external pure returns (uint256) {
@@ -36,9 +37,5 @@ contract AccessJBLib {
 
     function SPLITS_TOTAL_PERCENT() external pure returns (uint256) {
         return JBConstants.SPLITS_TOTAL_PERCENT;
-    }
-
-    function MAX_FEE_DISCOUNT() external pure returns (uint256) {
-        return JBConstants.MAX_FEE_DISCOUNT;
     }
 }

@@ -1207,6 +1207,10 @@
   dependencies:
     prb-math "^2.4.1"
 
+"@permit2/src@https://github.com/Uniswap/permit2":
+  version "1.0.0"
+  resolved "https://github.com/Uniswap/permit2#cc56ad0f3439c502c246fc5cfcc3db92bb8b7219"
+
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@resolver-engine/core/-/core-0.3.3.tgz#590f77d85d45bc7ecc4e06c654f41345db6ca967"

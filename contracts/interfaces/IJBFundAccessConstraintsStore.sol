@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JBFundAccessConstraints} from "./../structs/JBFundAccessConstraints.sol";
+import {JBCurrencyAmount} from "./../structs/JBCurrencyAmount.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 
 interface IJBFundAccessConstraintsStore is IERC165 {
@@ -13,19 +14,35 @@ interface IJBFundAccessConstraintsStore is IERC165 {
         address caller
     );
 
-    function distributionLimitOf(
+    function distributionLimitsOf(
         uint256 projectId,
         uint256 configuration,
         IJBPaymentTerminal terminal,
         address token
-    ) external view returns (uint256 distributionLimit, uint256 distributionLimitCurrency);
+    ) external view returns (JBCurrencyAmount[] memory distributionLimits);
+
+    function distributionLimitOf(
+        uint256 projectId,
+        uint256 configuration,
+        IJBPaymentTerminal terminal,
+        address token,
+        uint256 currency
+    ) external view returns (uint256 distributionLimit);
+
+    function overflowAllowancesOf(
+        uint256 projectId,
+        uint256 configuration,
+        IJBPaymentTerminal terminal,
+        address token
+    ) external view returns (JBCurrencyAmount[] memory overflowAllowances);
 
     function overflowAllowanceOf(
         uint256 projectId,
         uint256 configuration,
         IJBPaymentTerminal terminal,
-        address token
-    ) external view returns (uint256 overflowAllowance, uint256 overflowAllowanceCurrency);
+        address token,
+        uint256 currency
+    ) external view returns (uint256 overflowAllowance);
 
     function setFor(
         uint256 projectId,

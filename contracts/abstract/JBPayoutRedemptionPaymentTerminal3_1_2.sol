@@ -5,14 +5,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
-import {JBFeeType} from "./../enums/JBFeeType.sol";
 import {IJBAllowanceTerminal3_1} from "./../interfaces/IJBAllowanceTerminal3_1.sol";
 import {IJBController3_1} from "./../interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./../interfaces/IJBDirectory.sol";
 import {IJBPayoutRedemptionPaymentTerminal3_1} from
     "./../interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
 import {IJBSplitsStore} from "./../interfaces/IJBSplitsStore.sol";
-import {IJBFeeGauge3_1} from "./../interfaces/IJBFeeGauge3_1.sol";
 import {IJBOperatable} from "./../interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./../interfaces/IJBOperatorStore.sol";
 import {IJBPaymentTerminal} from "./../interfaces/IJBPaymentTerminal.sol";
@@ -114,9 +112,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     /// @dev Out of MAX_FEE (25_000_000 / 1_000_000_000)
     uint256 public override fee = 25_000_000; // 2.5%
 
-    /// @notice The data source that returns a discount to apply to a project's fee.
-    address public override feeGauge;
-
     /// @notice Addresses that can be paid towards from this terminal without incurring a fee.
     /// @dev Only addresses that are considered to be contained within the ecosystem can be feeless. Funds sent outside the ecosystem may incur fees despite being stored as feeless.
     /// @custom:param _address The address that can be paid toward.
@@ -142,15 +137,16 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
             IJBSingleTokenPaymentTerminalStore3_1_1(store).currentOverflowOf(this, _projectId);
 
         // Adjust the decimals of the fixed point number if needed to have 18 decimals.
-        uint256 _adjustedOverflow = (decimals == 18)
-            ? _overflow
-            : JBFixedPointNumber.adjustDecimals(_overflow, decimals, 18);
+        uint256 _adjustedOverflow =
+            decimals == 18 ? _overflow : JBFixedPointNumber.adjustDecimals(_overflow, decimals, 18);
 
         // Return the amount converted to ETH.
-        return (currency == JBCurrencies.ETH)
+        return currency == JBCurrencies.ETH
             ? _adjustedOverflow
             : PRBMath.mulDiv(
-                _adjustedOverflow, 10 ** decimals, prices.priceFor(currency, JBCurrencies.ETH, decimals)
+                _adjustedOverflow,
+                10 ** decimals,
+                prices.priceFor(_projectId, currency, JBCurrencies.ETH, decimals)
             );
     }
 
@@ -237,58 +233,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
-
-    /// @notice Contribute tokens to a project.
-    /// @param _projectId The ID of the project being paid.
-    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
-    /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
-    /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
-    /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
-    /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
-    /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-    /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
-    function pay(
-        uint256 _projectId,
-        uint256 _amount,
-        address _token,
-        address _beneficiary,
-        uint256 _minReturnedTokens,
-        bool _preferClaimedTokens,
-        string calldata _memo,
-        bytes calldata _metadata
-    ) external payable virtual override returns (uint256) {
-        _token; // Prevents unused var compiler and natspec complaints.
-
-        // ETH shouldn't be sent if this terminal's token isn't ETH.
-        if (token != JBTokens.ETH) {
-            if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
-
-            // Get a reference to the balance before receiving tokens.
-            uint256 _balanceBefore = _balance();
-
-            // Transfer tokens to this terminal from the msg sender.
-            _transferFrom(msg.sender, payable(address(this)), _amount);
-
-            // The amount should reflect the change in balance.
-            _amount = _balance() - _balanceBefore;
-        }
-        // If this terminal's token is ETH, override _amount with msg.value.
-        else {
-            _amount = msg.value;
-        }
-
-        return _pay(
-            _amount,
-            msg.sender,
-            _projectId,
-            _beneficiary,
-            _minReturnedTokens,
-            _preferClaimedTokens,
-            _memo,
-            _metadata
-        );
-    }
 
     /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
     /// @dev Only a token holder or a designated operator can redeem its tokens.
@@ -459,17 +403,18 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // Keep a reference to the amount.
         uint256 _amount;
 
+        // Get the terminal for the protocol project.
+        IJBPaymentTerminal _feeTerminal =
+            directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
+
         // Process each fee.
         for (uint256 _i; _i < _heldFeeLength;) {
             // Get the fee amount.
-            _amount = (
-                _heldFees[_i].fee == 0 || _heldFees[_i].feeDiscount == JBConstants.MAX_FEE_DISCOUNT
-                    ? 0
-                    : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee, _heldFees[_i].feeDiscount)
-            );
+            _amount =
+                (_heldFees[_i].fee == 0 ? 0 : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee));
 
             // Process the fee.
-            _processFee(_amount, _heldFees[_i].beneficiary, _projectId);
+            _processFee(_amount, _heldFees[_i].beneficiary, _projectId, _feeTerminal);
 
             emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, msg.sender);
 
@@ -492,16 +437,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         emit SetFee(_fee, msg.sender);
     }
 
-    /// @notice Allows the fee gauge to be updated.
-    /// @dev Only the owner of this contract can change the fee gauge.
-    /// @param _feeGauge The new fee gauge.
-    function setFeeGauge(address _feeGauge) external virtual override onlyOwner {
-        // Store the new fee gauge.
-        feeGauge = _feeGauge;
-
-        emit SetFeeGauge(_feeGauge, msg.sender);
-    }
-
     /// @notice Sets whether projects operating on this terminal can pay towards the specified address without incurring a fee.
     /// @dev Only the owner of this contract can set addresses as feeless.
     /// @param _address The address that can be paid towards while still bypassing fees.
@@ -516,6 +451,58 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     //*********************************************************************//
     // ----------------------- public transactions ----------------------- //
     //*********************************************************************//
+
+    /// @notice Contribute tokens to a project.
+    /// @param _projectId The ID of the project being paid.
+    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
+    /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
+    /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
+    /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+    /// @param _preferClaimedTokens A flag indicating whether the request prefers to mint project tokens into the beneficiaries wallet rather than leaving them unclaimed. This is only possible if the project has an attached token contract. Leaving them unclaimed saves gas.
+    /// @param _memo A memo to pass along to the emitted event, and passed along the the funding cycle's data source and delegate.  A data source can alter the memo before emitting in the event and forwarding to the delegate.
+    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+    /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
+    function pay(
+        uint256 _projectId,
+        uint256 _amount,
+        address _token,
+        address _beneficiary,
+        uint256 _minReturnedTokens,
+        bool _preferClaimedTokens,
+        string calldata _memo,
+        bytes calldata _metadata
+    ) public payable virtual override returns (uint256) {
+        _token; // Prevents unused var compiler and natspec complaints.
+
+        // ETH shouldn't be sent if this terminal's token isn't ETH.
+        if (token != JBTokens.ETH) {
+            if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
+
+            // Get a reference to the balance before receiving tokens.
+            uint256 _balanceBefore = _balance();
+
+            // Transfer tokens to this terminal from the msg sender.
+            _transferFrom(msg.sender, payable(address(this)), _amount);
+
+            // The amount should reflect the change in balance.
+            _amount = _balance() - _balanceBefore;
+        }
+        // If this terminal's token is ETH, override _amount with msg.value.
+        else {
+            _amount = msg.value;
+        }
+
+        return _pay(
+            _amount,
+            msg.sender,
+            _projectId,
+            _beneficiary,
+            _minReturnedTokens,
+            _preferClaimedTokens,
+            _memo,
+            _metadata
+        );
+    }
 
     /// @notice Receives funds belonging to the specified project.
     /// @param _projectId The ID of the project to which the funds received belong.
@@ -613,16 +600,17 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // Keep a reference to the funding cycle during which the redemption is being made.
         JBFundingCycle memory _fundingCycle;
 
-        // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount`, `_feeDiscount` and `_feePercent` only used within scope.
+        // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount` and `_feePercent` only used within scope.
         {
             // Keep a reference to the amount being reclaimed that should have fees withheld from.
             uint256 _feeEligibleDistributionAmount;
 
-            // Keep a reference to the amount of discount to apply to the fee.
-            uint256 _feeDiscount;
-
             // Keep a reference to the fee.
-            uint256 _feePercent = fee;
+            uint256 _feePercent;
+
+            // Get the terminal for the protocol project.
+            IJBPaymentTerminal _feeTerminal =
+                directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
             // Scoped section prevents stack too deep. `_delegateAllocations` only used within scope.
             {
@@ -634,12 +622,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                     _holder, _projectId, _tokenCount, _memo, _metadata
                 );
 
-                // Set the reference to the fee discount to apply. No fee if the beneficiary is feeless or if the redemption rate is at its max.
-                _feeDiscount = isFeelessAddress[_beneficiary]
+                // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
+                _feePercent = isFeelessAddress[_beneficiary]
                     || _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE
-                    || _feePercent == 0
-                    ? JBConstants.MAX_FEE_DISCOUNT
-                    : _currentFeeDiscount(_projectId, JBFeeType.REDEMPTION);
+                    || _feeTerminal == IJBPaymentTerminal(address(0)) ? 0 : fee;
 
                 // The amount being reclaimed must be at least as much as was expected.
                 if (reclaimAmount < _minReturnedTokens) revert INADEQUATE_RECLAIM_AMOUNT();
@@ -660,6 +646,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                         _tokenCount,
                         JBTokenAmount(token, reclaimAmount, decimals, currency),
                         JBTokenAmount(token, 0, decimals, currency),
+                        _fundingCycle.redemptionRate(),
                         _beneficiary,
                         _memo,
                         bytes(""),
@@ -682,7 +669,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                         // Get the fee for the delegated amount.
                         _delegatedAmountFee = _feePercent == 0
                             ? 0
-                            : JBFees.feeIn(_delegateAllocation.amount, _feePercent, _feeDiscount);
+                            : JBFees.feeIn(_delegateAllocation.amount, _feePercent);
 
                         // Add the delegated amount to the amount eligible for having a fee taken.
                         if (_delegatedAmountFee != 0) {
@@ -723,9 +710,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
             // Send the reclaimed funds to the beneficiary.
             if (reclaimAmount != 0) {
                 // Get the fee for the reclaimed amount.
-                uint256 _reclaimAmountFee = _feeDiscount == JBConstants.MAX_FEE_DISCOUNT
-                    ? 0
-                    : JBFees.feeIn(reclaimAmount, _feePercent, _feeDiscount);
+                uint256 _reclaimAmountFee =
+                    _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
 
                 if (_reclaimAmountFee != 0) {
                     _feeEligibleDistributionAmount += reclaimAmount;
@@ -744,7 +730,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                     _feeEligibleDistributionAmount,
                     _feePercent,
                     _beneficiary,
-                    _feeDiscount
+                    _feeTerminal
                 )
                 : 0;
         }
@@ -797,66 +783,67 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // Keep a reference to the fee amount that was paid.
         uint256 _feeTaken;
 
-        // Scoped section prevents stack too deep. `_feePercent`, `_feeDiscount`, `_feeEligibleDistributionAmount`, and `_leftoverDistributionAmount` only used within scope.
+        // Scoped section prevents stack too deep. `_feeTerminal` only used within scope.
         {
-            // Keep a reference to the fee.
-            uint256 _feePercent = fee;
+            // Get the terminal for the protocol project.
+            IJBPaymentTerminal _feeTerminal =
+                directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
 
-            // Get the amount of discount that should be applied to any fees taken.
-            // If the fee is zero, set the discount to 100% for convenience.
-            uint256 _feeDiscount = _feePercent == 0
-                ? JBConstants.MAX_FEE_DISCOUNT
-                : _currentFeeDiscount(_projectId, JBFeeType.PAYOUT);
+            // Scoped section prevents stack too deep. `_feeEligibleDistributionAmount` and `_leftoverDistributionAmount` only used within scope.
+            {
+                // Keep a reference to the fee.
+                // The fee is 0 if the fee beneficiary doesn't accept the given token.
+                uint256 _feePercent = _feeTerminal == IJBPaymentTerminal(address(0)) ? 0 : fee;
 
-            // The amount distributed that is eligible for incurring fees.
-            uint256 _feeEligibleDistributionAmount;
+                // The amount distributed that is eligible for incurring fees.
+                uint256 _feeEligibleDistributionAmount;
 
-            // The amount leftover after distributing to the splits.
-            uint256 _leftoverDistributionAmount;
+                // The amount leftover after distributing to the splits.
+                uint256 _leftoverDistributionAmount;
 
-            // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
-            // Also get a reference to the amount that was distributed to splits from which fees should be taken.
-            (_leftoverDistributionAmount, _feeEligibleDistributionAmount) =
-            _distributeToPayoutSplitsOf(
-                _projectId,
-                _fundingCycle.configuration,
-                payoutSplitsGroup,
-                _distributedAmount,
-                _feePercent,
-                _feeDiscount
-            );
-
-            if (_feeDiscount != JBConstants.MAX_FEE_DISCOUNT) {
-                // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
-                unchecked {
-                    _feeEligibleDistributionAmount += _leftoverDistributionAmount;
-                }
-            }
-
-            // Take the fee.
-            _feeTaken = _feeEligibleDistributionAmount != 0
-                ? _takeFeeFrom(
+                // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
+                // Also get a reference to the amount that was distributed to splits from which fees should be taken.
+                (_leftoverDistributionAmount, _feeEligibleDistributionAmount) =
+                _distributeToPayoutSplitsOf(
                     _projectId,
-                    _fundingCycle.shouldHoldFees(),
-                    _feeEligibleDistributionAmount,
-                    _feePercent,
-                    _projectOwner,
-                    _feeDiscount
-                )
-                : 0;
+                    _fundingCycle.configuration,
+                    payoutSplitsGroup,
+                    _distributedAmount,
+                    _feePercent
+                );
 
-            // Transfer any remaining balance to the project owner and update returned leftover accordingly.
-            if (_leftoverDistributionAmount != 0) {
-                // Subtract the fee from the net leftover amount.
-                netLeftoverDistributionAmount = _leftoverDistributionAmount
-                    - (
-                        _feeDiscount == JBConstants.MAX_FEE_DISCOUNT
-                            ? 0
-                            : JBFees.feeIn(_leftoverDistributionAmount, _feePercent, _feeDiscount)
-                    );
+                if (_feePercent != 0) {
+                    // Leftover distribution amount is also eligible for a fee since the funds are going out of the ecosystem to _beneficiary.
+                    unchecked {
+                        _feeEligibleDistributionAmount += _leftoverDistributionAmount;
+                    }
+                }
 
-                // Transfer the amount to the project owner.
-                _transferFrom(address(this), _projectOwner, netLeftoverDistributionAmount);
+                // Take the fee.
+                _feeTaken = _feeEligibleDistributionAmount != 0
+                    ? _takeFeeFrom(
+                        _projectId,
+                        _fundingCycle.shouldHoldFees(),
+                        _feeEligibleDistributionAmount,
+                        _feePercent,
+                        _projectOwner,
+                        _feeTerminal
+                    )
+                    : 0;
+
+                // Transfer any remaining balance to the project owner and update returned leftover accordingly.
+                if (_leftoverDistributionAmount != 0) {
+                    // Subtract the fee from the net leftover amount.
+                    netLeftoverDistributionAmount = _leftoverDistributionAmount
+                        - (
+                            _feePercent == 0
+                                ? 0
+                                : JBFees.feeIn(_leftoverDistributionAmount, _feePercent)
+                        );
+
+                    // Transfer the amount to the project owner.
+                    _transferFrom(address(this), _projectOwner, netLeftoverDistributionAmount);
+                }
             }
         }
 
@@ -903,25 +890,25 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // The amount being withdrawn must be at least as much as was expected.
         if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
 
-        // Scoped section prevents stack too deep. `_fee`, `_projectOwner`, `_feeDiscount`, and `_netAmount` only used within scope.
+        // Get the terminal for the protocol project.
+        IJBPaymentTerminal _feeTerminal =
+            directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
+
+        // Scoped section prevents stack too deep. `_fee`, `_projectOwner` and `_netAmount` only used within scope.
         {
             // Keep a reference to the fee amount that was paid.
             uint256 _feeTaken;
 
-            // Keep a reference to the fee.
-            uint256 _feePercent = fee;
-
             // Get a reference to the project owner, which will receive tokens from paying the platform fee.
             address _projectOwner = projects.ownerOf(_projectId);
 
-            // Get the amount of discount that should be applied to any fees taken.
-            // If the fee is zero or if the fee is being used by an address that doesn't incur fees, set the discount to 100% for convenience.
-            uint256 _feeDiscount = _feePercent == 0 || isFeelessAddress[msg.sender]
-                ? JBConstants.MAX_FEE_DISCOUNT
-                : _currentFeeDiscount(_projectId, JBFeeType.ALLOWANCE);
+            // Keep a reference to the fee.
+            // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
+            uint256 _feePercent = isFeelessAddress[msg.sender]
+                || _feeTerminal == IJBPaymentTerminal(address(0)) ? 0 : fee;
 
             // Take a fee from the `_distributedAmount`, if needed.
-            _feeTaken = _feeDiscount == JBConstants.MAX_FEE_DISCOUNT
+            _feeTaken = _feePercent == 0
                 ? 0
                 : _takeFeeFrom(
                     _projectId,
@@ -929,7 +916,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                     _distributedAmount,
                     _feePercent,
                     _projectOwner,
-                    _feeDiscount
+                    _feeTerminal
                 );
 
             unchecked {
@@ -962,7 +949,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     /// @param _domain The domain of the splits to distribute the payout between.
     /// @param _group The group of the splits to distribute the payout between.
     /// @param _amount The total amount being distributed, as a fixed point number with the same number of decimals as this terminal.
-    /// @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
     /// @param _feePercent The percent of fees to take, out of MAX_FEE.
     /// @return If the leftover amount if the splits don't add up to 100%.
     /// @return feeEligibleDistributionAmount The total amount of distributions that are eligible to have fees taken from.
@@ -971,8 +957,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         uint256 _domain,
         uint256 _group,
         uint256 _amount,
-        uint256 _feePercent,
-        uint256 _feeDiscount
+        uint256 _feePercent
     ) internal returns (uint256, uint256 feeEligibleDistributionAmount) {
         // The total percentage available to split
         uint256 _leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
@@ -992,9 +977,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
             uint256 _payoutAmount = PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
 
             // The payout amount substracting any applicable incurred fees.
-            uint256 _netPayoutAmount = _distributeToPayoutSplit(
-                _split, _projectId, _group, _payoutAmount, _feePercent, _feeDiscount
-            );
+            uint256 _netPayoutAmount =
+                _distributeToPayoutSplit(_split, _projectId, _group, _payoutAmount, _feePercent);
 
             // If the split allocator is set as feeless, this distribution is not eligible for a fee.
             if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount) {
@@ -1029,15 +1013,13 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     /// @param _split The split to distribute payouts to.
     /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
     /// @param _feePercent The percent of fees to take, out of MAX_FEE.
-    /// @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
     /// @return netPayoutAmount The amount sent to the split after subtracting fees.
     function _distributeToPayoutSplit(
         JBSplit memory _split,
         uint256 _projectId,
         uint256 _group,
         uint256 _amount,
-        uint256 _feePercent,
-        uint256 _feeDiscount
+        uint256 _feePercent
     ) internal returns (uint256 netPayoutAmount) {
         // By default, the net payout amount is the full amount. This will be adjusted if fees are taken.
         netPayoutAmount = _amount;
@@ -1045,12 +1027,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         // If there's an allocator set, transfer to its `allocate` function.
         if (_split.allocator != IJBSplitAllocator(address(0))) {
             // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
-            if (
-                _feeDiscount != JBConstants.MAX_FEE_DISCOUNT
-                    && !isFeelessAddress[address(_split.allocator)]
-            ) {
+            if (_feePercent != 0 && !isFeelessAddress[address(_split.allocator)]) {
                 unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent, _feeDiscount);
+                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
                 }
             }
 
@@ -1105,12 +1084,10 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                 emit PayoutReverted(_projectId, _split, _amount, "Terminal not found", msg.sender);
             } else {
                 // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
-                if (
-                    _terminal != this && _feeDiscount != JBConstants.MAX_FEE_DISCOUNT
-                        && !isFeelessAddress[address(_terminal)]
-                ) {
+                if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)])
+                {
                     unchecked {
-                        netPayoutAmount -= JBFees.feeIn(_amount, _feePercent, _feeDiscount);
+                        netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
                     }
                 }
 
@@ -1164,9 +1141,9 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         } else {
             // This distribution is eligible for a fee since the funds are leaving this contract and the beneficiary isn't listed as feeless.
             // Don't enforce feeless address for the beneficiary since the funds are leaving the ecosystem.
-            if (_feeDiscount != JBConstants.MAX_FEE_DISCOUNT) {
+            if (_feePercent != 0) {
                 unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent, _feeDiscount);
+                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
                 }
             }
 
@@ -1185,7 +1162,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     /// @param _feePercent The percent of fees to take, out of MAX_FEE.
     /// @param _amount The amount of the fee to take, as a floating point number with 18 decimals.
     /// @param _beneficiary The address to mint the platforms tokens for.
-    /// @param _feeDiscount The amount of discount to apply to the fee, out of the MAX_FEE.
+    /// @param _feeTerminal The terminal the fee should be taken into.
     /// @return feeAmount The amount of the fee taken.
     function _takeFeeFrom(
         uint256 _projectId,
@@ -1193,20 +1170,18 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         uint256 _amount,
         uint256 _feePercent,
         address _beneficiary,
-        uint256 _feeDiscount
+        IJBPaymentTerminal _feeTerminal
     ) internal returns (uint256 feeAmount) {
-        feeAmount = JBFees.feeIn(_amount, _feePercent, _feeDiscount);
+        feeAmount = JBFees.feeIn(_amount, _feePercent);
 
         if (_shouldHoldFees) {
             // Store the held fee.
-            _heldFeesOf[_projectId].push(
-                JBFee(_amount, uint32(_feePercent), uint32(_feeDiscount), _beneficiary)
-            );
+            _heldFeesOf[_projectId].push(JBFee(_amount, uint32(_feePercent), _beneficiary));
 
-            emit HoldFee(_projectId, _amount, _feePercent, _feeDiscount, _beneficiary, msg.sender);
+            emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, msg.sender);
         } else {
             // Process the fee.
-            _processFee(feeAmount, _beneficiary, _projectId); // Take the fee.
+            _processFee(feeAmount, _beneficiary, _projectId, _feeTerminal); // Take the fee.
 
             emit ProcessFee(_projectId, feeAmount, false, _beneficiary, msg.sender);
         }
@@ -1216,17 +1191,22 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
     /// @param _amount The fee amount, as a floating point number with 18 decimals.
     /// @param _beneficiary The address to mint the platform's tokens for.
     /// @param _from The project ID the fee is being paid from.
-    function _processFee(uint256 _amount, address _beneficiary, uint256 _from) internal {
-        // Get the terminal for the protocol project.
-        IJBPaymentTerminal _terminal =
-            directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token);
-
+    /// @param _feeTerminal The terminal the fee should be taken into.
+    function _processFee(
+        uint256 _amount,
+        address _beneficiary,
+        uint256 _from,
+        IJBPaymentTerminal _feeTerminal
+    ) internal {
         // Trigger any inherited pre-transfer logic if funds will be transferred.
-        if (address(_terminal) != address(this)) _beforeTransferTo(address(_terminal), _amount);
+        if (address(_feeTerminal) != address(this)) {
+            _beforeTransferTo(address(_feeTerminal), _amount);
+        }
 
-        try _terminal.pay{value: token == JBTokens.ETH ? _amount : 0}(
+        try _feeTerminal
             // Send the fee.
             // If this terminal's token is ETH, send it in msg.value.
+            .pay{value: token == JBTokens.ETH ? _amount : 0}(
             _FEE_BENEFICIARY_PROJECT_ID,
             _amount,
             token,
@@ -1239,8 +1219,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         ) {} catch (bytes memory _reason) {
             _revertTransferFrom(
                 _from,
-                address(_terminal) != address(this) ? address(_terminal) : address(0),
-                address(_terminal) != address(this) ? _amount : 0,
+                address(_feeTerminal) != address(this) ? address(_feeTerminal) : address(0),
+                address(_feeTerminal) != address(this) ? _amount : 0,
                 _amount
             );
             emit FeeReverted(_from, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
@@ -1326,6 +1306,7 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                     _fundingCycle.configuration,
                     _bundledAmount,
                     JBTokenAmount(token, 0, decimals, currency),
+                    _fundingCycle.weight,
                     beneficiaryTokenCount,
                     _beneficiary,
                     _preferClaimedTokens,
@@ -1436,11 +1417,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                 // Notice here we take feeIn the stored .amount
                 uint256 _feeAmount = (
                     _heldFees[_i].fee == 0
-                        || _heldFees[_i].feeDiscount == JBConstants.MAX_FEE_DISCOUNT
                         ? 0
-                        : JBFees.feeIn(
-                            _heldFees[_i].amount, _heldFees[_i].fee, _heldFees[_i].feeDiscount
-                        )
+                        : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee)
                 );
 
                 if (leftoverAmount >= _heldFees[_i].amount - _feeAmount) {
@@ -1452,11 +1430,8 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                     // And here we overwrite with feeFrom the leftoverAmount
                     _feeAmount = (
                         _heldFees[_i].fee == 0
-                            || _heldFees[_i].feeDiscount == JBConstants.MAX_FEE_DISCOUNT
                             ? 0
-                            : JBFees.feeFrom(
-                                leftoverAmount, _heldFees[_i].fee, _heldFees[_i].feeDiscount
-                            )
+                            : JBFees.feeFrom(leftoverAmount, _heldFees[_i].fee)
                     );
 
                     unchecked {
@@ -1464,7 +1439,6 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
                             JBFee(
                                 _heldFees[_i].amount - (leftoverAmount + _feeAmount),
                                 _heldFees[_i].fee,
-                                _heldFees[_i].feeDiscount,
                                 _heldFees[_i].beneficiary
                             )
                         );
@@ -1480,36 +1454,5 @@ abstract contract JBPayoutRedemptionPaymentTerminal3_1_2 is
         }
 
         emit RefundHeldFees(_projectId, _amount, refundedFees, leftoverAmount, msg.sender);
-    }
-
-    /// @notice Get the fee discount from the fee gauge for the specified project.
-    /// @param _projectId The ID of the project to get a fee discount for.
-    /// @param _feeType The type of fee the discount is being applied to.
-    /// @return feeDiscount The fee discount, which should be interpreted as a percentage out MAX_FEE_DISCOUNT.
-    function _currentFeeDiscount(uint256 _projectId, JBFeeType _feeType)
-        internal
-        view
-        returns (uint256)
-    {
-        // Can't take a fee if the protocol project doesn't have a terminal that accepts the token.
-        if (
-            directory.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, token)
-                == IJBPaymentTerminal(address(0))
-        ) return JBConstants.MAX_FEE_DISCOUNT;
-
-        // Get the fee discount.
-        if (feeGauge != address(0)) {
-            // If the guage reverts, keep the discount at 0.
-            try IJBFeeGauge3_1(feeGauge).currentDiscountFor(_projectId, _feeType) returns (
-                uint256 discount
-            ) {
-                // If the fee discount is greater than the max, we ignore the return value
-                if (discount <= JBConstants.MAX_FEE_DISCOUNT) return discount;
-            } catch {
-                return 0;
-            }
-        }
-
-        return 0;
     }
 }

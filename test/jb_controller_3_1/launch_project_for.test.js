@@ -197,10 +197,14 @@ describe('JBController3_1::launchProjectFor(...)', function () {
       constraints.push({
         terminal,
         token,
-        distributionLimit,
-        distributionLimitCurrency,
-        overflowAllowance,
-        overflowAllowanceCurrency,
+        distributionLimits: [{
+          value: distributionLimit,
+          currency: distributionLimitCurrency
+        }],
+        overflowAllowances: [{
+          value: overflowAllowance,
+          currency: overflowAllowanceCurrency
+        }]
       });
     }
     return constraints;

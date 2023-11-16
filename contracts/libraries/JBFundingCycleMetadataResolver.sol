@@ -175,25 +175,25 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (JBFundingCycleMetadata memory)
     {
-        return JBFundingCycleMetadata({
-            global: global(_fundingCycle),
-            reservedRate: reservedRate(_fundingCycle),
-            redemptionRate: redemptionRate(_fundingCycle),
-            baseCurrency: baseCurrency(_fundingCycle),
-            pausePay: payPaused(_fundingCycle),
-            pauseDistributions: distributionsPaused(_fundingCycle),
-            pauseRedeem: redeemPaused(_fundingCycle),
-            pauseBurn: burnPaused(_fundingCycle),
-            allowMinting: mintingAllowed(_fundingCycle),
-            allowTerminalMigration: terminalMigrationAllowed(_fundingCycle),
-            allowControllerMigration: controllerMigrationAllowed(_fundingCycle),
-            holdFees: shouldHoldFees(_fundingCycle),
-            preferClaimedTokenOverride: preferClaimedTokenOverride(_fundingCycle),
-            useTotalOverflowForRedemptions: useTotalOverflowForRedemptions(_fundingCycle),
-            useDataSourceForPay: useDataSourceForPay(_fundingCycle),
-            useDataSourceForRedeem: useDataSourceForRedeem(_fundingCycle),
-            dataSource: dataSource(_fundingCycle),
-            metadata: metadata(_fundingCycle)
-        });
+        return JBFundingCycleMetadata(
+            global(_fundingCycle),
+            reservedRate(_fundingCycle),
+            redemptionRate(_fundingCycle),
+            baseCurrency(_fundingCycle),
+            payPaused(_fundingCycle),
+            distributionsPaused(_fundingCycle),
+            redeemPaused(_fundingCycle),
+            burnPaused(_fundingCycle),
+            mintingAllowed(_fundingCycle),
+            terminalMigrationAllowed(_fundingCycle),
+            controllerMigrationAllowed(_fundingCycle),
+            shouldHoldFees(_fundingCycle),
+            preferClaimedTokenOverride(_fundingCycle),
+            useTotalOverflowForRedemptions(_fundingCycle),
+            useDataSourceForPay(_fundingCycle),
+            useDataSourceForRedeem(_fundingCycle),
+            dataSource(_fundingCycle),
+            metadata(_fundingCycle)
+        );
     }
 }

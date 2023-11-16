@@ -27,7 +27,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
   let CURRENCY_ETH;
   let ETH_PAYOUT_INDEX;
   let MAX_FEE;
-  let MAX_FEE_DISCOUNT;
 
   before(async function () {
     let jbSplitsGroupsFactory = await ethers.getContractFactory('JBSplitsGroups');
@@ -42,7 +41,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     const jbConstantsFactory = await ethers.getContractFactory('JBConstants');
     const jbConstants = await jbConstantsFactory.deploy();
     MAX_FEE = await jbConstants.MAX_FEE();
-    MAX_FEE_DISCOUNT = await jbConstants.MAX_FEE_DISCOUNT();
   });
 
   async function setup() {
@@ -113,6 +111,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
         mockJbPrices.address,
         mockJBPaymentTerminalStore.address,
         terminalOwner.address,
+        addrs[5].address //random
       );
 
     let fundingCycle = {
@@ -224,14 +223,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
 
     let heldFee = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    let discountedFee = ethers.BigNumber.from(heldFee[0].fee).sub(
-      ethers.BigNumber.from(heldFee[0].fee)
-        .mul(ethers.BigNumber.from(heldFee[0].feeDiscount))
-        .div(MAX_FEE_DISCOUNT),
-    );
-
     let feeNetAmount = ethers.BigNumber.from(heldFee[0].amount).sub(
-      ethers.BigNumber.from(heldFee[0].amount).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
+      ethers.BigNumber.from(heldFee[0].amount).mul(MAX_FEE).div(ethers.BigNumber.from(heldFee[0].fee).add(MAX_FEE)),
     );
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
       .withArgs(PROJECT_ID, AMOUNT.add(feeNetAmount))
@@ -294,14 +287,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
 
     await jbEthPaymentTerminal.connect(terminalOwner).setFeelessAddress(caller.address, true);
 
-    let discountedFee = ethers.BigNumber.from(heldFee[0].fee).sub(
-      ethers.BigNumber.from(heldFee[0].fee)
-        .mul(ethers.BigNumber.from(heldFee[0].feeDiscount))
-        .div(MAX_FEE_DISCOUNT),
-    );
 
     let feeNetAmount = ethers.BigNumber.from(heldFee[0].amount).sub(
-      ethers.BigNumber.from(heldFee[0].amount).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
+      ethers.BigNumber.from(heldFee[0].amount).mul(MAX_FEE).div(ethers.BigNumber.from(heldFee[0].fee).add(MAX_FEE)),
     );
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
       .withArgs(PROJECT_ID, AMOUNT.add(feeNetAmount))
@@ -437,14 +425,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
 
     let heldFee = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    let discountedFee = ethers.BigNumber.from(heldFee[0].fee).sub(
-      ethers.BigNumber.from(heldFee[0].fee)
-        .mul(ethers.BigNumber.from(heldFee[0].feeDiscount))
-        .div(MAX_FEE_DISCOUNT),
-    );
-
     let paidAmount = ethers.BigNumber.from('10500000');
-    let feeNetAmount = paidAmount.mul(discountedFee).div(MAX_FEE);
+    let feeNetAmount = paidAmount.mul(ethers.BigNumber.from(heldFee[0].fee)).div(MAX_FEE);
 
     // Add 1 and refund 1
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
@@ -539,15 +521,9 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
 
     let heldFee = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    // Both held fees are identical:
-    let discountedFee = ethers.BigNumber.from(heldFee[0].fee).sub(
-      ethers.BigNumber.from(heldFee[0].fee)
-        .mul(ethers.BigNumber.from(heldFee[0].feeDiscount))
-        .div(MAX_FEE_DISCOUNT),
-    );
 
     let feeNetAmount = ethers.BigNumber.from(AMOUNT).sub(
-      ethers.BigNumber.from(AMOUNT).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
+      ethers.BigNumber.from(AMOUNT).mul(MAX_FEE).div(ethers.BigNumber.from(heldFee[0].fee).add(MAX_FEE)),
     );
 
     let amountAfterFees = AMOUNT.sub(feeNetAmount).mul(2);
@@ -555,7 +531,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     let paidAmount = amountAfterFees.sub(diff);
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
-      .withArgs(PROJECT_ID, paidAmount.add(paidAmount.mul(discountedFee).div(MAX_FEE)))
+      .withArgs(PROJECT_ID, paidAmount.add(paidAmount.mul(ethers.BigNumber.from(heldFee[0].fee)).div(MAX_FEE)))
       .returns();
 
     expect(
@@ -577,7 +553,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
       .withArgs(
         PROJECT_ID,
         paidAmount,
-        paidAmount.mul(discountedFee).div(MAX_FEE),
+        paidAmount.mul(ethers.BigNumber.from(heldFee[0].fee)).div(MAX_FEE),
         MEMO,
         METADATA,
         caller.address,
@@ -587,14 +563,14 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
       .withArgs(
         PROJECT_ID,
         paidAmount /*amount*/,
-        paidAmount.mul(discountedFee).div(MAX_FEE) /*refund*/,
+        paidAmount.mul(ethers.BigNumber.from(heldFee[0].fee)).div(MAX_FEE) /*refund*/,
         0 /*leftOver*/,
         caller.address,
       );
 
     let heldFeeAfter = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    expect(heldFeeAfter[0].amount).to.equal(diff.add(diff.mul(discountedFee).div(MAX_FEE)));
+    expect(heldFeeAfter[0].amount).to.equal(diff.add(diff.mul(ethers.BigNumber.from(heldFee[0].fee)).div(MAX_FEE)));
   });
 
   it('Should add to the project balance, refund one out of multiple held fees bigger than the amount, keep the held fee difference and emit event', async function () {
@@ -658,18 +634,11 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
 
     let heldFee = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    // Both held fees are identical:
-    let discountedFee = ethers.BigNumber.from(heldFee[0].fee).sub(
-      ethers.BigNumber.from(heldFee[0].fee)
-        .mul(ethers.BigNumber.from(heldFee[0].feeDiscount))
-        .div(MAX_FEE_DISCOUNT),
-    );
-
     // Adding amount/4 to balance while there are 2 fee held on 'amount'
     const amountToAdd = AMOUNT.div(2);
 
     // fee from one distribute
-    let feeNetAmount = ethers.BigNumber.from(amountToAdd).mul(discountedFee).div(MAX_FEE);
+    let feeNetAmount = ethers.BigNumber.from(amountToAdd).mul(ethers.BigNumber.from(heldFee[0].fee)).div(MAX_FEE);
 
     await mockJBPaymentTerminalStore.mock.recordAddedBalanceFor
       .withArgs(PROJECT_ID, amountToAdd.add(feeNetAmount))
@@ -742,14 +711,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::addToBalanceOf(...)', function
     // Only one held fee
     let heldFeeBefore = await jbEthPaymentTerminal.heldFeesOf(PROJECT_ID);
 
-    let discountedFee = ethers.BigNumber.from(heldFeeBefore[0].fee).sub(
-      ethers.BigNumber.from(heldFeeBefore[0].fee)
-        .mul(ethers.BigNumber.from(heldFeeBefore[0].feeDiscount))
-        .div(MAX_FEE_DISCOUNT),
-    );
-
     let netHeldFee = ethers.BigNumber.from(heldFeeBefore[0].amount).sub(
-      ethers.BigNumber.from(heldFeeBefore[0].amount).mul(MAX_FEE).div(discountedFee.add(MAX_FEE)),
+      ethers.BigNumber.from(heldFeeBefore[0].amount).mul(MAX_FEE).div(ethers.BigNumber.from(heldFeeBefore[0].fee).add(MAX_FEE)),
     );
 
     // both total amount and refund fee are added

@@ -100,6 +100,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::migrate(...)', function () {
         mockJbPrices.address,
         mockJBPaymentTerminalStore.address,
         terminalOwner.address,
+        addrs[5].address
       );
 
     await mockJbOperatorStore.mock.hasPermission

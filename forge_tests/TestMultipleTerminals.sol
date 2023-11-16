@@ -11,7 +11,6 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
     JBFundingCycleData _data;
     JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] _groupedSplits;
-    JBFundAccessConstraints[] _fundAccessConstraints;
     MockPriceFeed _priceFeedJbUsd;
 
     IJBPaymentTerminal[] _terminals;
@@ -86,42 +85,54 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         });
 
         ERC20terminal = new JBERC20PaymentTerminal3_1_2(
-            jbToken(),
-            1, // JBSplitsGroupe
-            jbOperatorStore(),
-            jbProjects(),
-            jbDirectory(),
-            jbSplitsStore(),
-            jbPrices(),
-            address(jbPaymentTerminalStore()),
-            multisig()
-        );
+                jbToken(),
+                1, // JBSplitsGroupe
+                jbOperatorStore(),
+                jbProjects(),
+                jbDirectory(),
+                jbSplitsStore(),
+                jbPrices(),
+                address(jbPaymentTerminalStore()),
+                multisig(),
+                permit2()
+            );
 
         vm.label(address(ERC20terminal), "JBERC20PaymentTerminalUSD");
 
+        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](2);
+        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+
+        JBCurrencyAmount[] memory _distributionLimits2 = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _overflowAllowances2 = new JBCurrencyAmount[](1);
+
+        _distributionLimits[0] =
+            JBCurrencyAmount({value: 10 * 10 ** 18, currency: jbLibraries().USD()});
+
+        _overflowAllowances[0] =
+            JBCurrencyAmount({value: 5 * 10 ** 18, currency: jbLibraries().USD()});
+
+        _distributionLimits2[0] =
+            JBCurrencyAmount({value: 10 * 10 ** 18, currency: jbLibraries().ETH()});
+
+        _overflowAllowances2[0] =
+            JBCurrencyAmount({value: 5 * 10 ** 18, currency: jbLibraries().ETH()});
+
         ETHterminal = jbETHPaymentTerminal();
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: ERC20terminal,
-                token: address(jbToken()),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().USD(),
-                overflowAllowanceCurrency: jbLibraries().USD()
-            })
-        );
+        _fundAccessConstraints[0] = JBFundAccessConstraints({
+            terminal: ERC20terminal,
+            token: address(jbToken()),
+            distributionLimits: _distributionLimits,
+            overflowAllowances: _overflowAllowances
+        });
 
-        _fundAccessConstraints.push(
-            JBFundAccessConstraints({
-                terminal: ETHterminal,
-                token: jbLibraries().ETHToken(),
-                distributionLimit: 10 * 10 ** 18,
-                overflowAllowance: 5 * 10 ** 18,
-                distributionLimitCurrency: jbLibraries().ETH(),
-                overflowAllowanceCurrency: jbLibraries().ETH()
-            })
-        );
+        _fundAccessConstraints[1] = JBFundAccessConstraints({
+            terminal: ETHterminal,
+            token: jbLibraries().ETHToken(),
+            distributionLimits: _distributionLimits2,
+            overflowAllowances: _overflowAllowances2
+        });
 
         _terminals.push(ERC20terminal);
         _terminals.push(ETHterminal);
@@ -146,12 +157,14 @@ contract TestMultipleTerminals_Local is TestBaseWorkflow {
         vm.label(address(_priceFeedJbEth), "MockPrice Feed JB-USD");
 
         jbPrices().addFeedFor(
+            projectId,
             uint256(uint24(uint160(address(jbToken())))), // currency
             jbLibraries().ETH(), // base weight currency
             _priceFeedJbEth
         );
 
         jbPrices().addFeedFor(
+            projectId,
             uint256(uint24(uint160(address(jbToken())))), // currency
             jbLibraries().USD(), // base weight currency
             _priceFeedJbUsd

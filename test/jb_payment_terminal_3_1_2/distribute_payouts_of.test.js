@@ -8,7 +8,6 @@ import jbAllocator from '../../artifacts/contracts/interfaces/IJBSplitAllocator.
 import jbDirectory from '../../artifacts/contracts/JBDirectory.sol/JBDirectory.json';
 import JBETHPaymentTerminal from '../../artifacts/contracts/JBETHPaymentTerminal3_1_2.sol/JBETHPaymentTerminal3_1_2.json';
 import jbPaymentTerminalStore from '../../artifacts/contracts/JBSingleTokenPaymentTerminalStore3_1_1.sol/JBSingleTokenPaymentTerminalStore3_1_1.json';
-import jbFeeGauge from '../../artifacts/contracts/interfaces/IJBFeeGauge3_1.sol/IJBFeeGauge3_1.json';
 import jbOperatoreStore from '../../artifacts/contracts/JBOperatorStore.sol/JBOperatorStore.json';
 import jbProjects from '../../artifacts/contracts/JBProjects.sol/JBProjects.json';
 import jbSplitsStore from '../../artifacts/contracts/JBSplitsStore.sol/JBSplitsStore.json';
@@ -24,7 +23,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
   const AMOUNT_DISTRIBUTED = 1000000000000;
 
   const DEFAULT_FEE = 25000000; // 2.5%
-  const FEE_DISCOUNT = 500000000; // 50%
 
   const CURRENCY = 1;
   const MIN_TOKEN_REQUESTED = 180;
@@ -34,7 +32,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
   let ETH_PAYOUT_INDEX;
   let SPLITS_TOTAL_PERCENT;
   let MAX_FEE;
-  let MAX_FEE_DISCOUNT;
   let AMOUNT_MINUS_FEES;
 
   let fundingCycle;
@@ -53,7 +50,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
 
     ETH_ADDRESS = await jbToken.ETH();
     SPLITS_TOTAL_PERCENT = await jbConstants.SPLITS_TOTAL_PERCENT();
-    MAX_FEE_DISCOUNT = await jbConstants.MAX_FEE_DISCOUNT();
     MAX_FEE = (await jbConstants.MAX_FEE()).toNumber();
 
     let FEE =
@@ -87,7 +83,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       mockJbDirectory,
       mockJbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
-      mockJbFeeGauge,
       mockJbOperatorStore,
       mockJbProjects,
       mockJbSplitsStore,
@@ -98,7 +93,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       deployMockContract(deployer, jbDirectory.abi),
       deployMockContract(deployer, JBETHPaymentTerminal.abi),
       deployMockContract(deployer, jbPaymentTerminalStore.abi),
-      deployMockContract(deployer, jbFeeGauge.abi),
       deployMockContract(deployer, jbOperatoreStore.abi),
       deployMockContract(deployer, jbProjects.abi),
       deployMockContract(deployer, jbSplitsStore.abi),
@@ -143,6 +137,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
         mockJbPrices.address,
         mockJBPaymentTerminalStore.address,
         terminalOwner.address,
+        addrs[5].address //random
       );
 
     await mockJbEthPaymentTerminal.mock.decimals.returns(18);
@@ -199,7 +194,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       mockJbDirectory,
       mockJbEthPaymentTerminal,
       mockJBPaymentTerminalStore,
-      mockJbFeeGauge,
       mockJbProjects,
       mockJbSplitsStore,
       timestamp,
@@ -609,7 +603,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       [
         ethers.BigNumber.from(AMOUNT_DISTRIBUTED),
         DEFAULT_FEE,
-        /*discount*/ 0,
         projectOwner.address,
       ],
     ]);
@@ -1334,362 +1327,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       );
   });
 
-  it('Should distribute payout minus discounted fee if a fee gauge is set', async function () {
-    const {
-      projectOwner,
-      terminalOwner,
-      caller,
-      beneficiaryOne,
-      beneficiaryTwo,
-      jbEthPaymentTerminal,
-      timestamp,
-      mockJbDirectory,
-      mockJbEthPaymentTerminal,
-      mockJbFeeGauge,
-      mockJbSplitsStore,
-    } = await setup();
-
-    const DISCOUNTED_FEE =
-      DEFAULT_FEE - Math.floor((DEFAULT_FEE * FEE_DISCOUNT) / MAX_FEE_DISCOUNT);
-    const AMOUNT_MINUS_FEES = Math.floor(
-      (AMOUNT_DISTRIBUTED * MAX_FEE) / (MAX_FEE + DISCOUNTED_FEE),
-    );
-    const FEE_AMOUNT = AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES;
-
-    const splits = makeSplits({
-      count: 2,
-      beneficiary: [beneficiaryOne.address, beneficiaryTwo.address],
-    });
-
-    await jbEthPaymentTerminal.connect(terminalOwner).setFeeGauge(mockJbFeeGauge.address);
-
-    await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID, 0).returns(FEE_DISCOUNT);
-
-    await mockJbSplitsStore.mock.splitsOf
-      .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
-      .returns(splits);
-
-    await mockJbDirectory.mock.primaryTerminalOf
-      .withArgs(1, ETH_ADDRESS)
-      .returns(mockJbEthPaymentTerminal.address);
-
-    await mockJbEthPaymentTerminal.mock.pay
-      .withArgs(
-        1, //JBX Dao
-        FEE_AMOUNT,
-        ETH_ADDRESS,
-        projectOwner.address,
-        0,
-        false,
-        '',
-        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-      )
-      .returns(0);
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await mockJbEthPaymentTerminal.mock.pay
-          .withArgs(
-            split.projectId, //JBX Dao
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            ETH_ADDRESS,
-            split.beneficiary,
-            0,
-            split.preferClaimed,
-            '',
-            '0x',
-          )
-          .returns(0);
-      }),
-    );
-
-    let tx = await jbEthPaymentTerminal
-      .connect(caller)
-      .distributePayoutsOf(
-        PROJECT_ID,
-        AMOUNT_TO_DISTRIBUTE,
-        CURRENCY,
-        ethers.constants.AddressZero,
-        MIN_TOKEN_REQUESTED,
-        METADATA,
-      );
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await expect(tx)
-          .to.emit(jbEthPaymentTerminal, 'DistributeToPayoutSplit')
-          .withArgs(
-            PROJECT_ID,
-            /*_fundingCycle.configuration*/ timestamp,
-            ETH_PAYOUT_INDEX,
-            [
-              split.preferClaimed,
-              split.preferAddToBalance,
-              split.percent,
-              split.projectId,
-              split.beneficiary,
-              split.lockedUntil,
-              split.allocator,
-            ],
-            /*Amount*/ Math.floor(
-              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-            ),
-            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            caller.address,
-          );
-      }),
-    );
-
-    await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'DistributePayouts')
-      .withArgs(
-        /*_fundingCycle.configuration*/ timestamp,
-        /*_fundingCycle.number*/ 1,
-        PROJECT_ID,
-        projectOwner.address,
-        /*_amount*/ AMOUNT_TO_DISTRIBUTE,
-        /*_distributedAmount*/ AMOUNT_DISTRIBUTED,
-        /*_feeAmount*/ FEE_AMOUNT,
-        /*_leftoverDistributionAmount*/ 0,
-        METADATA,
-        caller.address,
-      );
-  });
-
-  it('Should distribute payout minus non-discounted fee if the fee gauge is faulty', async function () {
-    const {
-      projectOwner,
-      terminalOwner,
-      caller,
-      beneficiaryOne,
-      beneficiaryTwo,
-      jbEthPaymentTerminal,
-      timestamp,
-      mockJbDirectory,
-      mockJbEthPaymentTerminal,
-      mockJbFeeGauge,
-      mockJbSplitsStore,
-    } = await setup();
-
-    const AMOUNT_MINUS_FEES = Math.floor((AMOUNT_DISTRIBUTED * MAX_FEE) / (MAX_FEE + DEFAULT_FEE));
-
-    const splits = makeSplits({
-      count: 2,
-      beneficiary: [beneficiaryOne.address, beneficiaryTwo.address],
-    });
-
-    await jbEthPaymentTerminal.connect(terminalOwner).setFeeGauge(mockJbFeeGauge.address);
-
-    await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID, 0).reverts();
-
-    await mockJbSplitsStore.mock.splitsOf
-      .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
-      .returns(splits);
-
-    await mockJbDirectory.mock.primaryTerminalOf
-      .withArgs(1, ETH_ADDRESS)
-      .returns(mockJbEthPaymentTerminal.address);
-
-    await mockJbEthPaymentTerminal.mock.pay
-      .withArgs(
-        1, //JBX Dao
-        AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES, // 0 if fee is in ETH (as the amount is then in msg.value)
-        ETH_ADDRESS,
-        projectOwner.address,
-        0,
-        false,
-        '',
-        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-      )
-      .returns(0);
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await mockJbEthPaymentTerminal.mock.pay
-          .withArgs(
-            1, //JBX Dao
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            ETH_ADDRESS,
-            split.beneficiary,
-            0,
-            split.preferClaimed,
-            '',
-            '0x',
-          )
-          .returns(0);
-      }),
-    );
-
-    let tx = await jbEthPaymentTerminal
-      .connect(caller)
-      .distributePayoutsOf(
-        PROJECT_ID,
-        AMOUNT_TO_DISTRIBUTE,
-        CURRENCY,
-        ethers.constants.AddressZero,
-        MIN_TOKEN_REQUESTED,
-        METADATA,
-      );
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await expect(tx)
-          .to.emit(jbEthPaymentTerminal, 'DistributeToPayoutSplit')
-          .withArgs(
-            PROJECT_ID,
-            /*_fundingCycle.configuration*/ timestamp,
-            ETH_PAYOUT_INDEX,
-            [
-              split.preferClaimed,
-              split.preferAddToBalance,
-              split.percent,
-              split.projectId,
-              split.beneficiary,
-              split.lockedUntil,
-              split.allocator,
-            ],
-            /*Amount*/ Math.floor(
-              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-            ),
-            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            caller.address,
-          );
-      }),
-    );
-
-    await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'DistributePayouts')
-      .withArgs(
-        /*_fundingCycle.configuration*/ timestamp,
-        /*_fundingCycle.number*/ 1,
-        PROJECT_ID,
-        projectOwner.address,
-        /*_amount*/ AMOUNT_TO_DISTRIBUTE,
-        /*_distributedAmount*/ AMOUNT_DISTRIBUTED,
-        /*_feeAmount*/ AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES,
-        /*_leftoverDistributionAmount*/ 0,
-        METADATA,
-        caller.address,
-      );
-  });
-
-  it('Should distribute payout minus non-discounted fee if the discount is above 100%', async function () {
-    const {
-      projectOwner,
-      terminalOwner,
-      caller,
-      beneficiaryOne,
-      beneficiaryTwo,
-      jbEthPaymentTerminal,
-      timestamp,
-      mockJbDirectory,
-      mockJbEthPaymentTerminal,
-      mockJbFeeGauge,
-      mockJbSplitsStore,
-    } = await setup();
-
-    const AMOUNT_MINUS_FEES = Math.floor((AMOUNT_DISTRIBUTED * MAX_FEE) / (MAX_FEE + DEFAULT_FEE));
-
-    const splits = makeSplits({
-      count: 2,
-      beneficiary: [beneficiaryOne.address, beneficiaryTwo.address],
-    });
-
-    await jbEthPaymentTerminal.connect(terminalOwner).setFeeGauge(mockJbFeeGauge.address);
-
-    await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID, 0).returns(MAX_FEE_DISCOUNT + 1);
-
-    await mockJbSplitsStore.mock.splitsOf
-      .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
-      .returns(splits);
-
-    await mockJbDirectory.mock.primaryTerminalOf
-      .withArgs(1, ETH_ADDRESS)
-      .returns(mockJbEthPaymentTerminal.address);
-
-    await mockJbEthPaymentTerminal.mock.pay
-      .withArgs(
-        1, //JBX Dao
-        AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES, // 0 if fee is in ETH (as the amount is then in msg.value)
-        ETH_ADDRESS,
-        projectOwner.address,
-        0,
-        false,
-        '',
-        ethers.utils.hexZeroPad(ethers.utils.hexlify(PROJECT_ID), 32),
-      )
-      .returns(0);
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await mockJbEthPaymentTerminal.mock.pay
-          .withArgs(
-            1, //JBX Dao
-            /*payoutAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            ETH_ADDRESS,
-            split.beneficiary,
-            0,
-            split.preferClaimed,
-            '',
-            '0x',
-          )
-          .returns(0);
-      }),
-    );
-
-    let tx = await jbEthPaymentTerminal
-      .connect(caller)
-      .distributePayoutsOf(
-        PROJECT_ID,
-        AMOUNT_TO_DISTRIBUTE,
-        CURRENCY,
-        ethers.constants.AddressZero,
-        MIN_TOKEN_REQUESTED,
-        METADATA,
-      );
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await expect(tx)
-          .to.emit(jbEthPaymentTerminal, 'DistributeToPayoutSplit')
-          .withArgs(
-            PROJECT_ID,
-            /*_fundingCycle.configuration*/ timestamp,
-            ETH_PAYOUT_INDEX,
-            [
-              split.preferClaimed,
-              split.preferAddToBalance,
-              split.percent,
-              split.projectId,
-              split.beneficiary,
-              split.lockedUntil,
-              split.allocator,
-            ],
-            /*Amount*/ Math.floor(
-              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-            ),
-            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            caller.address,
-          );
-      }),
-    );
-
-    await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'DistributePayouts')
-      .withArgs(
-        /*_fundingCycle.configuration*/ timestamp,
-        /*_fundingCycle.number*/ 1,
-        PROJECT_ID,
-        projectOwner.address,
-        /*_amount*/ AMOUNT_TO_DISTRIBUTE,
-        /*_distributedAmount*/ AMOUNT_DISTRIBUTED,
-        /*_feeAmount*/ AMOUNT_DISTRIBUTED - AMOUNT_MINUS_FEES,
-        /*_leftoverDistributionAmount*/ 0,
-        METADATA,
-        caller.address,
-      );
-  });
-
   it('Should distribute payout and use the allocator if set in splits', async function () {
     const {
       projectOwner,
@@ -1778,122 +1415,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       );
   });
 
-  it('Should distribute payout and use the allocator if set in splits, using a fee discount', async function () {
-    const {
-      projectOwner,
-      terminalOwner,
-      caller,
-      jbEthPaymentTerminal,
-      timestamp,
-      mockJbAllocator,
-      mockJbFeeGauge,
-      mockJBPaymentTerminalStore,
-      mockJbSplitsStore,
-    } = await setup();
-
-    const DISCOUNTED_FEE =
-      DEFAULT_FEE - Math.floor((DEFAULT_FEE * FEE_DISCOUNT) / MAX_FEE_DISCOUNT);
-
-    const FEE_AMOUNT =
-      AMOUNT_DISTRIBUTED - Math.floor((AMOUNT_DISTRIBUTED * MAX_FEE) / (DISCOUNTED_FEE + MAX_FEE));
-
-    const AMOUNT_MINUS_FEES = AMOUNT_DISTRIBUTED - FEE_AMOUNT;
-
-    const splits = makeSplits({ count: 1, allocator: mockJbAllocator.address });
-
-    fundingCycle = {
-      number: 1,
-      configuration: timestamp,
-      basedOn: timestamp,
-      start: timestamp,
-      duration: 0,
-      weight: 0,
-      discountRate: 0,
-      ballot: ethers.constants.AddressZero,
-      metadata: packFundingCycleMetadata({ holdFees: true }),
-    };
-
-    await mockJBPaymentTerminalStore.mock.recordDistributionFor
-      .withArgs(PROJECT_ID, AMOUNT_TO_DISTRIBUTE, CURRENCY)
-      .returns(fundingCycle, AMOUNT_DISTRIBUTED);
-
-    await jbEthPaymentTerminal.connect(terminalOwner).setFeeGauge(mockJbFeeGauge.address);
-
-    await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID, 0).returns(FEE_DISCOUNT);
-
-    await mockJbSplitsStore.mock.splitsOf
-      .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
-      .returns(splits);
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await mockJbAllocator.mock.allocate
-          .withArgs({
-            // JBSplitAllocationData
-            token: ETH_ADDRESS,
-            amount: AMOUNT_MINUS_FEES, // One split
-            decimals: 18,
-            projectId: PROJECT_ID,
-            group: ETH_PAYOUT_INDEX,
-            split,
-          })
-          .returns();
-      }),
-    );
-
-    let tx = await jbEthPaymentTerminal
-      .connect(caller)
-      .distributePayoutsOf(
-        PROJECT_ID,
-        AMOUNT_TO_DISTRIBUTE,
-        CURRENCY,
-        ethers.constants.AddressZero,
-        MIN_TOKEN_REQUESTED,
-        METADATA,
-      );
-
-    await Promise.all(
-      splits.map(async (split) => {
-        await expect(tx)
-          .to.emit(jbEthPaymentTerminal, 'DistributeToPayoutSplit')
-          .withArgs(
-            PROJECT_ID,
-            /*_fundingCycle.configuration*/ timestamp,
-            ETH_PAYOUT_INDEX,
-            [
-              split.preferClaimed,
-              split.preferAddToBalance,
-              split.percent,
-              split.projectId,
-              split.beneficiary,
-              split.lockedUntil,
-              split.allocator,
-            ],
-            /*Amount*/ Math.floor(
-              (AMOUNT_DISTRIBUTED * split.percent) / SPLITS_TOTAL_PERCENT,
-            ),
-            /*NetAmount*/ Math.floor((AMOUNT_MINUS_FEES * split.percent) / SPLITS_TOTAL_PERCENT),
-            caller.address,
-          );
-      }),
-    );
-
-    await expect(tx)
-      .to.emit(jbEthPaymentTerminal, 'DistributePayouts')
-      .withArgs(
-        /*_fundingCycle.configuration*/ timestamp,
-        /*_fundingCycle.number*/ 1,
-        PROJECT_ID,
-        projectOwner.address,
-        /*_amount*/ AMOUNT_TO_DISTRIBUTE,
-        /*_distributedAmount*/ AMOUNT_DISTRIBUTED,
-        /*_feeAmount*/ FEE_AMOUNT,
-        /*_leftoverDistributionAmount*/ 0,
-        METADATA,
-        caller.address,
-      );
-  });
-
   it('Should distribute payout and use the allocator if set in splits without fee if the allocator is feeless', async function () {
     const {
       projectOwner,
@@ -1902,7 +1423,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       jbEthPaymentTerminal,
       timestamp,
       mockJbAllocator,
-      mockJbFeeGauge,
       mockJBPaymentTerminalStore,
       mockJbSplitsStore,
     } = await setup();
@@ -1928,8 +1448,6 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
     await jbEthPaymentTerminal
       .connect(terminalOwner)
       .setFeelessAddress(mockJbAllocator.address, true);
-
-    //await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID).returns(FEE_DISCOUNT);
 
     await mockJbSplitsStore.mock.splitsOf
       .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
@@ -2011,6 +1529,8 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       timestamp,
       mockJbAllocator,
       mockJbSplitsStore,
+      mockJbEthPaymentTerminal,
+      mockJbDirectory,
       fakeToken,
     } = await setup();
     const splits = makeSplits({ count: 2, allocator: mockJbAllocator.address });
@@ -2020,6 +1540,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
     await mockJbSplitsStore.mock.splitsOf
       .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)
       .returns(splits);
+
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, fakeToken.address)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await Promise.all(
       splits.map(async (split) => {
@@ -2279,7 +1803,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       );
   });
 
-  it('Should distribute payout using a fee discount and use the terminal of the project if project id is set in splits', async function () {
+  it('Should distribute payout using the terminal of the project if project id is set in splits', async function () {
     const {
       projectOwner,
       terminalOwner,
@@ -2288,21 +1812,14 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       timestamp,
       mockJbDirectory,
       mockJbEthPaymentTerminal,
-      mockJbFeeGauge,
       mockJbSplitsStore,
       mockJBPaymentTerminalStore,
     } = await setup();
-    const DISCOUNTED_FEE =
-      DEFAULT_FEE - Math.floor((DEFAULT_FEE * FEE_DISCOUNT) / MAX_FEE_DISCOUNT);
 
     const FEE_AMOUNT =
-      AMOUNT_DISTRIBUTED - Math.floor((AMOUNT_DISTRIBUTED * MAX_FEE) / (DISCOUNTED_FEE + MAX_FEE));
+      AMOUNT_DISTRIBUTED - Math.floor((AMOUNT_DISTRIBUTED * MAX_FEE) / (DEFAULT_FEE + MAX_FEE));
 
     const AMOUNT_MINUS_FEES = AMOUNT_DISTRIBUTED - FEE_AMOUNT;
-
-    await jbEthPaymentTerminal.connect(terminalOwner).setFeeGauge(mockJbFeeGauge.address);
-
-    await mockJbFeeGauge.mock.currentDiscountFor.withArgs(PROJECT_ID, 0).returns(FEE_DISCOUNT);
 
     const splits = makeSplits({ count: 1, projectId: OTHER_PROJECT_ID, preferAddToBalance: true });
 
@@ -3068,6 +2585,7 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
       timestamp,
       mockJbDirectory,
       mockJBPaymentTerminalStore,
+      mockJbEthPaymentTerminal,
       mockJbSplitsStore,
     } = await setup();
     const splits = makeSplits({
@@ -3076,6 +2594,10 @@ describe('JBPayoutRedemptionPaymentTerminal3_1_2::distributePayoutsOf(...)', fun
     });
 
     await jbErc20PaymentTerminal.connect(terminalOwner).setFee(0);
+
+    await mockJbDirectory.mock.primaryTerminalOf
+      .withArgs(1, fakeToken.address)
+      .returns(mockJbEthPaymentTerminal.address);
 
     await mockJbSplitsStore.mock.splitsOf
       .withArgs(PROJECT_ID, timestamp, ETH_PAYOUT_INDEX)

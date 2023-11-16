@@ -38,6 +38,7 @@ interface IJBTokenStore {
         uint256 indexed projectId,
         uint256 initialUnclaimedBalance,
         uint256 amount,
+        address beneficiary,
         address caller
     );
 
@@ -52,6 +53,8 @@ interface IJBTokenStore {
     );
 
     function tokenOf(uint256 projectId) external view returns (IJBToken);
+
+    function projectIdOf(IJBToken token) external view returns (uint256);
 
     function projects() external view returns (IJBProjects);
 
@@ -80,7 +83,8 @@ interface IJBTokenStore {
     function mintFor(address holder, uint256 projectId, uint256 amount, bool preferClaimedTokens)
         external;
 
-    function claimFor(address holder, uint256 projectId, uint256 amount) external;
+    function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
+        external;
 
     function transferFrom(address holder, uint256 projectId, address recipient, uint256 amount)
         external;
