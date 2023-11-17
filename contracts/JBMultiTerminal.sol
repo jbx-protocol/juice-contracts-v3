@@ -566,7 +566,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         bool _quoteExists;
         bytes memory _parsedMetadata;
 
-        // Unpack the quote from the pool, given by the frontend.
+        // Unpack the allowance to use, if any, given by the frontend.
         (_quoteExists, _parsedMetadata) =
             JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
         if (_quoteExists) {
