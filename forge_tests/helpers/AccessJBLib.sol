@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
-import {JBTokens} from "@juicebox/libraries/JBTokens.sol";
+import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 
 contract AccessJBLib {
@@ -16,7 +16,7 @@ contract AccessJBLib {
     }
 
     function ETHToken() external pure returns (address) {
-        return JBTokens.ETH;
+        return JBTokenList.ETH;
     }
 
     function MAX_FEE() external pure returns (uint256) {
