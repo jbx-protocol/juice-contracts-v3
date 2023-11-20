@@ -107,7 +107,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
             // If the terminal accepts the specified token, return it.
             if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0)) {
-                return IJBPaymentTerminal(address(_terminal));
+                return _terminal;
             }
 
             unchecked {
