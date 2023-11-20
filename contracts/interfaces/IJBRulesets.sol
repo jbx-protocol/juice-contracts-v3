@@ -38,7 +38,10 @@ interface IJBRulesets {
 
     function currentOf(uint256 projectId) external view returns (JBRuleset memory ruleset);
 
-    function currentApprovalStatusOf(uint256 projectId) external view returns (JBApprovalStatus);
+    function currentApprovalStatusForLatestRulesetOf(uint256 projectId)
+        external
+        view
+        returns (JBApprovalStatus);
 
     function queueFor(
         uint256 projectId,
