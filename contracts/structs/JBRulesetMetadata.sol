@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBGlobalRulesetMetadata} from './JBGlobalRulesetMetadata.sol';
+import {JBGlobalRulesetMetadata} from "./JBGlobalRulesetMetadata.sol";
 
 /// @custom:member global Data used globally in non-migratable ecosystem contracts.
 /// @custom:member reservedRate The reserved rate of the ruleset. This number is a percentage calculated out of `JBConstants.MAX_RESERVED_RATE`.
@@ -18,18 +18,18 @@ import {JBGlobalRulesetMetadata} from './JBGlobalRulesetMetadata.sol';
 /// @custom:member dataSource The data source to use during this ruleset.
 /// @custom:member metadata Metadata of the metadata, up to uint8 in size.
 struct JBRulesetMetadata {
-  JBGlobalRulesetMetadata global;
-  uint256 reservedRate;
-  uint256 redemptionRate;
-  uint256 baseCurrency;
-  bool pausePay;
-  bool allowMinting;
-  bool allowTerminalMigration;
-  bool allowControllerMigration;
-  bool holdFees;
-  bool useTotalOverflowForRedemptions;
-  bool useDataSourceForPay;
-  bool useDataSourceForRedeem;
-  address dataSource;
-  uint256 metadata;
+    JBGlobalRulesetMetadata global;
+    uint256 reservedRate;
+    uint256 redemptionRate;
+    uint256 baseCurrency;
+    bool pausePay;
+    bool allowMinting;
+    bool allowTerminalMigration;
+    bool allowControllerMigration;
+    bool holdFees;
+    bool useTotalOverflowForRedemptions;
+    bool useDataSourceForPay;
+    bool useDataSourceForRedeem;
+    address dataSource;
+    uint256 metadata;
 }

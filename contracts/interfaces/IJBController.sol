@@ -19,26 +19,11 @@ import {IJBSplitsStore} from "./IJBSplitsStore.sol";
 import {IJBTokens} from "./IJBTokens.sol";
 
 interface IJBController is IERC165 {
-    event LaunchProject(
-        uint256 rulesetId,
-        uint256 projectId,
-        string memo,
-        address caller
-    );
+    event LaunchProject(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
-    event LaunchRulesets(
-        uint256 rulesetId,
-        uint256 projectId,
-        string memo,
-        address caller
-    );
+    event LaunchRulesets(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
-    event QueueRulesets(
-        uint256 rulesetId,
-        uint256 projectId,
-        string memo,
-        address caller
-    );
+    event QueueRulesets(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
     event DistributeReservedTokens(
         uint256 indexed rulesetId,
@@ -80,11 +65,7 @@ interface IJBController is IERC165 {
 
     event Migrate(uint256 indexed projectId, IJBMigratable to, address caller);
 
-    event PrepMigration(
-        uint256 indexed projectId,
-        address from,
-        address caller
-    );
+    event PrepMigration(uint256 indexed projectId, address from, address caller);
 
     function projects() external view returns (IJBProjects);
 
@@ -94,62 +75,33 @@ interface IJBController is IERC165 {
 
     function splitsStore() external view returns (IJBSplitsStore);
 
-    function fundAccessConstraintsStore()
-        external
-        view
-        returns (IJBFundAccessConstraintsStore);
+    function fundAccessConstraintsStore() external view returns (IJBFundAccessConstraintsStore);
 
     function directory() external view returns (IJBDirectory);
 
-    function reservedTokenBalanceOf(
-        uint256 projectId
-    ) external view returns (uint256);
+    function reservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
 
-    function totalOutstandingTokensOf(
-        uint256 projectId
-    ) external view returns (uint256);
+    function totalOutstandingTokensOf(uint256 projectId) external view returns (uint256);
 
-    function getRulesetOf(
-        uint256 projectId,
-        uint256 rulesetId
-    )
+    function getRulesetOf(uint256 projectId, uint256 rulesetId)
         external
         view
-        returns (
-            JBRuleset memory ruleset,
-            JBRulesetMetadata memory metadata
-        );
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata);
 
-    function latestQueuedRulesetOf(
-        uint256 projectId
-    )
+    function latestQueuedRulesetOf(uint256 projectId)
         external
         view
-        returns (
-            JBRuleset memory,
-            JBRulesetMetadata memory metadata,
-            JBApprovalStatus
-        );
+        returns (JBRuleset memory, JBRulesetMetadata memory metadata, JBApprovalStatus);
 
-    function currentRulesetOf(
-        uint256 projectId
-    )
+    function currentRulesetOf(uint256 projectId)
         external
         view
-        returns (
-            JBRuleset memory ruleset,
-            JBRulesetMetadata memory metadata
-        );
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata);
 
-    function queuedRulesetOf(
-        uint256 projectId
-    )
+    function queuedRulesetOf(uint256 projectId)
         external
         view
-        returns (
-            JBRuleset memory ruleset,
-            JBRulesetMetadata memory metadata
-        );
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata);
 
     function launchProjectFor(
         address owner,
@@ -187,10 +139,9 @@ interface IJBController is IERC165 {
         string calldata memo
     ) external;
 
-    function distributeReservedTokensOf(
-        uint256 projectId,
-        string memory memo
-    ) external returns (uint256);
+    function distributeReservedTokensOf(uint256 projectId, string memory memo)
+        external
+        returns (uint256);
 
     function migrate(uint256 projectId, IJBMigratable to) external;
 }

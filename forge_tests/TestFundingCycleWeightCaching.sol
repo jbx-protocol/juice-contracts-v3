@@ -2,19 +2,19 @@
 pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
-import {MockPriceFeed} from './mock/MockPriceFeed.sol';
+import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 // A ruleset's weight can be cached to make larger intervals tractible under the gas limit.
 contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
     uint256 private constant _GAS_LIMIT = 30_000_000;
-    uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED 
+    uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED
     uint256 private constant _DURATION = 1;
     uint256 private constant _DECAY_RATE = 1;
-    
+
     IJBController private _controller;
     IJBRulesets private _rulesets;
     address private _projectOwner;
-    
+
     JBRulesetData private _data;
     JBRulesetMetadata private _metadata;
 
@@ -52,7 +52,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
             metadata: 0
         });
     }
-    
+
     /// Test that caching a ruleset's weight yields the same result as computing it.
     function testWeightCaching(uint256 _rulesetDiff) public {
         // TODO temporarily removed for faster test suite

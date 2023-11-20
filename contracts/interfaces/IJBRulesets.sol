@@ -16,38 +16,29 @@ interface IJBRulesets {
     );
 
     event RulesetInitialized(
-        uint256 indexed rulesetId,
-        uint256 indexed projectId,
-        uint256 indexed basedOn
+        uint256 indexed rulesetId, uint256 indexed projectId, uint256 indexed basedOn
     );
 
-    function latestRulesetIdOf(
-        uint256 projectId
-    ) external view returns (uint256);
+    function latestRulesetIdOf(uint256 projectId) external view returns (uint256);
 
-    function getRulesetStruct(
-        uint256 projectId,
-        uint256 rulesetId
-    ) external view returns (JBRuleset memory);
+    function getRulesetStruct(uint256 projectId, uint256 rulesetId)
+        external
+        view
+        returns (JBRuleset memory);
 
-    function latestQueuedOf(
-        uint256 projectId
-    )
+    function latestQueuedOf(uint256 projectId)
         external
         view
         returns (JBRuleset memory ruleset, JBApprovalStatus approvalStatus);
 
-    function upcomingRulesetOf(
-        uint256 projectId
-    ) external view returns (JBRuleset memory ruleset);
+    function upcomingRulesetOf(uint256 projectId)
+        external
+        view
+        returns (JBRuleset memory ruleset);
 
-    function currentOf(
-        uint256 projectId
-    ) external view returns (JBRuleset memory ruleset);
+    function currentOf(uint256 projectId) external view returns (JBRuleset memory ruleset);
 
-    function currentApprovalStatusOf(
-        uint256 projectId
-    ) external view returns (JBApprovalStatus);
+    function currentApprovalStatusOf(uint256 projectId) external view returns (JBApprovalStatus);
 
     function queueFor(
         uint256 projectId,

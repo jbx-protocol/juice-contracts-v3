@@ -40,11 +40,7 @@ interface IJBTokens {
         address caller
     );
 
-    event SetToken(
-        uint256 indexed projectId,
-        IJBERC20Token indexed newToken,
-        address caller
-    );
+    event SetToken(uint256 indexed projectId, IJBERC20Token indexed newToken, address caller);
 
     event TransferCredits(
         address indexed holder,
@@ -62,48 +58,29 @@ interface IJBTokens {
 
     function rulesets() external view returns (IJBRulesets);
 
-    function creditBalanceOf(
-        address holder,
-        uint256 projectId
-    ) external view returns (uint256);
+    function creditBalanceOf(address holder, uint256 projectId) external view returns (uint256);
 
-    function totalCreditSupplyOf(
-        uint256 projectId
-    ) external view returns (uint256);
+    function totalCreditSupplyOf(uint256 projectId) external view returns (uint256);
 
     function totalSupplyOf(uint256 projectId) external view returns (uint256);
 
-    function totalBalanceOf(
-        address holder,
-        uint256 projectId
-    ) external view returns (uint256 result);
+    function totalBalanceOf(address holder, uint256 projectId)
+        external
+        view
+        returns (uint256 result);
 
-    function deployERC20TokenFor(
-        uint256 projectId,
-        string calldata name,
-        string calldata symbol
-    ) external returns (IJBERC20Token token);
+    function deployERC20TokenFor(uint256 projectId, string calldata name, string calldata symbol)
+        external
+        returns (IJBERC20Token token);
 
     function setTokenFor(uint256 projectId, IJBERC20Token token) external;
 
-    function burnFrom(
-        address holder,
-        uint256 projectId,
-        uint256 amount
-    ) external;
+    function burnFrom(address holder, uint256 projectId, uint256 amount) external;
 
-    function mintFor(
-        address holder,
-        uint256 projectId,
-        uint256 amount
-    ) external;
+    function mintFor(address holder, uint256 projectId, uint256 amount) external;
 
-    function claimTokensFor(
-        address holder,
-        uint256 projectId,
-        uint256 amount,
-        address beneficiary
-    ) external;
+    function claimTokensFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
+        external;
 
     function transferCreditsFrom(
         address holder,

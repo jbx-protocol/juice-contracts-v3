@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from './../interfaces/IJBPaymentTerminal.sol';
-import {JBTokenAmount} from './JBTokenAmount.sol';
+import {IJBPaymentTerminal} from "./../interfaces/IJBPaymentTerminal.sol";
+import {JBTokenAmount} from "./JBTokenAmount.sol";
 
 /// @custom:member terminal The terminal that is facilitating the redemption.
 /// @custom:member holder The holder of the tokens being redeemed.
@@ -16,15 +16,15 @@ import {JBTokenAmount} from './JBTokenAmount.sol';
 /// @custom:member redemptionRate The redemption rate of the ruleset during which the redemption is being made.
 /// @custom:member metadata Extra data provided by the redeemer.
 struct JBRedeemParamsData {
-  IJBPaymentTerminal terminal;
-  address holder;
-  uint256 projectId;
-  uint256 currentRulesetId;
-  uint256 tokenCount;
-  uint256 totalSupply;
-  uint256 overflow;
-  JBTokenAmount reclaimAmount;
-  bool useTotalOverflow;
-  uint256 redemptionRate;
-  bytes metadata;
+    IJBPaymentTerminal terminal;
+    address holder;
+    uint256 projectId;
+    uint256 currentRulesetId;
+    uint256 tokenCount;
+    uint256 totalSupply;
+    uint256 overflow;
+    JBTokenAmount reclaimAmount;
+    bool useTotalOverflow;
+    uint256 redemptionRate;
+    bytes metadata;
 }

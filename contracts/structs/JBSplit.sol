@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
+import {IJBSplitAllocator} from "./../interfaces/IJBSplitAllocator.sol";
 
 /// @custom:member preferAddToBalance A flag indicating if a distribution to a project should prefer triggering it's addToBalance function instead of its pay function.
 /// @custom:member percent The percent of the whole group that this split occupies. This number is out of `JBConstants.SPLITS_TOTAL_PERCENT`.
@@ -10,10 +10,10 @@ import {IJBSplitAllocator} from './../interfaces/IJBSplitAllocator.sol';
 /// @custom:member lockedUntil Specifies if the split should be unchangeable until the specified time, with the exception of extending the locked period.
 /// @custom:member allocator If an allocator is specified, funds will be sent to the allocator contract along with all properties of this split.
 struct JBSplit {
-  bool preferAddToBalance;
-  uint256 percent;
-  uint256 projectId;
-  address payable beneficiary;
-  uint256 lockedUntil;
-  IJBSplitAllocator allocator;
+    bool preferAddToBalance;
+    uint256 percent;
+    uint256 projectId;
+    address payable beneficiary;
+    uint256 lockedUntil;
+    IJBSplitAllocator allocator;
 }

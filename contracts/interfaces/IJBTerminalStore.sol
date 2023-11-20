@@ -18,11 +18,10 @@ interface IJBTerminalStore {
 
     function PRICES() external view returns (IJBPrices);
 
-    function balanceOf(
-        IJBPaymentTerminal terminal,
-        uint256 projectId,
-        address token
-    ) external view returns (uint256);
+    function balanceOf(IJBPaymentTerminal terminal, uint256 projectId, address token)
+        external
+        view
+        returns (uint256);
 
     function usedDistributionLimitOf(
         IJBPaymentTerminal terminal,
@@ -48,11 +47,10 @@ interface IJBTerminalStore {
         uint256 currency
     ) external view returns (uint256);
 
-    function currentTotalOverflowOf(
-        uint256 projectId,
-        uint256 decimals,
-        uint256 currency
-    ) external view returns (uint256);
+    function currentTotalOverflowOf(uint256 projectId, uint256 decimals, uint256 currency)
+        external
+        view
+        returns (uint256);
 
     function currentReclaimableOverflowOf(
         IJBPaymentTerminal terminal,
@@ -105,27 +103,16 @@ interface IJBTerminalStore {
         JBAccountingContext calldata tokenContext,
         uint256 amount,
         uint256 currency
-    )
-        external
-        returns (JBRuleset memory ruleset, uint256 distributedAmount);
+    ) external returns (JBRuleset memory ruleset, uint256 distributedAmount);
 
     function recordUsedAllowanceOf(
         uint256 projectId,
         JBAccountingContext calldata tokenContext,
         uint256 amount,
         uint256 currency
-    )
-        external
-        returns (JBRuleset memory ruleset, uint256 withdrawnAmount);
+    ) external returns (JBRuleset memory ruleset, uint256 withdrawnAmount);
 
-    function recordAddedBalanceFor(
-        uint256 projectId,
-        address token,
-        uint256 amount
-    ) external;
+    function recordAddedBalanceFor(uint256 projectId, address token, uint256 amount) external;
 
-    function recordMigration(
-        uint256 projectId,
-        address token
-    ) external returns (uint256 balance);
+    function recordMigration(uint256 projectId, address token) external returns (uint256 balance);
 }

@@ -67,9 +67,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     IJBSplitsStore public immutable override splitsStore;
 
     /// @notice A contract that stores fund access constraints for each project.
-    IJBFundAccessConstraintsStore
-        public immutable
-        override fundAccessConstraintsStore;
+    IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
 
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override directory;
@@ -89,17 +87,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _projectId The ID of the project to which the ruleset belongs.
     /// @return ruleset The ruleset.
     /// @return metadata The ruleset's metadata.
-    function getRulesetOf(
-        uint256 _projectId,
-        uint256 _rulesetId
-    )
+    function getRulesetOf(uint256 _projectId, uint256 _rulesetId)
         external
         view
         override
-        returns (
-            JBRuleset memory ruleset,
-            JBRulesetMetadata memory metadata
-        )
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
         ruleset = rulesets.getRulesetStruct(_projectId, _rulesetId);
         metadata = ruleset.expandMetadata();
@@ -110,9 +102,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @return ruleset The latest queued ruleset.
     /// @return metadata The latest queued ruleset's metadata.
     /// @return approvalStatus The approval status of the configuration.
-    function latestQueuedRulesetOf(
-        uint256 _projectId
-    )
+    function latestQueuedRulesetOf(uint256 _projectId)
         external
         view
         override
@@ -130,16 +120,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _projectId The ID of the project to which the ruleset belongs.
     /// @return ruleset The current ruleset.
     /// @return metadata The current ruleset's metadata.
-    function currentRulesetOf(
-        uint256 _projectId
-    )
+    function currentRulesetOf(uint256 _projectId)
         external
         view
         override
-        returns (
-            JBRuleset memory ruleset,
-            JBRulesetMetadata memory metadata
-        )
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
         ruleset = rulesets.currentOf(_projectId);
         metadata = ruleset.expandMetadata();
@@ -149,16 +134,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _projectId The ID of the project to which the ruleset belongs.
     /// @return ruleset The queued ruleset.
     /// @return metadata The queued ruleset's metadata.
-    function queuedRulesetOf(
-        uint256 _projectId
-    )
+    function queuedRulesetOf(uint256 _projectId)
         external
         view
         override
-        returns (
-            JBRuleset memory ruleset,
-            JBRulesetMetadata memory metadata
-        )
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
         ruleset = rulesets.upcomingRulesetOf(_projectId);
         metadata = ruleset.expandMetadata();
@@ -171,27 +151,25 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @notice Gets the current total amount of outstanding tokens for a project.
     /// @param _projectId The ID of the project to get total outstanding tokens of.
     /// @return The current total amount of outstanding tokens for the project.
-    function totalOutstandingTokensOf(
-        uint256 _projectId
-    ) public view override returns (uint256) {
+    function totalOutstandingTokensOf(uint256 _projectId) public view override returns (uint256) {
         // Add the reserved tokens to the total supply.
-        return
-            tokenStore.totalSupplyOf(_projectId) +
-            reservedTokenBalanceOf[_projectId];
+        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
     }
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param _interfaceId The ID of the interface to check for adherance to.
     /// @return A flag indicating if the provided interface ID is supported.
-    function supportsInterface(
-        bytes4 _interfaceId
-    ) public view virtual override(ERC165, IERC165) returns (bool) {
-        return
-            _interfaceId == type(IJBController).interfaceId ||
-            _interfaceId == type(IJBMigratable).interfaceId ||
-            _interfaceId == type(IJBOperatable).interfaceId ||
-            super.supportsInterface(_interfaceId);
+    function supportsInterface(bytes4 _interfaceId)
+        public
+        view
+        virtual
+        override(ERC165, IERC165)
+        returns (bool)
+    {
+        return _interfaceId == type(IJBController).interfaceId
+            || _interfaceId == type(IJBMigratable).interfaceId
+            || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
     }
 
     //*********************************************************************//
@@ -252,10 +230,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         _directory.setControllerOf(projectId, address(this));
 
         // Queue the first ruleset.
-        uint256 _rulesetId = _queueRulesets(
-            projectId,
-            _rulesetConfigurations
-        );
+        uint256 _rulesetId = _queueRulesets(projectId, _rulesetConfigurations);
 
         // Configure the terminals.
         _configureTerminals(projectId, _terminalConfigurations);
@@ -280,25 +255,19 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.QUEUE_RULESETS
-        )
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.QUEUE_RULESETS)
         returns (uint256 rulesetId)
     {
         // If there is a previous configuration, queueRulesetsOf should be called instead
-        if (rulesets.latestRulesetIdOf(_projectId) > 0)
+        if (rulesets.latestRulesetIdOf(_projectId) > 0) {
             revert RULESET_ALREADY_LAUNCHED();
+        }
 
         // Set this contract as the project's controller in the directory.
         directory.setControllerOf(_projectId, address(this));
 
         // Queue the first ruleset.
-        rulesetId = _queueRulesets(
-            _projectId,
-            _rulesetConfigurations
-        );
+        rulesetId = _queueRulesets(_projectId, _rulesetConfigurations);
 
         // Configure the terminals.
         _configureTerminals(_projectId, _terminalConfigurations);
@@ -320,25 +289,13 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.QUEUE_RULESETS
-        )
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.QUEUE_RULESETS)
         returns (uint256 rulesetId)
     {
         // Queue the next ruleset.
-        rulesetId = _queueRulesets(
-            _projectId,
-            _rulesetConfigurations
-        );
+        rulesetId = _queueRulesets(_projectId, _rulesetConfigurations);
 
-        emit QueueRulesets(
-            rulesetId,
-            _projectId,
-            _memo,
-            msg.sender
-        );
+        emit QueueRulesets(rulesetId, _projectId, _memo, msg.sender);
     }
 
     /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current ruleset configuration.
@@ -366,29 +323,22 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Scoped section prevents stack too deep. `_ruleset` only used within scope.
         {
             // Get a reference to the project's current ruleset.
-            JBRuleset memory _ruleset = rulesets.currentOf(
-                _projectId
-            );
+            JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
             // Minting limited to: project owner, authorized callers, project terminal and current ruleset data source
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
                 JBOperations.MINT_TOKENS,
-                directory.isTerminalOf(
-                    _projectId,
-                    IJBPaymentTerminal(msg.sender)
-                ) || msg.sender == address(_ruleset.dataSource())
+                directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
+                    || msg.sender == address(_ruleset.dataSource())
             );
 
             // If the message sender is not a terminal or a datasource, the current ruleset must allow minting.
             if (
-                !_ruleset.mintingAllowed() &&
-                !directory.isTerminalOf(
-                    _projectId,
-                    IJBPaymentTerminal(msg.sender)
-                ) &&
-                msg.sender != address(_ruleset.dataSource())
+                !_ruleset.mintingAllowed()
+                    && !directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
+                    && msg.sender != address(_ruleset.dataSource())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
 
             // Determine the reserved rate to use.
@@ -408,10 +358,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         }
 
         // Add reserved tokens if needed
-        if (_reservedRate > 0)
-            reservedTokenBalanceOf[_projectId] +=
-                _tokenCount -
-                beneficiaryTokenCount;
+        if (_reservedRate > 0) {
+            reservedTokenBalanceOf[_projectId] += _tokenCount - beneficiaryTokenCount;
+        }
 
         emit MintTokens(
             _beneficiary,
@@ -459,10 +408,12 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _projectId The ID of the project to which the reserved tokens belong.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return The amount of minted reserved tokens.
-    function distributeReservedTokensOf(
-        uint256 _projectId,
-        string calldata _memo
-    ) external virtual override returns (uint256) {
+    function distributeReservedTokensOf(uint256 _projectId, string calldata _memo)
+        external
+        virtual
+        override
+        returns (uint256)
+    {
         return _distributeReservedTokensOf(_projectId, _memo);
     }
 
@@ -470,10 +421,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @dev This controller should not yet be the project's controller.
     /// @param _projectId The ID of the project that will be migrated to this controller.
     /// @param _from The controller being migrated from.
-    function prepForMigrationOf(
-        uint256 _projectId,
-        address _from
-    ) external virtual override {
+    function prepForMigrationOf(uint256 _projectId, address _from) external virtual override {
         _projectId; // Prevents unused var compiler and natspec complaints.
         _from; // Prevents unused var compiler and natspec complaints.
     }
@@ -482,36 +430,32 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @dev Only a project's owner or a designated operator can migrate it.
     /// @param _projectId The ID of the project that will be migrated from this controller.
     /// @param _to The controller to which the project is migrating.
-    function migrate(
-        uint256 _projectId,
-        IJBMigratable _to
-    )
+    function migrate(uint256 _projectId, IJBMigratable _to)
         external
         virtual
         override
-        requirePermission(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.MIGRATE_CONTROLLER
-        )
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.MIGRATE_CONTROLLER)
     {
         // Keep a reference to the directory.
         IJBDirectory _directory = directory;
 
         // This controller must be the project's current controller.
-        if (_directory.controllerOf(_projectId) != address(this))
+        if (_directory.controllerOf(_projectId) != address(this)) {
             revert NOT_CURRENT_CONTROLLER();
+        }
 
         // Get a reference to the project's current ruleset.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Migration must be allowed.
-        if (!_ruleset.controllerMigrationAllowed())
+        if (!_ruleset.controllerMigrationAllowed()) {
             revert MIGRATION_NOT_ALLOWED();
+        }
 
         // All reserved tokens must be minted before migrating.
-        if (reservedTokenBalanceOf[_projectId] != 0)
+        if (reservedTokenBalanceOf[_projectId] != 0) {
             _distributeReservedTokensOf(_projectId, "");
+        }
 
         // Make sure the new controller is prepped for the migration.
         _to.prepForMigrationOf(_projectId, address(this));
@@ -530,10 +474,10 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _projectId The ID of the project to which the reserved tokens belong.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return tokenCount The amount of minted reserved tokens.
-    function _distributeReservedTokensOf(
-        uint256 _projectId,
-        string memory _memo
-    ) internal returns (uint256 tokenCount) {
+    function _distributeReservedTokensOf(uint256 _projectId, string memory _memo)
+        internal
+        returns (uint256 tokenCount)
+    {
         // Keep a reference to the token store.
         IJBTokens _tokenStore = tokenStore;
 
@@ -553,15 +497,13 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         uint256 _leftoverTokenCount = tokenCount == 0
             ? 0
             : _distributeToReservedTokenSplitsOf(
-                _projectId,
-                _ruleset.rulesetId,
-                JBSplitsGroups.RESERVED_TOKENS,
-                tokenCount
+                _projectId, _ruleset.rulesetId, JBSplitsGroups.RESERVED_TOKENS, tokenCount
             );
 
         // Mint any leftover tokens to the project owner.
-        if (_leftoverTokenCount > 0)
+        if (_leftoverTokenCount > 0) {
             _tokenStore.mintFor(_owner, _projectId, _leftoverTokenCount);
+        }
 
         emit DistributeReservedTokens(
             _ruleset.rulesetId,
@@ -594,26 +536,19 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         leftoverAmount = _amount;
 
         // Get a reference to the project's reserved token splits.
-        JBSplit[] memory _splits = splitsStore.splitsOf(
-            _projectId,
-            _domain,
-            _group
-        );
+        JBSplit[] memory _splits = splitsStore.splitsOf(_projectId, _domain, _group);
 
         // Keep a reference to the number of splits being iterated on.
         uint256 _numberOfSplits = _splits.length;
 
         //Transfer between all splits.
-        for (uint256 _i; _i < _numberOfSplits; ) {
+        for (uint256 _i; _i < _numberOfSplits;) {
             // Get a reference to the split being iterated on.
             JBSplit memory _split = _splits[_i];
 
             // The amount to send towards the split.
-            uint256 _tokenCount = PRBMath.mulDiv(
-                _amount,
-                _split.percent,
-                JBConstants.SPLITS_TOTAL_PERCENT
-            );
+            uint256 _tokenCount =
+                PRBMath.mulDiv(_amount, _split.percent, JBConstants.SPLITS_TOTAL_PERCENT);
 
             // Mints tokens for the split if needed.
             if (_tokenCount > 0) {
@@ -624,10 +559,8 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
                     _split.allocator != IJBSplitAllocator(address(0))
                         ? address(_split.allocator)
                         : _split.projectId != 0
-                        ? projects.ownerOf(_split.projectId)
-                        : _split.beneficiary != address(0)
-                        ? _split.beneficiary
-                        : msg.sender,
+                            ? projects.ownerOf(_split.projectId)
+                            : _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
                     _projectId,
                     _tokenCount
                 );
@@ -639,14 +572,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
 
                     // Allocate.
                     _split.allocator.allocate(
-                        JBSplitAllocationData(
-                            _token,
-                            _tokenCount,
-                            18,
-                            _projectId,
-                            _group,
-                            _split
-                        )
+                        JBSplitAllocationData(_token, _tokenCount, 18, _projectId, _group, _split)
                     );
                 }
 
@@ -655,12 +581,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             }
 
             emit DistributeToReservedTokenSplit(
-                _projectId,
-                _domain,
-                _group,
-                _split,
-                _tokenCount,
-                msg.sender
+                _projectId, _domain, _group, _split, _tokenCount, msg.sender
             );
 
             unchecked {
@@ -673,63 +594,55 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _projectId The ID of the project whose rulesets are being queued.
     /// @param _rulesetConfigurations The ruleset configurations to schedule.
     /// @return rulesetId The rulesetId of the ruleset that was successfully queued.
-    function _queueRulesets(
-        uint256 _projectId,
-        JBRulesetConfig[] calldata _rulesetConfigurations
-    ) internal returns (uint256 rulesetId) {
+    function _queueRulesets(uint256 _projectId, JBRulesetConfig[] calldata _rulesetConfigurations)
+        internal
+        returns (uint256 rulesetId)
+    {
         // Keep a reference to the configuration being iterated on.
         JBRulesetConfig memory _rulesetId;
 
         // Keep a reference to the number of configurations being scheduled.
         uint256 _numberOfConfigurations = _rulesetConfigurations.length;
 
-        for (uint256 _i; _i < _numberOfConfigurations; ) {
+        for (uint256 _i; _i < _numberOfConfigurations;) {
             // Get a reference to the rulesetId being iterated on.
             _rulesetId = _rulesetConfigurations[_i];
 
             // Make sure the provided reserved rate is valid.
-            if (
-                _rulesetId.metadata.reservedRate >
-                JBConstants.MAX_RESERVED_RATE
-            ) revert INVALID_RESERVED_RATE();
+            if (_rulesetId.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE) {
+                revert INVALID_RESERVED_RATE();
+            }
 
             // Make sure the provided redemption rate is valid.
-            if (
-                _rulesetId.metadata.redemptionRate >
-                JBConstants.MAX_REDEMPTION_RATE
-            ) revert INVALID_REDEMPTION_RATE();
+            if (_rulesetId.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE) {
+                revert INVALID_REDEMPTION_RATE();
+            }
 
             // Make sure the provided base currency is valid.
-            if (_rulesetId.metadata.baseCurrency > type(uint32).max)
+            if (_rulesetId.metadata.baseCurrency > type(uint32).max) {
                 revert INVALID_BASE_CURRENCY();
+            }
 
             // Queue the ruleset's properties.
             JBRuleset memory _ruleset = rulesets.queueFor(
                 _projectId,
                 _rulesetId.data,
-                JBRulesetMetadataResolver.packRulesetMetadata(
-                    _rulesetId.metadata
-                ),
+                JBRulesetMetadataResolver.packRulesetMetadata(_rulesetId.metadata),
                 _rulesetId.mustStartAtOrAfter
             );
 
             // Set splits for the group.
-            splitsStore.set(
-                _projectId,
-                _ruleset.rulesetId,
-                _rulesetId.groupedSplits
-            );
+            splitsStore.set(_projectId, _ruleset.rulesetId, _rulesetId.groupedSplits);
 
             // Set the funds access constraints.
             fundAccessConstraintsStore.setFor(
-                _projectId,
-                _ruleset.rulesetId,
-                _rulesetId.fundAccessConstraints
+                _projectId, _ruleset.rulesetId, _rulesetId.fundAccessConstraints
             );
 
             // Return the rulesetId timestamp if this is the last configuration being scheduled.
-            if (_i == _numberOfConfigurations - 1)
+            if (_i == _numberOfConfigurations - 1) {
                 rulesetId = _ruleset.rulesetId;
+            }
 
             unchecked {
                 ++_i;
@@ -740,10 +653,9 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @notice Configure terminals for use.
     /// @param _projectId The ID of the project configuring the terminals for use.
     /// @param _terminalConfigs The configurations to enact.
-    function _configureTerminals(
-        uint256 _projectId,
-        JBTerminalConfig[] calldata _terminalConfigs
-    ) internal {
+    function _configureTerminals(uint256 _projectId, JBTerminalConfig[] calldata _terminalConfigs)
+        internal
+    {
         // Keep a reference to the number of terminals being configured.
         uint256 _numberOfTerminalConfigs = _terminalConfigs.length;
 
@@ -755,14 +667,13 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         // Keep a reference to the terminal configuration beingiterated on.
         JBTerminalConfig memory _terminalConfig;
 
-        for (uint256 _i; _i < _numberOfTerminalConfigs; ) {
+        for (uint256 _i; _i < _numberOfTerminalConfigs;) {
             // Set the terminal configuration being iterated on.
             _terminalConfig = _terminalConfigs[_i];
 
             // The the accounting contexts.
             _terminalConfig.terminal.setAccountingContextsFor(
-                _projectId,
-                _terminalConfig.accountingContextConfigs
+                _projectId, _terminalConfig.accountingContextConfigs
             );
 
             // Add the terminal.
@@ -774,7 +685,8 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         }
 
         // Set the terminals in the directory.
-        if (_numberOfTerminalConfigs > 0)
+        if (_numberOfTerminalConfigs > 0) {
             directory.setTerminalsOf(_projectId, _terminals);
+        }
     }
 }

@@ -90,7 +90,7 @@ import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
 contract TestBaseWorkflow is Test, DeployPermit2 {
     // Multisig address used for testing.
     address private _multisig = address(123);
-    address private _beneficiary = address(69420);
+    address private _beneficiary = address(69_420);
     MockERC20 private _usdcToken;
     address private _permit2;
     JBOperatorStore private _jbOperatorStore;
@@ -154,11 +154,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbController;
     }
 
-    function jbAccessConstraintStore()
-        internal
-        view
-        returns (JBFundAccessConstraintsStore)
-    {
+    function jbAccessConstraintStore() internal view returns (JBFundAccessConstraintsStore) {
         return _jbFundAccessConstraintsStore;
     }
 
@@ -166,11 +162,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbTerminalStore;
     }
 
-    function jbPayoutRedemptionTerminal()
-        internal
-        view
-        returns (JBMultiTerminal)
-    {
+    function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
         return _jbMultiTerminal;
     }
 
@@ -218,10 +210,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(
             _jbDirectory
         );
-        vm.label(
-            address(_jbFundAccessConstraintsStore),
-            "JBFundAccessConstraintsStore"
-        );
+        vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
         _jbController = new JBController(
             _jbOperatorStore,
             _jbProjects,
@@ -234,20 +223,14 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         vm.label(address(_jbController), "JBController");
 
         vm.prank(_multisig);
-        _jbDirectory.setIsAllowedToSetFirstController(
-            address(_jbController),
-            true
-        );
+        _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
         _jbTerminalStore = new JBTerminalStore(
             _jbDirectory,
             _jbRulesetStore,
             _jbPrices
         );
-        vm.label(
-            address(_jbTerminalStore),
-            "JBSingleTokenPaymentTerminalStore"
-        );
+        vm.label(address(_jbTerminalStore), "JBSingleTokenPaymentTerminalStore");
 
         vm.prank(_multisig);
         _permit2 = deployPermit2();
@@ -266,57 +249,28 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so
-    function addressFrom(
-        address _origin,
-        uint256 _nonce
-    ) internal pure returns (address _address) {
+    function addressFrom(address _origin, uint256 _nonce)
+        internal
+        pure
+        returns (address _address)
+    {
         bytes memory data;
         if (_nonce == 0x00) {
-            data = abi.encodePacked(
-                bytes1(0xd6),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x80)
-            );
+            data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), _origin, bytes1(0x80));
         } else if (_nonce <= 0x7f) {
-            data = abi.encodePacked(
-                bytes1(0xd6),
-                bytes1(0x94),
-                _origin,
-                uint8(_nonce)
-            );
+            data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), _origin, uint8(_nonce));
         } else if (_nonce <= 0xff) {
-            data = abi.encodePacked(
-                bytes1(0xd7),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x81),
-                uint8(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xd7), bytes1(0x94), _origin, bytes1(0x81), uint8(_nonce));
         } else if (_nonce <= 0xffff) {
-            data = abi.encodePacked(
-                bytes1(0xd8),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x82),
-                uint16(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xd8), bytes1(0x94), _origin, bytes1(0x82), uint16(_nonce));
         } else if (_nonce <= 0xffffff) {
-            data = abi.encodePacked(
-                bytes1(0xd9),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x83),
-                uint24(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xd9), bytes1(0x94), _origin, bytes1(0x83), uint24(_nonce));
         } else {
-            data = abi.encodePacked(
-                bytes1(0xda),
-                bytes1(0x94),
-                _origin,
-                bytes1(0x84),
-                uint32(_nonce)
-            );
+            data =
+                abi.encodePacked(bytes1(0xda), bytes1(0x94), _origin, bytes1(0x84), uint32(_nonce));
         }
         bytes32 hash = keccak256(data);
         assembly {
@@ -325,10 +279,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         }
     }
 
-    function strEqual(
-        string memory a,
-        string memory b
-    ) internal pure returns (bool) {
+    function strEqual(string memory a, string memory b) internal pure returns (bool) {
         return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
     }
 }
