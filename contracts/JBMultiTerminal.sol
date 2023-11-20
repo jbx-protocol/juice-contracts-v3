@@ -93,6 +93,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     mapping(uint256 => JBFee[]) internal _heldFeesOf;
 
     //*********************************************************************//
+    // ------------------------- public constants ------------------------ //
+    //*********************************************************************//
+
+    /// @notice The platform fee percent.
+    uint256 public constant override FEE = 25_000_000; // 2.5%
+
+    //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
@@ -107,9 +114,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
 
     /// @notice The contract that stores and manages the terminal's data.
     IJBTerminalStore public immutable override STORE;
-
-    /// @notice The platform fee percent.
-    uint256 public immutable override FEE = 25_000_000; // 2.5%
 
     /// @notice The permit2 utility.
     IPermit2 public immutable PERMIT2;
@@ -560,7 +564,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         bool _quoteExists;
         bytes memory _parsedMetadata;
 
-        // Unpack the quote from the pool, given by the frontend.
+        // Unpack the allowance to use, if any, given by the frontend.        
         (_quoteExists, _parsedMetadata) =
             JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
         if (_quoteExists) (_allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
@@ -1047,14 +1051,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
 
             // Create the data to send to the allocator.
-            JBSplitAllocationData memory _data = JBSplitAllocationData(
-                _token,
-                netPayoutAmount,
-                _accountingContextForTokenOf[_projectId][_token].decimals,
-                _projectId,
-                uint256(uint160(_token)),
-                _split
-            );
+            JBSplitAllocationData memory _data = JBSplitAllocationData({
+                token: _token,
+                amount: netPayoutAmount,
+                decimals: _accountingContextForTokenOf[_projectId][_token].decimals,
+                projectId: _projectId,
+                group: uint256(uint160(_token)),
+                split: _split
+            });
 
             // Trigger the allocator's `allocate` function.
             bytes memory _reason;
@@ -1229,7 +1233,12 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             _allocation = _allocations[_i];
 
             // Pass the correct token forwardedAmount to the delegate
-            _data.forwardedAmount.value = _allocation.amount;
+            _data.forwardedAmount = JBTokenAmount({
+                value: _allocation.amount,
+                token: _tokenAmount.token,
+                decimals: _tokenAmount.decimals,
+                currency: _tokenAmount.currency
+            });
 
             // Pass the correct metadata from the data source.
             _data.dataSourceMetadata = _allocation.metadata;
@@ -1314,7 +1323,12 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             }
 
             // Set the value of the forwarded amount.
-            _data.forwardedAmount.value = _allocation.amount;
+            _data.forwardedAmount = JBTokenAmount({
+                value: _allocation.amount,
+                token: _beneficiaryTokenAmount.token,
+                decimals: _beneficiaryTokenAmount.decimals,
+                currency: _beneficiaryTokenAmount.currency
+            });
 
             // Pass the correct metadata from the data source.
             _data.dataSourceMetadata = _allocation.metadata;

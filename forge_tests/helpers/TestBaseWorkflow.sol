@@ -62,11 +62,9 @@ import {IJBPayDelegate} from "@juicebox/interfaces/IJBPayDelegate.sol";
 import {IJBRulesetDataSource} from "@juicebox/interfaces/IJBRulesetDataSource.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
-import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
 import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
-import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
 
 import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
 import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
@@ -105,6 +103,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
+    JBMultiTerminal private _jbMultiTerminal2;
 
     function multisig() internal view returns (address) {
         return _multisig;
@@ -164,6 +163,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
         return _jbMultiTerminal;
+    }
+
+    function jbPayoutRedemptionTerminal2() internal view returns (JBMultiTerminal) {
+        return _jbMultiTerminal2;
     }
 
     //*********************************************************************//
@@ -244,8 +247,17 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             IPermit2(_permit2),
             _multisig
         );
-
         vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
+        _jbMultiTerminal2 = new JBMultiTerminal(
+        _jbOperatorStore,
+        _jbProjects,
+        _jbDirectory,
+        _jbSplitsStore,
+        _jbTerminalStore,
+        IPermit2(_permit2),
+        _multisig
+        );
+        vm.label(address(_jbMultiTerminal2), "JBMultiTerminal2");
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so

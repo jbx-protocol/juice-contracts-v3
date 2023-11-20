@@ -77,10 +77,14 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
             return PRBMath.mulDiv(10 ** _decimals, 10 ** _decimals, _feed.currentPrice(_decimals));
         }
 
-        // Check in the 0 project if not found.
-        if (_projectId != 0) {
-            return
-                priceFor({_projectId: 0, _currency: _currency, _base: _base, _decimals: _decimals});
+        // Check in the default project if not found.
+        if (_projectId != DEFAULT_PROJECT_ID) {
+            return priceFor({
+                _projectId: DEFAULT_PROJECT_ID,
+                _currency: _currency,
+                _base: _base,
+                _decimals: _decimals
+            });
         }
 
         // No price feed available, revert.
@@ -114,7 +118,9 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
         external
         override
     {
-        if (msg.sender != owner() || _projectId != 0) {
+        // If the message sender is the owner and the projectId being set is the default, no permissions necessary.
+        // Otherwise, only the project owner or an operator can add a feed for the project.
+        if (msg.sender != owner() || _projectId != DEFAULT_PROJECT_ID) {
             _requirePermission(
                 projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
             );
@@ -125,8 +131,8 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
 
         // Make sure there's no feed stored for the pair as defaults.
         if (
-            feedFor[0][_currency][_base] != IJBPriceFeed(address(0))
-                || feedFor[0][_base][_currency] != IJBPriceFeed(address(0))
+            feedFor[DEFAULT_PROJECT_ID][_currency][_base] != IJBPriceFeed(address(0))
+                || feedFor[DEFAULT_PROJECT_ID][_base][_currency] != IJBPriceFeed(address(0))
         ) {
             revert PRICE_FEED_ALREADY_EXISTS();
         }

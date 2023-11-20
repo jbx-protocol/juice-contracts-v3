@@ -671,7 +671,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             // Set the terminal configuration being iterated on.
             _terminalConfig = _terminalConfigs[_i];
 
-            // The the accounting contexts.
+            // Set the accounting contexts.
             _terminalConfig.terminal.setAccountingContextsFor(
                 _projectId, _terminalConfig.accountingContextConfigs
             );
