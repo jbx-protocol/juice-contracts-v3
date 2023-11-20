@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
-import {IJBTerminal} from "./terminal/IJBTerminal.sol";
+import {IJBPaymentTerminal} from "./terminal/IJBPaymentTerminal.sol";
 import {IJBPaymentTerminal} from "./terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 
@@ -10,15 +10,15 @@ interface IJBDirectory {
     event SetController(uint256 indexed projectId, address indexed controller, address caller);
 
     event AddTerminal(
-        uint256 indexed projectId, IJBTerminal indexed terminal, address caller
+        uint256 indexed projectId, IJBPaymentTerminal indexed terminal, address caller
     );
 
-    event SetTerminals(uint256 indexed projectId, IJBTerminal[] terminals, address caller);
+    event SetTerminals(uint256 indexed projectId, IJBPaymentTerminal[] terminals, address caller);
 
     event SetPrimaryTerminal(
         uint256 indexed projectId,
         address indexed token,
-        IJBTerminal indexed terminal,
+        IJBPaymentTerminal indexed terminal,
         address caller
     );
 
@@ -32,9 +32,9 @@ interface IJBDirectory {
 
     function isAllowedToSetFirstController(address account) external view returns (bool);
 
-    function terminalsOf(uint256 projectId) external view returns (IJBTerminal[] memory);
+    function terminalsOf(uint256 projectId) external view returns (IJBPaymentTerminal[] memory);
 
-    function isTerminalOf(uint256 projectId, IJBTerminal terminal)
+    function isTerminalOf(uint256 projectId, IJBPaymentTerminal terminal)
         external
         view
         returns (bool);
@@ -46,7 +46,7 @@ interface IJBDirectory {
 
     function setControllerOf(uint256 projectId, address controller) external;
 
-    function setTerminalsOf(uint256 projectId, IJBTerminal[] calldata terminals) external;
+    function setTerminalsOf(uint256 projectId, IJBPaymentTerminal[] calldata terminals) external;
 
     function setPrimaryTerminalOf(uint256 projectId, address token, IJBPaymentTerminal terminal)
         external;

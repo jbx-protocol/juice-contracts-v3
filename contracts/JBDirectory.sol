@@ -6,7 +6,6 @@ import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
@@ -22,7 +21,6 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
     error DUPLICATE_TERMINALS();
-    error TERMINAL_DOES_NOT_ACCEPT_PAYMENTS();
     error INVALID_PROJECT_ID_IN_DIRECTORY();
     error SET_CONTROLLER_NOT_ALLOWED();
     error SET_TERMINALS_NOT_ALLOWED();
@@ -34,7 +32,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
     /// @notice For each project ID, the terminals that are currently managing its funds.
     /// @custom:member _projectId The ID of the project to get terminals of.
-    mapping(uint256 => IJBTerminal[]) private _terminalsOf;
+    mapping(uint256 => IJBPaymentTerminal[]) private _terminalsOf;
 
     /// @notice The project's primary terminal for a token.
     /// @custom:member _projectId The ID of the project to get the primary terminal of.
@@ -74,7 +72,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
         external
         view
         override
-        returns (IJBTerminal[] memory)
+        returns (IJBPaymentTerminal[] memory)
     {
         return _terminalsOf[_projectId];
     }
@@ -105,10 +103,10 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
         // Return the first terminal which accepts the specified token.
         for (uint256 _i; _i < _numberOfTerminals;) {
             // Keep a reference to the terminal being iterated on.
-            IJBTerminal _terminal = _terminalsOf[_projectId][_i];
+            IJBPaymentTerminal _terminal = _terminalsOf[_projectId][_i];
 
             // If the terminal accepts the specified token, return it.
-            if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0) && _isPaymentTerminal(_terminal)) {
+            if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0)) {
                 return IJBPaymentTerminal(address(_terminal));
             }
 
@@ -129,7 +127,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     /// @param _projectId The ID of the project to check within.
     /// @param _terminal The address of the terminal to check for.
     /// @return A flag indicating whether or not the specified terminal is a terminal of the specified project.
-    function isTerminalOf(uint256 _projectId, IJBTerminal _terminal)
+    function isTerminalOf(uint256 _projectId, IJBPaymentTerminal _terminal)
         public
         view
         override
@@ -216,7 +214,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     /// @dev Only a project owner, an operator, or its controller can set its terminals.
     /// @param _projectId The ID of the project having terminals set.
     /// @param _terminals The terminal to set.
-    function setTerminalsOf(uint256 _projectId, IJBTerminal[] calldata _terminals)
+    function setTerminalsOf(uint256 _projectId, IJBPaymentTerminal[] calldata _terminals)
         external
         override
         requirePermissionAllowingOverride(
@@ -272,9 +270,6 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PRIMARY_TERMINAL)
     {
-        // A primary terminal should always support payments.
-        if (!_isPaymentTerminal(_terminal)) revert TERMINAL_DOES_NOT_ACCEPT_PAYMENTS();
-        
         // Can't set the primary terminal for a token if it doesn't accept the token.
         if (_terminal.accountingContextForTokenOf(_projectId, _token).token == address(0)) {
             revert TOKEN_NOT_ACCEPTED();
@@ -314,7 +309,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     /// @notice Add a terminal to a project's list of terminals if it hasn't been already.
     /// @param _projectId The ID of the project having a terminal added.
     /// @param _terminal The terminal to add.
-    function _addTerminalIfNeeded(uint256 _projectId, IJBTerminal _terminal) private {
+    function _addTerminalIfNeeded(uint256 _projectId, IJBPaymentTerminal _terminal) private {
         // Check that the terminal has not already been added.
         if (isTerminalOf(_projectId, _terminal)) return;
 
@@ -331,17 +326,5 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
         _terminalsOf[_projectId].push(_terminal);
 
         emit AddTerminal(_projectId, _terminal, msg.sender);
-    }
-
-    /// @notice Performs a quick check to see if the terminal support receiving payments, assuming a honest terminal.
-    /// @dev This function can be tricked or missreport, it should be used as a guide not as prevention. 
-    /// @param _terminal The terminal to check.
-    /// @return A bool indicating if the terminal supports IJBPaymentTerminal or not.
-    function _isPaymentTerminal(IJBTerminal _terminal) internal view returns (bool) {
-        try _terminal.supportsInterface{gas: 30_000}(type(IJBPaymentTerminal).interfaceId) returns (bool _supports) {
-            return _supports;
-        } catch  {
-            return false;
-        }
     }
 }

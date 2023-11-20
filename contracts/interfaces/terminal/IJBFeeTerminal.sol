@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBTerminal} from "./IJBTerminal.sol";
+import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {JBFee} from "../../structs/JBFee.sol";
 
-interface IJBFeeTerminal is IJBTerminal {
+interface IJBFeeTerminal is IJBPaymentTerminal {
     event HoldFee(
         uint256 indexed projectId,
         uint256 indexed amount,

@@ -10,7 +10,7 @@ import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
 import {IJBMultiTerminal} from "./interfaces/terminal/IJBMultiTerminal.sol";
-import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
+import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFixedPointNumber} from "./libraries/JBFixedPointNumber.sol";
@@ -866,7 +866,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         returns (uint256 overflow)
     {
         // Get a reference to the project's terminals.
-        IJBTerminal[] memory _terminals = DIRECTORY.terminalsOf(_projectId);
+        IJBPaymentTerminal[] memory _terminals = DIRECTORY.terminalsOf(_projectId);
 
         // Keep a reference to the number of termainls.
         uint256 _numberOfTerminals = _terminals.length;

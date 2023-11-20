@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBTerminal} from "./IJBTerminal.sol";
+import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {JBSplit} from "../../structs/JBSplit.sol";
 import {IJBSplitsStore} from "../IJBSplitsStore.sol";
 
-interface IJBPayoutTerminal is IJBTerminal {
+interface IJBPayoutTerminal is IJBPaymentTerminal {
      event DistributePayouts(
         uint256 indexed fundingCycleConfiguration,
         uint256 indexed fundingCycleNumber,
@@ -43,8 +43,6 @@ interface IJBPayoutTerminal is IJBTerminal {
     event PayoutReverted(
         uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller
     );
-
-    function SPLITS() external view returns (IJBSplitsStore);
 
     function distributePayoutsOf(
         uint256 projectId,

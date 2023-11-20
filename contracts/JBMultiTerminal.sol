@@ -18,7 +18,6 @@ import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
@@ -201,7 +200,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return _interfaceId == type(IJBPaymentTerminal).interfaceId
             || _interfaceId == type(IJBRedemptionTerminal).interfaceId
-            || _interfaceId == type(IJBTerminal).interfaceId
             || _interfaceId == type(IJBPayoutTerminal).interfaceId
             || _interfaceId == type(IJBPermitPaymentTerminal).interfaceId
             || _interfaceId == type(IJBMultiTerminal).interfaceId
@@ -396,7 +394,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @param _token The address of the token being migrated.
     /// @param _to The terminal contract that will gain the project's funds.
     /// @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
-    function migrateBalanceOf(uint256 _projectId, address _token, IJBTerminal _to)
+    function migrateBalanceOf(uint256 _projectId, address _token, IJBPaymentTerminal _to)
         external
         virtual
         override
