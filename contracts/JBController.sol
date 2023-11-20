@@ -112,7 +112,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             JBApprovalStatus approvalStatus
         )
     {
-        (ruleset, approvalStatus) = rulesets.latestQueuedOf(_projectId);
+        (ruleset, approvalStatus) = rulesets.latestQueuedRulesetOf(_projectId);
         metadata = ruleset.expandMetadata();
     }
 

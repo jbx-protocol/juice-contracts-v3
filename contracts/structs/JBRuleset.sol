@@ -5,8 +5,8 @@ import {IJBRulesetApprovalHook} from "./../interfaces/IJBRulesetApprovalHook.sol
 
 /// @dev `JBRuleset` timestamps are unix timestamps (seconds since 00:00 January 1st, 1970 UTC).
 /// @custom:member cycleNumber The ruleset's cycle number. Each ruleset's `cycleNumber` is the previous ruleset's `cycleNumber` plus one. Each project's first ruleset has a `cycleNumber` of 1.
-/// @custom:member rulesetId The ruleset's ID, which is the timestamp marking when this ruleset's rules were initialized. The `rulesetId` stays the same for rulesets that automatically cycle over from a manually queued ruleset.
-/// @custom:member basedOn The `rulesetId` of the ruleset which was active when this ruleset was created.
+/// @custom:member rulesetId The ruleset's ID, which is a timestamp of when this ruleset's rules were initialized. The `rulesetId` stays the same for rulesets that automatically cycle over from a manually queued ruleset.
+/// @custom:member basedOnId The `rulesetId` of the ruleset which was active when this ruleset was created.
 /// @custom:member start The timestamp from which this ruleset is considered active.
 /// @custom:member duration The number of seconds the ruleset lasts for. After this duration, a new ruleset will start. The project owner can queue new rulesets at any time, which will take effect once the current ruleset's duration is over. If the `duration` is 0, newly queued rulesets will take effect immediately. If a ruleset ends and there are no new rulesets queued, the current ruleset cycles over to another one with the same properties but a new `start` timestamp and a `weight` reduced by the ruleset's `decayRate`.
 /// @custom:member weight A fixed point number with 18 decimals that contracts can use to base arbitrary calculations on. For example, payment terminals can use this to determine how many tokens should be minted when a payment is received.
@@ -16,7 +16,7 @@ import {IJBRulesetApprovalHook} from "./../interfaces/IJBRulesetApprovalHook.sol
 struct JBRuleset {
     uint256 cycleNumber;
     uint256 rulesetId;
-    uint256 basedOn;
+    uint256 basedOnId;
     uint256 start;
     uint256 duration;
     uint256 weight;
