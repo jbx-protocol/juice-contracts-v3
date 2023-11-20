@@ -1820,14 +1820,18 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 new JBAccountingContextConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs3 =
                 new JBAccountingContextConfig[](1);
-            _accountingContextConfigs1[0] =
-                JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+            _accountingContextConfigs1[0] = JBAccountingContextConfig({
+                token: JBTokenList.ETH,
+                standard: JBTokenStandards.NATIVE
+            });
             _accountingContextConfigs1[1] = JBAccountingContextConfig({
                 token: address(_usdcToken),
                 standard: JBTokenStandards.ERC20
             });
-            _accountingContextConfigs2[0] =
-                JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+            _accountingContextConfigs2[0] = JBAccountingContextConfig({
+                token: JBTokenList.ETH,
+                standard: JBTokenStandards.NATIVE
+            });
             _accountingContextConfigs3[0] = JBAccountingContextConfig({
                 token: address(_usdcToken),
                 standard: JBTokenStandards.ERC20

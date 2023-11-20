@@ -8,7 +8,7 @@ import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
-import {IJBERC20Token} from "./interfaces/IJBERC20Token.sol";
+import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
@@ -18,7 +18,7 @@ import {JBERC20Token} from "./JBERC20Token.sol";
 /// @notice Manages minting, burning, and balances of projects' tokens and token credits.
 /// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
-/// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBERC20Token if they prefer.
+/// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBToken if they prefer.
 contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     // A library that parses the packed ruleset metadata into a friendlier format.
     using JBRulesetMetadataResolver for JBRuleset;
@@ -55,11 +55,11 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
 
     /// @notice Each project's attached token contract.
     /// @custom:param _projectId The ID of the project the token belongs to.
-    mapping(uint256 => IJBERC20Token) public override tokenOf;
+    mapping(uint256 => IJBToken) public override tokenOf;
 
     /// @notice Each token's project.
     /// @custom:param _token The address of the token associated with the project.
-    mapping(IJBERC20Token => uint256) public override projectIdOf;
+    mapping(IJBToken => uint256) public override projectIdOf;
 
     /// @notice The total supply of credits for each project.
     /// @custom:param _projectId The ID of the project to which the credits belong.
@@ -88,11 +88,11 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         balance = creditBalanceOf[_holder][_projectId];
 
         // Get a reference to the project's current token.
-        IJBERC20Token _token = tokenOf[_projectId];
+        IJBToken _token = tokenOf[_projectId];
 
         // If the project has a current token, add the holder's balance to the total.
-        if (_token != IJBERC20Token(address(0))) {
-            balance = balance + _token.balanceOf(_holder, _projectId);
+        if (_token != IJBToken(address(0))) {
+            balance = balance + _token.balanceOf(_holder);
         }
     }
 
@@ -108,11 +108,11 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         totalSupply = totalCreditSupplyOf[_projectId];
 
         // Get a reference to the project's current token.
-        IJBERC20Token _token = tokenOf[_projectId];
+        IJBToken _token = tokenOf[_projectId];
 
         // If the project has a current token, add its total supply to the total.
-        if (_token != IJBERC20Token(address(0))) {
-            totalSupply = totalSupply + _token.totalSupply(_projectId);
+        if (_token != IJBToken(address(0))) {
+            totalSupply = totalSupply + _token.totalSupply();
         }
     }
 
@@ -149,7 +149,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         external
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
-        returns (IJBERC20Token token)
+        returns (IJBToken token)
     {
         // There must be a name.
         if (bytes(_name).length == 0) revert EMPTY_NAME();
@@ -158,10 +158,10 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         if (bytes(_symbol).length == 0) revert EMPTY_SYMBOL();
 
         // The project shouldn't already have a token.
-        if (tokenOf[_projectId] != IJBERC20Token(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
+        if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
         // Deploy the token contract.
-        token = new JBERC20Token(_name, _symbol, _projectId, address(this));
+        token = new JBERC20Token(_name, _symbol, address(this));
 
         // Store the token contract.
         tokenOf[_projectId] = token;
@@ -176,16 +176,16 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     /// @dev Only a project's owner or operator can set its token.
     /// @param _projectId The ID of the project to set the token of.
     /// @param _token The new token's address.
-    function setTokenFor(uint256 _projectId, IJBERC20Token _token)
+    function setTokenFor(uint256 _projectId, IJBToken _token)
         external
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
     {
         // Can't set to the zero address.
-        if (_token == IJBERC20Token(address(0))) revert EMPTY_TOKEN();
+        if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
 
         // Can't set a token if the project is already associated with another token.
-        if (tokenOf[_projectId] != IJBERC20Token(address(0))) revert TOKEN_ALREADY_SET();
+        if (tokenOf[_projectId] != IJBToken(address(0))) revert TOKEN_ALREADY_SET();
 
         // Can't set a token if it's already associated with another project.
         if (projectIdOf[_token] != 0) revert TOKEN_ALREADY_SET();
@@ -213,14 +213,14 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         onlyController(_projectId)
     {
         // Get a reference to the project's current token.
-        IJBERC20Token _token = tokenOf[_projectId];
+        IJBToken _token = tokenOf[_projectId];
 
         // Save a reference to whether there a token exists.
-        bool _shouldClaimTokens = _token != IJBERC20Token(address(0));
+        bool _shouldClaimTokens = _token != IJBToken(address(0));
 
         if (_shouldClaimTokens) {
             // If tokens should be claimed, mint tokens into the holder's wallet.
-            _token.mint(_projectId, _holder, _amount);
+            _token.mint(_holder, _amount);
         } else {
             // Otherwise, add the tokens to their credits and the credit supply.
             creditBalanceOf[_holder][_projectId] = creditBalanceOf[_holder][_projectId] + _amount;
@@ -245,14 +245,13 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         onlyController(_projectId)
     {
         // Get a reference to the project's current token.
-        IJBERC20Token _token = tokenOf[_projectId];
+        IJBToken _token = tokenOf[_projectId];
 
         // Get a reference to the amount of credits the holder has.
         uint256 _creditBalance = creditBalanceOf[_holder][_projectId];
 
         // Get a reference to the amount of the project's current token the holder has in their wallet.
-        uint256 _tokenBalance =
-            _token == IJBERC20Token(address(0)) ? 0 : _token.balanceOf(_holder, _projectId);
+        uint256 _tokenBalance = _token == IJBToken(address(0)) ? 0 : _token.balanceOf(_holder);
 
         // There must be enough tokens to burn across the holder's combined token and credit balance.
         if (_amount > _tokenBalance + _creditBalance) revert INSUFFICIENT_FUNDS();
@@ -282,7 +281,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         }
 
         // Burn the tokens.
-        if (_tokensToBurn > 0) _token.burn(_projectId, _holder, _tokensToBurn);
+        if (_tokensToBurn > 0) _token.burn(_holder, _tokensToBurn);
 
         emit Burn(_holder, _projectId, _amount, _creditBalance, _tokenBalance, msg.sender);
     }
@@ -300,10 +299,10 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         address _beneficiary
     ) external override requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS) {
         // Get a reference to the project's current token.
-        IJBERC20Token _token = tokenOf[_projectId];
+        IJBToken _token = tokenOf[_projectId];
 
         // The project must have a token contract attached.
-        if (_token == IJBERC20Token(address(0))) revert TOKEN_NOT_FOUND();
+        if (_token == IJBToken(address(0))) revert TOKEN_NOT_FOUND();
 
         // Get a reference to the amount of credits the holder has.
         uint256 _creditBalance = creditBalanceOf[_holder][_projectId];
@@ -320,7 +319,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         }
 
         // Mint the equivalent amount of the project's token for the holder.
-        _token.mint(_projectId, _beneficiary, _amount);
+        _token.mint(_beneficiary, _amount);
 
         emit ClaimTokens(_holder, _projectId, _creditBalance, _amount, _beneficiary, msg.sender);
     }

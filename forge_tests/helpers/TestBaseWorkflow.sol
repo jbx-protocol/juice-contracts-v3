@@ -45,7 +45,7 @@ import {JBPayDelegateAllocation} from "@juicebox/structs/JBPayDelegateAllocation
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
 import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
-import {IJBERC20Token} from "@juicebox/interfaces/IJBERC20Token.sol";
+import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
 import {JBSingleAllowanceData} from "@juicebox/structs/JBSingleAllowanceData.sol";
 import {IJBController} from "@juicebox/interfaces/IJBController.sol";
 import {IJBMigratable} from "@juicebox/interfaces/IJBMigratable.sol";

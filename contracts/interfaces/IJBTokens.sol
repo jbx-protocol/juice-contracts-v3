@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBProjects} from "./IJBProjects.sol";
-import {IJBERC20Token} from "./IJBERC20Token.sol";
+import {IJBToken} from "./IJBToken.sol";
 
 interface IJBTokens {
     event DeployERC20Token(
         uint256 indexed projectId,
-        IJBERC20Token indexed token,
+        IJBToken indexed token,
         string name,
         string symbol,
         address caller
@@ -40,7 +40,7 @@ interface IJBTokens {
         address caller
     );
 
-    event SetToken(uint256 indexed projectId, IJBERC20Token indexed newToken, address caller);
+    event SetToken(uint256 indexed projectId, IJBToken indexed newToken, address caller);
 
     event TransferCredits(
         address indexed holder,
@@ -50,9 +50,9 @@ interface IJBTokens {
         address caller
     );
 
-    function tokenOf(uint256 projectId) external view returns (IJBERC20Token);
+    function tokenOf(uint256 projectId) external view returns (IJBToken);
 
-    function projectIdOf(IJBERC20Token token) external view returns (uint256);
+    function projectIdOf(IJBToken token) external view returns (uint256);
 
     function projects() external view returns (IJBProjects);
 
@@ -71,9 +71,9 @@ interface IJBTokens {
 
     function deployERC20TokenFor(uint256 projectId, string calldata name, string calldata symbol)
         external
-        returns (IJBERC20Token token);
+        returns (IJBToken token);
 
-    function setTokenFor(uint256 projectId, IJBERC20Token token) external;
+    function setTokenFor(uint256 projectId, IJBToken token) external;
 
     function burnFrom(address holder, uint256 projectId, uint256 amount) external;
 
