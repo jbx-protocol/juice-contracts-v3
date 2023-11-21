@@ -10,7 +10,7 @@ import "../contracts/JBPrices.sol";
 import "../contracts/JBRulesets.sol";
 import "../contracts/JBDirectory.sol";
 import "../contracts/JBTokens.sol";
-import "../contracts/JBSplitsStore.sol";
+import "../contracts/JBSplits.sol";
 import "../contracts/JBFundAccessConstraintsStore.sol";
 import "../contracts/JBController.sol";
 import "../contracts/JBTerminalStore.sol";
@@ -24,7 +24,7 @@ contract Deploy is Script {
     JBDirectory _directory;
     JBRulesets _rulesetStore;
     JBTokens _tokenStore;
-    JBSplitsStore _splitsStore;
+    JBSplits _splits;
     JBFundAccessConstraintsStore _fundAccessConstraintsStore;
     JBController _controller;
     JBTerminalStore _terminalStore;
@@ -58,7 +58,7 @@ contract Deploy is Script {
             _directory,
             _rulesetStore
         );
-        _splitsStore = new JBSplitsStore(_operatorStore, _projects, _directory);
+        _splits = new JBSplits(_operatorStore, _projects, _directory);
         _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(
             _directory
         );
@@ -68,7 +68,7 @@ contract Deploy is Script {
             _directory,
             _rulesetStore,
             _tokenStore,
-            _splitsStore,
+            _splits,
             _fundAccessConstraintsStore
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
@@ -82,7 +82,7 @@ contract Deploy is Script {
             _operatorStore,
             _projects,
             _directory,
-            _splitsStore,
+            _splits,
             _terminalStore,
             _PERMIT2,
             _manager

@@ -16,13 +16,13 @@ import {JBDelegateMetadataLib} from
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
-import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
+import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
-import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
+import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
@@ -37,7 +37,7 @@ import {JBPayDelegateAllocation} from "./structs/JBPayDelegateAllocation.sol";
 import {JBRedeemDelegateAllocation} from "./structs/JBRedeemDelegateAllocation.sol";
 import {JBSingleAllowanceData} from "./structs/JBSingleAllowanceData.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
-import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
+import {JBSplitHookData} from "./structs/JBSplitHookData.sol";
 import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
@@ -110,7 +110,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     IJBDirectory public immutable override DIRECTORY;
 
     /// @notice The contract that stores splits for each project.
-    IJBSplitsStore public immutable override SPLITS;
+    IJBSplits public immutable override SPLITS;
 
     /// @notice The contract that stores and manages the terminal's data.
     IJBTerminalStore public immutable override STORE;
@@ -216,7 +216,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @param _permissions A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _splitsStore A contract that stores splits for each project.
+    /// @param _splits A contract that stores splits for each project.
     /// @param _store A contract that stores the terminal's data.
     /// @param _permit2 A permit2 utility.
     /// @param _owner The address that will own this contract.
@@ -224,14 +224,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         IJBOperatorStore _permissions,
         IJBProjects _projects,
         IJBDirectory _directory,
-        IJBSplitsStore _splitsStore,
+        IJBSplits _splits,
         IJBTerminalStore _store,
         IPermit2 _permit2,
         address _owner
     ) JBOperatable(_permissions) Ownable(_owner) {
         PROJECTS = _projects;
         DIRECTORY = _directory;
-        SPLITS = _splitsStore;
+        SPLITS = _splits;
         STORE = _store;
         PERMIT2 = _permit2;
     }
@@ -986,7 +986,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             uint256 _netPayoutAmount =
                 _distributeToPayoutSplit(_split, _projectId, _token, _payoutAmount, _feePercent);
 
-            // If the split allocator is set as feeless, this distribution is not eligible for a fee.
+            // If the split hook is set as feeless, this distribution is not eligible for a fee.
             if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount) {
                 feeEligibleDistributionAmount += _payoutAmount;
             }
@@ -1038,20 +1038,20 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         // By default, the net payout amount is the full amount. This will be adjusted if fees are taken.
         netPayoutAmount = _amount;
 
-        // If there's an allocator set, transfer to its `allocate` function.
-        if (_split.allocator != IJBSplitAllocator(address(0))) {
-            // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
-            if (_feePercent != 0 && !isFeelessAddress[address(_split.allocator)]) {
+        // If there's a split hook set, transfer to its `process` function.
+        if (_split.splitHook != IJBSplitHook(address(0))) {
+            // This distribution is eligible for a fee since the funds are leaving this contract and the split hook isn't listed as feeless.
+            if (_feePercent != 0 && !isFeelessAddress[address(_split.splitHook)]) {
                 unchecked {
                     netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
                 }
             }
 
             // Trigger any inherited pre-transfer logic.
-            _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
+            _beforeTransferFor(address(_split.splitHook), _token, netPayoutAmount);
 
-            // Create the data to send to the allocator.
-            JBSplitAllocationData memory _data = JBSplitAllocationData({
+            // Create the data to send to the split hook.
+            JBSplitHookData memory _data = JBSplitHookData({
                 token: _token,
                 amount: netPayoutAmount,
                 decimals: _accountingContextForTokenOf[_projectId][_token].decimals,
@@ -1060,21 +1060,21 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
                 split: _split
             });
 
-            // Trigger the allocator's `allocate` function.
+            // Trigger the split hook's `process` function.
             bytes memory _reason;
 
             if (
                 ERC165Checker.supportsInterface(
-                    address(_split.allocator), type(IJBSplitAllocator).interfaceId
+                    address(_split.splitHook), type(IJBSplitHook).interfaceId
                 )
             ) {
-                // Keep a reference to the value that'll be paid to the allocator.
+                // Keep a reference to the value that'll be paid to the split hook.
                 uint256 _payValue = _token == JBTokenList.ETH ? netPayoutAmount : 0;
 
                 // If this terminal's token is ETH, send it in msg.value.
-                try _split.allocator.allocate{value: _payValue}(_data) {}
+                try _split.splitHook.process{value: _payValue}(_data) {}
                 catch (bytes memory __reason) {
-                    _reason = __reason.length == 0 ? abi.encode("Allocate fail") : __reason;
+                    _reason = __reason.length == 0 ? abi.encode("Process fail") : __reason;
                 }
             } else {
                 _reason = abi.encode("IERC165 fail");
@@ -1083,7 +1083,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             if (_reason.length != 0) {
                 // Revert the payout.
                 _revertTransferFrom(
-                    _projectId, _token, address(_split.allocator), netPayoutAmount, _amount
+                    _projectId, _token, address(_split.splitHook), netPayoutAmount, _amount
                 );
 
                 // Set the net payout amount to 0 to signal the reversion.

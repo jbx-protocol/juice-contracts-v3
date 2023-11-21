@@ -15,7 +15,7 @@ import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBMigratable} from "./IJBMigratable.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IJBProjects} from "./IJBProjects.sol";
-import {IJBSplitsStore} from "./IJBSplitsStore.sol";
+import {IJBSplits} from "./IJBSplits.sol";
 import {IJBTokens} from "./IJBTokens.sol";
 
 interface IJBController is IERC165 {
@@ -73,7 +73,7 @@ interface IJBController is IERC165 {
 
     function tokenStore() external view returns (IJBTokens);
 
-    function splitsStore() external view returns (IJBSplitsStore);
+    function splits() external view returns (IJBSplits);
 
     function fundAccessConstraintsStore() external view returns (IJBFundAccessConstraintsStore);
 

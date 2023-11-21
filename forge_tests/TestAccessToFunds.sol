@@ -108,7 +108,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].mustStartAtOrAfter = 0;
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
-            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
             _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
@@ -349,7 +349,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].mustStartAtOrAfter = 0;
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
-            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
             _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
@@ -648,7 +648,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].mustStartAtOrAfter = 0;
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
-            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
             _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             // Create the project to test.
@@ -879,7 +879,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].mustStartAtOrAfter = 0;
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
-            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
             _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
@@ -1154,7 +1154,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].mustStartAtOrAfter = 0;
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
-            _rulesetConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
             _rulesetConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
@@ -1809,7 +1809,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _cycleConfigurations[0].mustStartAtOrAfter = 0;
             _cycleConfigurations[0].data = _data;
             _cycleConfigurations[0].metadata = _metadata;
-            _cycleConfigurations[0].groupedSplits = new JBGroupedSplits[](0);
+            _cycleConfigurations[0].splitGroups = new JBSplitGroup[](0);
             _cycleConfigurations[0].fundAccessConstraints = _fundAccessConstraints;
 
             JBTerminalConfig[] memory _terminalConfigurations1 = new JBTerminalConfig[](1);

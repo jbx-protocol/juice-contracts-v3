@@ -10,7 +10,7 @@ import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IJBPrices} from "./IJBPrices.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBRedeemDelegate} from "./IJBRedeemDelegate.sol";
-import {IJBSplitsStore} from "./IJBSplitsStore.sol";
+import {IJBSplits} from "./IJBSplits.sol";
 import {IJBTerminalStore} from "./IJBTerminalStore.sol";
 import {JBDidPayData} from "./../structs/JBDidPayData.sol";
 import {JBDidRedeemData} from "./../structs/JBDidRedeemData.sol";
@@ -152,7 +152,7 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
 
     function PROJECTS() external view returns (IJBProjects);
 
-    function SPLITS() external view returns (IJBSplitsStore);
+    function SPLITS() external view returns (IJBSplits);
 
     function DIRECTORY() external view returns (IJBDirectory);
 

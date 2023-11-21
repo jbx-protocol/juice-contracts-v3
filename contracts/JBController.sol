@@ -15,20 +15,20 @@ import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
-import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
-import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
+import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
+import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
-import {JBSplitsGroups} from "./libraries/JBSplitsGroups.sol";
+import {JBSplitGroupIDs} from "./libraries/JBSplitGroupIDs.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "./structs/JBRulesetMetadata.sol";
 import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
-import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
+import {JBSplitHookData} from "./structs/JBSplitHookData.sol";
 
 /// @notice Stitches together rulesets and project tokens, making sure all activity is accounted for and correct.
 contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
@@ -64,7 +64,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     IJBTokens public immutable override tokenStore;
 
     /// @notice The contract that stores splits for each project.
-    IJBSplitsStore public immutable override splitsStore;
+    IJBSplits public immutable override splits;
 
     /// @notice A contract that stores fund access constraints for each project.
     IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
@@ -181,7 +181,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _rulesets A contract storing all ruleset configurations.
     /// @param _tokenStore A contract that manages token minting and burning.
-    /// @param _splitsStore A contract that stores splits for each project.
+    /// @param _splits A contract that stores splits for each project.
     /// @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
     constructor(
         IJBOperatorStore _permissions,
@@ -189,14 +189,14 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         IJBDirectory _directory,
         IJBRulesets _rulesets,
         IJBTokens _tokenStore,
-        IJBSplitsStore _splitsStore,
+        IJBSplits _splits,
         IJBFundAccessConstraintsStore _fundAccessConstraintsStore
     ) JBOperatable(_permissions) {
         projects = _projects;
         directory = _directory;
         rulesets = _rulesets;
         tokenStore = _tokenStore;
-        splitsStore = _splitsStore;
+        splits = _splits;
         fundAccessConstraintsStore = _fundAccessConstraintsStore;
     }
 
@@ -497,7 +497,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         uint256 _leftoverTokenCount = tokenCount == 0
             ? 0
             : _distributeToReservedTokenSplitsOf(
-                _projectId, _ruleset.rulesetId, JBSplitsGroups.RESERVED_TOKENS, tokenCount
+                _projectId, _ruleset.rulesetId, JBSplitGroupIDs.RESERVED_TOKENS, tokenCount
             );
 
         // Mint any leftover tokens to the project owner.
@@ -520,13 +520,13 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @notice Distribute tokens to the splits according to the specified ruleset.
     /// @param _projectId The ID of the project for which reserved token splits are being distributed.
     /// @param _domain The domain of the splits to distribute the reserved tokens between.
-    /// @param _group The group of the splits to distribute the reserved tokens between.
+    /// @param _groupId The group of the splits to distribute the reserved tokens between.
     /// @param _amount The total amount of tokens to mint.
     /// @return leftoverAmount If the splits percents dont add up to 100%, the leftover amount is returned.
     function _distributeToReservedTokenSplitsOf(
         uint256 _projectId,
         uint256 _domain,
-        uint256 _group,
+        uint256 _groupId,
         uint256 _amount
     ) internal returns (uint256 leftoverAmount) {
         // Keep a reference to the token store.
@@ -536,7 +536,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         leftoverAmount = _amount;
 
         // Get a reference to the project's reserved token splits.
-        JBSplit[] memory _splits = splitsStore.splitsOf(_projectId, _domain, _group);
+        JBSplit[] memory _splits = splits.splitsOf(_projectId, _domain, _groupId);
 
         // Keep a reference to the number of splits being iterated on.
         uint256 _numberOfSplits = _splits.length;
@@ -553,11 +553,11 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             // Mints tokens for the split if needed.
             if (_tokenCount > 0) {
                 _tokenStore.mintFor(
-                    // If an allocator is set in the splits, set it as the beneficiary.
+                    // If a split hook is set in the splits, set it as the beneficiary.
                     // Otherwise if a projectId is set in the split, set the project's owner as the beneficiary.
                     // If the split has a beneficiary send to the split's beneficiary. Otherwise send to the msg.sender.
-                    _split.allocator != IJBSplitAllocator(address(0))
-                        ? address(_split.allocator)
+                    _split.splitHook != IJBSplitHook(address(0))
+                        ? address(_split.splitHook)
                         : _split.projectId != 0
                             ? projects.ownerOf(_split.projectId)
                             : _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
@@ -565,14 +565,14 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
                     _tokenCount
                 );
 
-                // If there's an allocator set, trigger its `allocate` function.
-                if (_split.allocator != IJBSplitAllocator(address(0))) {
+                // If there's a split hook set, trigger its `process` function.
+                if (_split.splitHook != IJBSplitHook(address(0))) {
                     // Get a reference to the project's token.
                     address _token = address(_tokenStore.tokenOf(_projectId));
 
-                    // Allocate.
-                    _split.allocator.allocate(
-                        JBSplitAllocationData(_token, _tokenCount, 18, _projectId, _group, _split)
+                    // Process.
+                    _split.splitHook.process(
+                        JBSplitHookData(_token, _tokenCount, 18, _projectId, _groupId, _split)
                     );
                 }
 
@@ -581,7 +581,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             }
 
             emit DistributeToReservedTokenSplit(
-                _projectId, _domain, _group, _split, _tokenCount, msg.sender
+                _projectId, _domain, _groupId, _split, _tokenCount, msg.sender
             );
 
             unchecked {
@@ -598,45 +598,45 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         internal
         returns (uint256 rulesetId)
     {
-        // Keep a reference to the configuration being iterated on.
-        JBRulesetConfig memory _rulesetId;
+        // Keep a reference to the ruleset config being iterated on.
+        JBRulesetConfig memory _rulesetConfig;
 
         // Keep a reference to the number of configurations being scheduled.
         uint256 _numberOfConfigurations = _rulesetConfigurations.length;
 
         for (uint256 _i; _i < _numberOfConfigurations;) {
             // Get a reference to the rulesetId being iterated on.
-            _rulesetId = _rulesetConfigurations[_i];
+            _rulesetConfig = _rulesetConfigurations[_i];
 
             // Make sure the provided reserved rate is valid.
-            if (_rulesetId.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE) {
+            if (_rulesetConfig.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE) {
                 revert INVALID_RESERVED_RATE();
             }
 
             // Make sure the provided redemption rate is valid.
-            if (_rulesetId.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE) {
+            if (_rulesetConfig.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE) {
                 revert INVALID_REDEMPTION_RATE();
             }
 
             // Make sure the provided base currency is valid.
-            if (_rulesetId.metadata.baseCurrency > type(uint32).max) {
+            if (_rulesetConfig.metadata.baseCurrency > type(uint32).max) {
                 revert INVALID_BASE_CURRENCY();
             }
 
             // Queue the ruleset's properties.
             JBRuleset memory _ruleset = rulesets.queueFor(
                 _projectId,
-                _rulesetId.data,
-                JBRulesetMetadataResolver.packRulesetMetadata(_rulesetId.metadata),
-                _rulesetId.mustStartAtOrAfter
+                _rulesetConfig.data,
+                JBRulesetMetadataResolver.packRulesetMetadata(_rulesetConfig.metadata),
+                _rulesetConfig.mustStartAtOrAfter
             );
 
             // Set splits for the group.
-            splitsStore.set(_projectId, _ruleset.rulesetId, _rulesetId.groupedSplits);
+            splits.setSplitGroupsFor(_projectId, _ruleset.rulesetId, _rulesetConfig.splitGroups);
 
             // Set the funds access constraints.
             fundAccessConstraintsStore.setFor(
-                _projectId, _ruleset.rulesetId, _rulesetId.fundAccessConstraints
+                _projectId, _ruleset.rulesetId, _rulesetConfig.fundAccessConstraints
             );
 
             // Return the rulesetId timestamp if this is the last configuration being scheduled.
