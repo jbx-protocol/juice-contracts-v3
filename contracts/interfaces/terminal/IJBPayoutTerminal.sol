@@ -6,7 +6,7 @@ import {JBSplit} from "../../structs/JBSplit.sol";
 import {IJBSplitsStore} from "../IJBSplitsStore.sol";
 
 interface IJBPayoutTerminal is IJBPaymentTerminal {
-     event DistributePayouts(
+    event DistributePayouts(
         uint256 indexed fundingCycleConfiguration,
         uint256 indexed fundingCycleNumber,
         uint256 indexed projectId,

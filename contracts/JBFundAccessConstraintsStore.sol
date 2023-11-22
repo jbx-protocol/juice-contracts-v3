@@ -36,9 +36,8 @@ contract JBFundAccessConstraintsStore is
     /// @custom:param _configuration The configuration during which the packed distribution limit data applies.
     /// @custom:param _terminal The terminal from which distributions are being limited.
     /// @custom:param _token The token for which distributions are being limited.
-    mapping(
-        uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[])))
-    ) internal _packedDistributionLimitsDataOf;
+    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[]))))
+        internal _packedDistributionLimitsDataOf;
 
     /// @notice Data regarding the overflow allowance of a project during a configuration.
     /// @dev bits 0-231: The amount of overflow that a project is allowed to tap into on-demand throughout the configuration.
@@ -47,9 +46,8 @@ contract JBFundAccessConstraintsStore is
     /// @custom:param _configuration The configuration during which the packed overflow allowance data applies.
     /// @custom:param _terminal The terminal managing the overflow.
     /// @custom:param _token The token for which overflow is being allowed.
-    mapping(
-        uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[])))
-    ) internal _packedOverflowAllowancesDataOf;
+    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[]))))
+        internal _packedOverflowAllowancesDataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

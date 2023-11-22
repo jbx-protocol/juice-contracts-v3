@@ -74,8 +74,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @custom:param _terminal The terminal to which the balance applies.
     /// @custom:param _projectId The ID of the project to get the balance of.
     /// @custom:param _token The token to which the balance applies.
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public override
-        balanceOf;
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public override balanceOf;
 
     /// @notice The currency-denominated amounts of funds that a project has distributed from its limit during the current funding cycle for each terminal.
     /// @dev Increases as projects use their preconfigured distribution limits.
@@ -472,17 +471,15 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         }
 
         // The amount being reclaimed must be within the project's balance.
-        if (
-            _balanceDiff
-                > balanceOf[msg.sender][_projectId][_accountingContext.token]
-        ) revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
+        if (_balanceDiff > balanceOf[msg.sender][_projectId][_accountingContext.token]) {
+            revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
+        }
 
         // Remove the reclaimed funds from the project's balance.
         if (_balanceDiff != 0) {
             unchecked {
                 balanceOf[msg.sender][_projectId][_accountingContext.token] =
-                balanceOf[msg.sender][_projectId][_accountingContext.token]
-                    - _balanceDiff;
+                    balanceOf[msg.sender][_projectId][_accountingContext.token] - _balanceDiff;
             }
         }
     }
@@ -515,11 +512,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Amount must be within what is still distributable.
         uint256 _distributionLimit = IJBController3_1(DIRECTORY.controllerOf(_projectId))
             .fundAccessConstraintsStore().distributionLimitOf(
-            _projectId,
-            fundingCycle.configuration,
-            msg.sender,
-            _accountingContext.token,
-            _currency
+            _projectId, fundingCycle.configuration, msg.sender, _accountingContext.token, _currency
         );
 
         // Make sure the new used amount is within the distribution limit.
@@ -539,10 +532,9 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
 
         // The amount being distributed must be available.
-        if (
-            distributedAmount
-                > balanceOf[msg.sender][_projectId][_accountingContext.token]
-        ) revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
+        if (distributedAmount > balanceOf[msg.sender][_projectId][_accountingContext.token]) {
+            revert INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE();
+        }
 
         // Store the new amount.
         usedDistributionLimitOf[msg.sender][_projectId][_accountingContext.token][fundingCycle
@@ -551,8 +543,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Removed the distributed funds from the project's token balance.
         unchecked {
             balanceOf[msg.sender][_projectId][_accountingContext.token] =
-            balanceOf[msg.sender][_projectId][_accountingContext.token]
-                - distributedAmount;
+                balanceOf[msg.sender][_projectId][_accountingContext.token] - distributedAmount;
         }
     }
 
@@ -584,11 +575,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // There must be sufficient allowance available.
         uint256 _overflowAllowance = IJBController3_1(DIRECTORY.controllerOf(_projectId))
             .fundAccessConstraintsStore().overflowAllowanceOf(
-            _projectId,
-            fundingCycle.configuration,
-            msg.sender,
-            _accountingContext.token,
-            _currency
+            _projectId, fundingCycle.configuration, msg.sender, _accountingContext.token, _currency
         );
 
         // Make sure the new used amount is within the allowance.
@@ -629,9 +616,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             .configuration][_currency] = _newUsedOverflowAllowanceOf;
 
         // Update the project's balance.
-        balanceOf[msg.sender][_projectId][_accountingContext.token] = balanceOf[
-            msg.sender
-        ][_projectId][_accountingContext.token] - usedAmount;
+        balanceOf[msg.sender][_projectId][_accountingContext.token] =
+            balanceOf[msg.sender][_projectId][_accountingContext.token] - usedAmount;
     }
 
     /// @notice Records newly added funds for the project.

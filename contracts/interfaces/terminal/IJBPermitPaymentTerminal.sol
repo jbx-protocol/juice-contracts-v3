@@ -5,5 +5,5 @@ import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 
 interface IJBPermitPaymentTerminal is IJBPaymentTerminal {
-   function PERMIT2() external returns (IPermit2);
+    function PERMIT2() external returns (IPermit2);
 }

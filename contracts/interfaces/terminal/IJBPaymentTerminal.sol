@@ -9,7 +9,7 @@ import {IJBPayDelegate3_1_1} from "../../interfaces/IJBPayDelegate3_1_1.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 interface IJBPaymentTerminal is IERC165 {
-     event Migrate(
+    event Migrate(
         uint256 indexed projectId,
         address indexed token,
         IJBPaymentTerminal indexed to,

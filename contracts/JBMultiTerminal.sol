@@ -1131,7 +1131,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
                 _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
 
                 // Specify the reason for reverting.
-                bytes memory _reason = "404";
+                bytes memory _reason = "Terminal not found";
 
                 emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
             } else {
@@ -1424,7 +1424,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
 
             // Specify the reason for reverting.
-            bytes memory _reason = "404";
+            bytes memory _reason = "Fee not accepted";
 
             emit FeeReverted(_projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, msg.sender);
             return;
