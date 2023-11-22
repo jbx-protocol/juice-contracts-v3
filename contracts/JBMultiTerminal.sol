@@ -441,20 +441,26 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // Keep a reference to the number of held fees.
         uint256 _numberOfHeldFees = _heldFees.length;
 
+        // Keep a reference to the fee being iterated on.
+        JBFee memory _heldFee;
+
         // Keep a reference to the terminal that'll receive the fees.
         IJBPaymentTerminal _feeTerminal =
             DIRECTORY.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, _token);
 
         // Process each fee.
         for (uint256 _i; _i < _numberOfHeldFees;) {
+            // Keep a reference to the held fee being iterated on.
+            _heldFee = _heldFees[_i];
+
             // Get the fee amount.
             _amount =
-                (_heldFees[_i].fee == 0 ? 0 : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee));
+                (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
 
             // Process the fee.
-            _processFee(_projectId, _token, _amount, _heldFees[_i].beneficiary, _feeTerminal);
+            _processFee(_projectId, _token, _amount, _heldFee.beneficiary, _feeTerminal);
 
-            emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, _msgSender());
+            emit ProcessFee(_projectId, _amount, true, _heldFee.beneficiary, _msgSender());
 
             unchecked {
                 ++_i;
@@ -490,11 +496,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _msgSender() == DIRECTORY.controllerOf(_projectId)
         )
     {
+        // Keep a reference to the number of accounting context configurations.
+        uint256 _numberOfAccountingContextsConfigs = _accountingContextConfigs.length;
+
         // Keep a reference to the accounting context being iterated on.
         JBAccountingContextConfig calldata _accountingContextConfig;
 
         // Set each accounting context.
-        for (uint256 _i; _i < _accountingContextConfigs.length;) {
+        for (uint256 _i; _i < _numberOfAccountingContextsConfigs;) {
             // Set the accounting context being iterated on.
             _accountingContextConfig = _accountingContextConfigs[_i];
 
@@ -981,15 +990,24 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // Get a reference to the project's payout splits.
         JBSplit[] memory _splits = SPLITS.splitsOf(_projectId, _domain, uint256(uint160(_token)));
 
+        // Keep a reference to the number of splits being iterated on.
+        uint256 _numberOfSplits = _splits.length;
+
+        // Keep a reference to the split being iterated on.
+        JBSplit memory _split;
+
         // Transfer between all splits.
-        for (uint256 _i; _i < _splits.length;) {
+        for (uint256 _i; _i < _numberOfSplits;) {
+            // Get a reference to the split being iterated on.
+            _split = _splits[_i];
+
             // The amount to send towards the split.
             uint256 _payoutAmount =
-                PRBMath.mulDiv(_amount, _splits[_i].percent, _leftoverPercentage);
+                PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
 
             // The payout amount substracting any applicable incurred fees.
             uint256 _netPayoutAmount = _distributeToPayoutSplit(
-                _splits[_i], _projectId, _token, _payoutAmount, _feePercent
+                _split, _projectId, _token, _payoutAmount, _feePercent
             );
 
             // If the split allocator is set as feeless, this distribution is not eligible for a fee.
@@ -1006,14 +1024,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             unchecked {
                 // Decrement the leftover percentage.
-                _leftoverPercentage -= _splits[_i].percent;
+                _leftoverPercentage -= _split.percent;
             }
 
             emit DistributeToPayoutSplit(
                 _projectId,
                 _domain,
                 uint256(uint160(_token)),
-                _splits[_i],
+                _split,
                 _payoutAmount,
                 _netPayoutAmount,
                 _msgSender()
@@ -1227,11 +1245,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _metadata
         );
 
-        // Keep a reference to the allocation being iterated on.
-        JBPayDelegateAllocation3_1_1 memory _allocation;
-
         // Keep a reference to the number of allocations there are.
         uint256 _numberOfAllocations = _allocations.length;
+
+        // Keep a reference to the allocation being iterated on.
+        JBPayDelegateAllocation3_1_1 memory _allocation;
 
         // Fulfill each allocation.
         for (uint256 _i; _i < _numberOfAllocations;) {
@@ -1303,11 +1321,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _metadata
         );
 
-        // Keep a reference to the allocation being iterated on.
-        JBRedemptionDelegateAllocation3_1_1 memory _allocation;
-
         // Keep a reference to the number of allocations there are.
         uint256 _numberOfAllocations = _allocations.length;
+
+        // Keep a reference to the allocation being iterated on.
+        JBRedemptionDelegateAllocation3_1_1 memory _allocation;
 
         for (uint256 _i; _i < _numberOfAllocations;) {
             // Set the allocation being iterated on.
@@ -1467,35 +1485,41 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // Keep a reference to the number of held fees.
         uint256 _numberOfHeldFees = _heldFees.length;
 
+        // Keep a reference to the fee being iterated on.
+        JBFee memory _heldFee;
+
         // Process each fee.
         for (uint256 _i; _i < _numberOfHeldFees;) {
+            // Save the fee being iterated on.
+            _heldFee = _heldFees[_i];
+
             if (leftoverAmount == 0) {
-                _heldFeesOf[_projectId].push(_heldFees[_i]);
+                _heldFeesOf[_projectId].push(_heldFee);
             } else {
                 // Notice here we take feeIn the stored .amount
                 uint256 _feeAmount = (
-                    _heldFees[_i].fee == 0
+                    _heldFee.fee == 0
                         ? 0
-                        : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee)
+                        : JBFees.feeIn(_heldFee.amount, _heldFee.fee)
                 );
 
-                if (leftoverAmount >= _heldFees[_i].amount - _feeAmount) {
+                if (leftoverAmount >= _heldFee.amount - _feeAmount) {
                     unchecked {
-                        leftoverAmount = leftoverAmount - (_heldFees[_i].amount - _feeAmount);
+                        leftoverAmount = leftoverAmount - (_heldFee.amount - _feeAmount);
                         refundedFees += _feeAmount;
                     }
                 } else {
                     // And here we overwrite with feeFrom the leftoverAmount
-                    _feeAmount = _heldFees[_i].fee == 0
+                    _feeAmount = _heldFee.fee == 0
                         ? 0
-                        : JBFees.feeFrom(leftoverAmount, _heldFees[_i].fee);
+                        : JBFees.feeFrom(leftoverAmount, _heldFee.fee);
 
                     unchecked {
                         _heldFeesOf[_projectId].push(
                             JBFee(
-                                _heldFees[_i].amount - (leftoverAmount + _feeAmount),
-                                _heldFees[_i].fee,
-                                _heldFees[_i].beneficiary
+                                _heldFee.amount - (leftoverAmount + _feeAmount),
+                                _heldFee.fee,
+                                _heldFee.beneficiary
                             )
                         );
                         refundedFees += _feeAmount;
