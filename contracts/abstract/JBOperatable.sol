@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+
 import {IJBOperatable} from "./../interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./../interfaces/IJBOperatorStore.sol";
 
 /// @notice Modifiers to allow access to functions based on the message sender's operator status.
-abstract contract JBOperatable is IJBOperatable {
+abstract contract JBOperatable is Context, IJBOperatable {
     //*********************************************************************//
     // --------------------------- custom errors -------------------------- //
     //*********************************************************************//
@@ -67,10 +69,11 @@ abstract contract JBOperatable is IJBOperatable {
         internal
         view
     {
+        address _sender = _msgSender();
         if (
-            msg.sender != _account
-                && !operatorStore.hasPermission(msg.sender, _account, _domain, _permissionIndex)
-                && !operatorStore.hasPermission(msg.sender, _account, 0, _permissionIndex)
+            _sender != _account
+                && !operatorStore.hasPermission(_sender, _account, _domain, _permissionIndex)
+                && !operatorStore.hasPermission(_sender, _account, 0, _permissionIndex)
         ) revert UNAUTHORIZED();
     }
 
@@ -85,10 +88,7 @@ abstract contract JBOperatable is IJBOperatable {
         uint256 _permissionIndex,
         bool _override
     ) internal view {
-        if (
-            !_override && msg.sender != _account
-                && !operatorStore.hasPermission(msg.sender, _account, _domain, _permissionIndex)
-                && !operatorStore.hasPermission(msg.sender, _account, 0, _permissionIndex)
-        ) revert UNAUTHORIZED();
+        if(_override) return;
+        _requirePermission(_account, _domain, _permissionIndex);
     }
 }
