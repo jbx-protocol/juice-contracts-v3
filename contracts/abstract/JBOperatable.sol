@@ -2,7 +2,6 @@
 pragma solidity ^0.8.16;
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-
 import {IJBOperatable} from "./../interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./../interfaces/IJBOperatorStore.sol";
 
