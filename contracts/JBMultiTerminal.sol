@@ -454,8 +454,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _heldFee = _heldFees[_i];
 
             // Get the fee amount.
-            _amount =
-                (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
+            _amount = (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
 
             // Process the fee.
             _processFee(_projectId, _token, _amount, _heldFee.beneficiary, _feeTerminal);
@@ -1002,13 +1001,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _split = _splits[_i];
 
             // The amount to send towards the split.
-            uint256 _payoutAmount =
-                PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
+            uint256 _payoutAmount = PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
 
             // The payout amount substracting any applicable incurred fees.
-            uint256 _netPayoutAmount = _distributeToPayoutSplit(
-                _split, _projectId, _token, _payoutAmount, _feePercent
-            );
+            uint256 _netPayoutAmount =
+                _distributeToPayoutSplit(_split, _projectId, _token, _payoutAmount, _feePercent);
 
             // If the split allocator is set as feeless, this distribution is not eligible for a fee.
             if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount) {
@@ -1497,11 +1494,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 _heldFeesOf[_projectId].push(_heldFee);
             } else {
                 // Notice here we take feeIn the stored .amount
-                uint256 _feeAmount = (
-                    _heldFee.fee == 0
-                        ? 0
-                        : JBFees.feeIn(_heldFee.amount, _heldFee.fee)
-                );
+                uint256 _feeAmount =
+                    (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
 
                 if (leftoverAmount >= _heldFee.amount - _feeAmount) {
                     unchecked {
@@ -1510,9 +1504,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                     }
                 } else {
                     // And here we overwrite with feeFrom the leftoverAmount
-                    _feeAmount = _heldFee.fee == 0
-                        ? 0
-                        : JBFees.feeFrom(leftoverAmount, _heldFee.fee);
+                    _feeAmount =
+                        _heldFee.fee == 0 ? 0 : JBFees.feeFrom(leftoverAmount, _heldFee.fee);
 
                     unchecked {
                         _heldFeesOf[_projectId].push(
@@ -1615,13 +1608,23 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
     /// @notice Returns the sender, prefered to use over `msg.sender`
     /// @return _sender the sender address of this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address _sender) {
+    function _msgSender()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (address _sender)
+    {
         return ERC2771Context._msgSender();
     }
 
     /// @notice Returns the calldata, prefered to use over `msg.data`
     /// @return _calldata the `msg.data` of this call
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata _calldata) {
+    function _msgData()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (bytes calldata _calldata)
+    {
         return ERC2771Context._msgData();
     }
 }

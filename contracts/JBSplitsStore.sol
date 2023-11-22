@@ -87,10 +87,12 @@ contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    constructor(IJBOperatorStore _operatorStore, IJBProjects _projects, IJBDirectory _directory, address _trustedForwarder)
-        JBOperatable(_operatorStore)
-        ERC2771Context(_trustedForwarder)
-    {
+    constructor(
+        IJBOperatorStore _operatorStore,
+        IJBProjects _projects,
+        IJBDirectory _directory,
+        address _trustedForwarder
+    ) JBOperatable(_operatorStore) ERC2771Context(_trustedForwarder) {
         projects = _projects;
         directory = _directory;
     }
@@ -112,7 +114,7 @@ contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
             projects.ownerOf(_projectId),
             _projectId,
             JBOperations.SET_SPLITS,
-            address(directory.controllerOf(_projectId)) ==  _msgSender()
+            address(directory.controllerOf(_projectId)) == _msgSender()
         )
     {
         // Keep a reference to the number of grouped splits.
@@ -218,7 +220,7 @@ contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
                 delete _packedSplitParts2Of[_projectId][_domain][_group][_i];
             }
 
-            emit SetSplit(_projectId, _domain, _group, _splits[_i],  _msgSender());
+            emit SetSplit(_projectId, _domain, _group, _splits[_i], _msgSender());
 
             unchecked {
                 ++_i;
@@ -318,13 +320,23 @@ contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
 
     /// @notice Returns the sender, prefered to use over `msg.sender`
     /// @return _sender the sender address of this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address _sender) {
+    function _msgSender()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (address _sender)
+    {
         return ERC2771Context._msgSender();
     }
 
     /// @notice Returns the calldata, prefered to use over `msg.data`
     /// @return _calldata the `msg.data` of this call
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata _calldata) {
+    function _msgData()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (bytes calldata _calldata)
+    {
         return ERC2771Context._msgData();
     }
 }

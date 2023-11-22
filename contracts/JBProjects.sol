@@ -143,13 +143,23 @@ contract JBProjects is JBOperatable, ERC2771Context, ERC721Votes, Ownable, IJBPr
 
     /// @notice Returns the sender, prefered to use over ` _msgSender()`
     /// @return _sender the sender address of this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address _sender) {
+    function _msgSender()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (address _sender)
+    {
         return ERC2771Context._msgSender();
     }
 
     /// @notice Returns the calldata, prefered to use over `msg.data`
     /// @return _calldata the `msg.data` of this call
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata _calldata) {
+    function _msgData()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (bytes calldata _calldata)
+    {
         return ERC2771Context._msgData();
     }
 }

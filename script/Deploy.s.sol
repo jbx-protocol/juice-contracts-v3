@@ -19,7 +19,8 @@ import "../contracts/JBMultiTerminal.sol";
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
     // NOTICE: Make sure this is the correct forwarder address for the chain your deploying to.
-    address internal constant _TRUSTED_FORWARDER = address(0xB2b5841DBeF766d4b521221732F9B618fCf34A87);
+    address internal constant _TRUSTED_FORWARDER =
+        address(0xB2b5841DBeF766d4b521221732F9B618fCf34A87);
 
     JBOperatorStore _operatorStore;
     JBProjects _projects;
