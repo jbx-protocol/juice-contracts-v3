@@ -63,7 +63,7 @@ contract Deploy is Script {
             _directory,
             _fundingCycleStore
         );
-        _splitsStore = new JBSplitsStore(_operatorStore, _projects, _directory);
+        _splitsStore = new JBSplitsStore(_operatorStore, _projects, _directory, _TRUSTED_FORWARDER);
         _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(
             _directory
         );
