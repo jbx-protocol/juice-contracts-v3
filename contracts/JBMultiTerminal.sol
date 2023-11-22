@@ -1095,10 +1095,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 // If this terminal's token is ETH, send it in msg.value.
                 try _split.allocator.allocate{value: _payValue}(_data) {}
                 catch (bytes memory __reason) {
-                    _reason = __reason.length == 0 ? abi.encode("AF") : __reason;
+                    _reason = __reason.length == 0 ? abi.encode("Allocate fail") : __reason;
                 }
             } else {
-                _reason = abi.encode("165");
+                _reason = abi.encode("IERC165 fail");
             }
 
             if (_reason.length != 0) {
@@ -1127,7 +1127,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
 
                 // Specify the reason for reverting.
-                bytes memory _reason = "404";
+                bytes memory _reason = "Terminal not found";
 
                 emit PayoutReverted(_projectId, _split, _amount, _reason, _msgSender());
             } else {
