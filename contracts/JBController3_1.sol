@@ -20,6 +20,8 @@ import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "./interfaces/IJBTokenStore.sol";
+import {IJBToken} from "./interfaces/IJBToken.sol";
+import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
@@ -31,6 +33,7 @@ import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
+import {JBGroupedSplits} from "./structs/JBGroupedSplits.sol";
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
 contract JBController3_1 is
@@ -475,6 +478,64 @@ contract JBController3_1 is
         _directory.setControllerOf(_projectId, address(_to));
 
         emit Migrate(_projectId, _to, _msgSender());
+    }
+
+    /// @notice Sets a project's splits.
+    /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
+    /// @dev The new splits must include any currently set splits that are locked.
+    /// @param _projectId The ID of the project for which splits are being added.
+    /// @param _domain An identifier within which the splits should be considered active.
+    /// @param _groupedSplits An array of splits to set for any number of groups.
+    function setSplitsOf(
+        uint256 _projectId,
+        uint256 _domain,
+        JBGroupedSplits[] calldata _groupedSplits
+    )
+        external
+        virtual
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
+    {
+        // Set splits for the group.
+        splitsStore.set(_projectId, _domain, _groupedSplits);
+    }
+
+    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
+    /// @dev Only a project's owner or operator can set its metadata.
+    /// @dev Applications can use the domain namespace as they wish.
+    /// @param _projectId The ID of the project who's metadata is being changed.
+    /// @param _metadata A struct containing metadata content, and domain within which the metadata applies.
+    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
+        external
+        virtual
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+    {
+        projects.setMetadataOf(_projectId, _metadata);
+    }
+
+    /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
+    /// @dev Deploys a project's ERC-20 token contract.
+    /// @dev Only a project's owner or operator can issue its token.
+    /// @param _projectId The ID of the project being issued tokens.
+    /// @param _name The ERC-20's name.
+    /// @param _symbol The ERC-20's symbol.
+    /// @return token The token that was issued.
+    function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+        external
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
+        returns (IJBToken token)
+    {
+        return tokenStore.issueFor(_projectId, _name, _symbol);
+    }
+
+    /// @notice Set a project's token if not already set.
+    /// @dev Only a project's owner or operator can set its token.
+    /// @param _projectId The ID of the project to which the set token belongs.
+    /// @param _token The new token.
+    function setTokenFor(uint256 _projectId, IJBToken _token)
+        external
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
+    {
+        tokenStore.setFor(_projectId, _token);
     }
 
     //*********************************************************************//

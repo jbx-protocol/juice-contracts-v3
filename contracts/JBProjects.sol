@@ -6,19 +6,25 @@ import {ERC721Votes} from "@openzeppelin/contracts/token/ERC721/extensions/ERC72
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
-import {Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTokenUriResolver} from "./interfaces/IJBTokenUriResolver.sol";
+import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 
 /// @notice Stores project ownership and metadata.
 /// @dev Projects are represented as ERC-721's.
-contract JBProjects is JBOperatable, ERC2771Context, ERC721Votes, Ownable, IJBProjects {
+contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
+    //*********************************************************************//
+    // --------------- public immutable stored properties ---------------- //
+    //*********************************************************************//
+
+    /// @notice The directory of terminals and controllers for projects.
+    IJBDirectory public immutable DIRECTORY;
+
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
@@ -75,14 +81,15 @@ contract JBProjects is JBOperatable, ERC2771Context, ERC721Votes, Ownable, IJBPr
 
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _owner The owner of the contract who can set metadata.
-    constructor(IJBOperatorStore _operatorStore, address _trustedForwarder, address _owner)
+    constructor(IJBOperatorStore _operatorStore, IJBDirectory _directory, address _owner)
         ERC721("Juicebox Projects", "JUICEBOX")
         EIP712("Juicebox Projects", "1")
         JBOperatable(_operatorStore)
         Ownable(_owner)
-        ERC2771Context(_trustedForwarder)
     // solhint-disable-next-line no-empty-blocks
-    {}
+    {
+        DIRECTORY = _directory;
+    }
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
@@ -120,7 +127,12 @@ contract JBProjects is JBOperatable, ERC2771Context, ERC721Votes, Ownable, IJBPr
     function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
         external
         override
-        requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+        requirePermissionAllowingOverride(
+            ownerOf(_projectId),
+            _projectId,
+            JBOperations.SET_PROJECT_METADATA,
+            address(DIRECTORY.controllerOf(_projectId)) == _msgSender()
+        )
     {
         // Set the project's new metadata content within the specified domain.
         metadataContentOf[_projectId][_metadata.domain] = _metadata.content;
@@ -139,27 +151,5 @@ contract JBProjects is JBOperatable, ERC2771Context, ERC721Votes, Ownable, IJBPr
         tokenUriResolver = _newResolver;
 
         emit SetTokenUriResolver(_newResolver, _msgSender());
-    }
-
-    /// @notice Returns the sender, prefered to use over ` _msgSender()`
-    /// @return _sender the sender address of this call.
-    function _msgSender()
-        internal
-        view
-        override(ERC2771Context, Context)
-        returns (address _sender)
-    {
-        return ERC2771Context._msgSender();
-    }
-
-    /// @notice Returns the calldata, prefered to use over `msg.data`
-    /// @return _calldata the `msg.data` of this call
-    function _msgData()
-        internal
-        view
-        override(ERC2771Context, Context)
-        returns (bytes calldata _calldata)
-    {
-        return ERC2771Context._msgData();
     }
 }

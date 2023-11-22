@@ -178,22 +178,34 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     // Deploys and initializes contracts for testing.
     function setUp() public virtual {
+        _jbDirectory = JBDirectory(addressFrom(address(this), 6));
+
+        _jbOperatorStore = new JBOperatorStore();
+
+        _usdcToken = new MockERC20('USDC', 'USDC');
+
+        _jbProjects = new JBProjects(_jbOperatorStore, IJBDirectory(_jbDirectory), _multisig);
+
+        _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _jbDirectory, _multisig);
+
+        _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(_jbDirectory));
+
+        address _realJbDirectory =
+            address(new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig));
+
+        assertEq(
+            address(_jbDirectory), _realJbDirectory, "Incorrect nonce was used for JBDirectory"
+        );
+
         vm.label(_multisig, "projectOwner");
         vm.label(_beneficiary, "beneficiary");
-        _jbOperatorStore = new JBOperatorStore();
-        vm.label(address(_jbOperatorStore), "JBOperatorStore");
-        _usdcToken = new MockERC20('USDC', 'USDC');
-        vm.label(address(_usdcToken), "ERC20");
-        _jbProjects = new JBProjects(_jbOperatorStore, _multisig, _trustedForwarder);
-        vm.label(address(_jbProjects), "JBProjects");
-        _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
         vm.label(address(_jbPrices), "JBPrices");
-        address contractAtNoncePlusOne = addressFrom(address(this), 6);
-        _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(contractAtNoncePlusOne));
+        vm.label(address(_jbProjects), "JBProjects");
         vm.label(address(_jbFundingCycleStore), "JBFundingCycleStore");
-        _jbDirectory =
-            new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
         vm.label(address(_jbDirectory), "JBDirectory");
+        vm.label(address(_usdcToken), "ERC20");
+        vm.label(address(_jbOperatorStore), "JBOperatorStore");
+
         _jbTokenStore = new JBTokenStore(
       _jbOperatorStore,
       _jbProjects,
@@ -202,7 +214,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     );
         vm.label(address(_jbTokenStore), "JBTokenStore");
         _jbSplitsStore =
-            new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory, _trustedForwarder);
+            new JBSplitsStore(_jbOperatorStore, _jbProjects, IJBDirectory(_jbDirectory));
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");

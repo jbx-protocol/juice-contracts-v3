@@ -13,10 +13,8 @@ import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBGroupedSplits} from "./structs/JBGroupedSplits.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 
-import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
-
 /// @notice Stores splits for each project.
-contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
+contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -88,12 +86,9 @@ contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    constructor(
-        IJBOperatorStore _operatorStore,
-        IJBProjects _projects,
-        IJBDirectory _directory,
-        address _trustedForwarder
-    ) JBOperatable(_operatorStore) ERC2771Context(_trustedForwarder) {
+    constructor(IJBOperatorStore _operatorStore, IJBProjects _projects, IJBDirectory _directory)
+        JBOperatable(_operatorStore)
+    {
         projects = _projects;
         directory = _directory;
     }
@@ -317,27 +312,5 @@ contract JBSplitsStore is JBOperatable, ERC2771Context, IJBSplitsStore {
         }
 
         return _splits;
-    }
-
-    /// @notice Returns the sender, prefered to use over `msg.sender`
-    /// @return _sender the sender address of this call.
-    function _msgSender()
-        internal
-        view
-        override(ERC2771Context, Context)
-        returns (address _sender)
-    {
-        return ERC2771Context._msgSender();
-    }
-
-    /// @notice Returns the calldata, prefered to use over `msg.data`
-    /// @return _calldata the `msg.data` of this call
-    function _msgData()
-        internal
-        view
-        override(ERC2771Context, Context)
-        returns (bytes calldata _calldata)
-    {
-        return ERC2771Context._msgData();
     }
 }

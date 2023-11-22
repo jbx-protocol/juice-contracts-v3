@@ -148,7 +148,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function issueFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
+        requirePermissionAllowingOverride(
+            projects.ownerOf(_projectId),
+            _projectId,
+            JBOperations.ISSUE_TOKEN,
+            address(directory.controllerOf(_projectId)) == _msgSender()
+        )
         returns (IJBToken token)
     {
         // There must be a name.
@@ -179,7 +184,12 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function setFor(uint256 _projectId, IJBToken _token)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
+        requirePermissionAllowingOverride(
+            projects.ownerOf(_projectId),
+            _projectId,
+            JBOperations.SET_TOKEN,
+            address(directory.controllerOf(_projectId)) == _msgSender()
+        )
     {
         // Can't set to the zero address.
         if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
