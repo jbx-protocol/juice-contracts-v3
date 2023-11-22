@@ -178,7 +178,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         returns (uint256)
     {
         return STORE.currentOverflowOf(
-            this, _projectId, _accountingContextsOf[_projectId], _decimals, _currency
+            address(this), _projectId, _accountingContextsOf[_projectId], _decimals, _currency
         );
     }
 

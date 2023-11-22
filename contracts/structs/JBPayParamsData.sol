@@ -14,7 +14,7 @@ import {JBTokenAmount} from "./JBTokenAmount.sol";
 /// @custom:member reservedRate The reserved rate of the funding cycle during which the payment is being made.
 /// @custom:member metadata Extra data provided by the payer.
 struct JBPayParamsData {
-    IJBPaymentTerminal terminal;
+    address terminal;
     address payer;
     JBTokenAmount amount;
     uint256 projectId;

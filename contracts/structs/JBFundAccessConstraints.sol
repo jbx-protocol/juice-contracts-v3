@@ -9,7 +9,7 @@ import {JBCurrencyAmount} from "./JBCurrencyAmount.sol";
 /// @custom:member distributionLimits The currency-denomenated amounts of the distribution limit, as a fixed point number with the same number of decimals as the terminal within which the limit applies.
 /// @custom:member overflowAllowances The currency-denomenated amounts of the overflow allowance, as a fixed point number with the same number of decimals as the terminal within which the allowance applies.
 struct JBFundAccessConstraints {
-    IJBPayoutTerminal terminal;
+    address terminal;
     address token;
     JBCurrencyAmount[] distributionLimits;
     JBCurrencyAmount[] overflowAllowances;

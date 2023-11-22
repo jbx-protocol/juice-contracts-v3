@@ -17,14 +17,14 @@ interface IJBFundAccessConstraintsStore is IERC165 {
     function distributionLimitsOf(
         uint256 projectId,
         uint256 configuration,
-        IJBPayoutTerminal terminal,
+        address terminal,
         address token
     ) external view returns (JBCurrencyAmount[] memory distributionLimits);
 
     function distributionLimitOf(
         uint256 projectId,
         uint256 configuration,
-        IJBPayoutTerminal terminal,
+        address terminal,
         address token,
         uint256 currency
     ) external view returns (uint256 distributionLimit);
@@ -32,14 +32,14 @@ interface IJBFundAccessConstraintsStore is IERC165 {
     function overflowAllowancesOf(
         uint256 projectId,
         uint256 configuration,
-        IJBPayoutTerminal terminal,
+        address terminal,
         address token
     ) external view returns (JBCurrencyAmount[] memory overflowAllowances);
 
     function overflowAllowanceOf(
         uint256 projectId,
         uint256 configuration,
-        IJBPayoutTerminal terminal,
+        address terminal,
         address token,
         uint256 currency
     ) external view returns (uint256 overflowAllowance);

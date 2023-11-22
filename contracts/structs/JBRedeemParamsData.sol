@@ -16,7 +16,7 @@ import {JBTokenAmount} from "./JBTokenAmount.sol";
 /// @custom:member redemptionRate The redemption rate of the funding cycle during which the redemption is being made.
 /// @custom:member metadata Extra data provided by the redeemer.
 struct JBRedeemParamsData {
-    IJBRedemptionTerminal terminal;
+    address terminal;
     address holder;
     uint256 projectId;
     uint256 currentFundingCycleConfiguration;

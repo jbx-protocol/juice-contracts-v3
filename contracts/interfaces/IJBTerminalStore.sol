@@ -10,7 +10,6 @@ import {JBTokenAmount} from "./../structs/JBTokenAmount.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBPrices} from "./IJBPrices.sol";
-import {IJBMultiTerminal} from "./terminal/IJBMultiTerminal.sol";
 
 interface IJBTerminalStore {
     function FUNDING_CYCLE_STORE() external view returns (IJBFundingCycleStore);
@@ -19,13 +18,13 @@ interface IJBTerminalStore {
 
     function PRICES() external view returns (IJBPrices);
 
-    function balanceOf(IJBMultiTerminal terminal, uint256 projectId, address token)
+    function balanceOf(address terminal, uint256 projectId, address token)
         external
         view
         returns (uint256);
 
     function usedDistributionLimitOf(
-        IJBMultiTerminal terminal,
+        address terminal,
         uint256 projectId,
         address token,
         uint256 fundingCycleNumber,
@@ -33,7 +32,7 @@ interface IJBTerminalStore {
     ) external view returns (uint256);
 
     function usedOverflowAllowanceOf(
-        IJBMultiTerminal terminal,
+        address terminal,
         uint256 projectId,
         address token,
         uint256 fundingCycleConfiguration,
@@ -41,9 +40,9 @@ interface IJBTerminalStore {
     ) external view returns (uint256);
 
     function currentOverflowOf(
-        IJBMultiTerminal terminal,
+        address terminal,
         uint256 projectId,
-        JBAccountingContext[] calldata tokenContexts,
+        JBAccountingContext[] calldata accountingContexts,
         uint256 decimals,
         uint256 currency
     ) external view returns (uint256);
@@ -54,9 +53,9 @@ interface IJBTerminalStore {
         returns (uint256);
 
     function currentReclaimableOverflowOf(
-        IJBMultiTerminal terminal,
+        address terminal,
         uint256 projectId,
-        JBAccountingContext[] calldata tokenContexts,
+        JBAccountingContext[] calldata accountingContexts,
         uint256 _decimals,
         uint256 _currency,
         uint256 tokenCount,
@@ -87,8 +86,8 @@ interface IJBTerminalStore {
     function recordRedemptionFor(
         address holder,
         uint256 projectId,
-        JBAccountingContext calldata tokenContext,
-        JBAccountingContext[] calldata balanceTokenContexts,
+        JBAccountingContext calldata accountingContext,
+        JBAccountingContext[] calldata balanceAccountingContexts,
         uint256 tokenCount,
         bytes calldata metadata
     )
@@ -101,14 +100,14 @@ interface IJBTerminalStore {
 
     function recordDistributionFor(
         uint256 projectId,
-        JBAccountingContext calldata tokenContext,
+        JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
     ) external returns (JBFundingCycle memory fundingCycle, uint256 distributedAmount);
 
     function recordUsedAllowanceOf(
         uint256 projectId,
-        JBAccountingContext calldata tokenContext,
+        JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
     ) external returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);
