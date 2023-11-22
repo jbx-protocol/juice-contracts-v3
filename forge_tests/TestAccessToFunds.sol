@@ -1200,10 +1200,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 new MockPriceFeed(_USD_PRICE_PER_ETH, _PRICE_FEED_DECIMALS);
             vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USDC");
 
-            _prices.addFeedFor({
+            _prices.addPriceFeedFor({
                 projectId: 0,
-                currency: uint32(uint160(address(_usdcToken))),
-                base: uint32(uint160(JBTokenList.ETH)),
+                pricingCurrency: uint32(uint160(address(_usdcToken))),
+                unitCurrency: uint32(uint160(JBTokenList.ETH)),
                 priceFeed: _priceFeedEthUsd
             });
 
@@ -1877,10 +1877,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 new MockPriceFeed(_USD_PRICE_PER_ETH, _PRICE_FEED_DECIMALS);
             vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USDC");
 
-            _prices.addFeedFor({
+            _prices.addPriceFeedFor({
                 projectId: 0,
-                currency: uint32(uint160(address(_usdcToken))),
-                base: uint32(uint160(JBTokenList.ETH)),
+                pricingCurrency: uint32(uint160(address(_usdcToken))),
+                unitCurrency: uint32(uint160(JBTokenList.ETH)),
                 priceFeed: _priceFeedEthUsd
             });
 

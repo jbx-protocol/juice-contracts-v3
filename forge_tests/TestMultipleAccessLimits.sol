@@ -131,10 +131,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
         vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
 
-        _prices.addFeedFor({
+        _prices.addPriceFeedFor({
             projectId: _projectId,
-            currency: uint32(uint160(JBTokenList.ETH)),
-            base: uint32(uint160(address(usdcToken()))),
+            pricingCurrency: uint32(uint160(JBTokenList.ETH)),
+            unitCurrency: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedEthUsd
         });
 
@@ -198,10 +198,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _usdDistributableAmount = PRBMath.mulDiv(
             _ethPayAmount - _ethDistributionLimit, // ETH value
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            _prices.priceFor({
+            _prices.pricePerUnitOf({
                 projectId: _projectId,
-                currency: _ethCurrency,
-                base: uint32(uint160(address(usdcToken()))),
+                pricingCurrency: _ethCurrency,
+                unitCurrency: uint32(uint160(address(usdcToken()))),
                 decimals: 18
             })
         );
@@ -504,10 +504,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _distributedAmount = PRBMath.mulDiv(
             1_800_000_000,
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            _prices.priceFor({
+            _prices.pricePerUnitOf({
                 projectId: 1,
-                currency: uint32(uint160(address(usdcToken()))),
-                base: _ethCurrency,
+                pricingCurrency: uint32(uint160(address(usdcToken()))),
+                unitCurrency: _ethCurrency,
                 decimals: 18
             })
         );
@@ -592,10 +592,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_price, 18);
         vm.label(address(_priceFeedEthUsd), "MockPrice Feed MyToken-ETH");
 
-        _prices.addFeedFor({
+        _prices.addPriceFeedFor({
             projectId: _projectId,
-            currency: _ethCurrency,
-            base: uint32(uint160(address(usdcToken()))),
+            pricingCurrency: _ethCurrency,
+            unitCurrency: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedEthUsd
         });
 
@@ -617,10 +617,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _distributedAmount = PRBMath.mulDiv(
             3_000_000_000,
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
-            _prices.priceFor({
+            _prices.pricePerUnitOf({
                 projectId: 1,
-                currency: uint32(uint160(address(usdcToken()))),
-                base: _ethCurrency,
+                pricingCurrency: uint32(uint160(address(usdcToken()))),
+                unitCurrency: _ethCurrency,
                 decimals: 18
             })
         );

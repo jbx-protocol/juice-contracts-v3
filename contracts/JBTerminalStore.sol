@@ -346,7 +346,9 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // The weight is always a fixed point mumber with 18 decimals. To ensure this, the ratio should use the same number of decimals as the `_amount`.
         uint256 _weightRatio = _amount.currency == ruleset.baseCurrency()
             ? 10 ** _amount.decimals
-            : PRICES.priceFor(_projectId, _amount.currency, ruleset.baseCurrency(), _amount.decimals);
+            : PRICES.pricePerUnitOf(
+                _projectId, _amount.currency, ruleset.baseCurrency(), _amount.decimals
+            );
 
         // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
         tokenCount = PRBMath.mulDiv(_amount.value, _weight, _weightRatio);
@@ -531,7 +533,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             : PRBMath.mulDiv(
                 _amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
-                PRICES.priceFor(
+                PRICES.pricePerUnitOf(
                     _projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY
                 )
             );
@@ -596,7 +598,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             : PRBMath.mulDiv(
                 _amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
-                PRICES.priceFor(
+                PRICES.pricePerUnitOf(
                     _projectId, _currency, _accountingContext.currency, _MAX_FIXED_POINT_FIDELITY
                 )
             );
@@ -781,7 +783,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             : PRBMath.mulDiv(
                 overflow,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-                PRICES.priceFor(
+                PRICES.pricePerUnitOf(
                     _projectId, _accountingContext.currency, _targetCurrency, _MAX_FIXED_POINT_FIDELITY
                 )
             );
@@ -822,7 +824,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 : PRBMath.mulDiv(
                     _distributionLimit.value,
                     10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_distributionLimitRemaining`'s fidelity as possible when converting.
-                    PRICES.priceFor(
+                    PRICES.pricePerUnitOf(
                         _projectId,
                         _distributionLimit.currency,
                         _targetCurrency,

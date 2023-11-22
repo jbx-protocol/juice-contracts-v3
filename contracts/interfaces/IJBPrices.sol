@@ -5,24 +5,33 @@ import {IJBPriceFeed} from "./IJBPriceFeed.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 
 interface IJBPrices {
-    event AddFeed(
-        uint256 indexed projectId, uint256 indexed currency, uint256 indexed base, IJBPriceFeed feed
+    event AddPriceFeed(
+        uint256 indexed projectId,
+        uint256 indexed pricingCurrency,
+        uint256 indexed unitCurrency,
+        IJBPriceFeed feed
     );
 
     function DEFAULT_PROJECT_ID() external view returns (uint256);
 
     function projects() external view returns (IJBProjects);
 
-    function feedFor(uint256 projectId, uint256 currency, uint256 base)
+    function priceFeedFor(uint256 projectId, uint256 pricingCurrency, uint256 unitCurrency)
         external
         view
         returns (IJBPriceFeed);
 
-    function priceFor(uint256 projectId, uint256 currency, uint256 base, uint256 decimals)
-        external
-        view
-        returns (uint256);
+    function pricePerUnitOf(
+        uint256 projectId,
+        uint256 pricingCurrency,
+        uint256 unitCurrency,
+        uint256 decimals
+    ) external view returns (uint256);
 
-    function addFeedFor(uint256 projectId, uint256 currency, uint256 base, IJBPriceFeed priceFeed)
-        external;
+    function addPriceFeedFor(
+        uint256 projectId,
+        uint256 pricingCurrency,
+        uint256 unitCurrency,
+        IJBPriceFeed priceFeed
+    ) external;
 }
