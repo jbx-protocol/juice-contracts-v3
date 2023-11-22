@@ -2,16 +2,16 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 
 /// @notice Manages and normalizes price feeds.
-contract JBPrices is Ownable, JBOperatable, IJBPrices {
+contract JBPrices is Ownable, JBPermissioned, IJBPrices {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -95,11 +95,11 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     // ---------------------------- constructor -------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing operator assignments.
+    /// @param _permissions A contract storing permissions.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _owner The address that will own the contract.
-    constructor(IJBOperatorStore _permissions, IJBProjects _projects, address _owner)
-        JBOperatable(_permissions)
+    constructor(IJBPermissions _permissions, IJBProjects _projects, address _owner)
+        JBPermissioned(_permissions)
         Ownable(_owner)
     {
         projects = _projects;
@@ -122,7 +122,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
         // Otherwise, only the project owner or an operator can add a feed for the project.
         if (msg.sender != owner() || _projectId != DEFAULT_PROJECT_ID) {
             _requirePermission(
-                projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
+                projects.ownerOf(_projectId), _projectId, JBPermissionIDs.ADD_PRICE_FEED
             );
         }
 

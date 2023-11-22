@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
-import "../contracts/JBOperatorStore.sol";
+import "../contracts/JBPermissions.sol";
 import "../contracts/JBProjects.sol";
 import "../contracts/JBPrices.sol";
 import "../contracts/JBRulesets.sol";
@@ -18,7 +18,7 @@ import "../contracts/JBMultiTerminal.sol";
 
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
-    JBOperatorStore _operatorStore;
+    JBPermissions _permissions;
     JBProjects _projects;
     JBPrices _prices;
     JBDirectory _directory;
@@ -37,33 +37,33 @@ contract Deploy is Script {
 
     function _deployContracts(address _manager) internal {
         // 1
-        _operatorStore = new JBOperatorStore();
+        _permissions = new JBPermissions();
         // 2
-        _projects = new JBProjects(_operatorStore, _manager);
+        _projects = new JBProjects(_permissions, _manager);
         // 3
-        _prices = new JBPrices(_operatorStore, _projects, _manager);
+        _prices = new JBPrices(_permissions, _projects, _manager);
         address _directoryAddress = addressFrom(address(this), 5);
         //4
         _rulesetStore = new JBRulesets(IJBDirectory(_directoryAddress));
         // 5
         _directory = new JBDirectory(
-            _operatorStore,
+            _permissions,
             _projects,
             _rulesetStore,
             address(this)
         );
         _tokenStore = new JBTokens(
-            _operatorStore,
+            _permissions,
             _projects,
             _directory,
             _rulesetStore
         );
-        _splits = new JBSplits(_operatorStore, _projects, _directory);
+        _splits = new JBSplits(_permissions, _projects, _directory);
         _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(
             _directory
         );
         _controller = new JBController(
-            _operatorStore,
+            _permissions,
             _projects,
             _directory,
             _rulesetStore,
@@ -79,7 +79,7 @@ contract Deploy is Script {
             _prices
         );
         _multiTerminal = new JBMultiTerminal(
-            _operatorStore,
+            _permissions,
             _projects,
             _directory,
             _splits,

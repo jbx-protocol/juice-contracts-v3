@@ -17,8 +17,8 @@ import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
-import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
@@ -26,7 +26,7 @@ import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBTokenList} from "./libraries/JBTokenList.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
 import {JBDidRedeemData} from "./structs/JBDidRedeemData.sol";
@@ -41,10 +41,10 @@ import {JBSplitHookData} from "./structs/JBSplitHookData.sol";
 import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
-contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
+contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     // A library that parses the packed ruleset metadata into a friendlier format.
     using JBRulesetMetadataResolver for JBRuleset;
 
@@ -191,7 +191,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @return A flag indicating if the provided interface ID is supported.
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return _interfaceId == type(IJBMultiTerminal).interfaceId
-            || _interfaceId == type(IJBOperatable).interfaceId
+            || _interfaceId == type(IJBPermissioned).interfaceId
             || _interfaceId == type(IJBPaymentTerminal).interfaceId;
     }
 
@@ -213,7 +213,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing operator assignments.
+    /// @param _permissions A contract storing permissions.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _splits A contract that stores splits for each project.
@@ -221,14 +221,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @param _permit2 A permit2 utility.
     /// @param _owner The address that will own this contract.
     constructor(
-        IJBOperatorStore _permissions,
+        IJBPermissions _permissions,
         IJBProjects _projects,
         IJBDirectory _directory,
         IJBSplits _splits,
         IJBTerminalStore _store,
         IPermit2 _permit2,
         address _owner
-    ) JBOperatable(_permissions) Ownable(_owner) {
+    ) JBPermissioned(_permissions) Ownable(_owner) {
         PROJECTS = _projects;
         DIRECTORY = _directory;
         SPLITS = _splits;
@@ -318,7 +318,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         external
         virtual
         override
-        requirePermission(_holder, _projectId, JBOperations.REDEEM_TOKENS)
+        requirePermission(_holder, _projectId, JBPermissionIDs.REDEEM_TOKENS)
         returns (uint256 reclaimAmount)
     {
         return _redeemTokensOf(
@@ -369,7 +369,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         external
         virtual
         override
-        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBOperations.USE_ALLOWANCE)
+        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIDs.USE_ALLOWANCE)
         returns (uint256 netDistributedAmount)
     {
         return _useAllowanceOf(
@@ -387,7 +387,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         external
         virtual
         override
-        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBOperations.MIGRATE_TERMINAL)
+        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIDs.MIGRATE_TERMINAL)
         returns (uint256 balance)
     {
         // The terminal being migrated to must accept the same token as this terminal.
@@ -423,7 +423,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         requirePermissionAllowingOverride(
             PROJECTS.ownerOf(_projectId),
             _projectId,
-            JBOperations.PROCESS_FEES,
+            JBPermissionIDs.PROCESS_FEES,
             msg.sender == owner()
         )
     {
@@ -484,7 +484,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         requirePermissionAllowingOverride(
             PROJECTS.ownerOf(_projectId),
             _projectId,
-            JBOperations.SET_ACCOUNTING_CONTEXT,
+            JBPermissionIDs.SET_ACCOUNTING_CONTEXT,
             msg.sender == DIRECTORY.controllerOf(_projectId)
         )
     {

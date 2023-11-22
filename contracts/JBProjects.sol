@@ -7,17 +7,17 @@ import {
 } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
-import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
+import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTokenUriResolver} from "./interfaces/IJBTokenUriResolver.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 
 /// @notice Stores project ownership and metadata.
 /// @dev Projects are represented as ERC-721's.
-contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
+contract JBProjects is JBPermissioned, ERC721Votes, Ownable, IJBProjects {
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
@@ -65,19 +65,20 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
         returns (bool)
     {
         return _interfaceId == type(IJBProjects).interfaceId
-            || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
+            || _interfaceId == type(IJBPermissioned).interfaceId
+            || super.supportsInterface(_interfaceId);
     }
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing operator assignments.
+    /// @param _permissions A contract storing permissions.
     /// @param _owner The owner of the contract who can set metadata.
-    constructor(IJBOperatorStore _permissions, address _owner)
+    constructor(IJBPermissions _permissions, address _owner)
         ERC721("Juicebox Projects", "JUICEBOX")
         EIP712("Juicebox Projects", "1")
-        JBOperatable(_permissions)
+        JBPermissioned(_permissions)
         Ownable(_owner)
     // solhint-disable-next-line no-empty-blocks
     {}
@@ -118,7 +119,7 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
     function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
         external
         override
-        requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+        requirePermission(ownerOf(_projectId), _projectId, JBPermissionIDs.SET_PROJECT_METADATA)
     {
         // Set the project's new metadata content within the specified domain.
         metadataContentOf[_projectId][_metadata.domain] = _metadata.content;

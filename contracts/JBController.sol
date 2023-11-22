@@ -4,15 +4,15 @@ pragma solidity ^0.8.16;
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
-import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
@@ -20,7 +20,7 @@ import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBSplitGroupIDs} from "./libraries/JBSplitGroupIDs.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
@@ -31,7 +31,7 @@ import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitHookData} from "./structs/JBSplitHookData.sol";
 
 /// @notice Stitches together rulesets and project tokens, making sure all activity is accounted for and correct.
-contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
+contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     // A library that parses the packed ruleset metadata into a more friendly format.
     using JBRulesetMetadataResolver for JBRuleset;
 
@@ -169,14 +169,15 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     {
         return _interfaceId == type(IJBController).interfaceId
             || _interfaceId == type(IJBMigratable).interfaceId
-            || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
+            || _interfaceId == type(IJBPermissioned).interfaceId
+            || super.supportsInterface(_interfaceId);
     }
 
     //*********************************************************************//
     // ---------------------------- constructor -------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing operator assignments.
+    /// @param _permissions A contract storing permissions.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _rulesets A contract storing all ruleset configurations.
@@ -184,14 +185,14 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
     /// @param _splits A contract that stores splits for each project.
     /// @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
     constructor(
-        IJBOperatorStore _permissions,
+        IJBPermissions _permissions,
         IJBProjects _projects,
         IJBDirectory _directory,
         IJBRulesets _rulesets,
         IJBTokens _tokenStore,
         IJBSplits _splits,
         IJBFundAccessConstraintsStore _fundAccessConstraintsStore
-    ) JBOperatable(_permissions) {
+    ) JBPermissioned(_permissions) {
         projects = _projects;
         directory = _directory;
         rulesets = _rulesets;
@@ -255,7 +256,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.QUEUE_RULESETS)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.QUEUE_RULESETS)
         returns (uint256 rulesetId)
     {
         // If there is a previous configuration, queueRulesetsOf should be called instead
@@ -289,7 +290,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.QUEUE_RULESETS)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.QUEUE_RULESETS)
         returns (uint256 rulesetId)
     {
         // Queue the next ruleset.
@@ -329,7 +330,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
-                JBOperations.MINT_TOKENS,
+                JBPermissionIDs.MINT_TOKENS,
                 directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
                     || msg.sender == address(_ruleset.dataSource())
             );
@@ -391,7 +392,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         requirePermissionAllowingOverride(
             _holder,
             _projectId,
-            JBOperations.BURN_TOKENS,
+            JBPermissionIDs.BURN_TOKENS,
             directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
         )
     {
@@ -434,7 +435,7 @@ contract JBController is JBOperatable, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.MIGRATE_CONTROLLER)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.MIGRATE_CONTROLLER)
     {
         // Keep a reference to the directory.
         IJBDirectory _directory = directory;

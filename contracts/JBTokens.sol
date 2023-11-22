@@ -3,15 +3,15 @@ pragma solidity ^0.8.16;
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBERC20Token} from "./JBERC20Token.sol";
 
@@ -19,7 +19,7 @@ import {JBERC20Token} from "./JBERC20Token.sol";
 /// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBToken if they prefer.
-contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
+contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
     // A library that parses the packed ruleset metadata into a friendlier format.
     using JBRulesetMetadataResolver for JBRuleset;
 
@@ -125,11 +125,11 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _rulesets A contract storing project rulesets.
     constructor(
-        IJBOperatorStore _permissions,
+        IJBPermissions _permissions,
         IJBProjects _projects,
         IJBDirectory _directory,
         IJBRulesets _rulesets
-    ) JBOperatable(_permissions) JBControllerUtility(_directory) {
+    ) JBPermissioned(_permissions) JBControllerUtility(_directory) {
         projects = _projects;
         rulesets = _rulesets;
     }
@@ -148,7 +148,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.ISSUE_TOKEN)
         returns (IJBToken token)
     {
         // There must be a name.
@@ -179,7 +179,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.SET_TOKEN)
     {
         // Can't set to the zero address.
         if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
@@ -297,7 +297,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         uint256 _projectId,
         uint256 _amount,
         address _beneficiary
-    ) external override requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS) {
+    ) external override requirePermission(_holder, _projectId, JBPermissionIDs.CLAIM_TOKENS) {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
 
@@ -335,7 +335,7 @@ contract JBTokens is JBControllerUtility, JBOperatable, IJBTokens {
         uint256 _projectId,
         address _recipient,
         uint256 _amount
-    ) external override requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS) {
+    ) external override requirePermission(_holder, _projectId, JBPermissionIDs.TRANSFER_TOKENS) {
         // Get a reference to the project's current ruleset.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 

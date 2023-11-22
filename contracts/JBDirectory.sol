@@ -2,18 +2,18 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 
 /// @notice Keeps a reference of which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and rulesets.
-contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
+contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     // A library that parses the packed ruleset metadata into a friendlier format.
     using JBRulesetMetadataResolver for JBRuleset;
 
@@ -154,16 +154,16 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing operator assignments.
+    /// @param _permissions A contract storing permissions.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _rulesets A contract storing all ruleset configurations.
     /// @param _owner The address that will own the contract.
     constructor(
-        IJBOperatorStore _permissions,
+        IJBPermissions _permissions,
         IJBProjects _projects,
         IJBRulesets _rulesets,
         address _owner
-    ) JBOperatable(_permissions) Ownable(_owner) {
+    ) JBPermissioned(_permissions) Ownable(_owner) {
         projects = _projects;
         rulesets = _rulesets;
     }
@@ -185,7 +185,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
         requirePermissionAllowingOverride(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.SET_CONTROLLER,
+            JBPermissionIDs.SET_CONTROLLER,
             (
                 msg.sender == address(controllerOf[_projectId])
                     || (isAllowedToSetFirstController[msg.sender] && controllerOf[_projectId] == address(0))
@@ -220,7 +220,7 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
         requirePermissionAllowingOverride(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.SET_TERMINALS,
+            JBPermissionIDs.SET_TERMINALS,
             msg.sender == address(controllerOf[_projectId])
         )
     {
@@ -268,7 +268,11 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
     function setPrimaryTerminalOf(uint256 _projectId, address _token, IJBPaymentTerminal _terminal)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PRIMARY_TERMINAL)
+        requirePermission(
+            projects.ownerOf(_projectId),
+            _projectId,
+            JBPermissionIDs.SET_PRIMARY_TERMINAL
+        )
     {
         // Can't set the primary terminal for a token if it doesn't accept the token.
         if (_terminal.accountingContextForTokenOf(_projectId, _token).token == address(0)) {

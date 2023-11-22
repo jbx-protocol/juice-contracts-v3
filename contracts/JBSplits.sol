@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
+import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBSplitGroup} from "./structs/JBSplitGroup.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 
 /// @notice Stores and manages splits for each project.
 /// @dev The domain ID is the ruleset ID that a split *should* be considered active within. This is not always the case.
-contract JBSplits is JBOperatable, IJBSplits {
+contract JBSplits is JBPermissioned, IJBSplits {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -90,8 +90,8 @@ contract JBSplits is JBOperatable, IJBSplits {
     /// @param _permissions A contract storing protocol-wide permissions.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    constructor(IJBOperatorStore _permissions, IJBProjects _projects, IJBDirectory _directory)
-        JBOperatable(_permissions)
+    constructor(IJBPermissions _permissions, IJBProjects _projects, IJBDirectory _directory)
+        JBPermissioned(_permissions)
     {
         projects = _projects;
         directory = _directory;
@@ -117,7 +117,7 @@ contract JBSplits is JBOperatable, IJBSplits {
         requirePermissionAllowingOverride(
             projects.ownerOf(_projectId),
             _projectId,
-            JBOperations.SET_SPLITS,
+            JBPermissionIDs.SET_SPLITS,
             address(directory.controllerOf(_projectId)) == msg.sender
         )
     {
