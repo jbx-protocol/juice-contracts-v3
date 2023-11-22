@@ -42,7 +42,7 @@ contract Deploy is Script {
         // 1
         _operatorStore = new JBOperatorStore();
         // 2
-        _projects = new JBProjects(_operatorStore, _manager);
+        _projects = new JBProjects(_operatorStore, _manager, _TRUSTED_FORWARDER);
         // 3
         _prices = new JBPrices(_operatorStore, _projects, _manager);
         address _directoryAddress = addressFrom(address(this), 5);

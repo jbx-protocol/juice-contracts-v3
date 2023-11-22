@@ -7,6 +7,7 @@ import {
 } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {ERC2771Context, Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
@@ -17,7 +18,7 @@ import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 
 /// @notice Stores project ownership and metadata.
 /// @dev Projects are represented as ERC-721's.
-contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
+contract JBProjects is JBOperatable, ERC2771Context, ERC721Votes, Ownable, IJBProjects {
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
@@ -74,11 +75,12 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
 
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _owner The owner of the contract who can set metadata.
-    constructor(IJBOperatorStore _operatorStore, address _owner)
+    constructor(IJBOperatorStore _operatorStore, address _trustedForwarder, address _owner)
         ERC721("Juicebox Projects", "JUICEBOX")
         EIP712("Juicebox Projects", "1")
         JBOperatable(_operatorStore)
         Ownable(_owner)
+        ERC2771Context(_trustedForwarder)
     // solhint-disable-next-line no-empty-blocks
     {}
 
@@ -107,7 +109,7 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
             metadataContentOf[projectId][_metadata.domain] = _metadata.content;
         }
 
-        emit Create(projectId, _owner, _metadata, msg.sender);
+        emit Create(projectId, _owner, _metadata, _msgSender());
     }
 
     /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
@@ -123,8 +125,12 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
         // Set the project's new metadata content within the specified domain.
         metadataContentOf[_projectId][_metadata.domain] = _metadata.content;
 
-        emit SetMetadata(_projectId, _metadata, msg.sender);
+        emit SetMetadata(_projectId, _metadata, _msgSender());
     }
+
+    //*********************************************************************//
+    // ------------------------ internal functions ----------------------- //
+    //*********************************************************************//
 
     /// @notice Sets the address of the resolver used to retrieve the tokenURI of projects.
     /// @param _newResolver The address of the new resolver.
@@ -132,6 +138,18 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
         // Store the new resolver.
         tokenUriResolver = _newResolver;
 
-        emit SetTokenUriResolver(_newResolver, msg.sender);
+        emit SetTokenUriResolver(_newResolver, _msgSender());
+    }
+
+    /// @notice Returns the sender, prefered to use over ` _msgSender()`
+    /// @return _sender the sender address of this call.
+    function _msgSender() internal view override(ERC2771Context, Context) returns (address _sender) {
+        return ERC2771Context._msgSender();
+    }
+
+    /// @notice Returns the calldata, prefered to use over `msg.data`
+    /// @return _calldata the `msg.data` of this call
+    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata _calldata) {
+        return ERC2771Context._msgData();
     }
 }
