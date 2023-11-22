@@ -88,7 +88,7 @@ abstract contract JBOperatable is Context, IJBOperatable {
         uint256 _permissionIndex,
         bool _override
     ) internal view {
-        if(_override) return;
+        if (_override) return;
         _requirePermission(_account, _domain, _permissionIndex);
     }
 }

@@ -228,8 +228,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         IJBSplitsStore _splitsStore,
         IJBTerminalStore _store,
         IPermit2 _permit2,
+        address _trustedForwarder,
         address _owner
-    ) JBOperatable(_operatorStore) Ownable(_owner) ERC2771Context(address(0)) { // TODO: accept an ERC2771Context argument
+    ) JBOperatable(_operatorStore) Ownable(_owner) ERC2771Context(_trustedForwarder) {
         PROJECTS = _projects;
         DIRECTORY = _directory;
         SPLITS = _splitsStore;
@@ -262,7 +263,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         return _pay(
             _token,
             _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
-             _msgSender(),
+            _msgSender(),
             _projectId,
             _beneficiary,
             _minReturnedTokens,
@@ -411,7 +412,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _to.addToBalanceOf{value: _payValue}(_projectId, _token, balance, false, "", bytes(""));
         }
 
-        emit Migrate(_projectId, _token, _to, balance,  _msgSender());
+        emit Migrate(_projectId, _token, _to, balance, _msgSender());
     }
 
     /// @notice Process any fees that are being held for the project.
@@ -425,7 +426,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             PROJECTS.ownerOf(_projectId),
             _projectId,
             JBOperations.PROCESS_FEES,
-             _msgSender() == owner()
+            _msgSender() == owner()
         )
     {
         // Get a reference to the project's held fees.
@@ -453,7 +454,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // Process the fee.
             _processFee(_projectId, _token, _amount, _heldFees[_i].beneficiary, _feeTerminal);
 
-            emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary,  _msgSender());
+            emit ProcessFee(_projectId, _amount, true, _heldFees[_i].beneficiary, _msgSender());
 
             unchecked {
                 ++_i;
@@ -469,7 +470,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // Set the flag value.
         isFeelessAddress[_address] = _flag;
 
-        emit SetFeelessAddress(_address, _flag,  _msgSender());
+        emit SetFeelessAddress(_address, _flag, _msgSender());
     }
 
     /// @notice Sets accounting context for a token so that a project can begin accepting it.
@@ -486,7 +487,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             PROJECTS.ownerOf(_projectId),
             _projectId,
             JBOperations.SET_ACCOUNTING_CONTEXT,
-             _msgSender() == DIRECTORY.controllerOf(_projectId)
+            _msgSender() == DIRECTORY.controllerOf(_projectId)
         )
     {
         // Keep a reference to the accounting context being iterated on.
@@ -519,7 +520,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _accountingContextsOf[_projectId].push(_accountingContext);
 
             emit SetAccountingContext(
-                _projectId, _accountingContextConfig.token, _accountingContext,  _msgSender()
+                _projectId, _accountingContextConfig.token, _accountingContext, _msgSender()
             );
 
             unchecked {
@@ -556,7 +557,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
 
         // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
-        if ( _msgSender() == address(this)) return _amount;
+        if (_msgSender() == address(this)) return _amount;
 
         // Keep a reference to the allowance context parsed from the metadata.
         JBSingleAllowanceData memory _allowance;
@@ -578,7 +579,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         uint256 _balanceBefore = _balance(_token);
 
         // Transfer tokens to this terminal from the msg sender.
-        _transferFor( _msgSender(), payable(address(this)), _token, _amount);
+        _transferFor(_msgSender(), payable(address(this)), _token, _amount);
 
         // The amount should reflect the change in balance.
         return _balance(_token) - _balanceBefore;
@@ -665,7 +666,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             beneficiaryTokenCount,
             _memo,
             _metadata,
-             _msgSender()
+            _msgSender()
         );
     }
 
@@ -690,7 +691,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // Record the added funds with any refunded fees.
         STORE.recordAddedBalanceFor(_projectId, _token, _amount + _refundedFees);
 
-        emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata,  _msgSender());
+        emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, _msgSender());
     }
 
     /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -803,7 +804,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _tokenCount,
             reclaimAmount,
             _metadata,
-             _msgSender()
+            _msgSender()
         );
     }
 
@@ -881,7 +882,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _distributedAmount,
             _feeTaken,
             netLeftoverDistributionAmount,
-             _msgSender()
+            _msgSender()
         );
     }
 
@@ -921,7 +922,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
         // Keep a reference to the fee.
         // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
-        uint256 _feePercent = isFeelessAddress[ _msgSender()] ? 0 : FEE;
+        uint256 _feePercent = isFeelessAddress[_msgSender()] ? 0 : FEE;
 
         unchecked {
             // Take a fee from the `_distributedAmount`, if needed.
@@ -955,7 +956,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _distributedAmount,
             netDistributedAmount,
             _memo,
-             _msgSender()
+            _msgSender()
         );
     }
 
@@ -982,13 +983,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
         // Transfer between all splits.
         for (uint256 _i; _i < _splits.length;) {
-
             // The amount to send towards the split.
-            uint256 _payoutAmount = PRBMath.mulDiv(_amount, _splits[_i].percent, _leftoverPercentage);
+            uint256 _payoutAmount =
+                PRBMath.mulDiv(_amount, _splits[_i].percent, _leftoverPercentage);
 
             // The payout amount substracting any applicable incurred fees.
-            uint256 _netPayoutAmount =
-                _distributeToPayoutSplit(_splits[_i], _projectId, _token, _payoutAmount, _feePercent);
+            uint256 _netPayoutAmount = _distributeToPayoutSplit(
+                _splits[_i], _projectId, _token, _payoutAmount, _feePercent
+            );
 
             // If the split allocator is set as feeless, this distribution is not eligible for a fee.
             if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount) {
@@ -1014,7 +1016,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 _splits[_i],
                 _payoutAmount,
                 _netPayoutAmount,
-                 _msgSender()
+                _msgSender()
             );
 
             unchecked {
@@ -1093,7 +1095,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 // Set the net payout amount to 0 to signal the reversion.
                 netPayoutAmount = 0;
 
-                emit PayoutReverted(_projectId, _split, _amount, _reason,  _msgSender());
+                emit PayoutReverted(_projectId, _split, _amount, _reason, _msgSender());
             }
 
             // Otherwise, if a project is specified, make a payment to it.
@@ -1112,7 +1114,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 // Specify the reason for reverting.
                 bytes memory _reason = "404";
 
-                emit PayoutReverted(_projectId, _split, _amount, _reason,  _msgSender());
+                emit PayoutReverted(_projectId, _split, _amount, _reason, _msgSender());
             } else {
                 // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
                 if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)])
@@ -1148,14 +1150,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                         // Set the net payout amount to 0 to signal the reversion.
                         netPayoutAmount = 0;
 
-                        emit PayoutReverted(_projectId, _split, _amount, _reason,  _msgSender());
+                        emit PayoutReverted(_projectId, _split, _amount, _reason, _msgSender());
                     }
                 } else {
                     try _terminal.pay{value: _payValue}(
                         _split.projectId,
                         _token,
                         netPayoutAmount,
-                        _split.beneficiary != address(0) ? _split.beneficiary :  _msgSender(),
+                        _split.beneficiary != address(0) ? _split.beneficiary : _msgSender(),
                         0,
                         "",
                         // Send the projectId in the metadata as a referral.
@@ -1169,7 +1171,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                         // Set the net payout amount to 0 to signal the reversion.
                         netPayoutAmount = 0;
 
-                        emit PayoutReverted(_projectId, _split, _amount, _reason,  _msgSender());
+                        emit PayoutReverted(_projectId, _split, _amount, _reason, _msgSender());
                     }
                 }
             }
@@ -1185,7 +1187,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the  _msgSender().
             _transferFor(
                 address(this),
-                _split.beneficiary != address(0) ? _split.beneficiary : payable( _msgSender()),
+                _split.beneficiary != address(0) ? _split.beneficiary : payable(_msgSender()),
                 _token,
                 netPayoutAmount
             );
@@ -1257,7 +1259,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // Fulfill the allocation.
             _allocation.delegate.didPay{value: _payValue}(_data);
 
-            emit DelegateDidPay(_allocation.delegate, _data, _allocation.amount,  _msgSender());
+            emit DelegateDidPay(_allocation.delegate, _data, _allocation.amount, _msgSender());
 
             unchecked {
                 ++_i;
@@ -1345,7 +1347,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _allocation.delegate.didRedeem{value: _payValue}(_data);
 
             emit DelegateDidRedeem(
-                _allocation.delegate, _data, _allocation.amount, _delegatedAmountFee,  _msgSender()
+                _allocation.delegate, _data, _allocation.amount, _delegatedAmountFee, _msgSender()
             );
         }
     }
@@ -1373,7 +1375,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // Store the held fee.
             _heldFeesOf[_projectId].push(JBFee(_amount, uint32(_feePercent), _beneficiary));
 
-            emit HoldFee(_projectId, _amount, _feePercent, _beneficiary,  _msgSender());
+            emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, _msgSender());
         } else {
             // Get the terminal that'll receive the fee if one wasn't provided.
             IJBPaymentTerminal _feeTerminal =
@@ -1382,7 +1384,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // Process the fee.
             _processFee(_projectId, _token, feeAmount, _beneficiary, _feeTerminal);
 
-            emit ProcessFee(_projectId, feeAmount, false, _beneficiary,  _msgSender());
+            emit ProcessFee(_projectId, feeAmount, false, _beneficiary, _msgSender());
         }
     }
 
@@ -1405,7 +1407,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // Specify the reason for reverting.
             bytes memory _reason = "Fee not accepted";
 
-            emit FeeReverted(_projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason,  _msgSender());
+            emit FeeReverted(
+                _projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, _msgSender()
+            );
             return;
         }
 
@@ -1437,7 +1441,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 address(_feeTerminal) != address(this) ? _amount : 0,
                 _amount
             );
-            emit FeeReverted(_projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason,  _msgSender());
+            emit FeeReverted(
+                _projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, _msgSender()
+            );
         }
     }
 
@@ -1503,7 +1509,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             }
         }
 
-        emit RefundHeldFees(_projectId, _amount, refundedFees, leftoverAmount,  _msgSender());
+        emit RefundHeldFees(_projectId, _amount, refundedFees, leftoverAmount, _msgSender());
     }
 
     /// @notice Reverts an expected payout.
@@ -1568,7 +1574,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _token The token being allowed.
     function _permitAllowance(JBSingleAllowanceData memory _allowance, address _token) internal {
         PERMIT2.permit(
-             _msgSender(),
+            _msgSender(),
             IAllowanceTransfer.PermitSingle({
                 details: IAllowanceTransfer.PermitDetails({
                     token: _token,
@@ -1583,11 +1589,15 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         );
     }
 
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address){
+    /// @notice Returns the sender, prefered to use over `msg.sender`
+    /// @return _sender the sender address of this call.
+    function _msgSender() internal view override(ERC2771Context, Context) returns (address _sender) {
         return ERC2771Context._msgSender();
     }
 
-     function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata){
+    /// @notice Returns the calldata, prefered to use over `msg.data`
+    /// @return _calldata the `msg.data` of this call
+    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata _calldata) {
         return ERC2771Context._msgData();
     }
 }

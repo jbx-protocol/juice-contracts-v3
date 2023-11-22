@@ -3,8 +3,9 @@ pragma solidity ^0.8.16;
 
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {JBOperatable, Context} from "./abstract/JBOperatable.sol";
 import {JBBallotState} from "./enums/JBBallotState.sol";
 import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
@@ -31,7 +32,7 @@ import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
 
 /// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratable {
+contract JBController3_1 is JBOperatable, ERC2771Context, ERC165, IJBController3_1, IJBMigratable {
     // A library that parses the packed funding cycle metadata into a more friendly format.
     using JBFundingCycleMetadataResolver for JBFundingCycle;
 
@@ -190,8 +191,9 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         IJBFundingCycleStore _fundingCycleStore,
         IJBTokenStore _tokenStore,
         IJBSplitsStore _splitsStore,
-        IJBFundAccessConstraintsStore _fundAccessConstraintsStore
-    ) JBOperatable(_operatorStore) {
+        IJBFundAccessConstraintsStore _fundAccessConstraintsStore,
+        address _trustedForwarder
+    ) JBOperatable(_operatorStore) ERC2771Context(_trustedForwarder) {
         projects = _projects;
         directory = _directory;
         fundingCycleStore = _fundingCycleStore;
@@ -235,7 +237,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         // Configure the terminals.
         _configureTerminals(projectId, _terminalConfigurations);
 
-        emit LaunchProject(_configuration, projectId, _memo, msg.sender);
+        emit LaunchProject(_configuration, projectId, _memo,  _msgSender());
     }
 
     /// @notice Creates a funding cycle for an already existing project ERC-721.
@@ -276,7 +278,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         // Configure the terminals.
         _configureTerminals(_projectId, _terminalConfigurations);
 
-        emit LaunchFundingCycles(configured, _projectId, _memo, msg.sender);
+        emit LaunchFundingCycles(configured, _projectId, _memo,  _msgSender());
     }
 
     /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's ballot.
@@ -303,7 +305,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         // Configure the next funding cycle.
         configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
 
-        emit ReconfigureFundingCycles(configured, _projectId, _memo, msg.sender);
+        emit ReconfigureFundingCycles(configured, _projectId, _memo,  _msgSender());
     }
 
     /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current funding cycle configuration.
@@ -338,15 +340,15 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
                 projects.ownerOf(_projectId),
                 _projectId,
                 JBOperations.MINT_TOKENS,
-                directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
-                    || msg.sender == address(_fundingCycle.dataSource())
+                directory.isTerminalOf(_projectId, IJBPaymentTerminal( _msgSender()))
+                    ||  _msgSender() == address(_fundingCycle.dataSource())
             );
 
             // If the message sender is not a terminal or a datasource, the current funding cycle must allow minting.
             if (
                 !_fundingCycle.mintingAllowed()
-                    && !directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
-                    && msg.sender != address(_fundingCycle.dataSource())
+                    && !directory.isTerminalOf(_projectId, IJBPaymentTerminal( _msgSender()))
+                    &&  _msgSender() != address(_fundingCycle.dataSource())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
 
             // Determine the reserved rate to use.
@@ -377,7 +379,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
             beneficiaryTokenCount,
             _memo,
             _reservedRate,
-            msg.sender
+             _msgSender()
         );
     }
 
@@ -400,7 +402,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
             _holder,
             _projectId,
             JBOperations.BURN_TOKENS,
-            directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
+            directory.isTerminalOf(_projectId, IJBPaymentTerminal( _msgSender()))
         )
     {
         // There should be tokens to burn
@@ -409,7 +411,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         // Burn the tokens.
         tokenStore.burnFrom(_holder, _projectId, _tokenCount);
 
-        emit BurnTokens(_holder, _projectId, _tokenCount, _memo, msg.sender);
+        emit BurnTokens(_holder, _projectId, _tokenCount, _memo,  _msgSender());
     }
 
     /// @notice Distributes all outstanding reserved tokens for a project.
@@ -465,7 +467,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
         // Set the new controller.
         _directory.setControllerOf(_projectId, address(_to));
 
-        emit Migrate(_projectId, _to, msg.sender);
+        emit Migrate(_projectId, _to,  _msgSender());
     }
 
     //*********************************************************************//
@@ -513,7 +515,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
             tokenCount,
             _leftoverTokenCount,
             _memo,
-            msg.sender
+             _msgSender()
         );
     }
 
@@ -555,12 +557,12 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
                 _tokenStore.mintFor(
                     // If an allocator is set in the splits, set it as the beneficiary.
                     // Otherwise if a projectId is set in the split, set the project's owner as the beneficiary.
-                    // If the split has a beneficiary send to the split's beneficiary. Otherwise send to the msg.sender.
+                    // If the split has a beneficiary send to the split's beneficiary. Otherwise send to the  _msgSender().
                     _split.allocator != IJBSplitAllocator(address(0))
                         ? address(_split.allocator)
                         : _split.projectId != 0
                             ? projects.ownerOf(_split.projectId)
-                            : _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
+                            : _split.beneficiary != address(0) ? _split.beneficiary :  _msgSender(),
                     _projectId,
                     _tokenCount
                 );
@@ -581,7 +583,7 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
             }
 
             emit DistributeToReservedTokenSplit(
-                _projectId, _domain, _group, _split, _tokenCount, msg.sender
+                _projectId, _domain, _group, _split, _tokenCount,  _msgSender()
             );
 
             unchecked {
@@ -682,5 +684,17 @@ contract JBController3_1 is JBOperatable, ERC165, IJBController3_1, IJBMigratabl
 
         // Set the terminals in the directory.
         if (_numberOfTerminalConfigs > 0) directory.setTerminalsOf(_projectId, _terminals);
+    }
+
+    /// @notice Returns the sender, prefered to use over ` _msgSender()`
+    /// @return _sender the sender address of this call.
+    function _msgSender() internal view override(ERC2771Context, Context) returns (address _sender) {
+        return ERC2771Context._msgSender();
+    }
+
+    /// @notice Returns the calldata, prefered to use over `msg.data`
+    /// @return _calldata the `msg.data` of this call
+    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata _calldata) {
+        return ERC2771Context._msgData();
     }
 }

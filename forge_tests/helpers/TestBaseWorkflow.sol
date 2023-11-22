@@ -91,6 +91,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     // Multisig address used for testing.
     address private _multisig = address(123);
     address private _beneficiary = address(69_420);
+    address private _trustedForwarder = address(123_456);
     MockERC20 private _usdcToken;
     address private _permit2;
     JBOperatorStore private _jbOperatorStore;
@@ -211,7 +212,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbFundingCycleStore,
       _jbTokenStore,
       _jbSplitsStore,
-      _jbFundAccessConstraintsStore
+      _jbFundAccessConstraintsStore,
+      _trustedForwarder
     );
         vm.label(address(_jbController), "JBController3_1");
 
@@ -231,6 +233,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbSplitsStore,
       _jbTerminalStore,
       IPermit2(_permit2),
+      _trustedForwarder,
       _multisig
     );
 
@@ -241,6 +244,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbSplitsStore,
         _jbTerminalStore,
         IPermit2(_permit2),
+        _trustedForwarder,
         _multisig
         );
 
