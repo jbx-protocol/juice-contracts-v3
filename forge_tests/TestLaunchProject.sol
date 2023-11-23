@@ -105,6 +105,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     }
 
     function testLaunchProjectFuzzWeight(uint256 _weight) public {
+        _weight = bound(_weight, 0, type(uint88).max);
         uint256 _projectId;
         
         _data = JBFundingCycleData({
@@ -130,8 +131,63 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // expectRevert on the next call if weight overflowing
+        _projectId = _controller.launchProjectFor({
+            owner: _projectOwner,
+            projectMetadata: _projectMetadata,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
+            memo: ""
+        });
+
+        JBFundingCycle memory fundingCycle = _fcStore.currentOf(_projectId);
+
+        // Reference configured attributes for sake of comparison
+        JBFundingCycle memory configured = JBFundingCycle({
+            number: 1,
+            configuration: block.timestamp,
+            basedOn: 0,
+            start: block.timestamp,
+            duration: _data.duration,
+            weight: _weight,
+            discountRate: _data.discountRate,
+            ballot: _data.ballot,
+            metadata: fundingCycle.metadata
+        });
+
+        bool same = equals(configured, fundingCycle);
+
+        assertEq(same, true);
+    }
+
+    function testLaunchOverweight(uint256 _weight) public {
+        _weight = bound(_weight, type(uint88).max, type(uint256).max);
+        uint256 _projectId;
+        
+        _data = JBFundingCycleData({
+            duration: 14,
+            weight: _weight,
+            discountRate: 450_000_000,
+            ballot: IJBFundingCycleBallot(address(0))
+        });
+
+        // Package up cycle config.
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
+        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+
+        // Package up terminal config.
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
+
         if (_weight > type(uint88).max) {
+            // expectRevert on the next call if weight overflowing
             vm.expectRevert(abi.encodeWithSignature("INVALID_WEIGHT()"));
 
             _projectId = _controller.launchProjectFor({
@@ -140,20 +196,36 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
-        });
+            });
         } else {
             _projectId = _controller.launchProjectFor({
-            owner: _projectOwner,
-            projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
-            terminalConfigurations: _terminalConfigurations,
-            memo: ""
-        });
+                owner: _projectOwner,
+                projectMetadata: _projectMetadata,
+                fundingCycleConfigurations: _cycleConfig,
+                terminalConfigurations: _terminalConfigurations,
+                memo: ""
+            });
 
+            // Reference for sake of comparison
             JBFundingCycle memory fundingCycle = _fcStore.currentOf(_projectId);
 
-            assertEq(fundingCycle.number, 1);
-            assertEq(fundingCycle.weight, _weight);
+            // Reference configured attributes for sake of comparison
+            JBFundingCycle memory configured = JBFundingCycle({
+                number: 1,
+                configuration: block.timestamp,
+                basedOn: 0,
+                start: block.timestamp,
+                duration: _data.duration,
+                weight: _weight,
+                discountRate: _data.discountRate,
+                ballot: _data.ballot,
+                metadata: fundingCycle.metadata
+            });
+
+            bool same = equals(configured, fundingCycle);
+
+            assertEq(same, true);
         }
+
     }
 }
