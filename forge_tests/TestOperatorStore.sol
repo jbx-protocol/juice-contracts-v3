@@ -71,7 +71,7 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         _projectZero = _controller.launchProjectFor({
-            owner: makeAddr("8008"),
+            owner: makeAddr("zeroOwner"),
             projectMetadata: _projectMetadata,
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
@@ -96,8 +96,10 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
         _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
         
-        vm.prank(makeAddr("8008"));
-        _controller.reconfigureFundingCyclesOf(_projectOne, _cycleConfig, "");
+        vm.prank(makeAddr("zeroOwner"));
+        uint256 configured = _controller.reconfigureFundingCyclesOf(_projectOne, _cycleConfig, "");
+
+        assertEq(configured, block.timestamp);
     }
 
     function testFailSetOperators() public {
@@ -116,9 +118,9 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
                 permissionIndexes: permIndexes
                 });
 
-        // Set em.
-        vm.prank(_projectOwner);
-        _opStore.setOperatorOf(_projectOwner, opData[0]);
+            // Set em.
+            vm.prank(_projectOwner);
+            _opStore.setOperatorOf(_projectOwner, opData[0]);
         }
     }
 
@@ -138,13 +140,13 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
                 permissionIndexes: permIndexes
                 });
 
-        // Set em.
-        vm.prank(_projectOwner);
-        _opStore.setOperatorOf(_projectOwner, opData[0]);
+            // Set em.
+            vm.prank(_projectOwner);
+            _opStore.setOperatorOf(_projectOwner, opData[0]);
 
-        // verify
-        bool _check = _opStore.hasPermission(address(0), _projectOwner, _projectOne, permIndexes[i]);
-        assertEq(_check, true);
+            // verify
+            bool _check = _opStore.hasPermission(address(0), _projectOwner, _projectOne, permIndexes[i]);
+            assertEq(_check, true);
         }
     }
 
