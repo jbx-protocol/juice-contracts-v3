@@ -82,7 +82,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
     function testPayDelegates(uint256 _numberOfAllocations, uint256 _ethPayAmount) public {
         // Bound the number of allocations to a reasonable amount.
-        _numberOfAllocations = bound(_numberOfAllocations, 1, 2);
+        _numberOfAllocations = bound(_numberOfAllocations, 1, 20);
         // Make sure the amount of tokens generated fits in a register, and that each allocation can get some.
         _ethPayAmount =
             bound(_ethPayAmount, _numberOfAllocations, type(uint256).max / _DATA_SOURCE_WEIGHT);

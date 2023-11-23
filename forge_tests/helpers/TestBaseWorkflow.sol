@@ -42,6 +42,7 @@ import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
+import {JBRedemptionDelegateAllocation3_1_1} from "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
 import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
@@ -59,6 +60,7 @@ import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "@juicebox/interfaces/IJBTokenStore.sol";
 import {IJBSplitAllocator} from "@juicebox/interfaces/IJBSplitAllocator.sol";
 import {IJBPayDelegate3_1_1} from "@juicebox/interfaces/IJBPayDelegate3_1_1.sol";
+import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol";
 import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
