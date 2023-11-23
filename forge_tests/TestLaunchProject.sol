@@ -10,6 +10,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
     IJBPaymentTerminal private _terminal;
+    IJBFundingCycleStore private _fcStore;
 
     address private _projectOwner;
 
@@ -19,6 +20,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
+        _fcStore = jbFundingCycleStore();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
@@ -50,6 +52,12 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
     }
 
+    function equals(JBFundingCycle memory configured, JBFundingCycle memory stored) internal view returns (bool) {
+        // Just compare the output of hashing all fields packed
+        return(keccak256(abi.encodePacked(configured.number, configured.configuration, configured.basedOn, configured.start, configured.duration, configured.weight, configured.discountRate, configured.ballot, configured.metadata)) 
+        == keccak256(abi.encodePacked(stored.number, stored.configuration, stored.basedOn, stored.start, stored.duration, stored.weight, stored.discountRate, stored.ballot, stored.metadata)));
+    }
+
     function testLaunchProject() public {
         // Package up cycle config.
         JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
@@ -76,11 +84,24 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
 
         // Get a reference to the first funding cycle.
-        JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(projectId);
+        JBFundingCycle memory fundingCycle = _fcStore.currentOf(projectId);
 
-        // Make sure the funding cycle got saved correctly.
-        assertEq(fundingCycle.number, 1);
-        assertEq(fundingCycle.weight, _data.weight);
+        // Reference configured attributes for sake of comparison
+        JBFundingCycle memory configured = JBFundingCycle({
+            number: 1,
+            configuration: block.timestamp,
+            basedOn: 0,
+            start: block.timestamp,
+            duration: _data.duration,
+            weight: _data.weight,
+            discountRate: _data.discountRate,
+            ballot: _data.ballot,
+            metadata: fundingCycle.metadata
+        });
+
+        bool same = equals(configured, fundingCycle);
+
+        assertEq(same, true);
     }
 
     function testLaunchProjectFuzzWeight(uint256 _weight) public {
@@ -129,7 +150,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             memo: ""
         });
 
-            JBFundingCycle memory fundingCycle = jbFundingCycleStore().currentOf(_projectId);
+            JBFundingCycle memory fundingCycle = _fcStore.currentOf(_projectId);
 
             assertEq(fundingCycle.number, 1);
             assertEq(fundingCycle.weight, _weight);
