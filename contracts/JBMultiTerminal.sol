@@ -561,6 +561,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         address _beneficiary,
         IJBPaymentTerminal _feeTerminal
     ) external {
+        // NOTICE: May only be called by this terminal itself.
+        require(msg.sender == address(this));
+
         if (address(_feeTerminal) == address(0))
             revert("Fee not accepted");
 
@@ -601,6 +604,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         uint256 _feePercent,
         address _originalMessageSender
     ) external returns (uint256 netPayoutAmount) {
+        // NOTICE: May only be called by this terminal itself.
         require(msg.sender == address(this));
 
         // By default, the net payout amount is the full amount. This will be adjusted if fees are taken.
