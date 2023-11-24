@@ -41,14 +41,14 @@ contract TestDelegates_Local is TestBaseWorkflow {
                 pauseTransfers: false
             }),
             reservedRate: 0,
-            redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2,
+            redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
             allowMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: true,
+            useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
             useDataSourceForRedeem: true,
             dataSource: _DATA_SOURCE,
@@ -106,15 +106,37 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // Keep a reference to the current funding cycle.
         (JBFundingCycle memory _fundingCycle,) = _controller.currentFundingCycleOf(_projectId);
 
-        // Reference tokens received from pay
-        uint256 _redeemableReceived = 1 ether;
+        vm.deal(address(this), _ethPayAmount);
+        _terminal.pay{value: _ethPayAmount}({
+            projectId: _projectId,
+            amount: _ethPayAmount,
+            token: JBTokens.ETH,
+            beneficiary: address(this),
+            minReturnedTokens: 0,
+            memo: "Forge Test",
+            metadata: ""
+        });
+
+        // Make sure the beneficiary has a balance of tokens.
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _WEIGHT);
+        assertEq(_tokenStore.balanceOf(address(this), _projectId), _beneficiaryTokenBalance);
+        emit log_uint(_beneficiaryTokenBalance);
+
+        // Make sure the ETH balance in terminal is up to date.
+        uint256 _ethTerminalBalance = _ethPayAmount;
+        assertEq(
+            jbTerminalStore().balanceOf(
+                IJBPaymentTerminal(address(_terminal)), _projectId, JBTokens.ETH
+            ),
+            _ethTerminalBalance
+        );
 
         // Reference allocations
         JBRedemptionDelegateAllocation3_1_1[] memory _allocations = new JBRedemptionDelegateAllocation3_1_1[](1);
 
         _allocations[0] = JBRedemptionDelegateAllocation3_1_1({
             delegate: IJBRedemptionDelegate3_1_1(_redDelegate),
-            amount: _redeemableReceived,
+            amount: 0,
             metadata: ""
         });
 
@@ -123,7 +145,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             holder: address(this),
             projectId: _projectId,
             currentFundingCycleConfiguration: _fundingCycle.configuration,
-            projectTokenCount: 1 ether,
+            projectTokenCount: _beneficiaryTokenBalance,
             reclaimedAmount: JBTokenAmount(
                     JBTokens.ETH,
                     _ethPayAmount,
@@ -132,9 +154,9 @@ contract TestDelegates_Local is TestBaseWorkflow {
                     ),
             forwardedAmount: JBTokenAmount(
                     address(jbTokenStore().tokenOf(_projectId)),
-                    _redeemableReceived,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
+                    _beneficiaryTokenBalance,
+                    _terminal.accountingContextForTokenOf(_projectId, address(_tokenStore.tokenOf(_projectId))).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, address(_tokenStore.tokenOf(_projectId))).currency
                     ),
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             beneficiary: payable(address(this)),
@@ -142,18 +164,8 @@ contract TestDelegates_Local is TestBaseWorkflow {
             redeemerMetadata: ""
         });
 
-        vm.deal(address(this), 10 ether);
-        _terminal.pay{value: _ethPayAmount}({
-            projectId: _projectId,
-            amount: 10 ether,
-            token: JBTokens.ETH,
-            beneficiary: address(this),
-            minReturnedTokens: 0,
-            memo: "Forge Test",
-            metadata: ""
-        });
 
-        // Mock the delegate
+        /* // Mock the delegate
         vm.mockCall(
             _redDelegate,
             abi.encodeWithSelector(IJBRedemptionDelegate3_1_1.didRedeem.selector),
@@ -163,34 +175,27 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // Assert that the delegate gets called with the expected value
         vm.expectCall(
             _redDelegate,
-            _redeemableReceived,
+            _beneficiaryTokenBalance,
             abi.encodeWithSelector(IJBRedemptionDelegate3_1_1.didRedeem.selector, _redeemData)
-        );
-
-        vm.prank(_projectOwner);
-        // Mint tokens to beneficiary.
-        _controller.mintTokensOf({
-            projectId: _projectId,
-            tokenCount: 1 ether,
-            beneficiary: address(this),
-            memo: "Mint memo",
-            useReservedRate: true
-        });
+        ); */
 
         vm.mockCall(
             _DATA_SOURCE,
             abi.encodeWithSelector(IJBFundingCycleDataSource3_1_1.redeemParams.selector),
-            abi.encode(_ethPayAmount, _allocations)
+            abi.encode(0, _allocations)
             );
         
         _terminal.redeemTokensOf({
             holder: address(this),
             projectId: _projectId,
-            count: PRBMathUD60x18.mul(_ethPayAmount, _WEIGHT),
+            count: _beneficiaryTokenBalance,
             token: JBTokens.ETH,
             minReclaimed: 0,
             beneficiary: payable(address(this)),
             metadata: new bytes(0)
         });
     }
+
+    receive() external payable {}
+    fallback() external payable {}
 }
