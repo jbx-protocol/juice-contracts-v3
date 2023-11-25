@@ -50,7 +50,7 @@ library JBRulesetMetadataResolver {
         return ((_ruleset.metadata >> 84) & 1) == 1;
     }
 
-    function useTotalOverflowForRedemptions(JBRuleset memory _ruleset)
+    function useTotalSurplusForRedemptions(JBRuleset memory _ruleset)
         internal
         pure
         returns (bool)
@@ -104,8 +104,8 @@ library JBRulesetMetadataResolver {
         if (_metadata.allowControllerMigration) packed |= 1 << 83;
         // hold fees in bit 84.
         if (_metadata.holdFees) packed |= 1 << 84;
-        // useTotalOverflowForRedemptions in bit 85.
-        if (_metadata.useTotalOverflowForRedemptions) packed |= 1 << 85;
+        // useTotalSurplusForRedemptions in bit 85.
+        if (_metadata.useTotalSurplusForRedemptions) packed |= 1 << 85;
         // use pay data source in bit 86.
         if (_metadata.useDataSourceForPay) packed |= 1 << 86;
         // use redeem data source in bit 87.
@@ -134,7 +134,7 @@ library JBRulesetMetadataResolver {
             terminalMigrationAllowed(_ruleset),
             controllerMigrationAllowed(_ruleset),
             shouldHoldFees(_ruleset),
-            useTotalOverflowForRedemptions(_ruleset),
+            useTotalSurplusForRedemptions(_ruleset),
             useDataSourceForPay(_ruleset),
             useDataSourceForRedeem(_ruleset),
             dataSource(_ruleset),

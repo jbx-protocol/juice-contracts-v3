@@ -49,7 +49,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
+            useTotalSurplusForRedemptions: false,
             useDataSourceForPay: false,
             useDataSourceForRedeem: false,
             dataSource: address(0),
@@ -64,31 +64,29 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         returns (uint256, JBCurrencyAmount[] memory, JBAccountingContextConfig[] memory)
     {
         uint256 _ethPayAmount = 1.5 ether;
-        uint256 _ethDistributionLimit = 1 ether;
+        uint256 _ethPayoutLimit = 1 ether;
         uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // More than the treasury will have available.
-        uint256 _usdDistributionLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
 
-        // Package up fund access constraints
-        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+        // Package up fund access limits
+        JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
+        JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _distributionLimits[0] = JBCurrencyAmount({
-            value: _ethDistributionLimit,
-            currency: uint32(uint160(JBTokenList.ETH))
-        });
-        _distributionLimits[1] = JBCurrencyAmount({
-            value: _usdDistributionLimit,
+        _payoutLimits[0] =
+            JBCurrencyAmount({amount: _ethPayoutLimit, currency: uint32(uint160(JBTokenList.ETH))});
+        _payoutLimits[1] = JBCurrencyAmount({
+            amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
         });
-        _overflowAllowances[0] =
-            JBCurrencyAmount({value: 1 ether, currency: uint32(uint160(JBTokenList.ETH))});
-        _fundAccessConstraints[0] = JBFundAccessConstraints({
+        _surplusAllowances[0] =
+            JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBTokenList.ETH))});
+        _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: __terminal,
             token: JBTokenList.ETH,
-            distributionLimits: _distributionLimits,
-            overflowAllowances: _overflowAllowances
+            payoutLimits: _payoutLimits,
+            surplusAllowances: _surplusAllowances
         });
 
         // Package up ruleset config.
@@ -97,7 +95,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -140,19 +138,19 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         vm.stopPrank();
 
-        return (_projectId, _distributionLimits, _accountingContexts);
+        return (_projectId, _payoutLimits, _accountingContexts);
     }
 
     function testAccessConstraintsDelineation() external {
         uint256 _ethPayAmount = 1.5 ether;
-        uint256 _ethDistributionLimit = 1 ether;
+        uint256 _ethPayoutLimit = 1 ether;
         uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // More than the treasury will have available.
-        uint256 _usdDistributionLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
 
         (
             uint256 _projectId,
-            JBCurrencyAmount[] memory _distributionLimits,
+            JBCurrencyAmount[] memory _payoutLimits,
             JBAccountingContextConfig[] memory _accountingContexts
         ) = launchProjectsForTestBelow();
 
@@ -177,7 +175,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // First dist meets our ETH limit
         __terminal.distributePayoutsOf({
             projectId: _projectId,
-            amount: _ethDistributionLimit,
+            amount: _ethPayoutLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
             token: JBTokenList.ETH, // unused
             minReturnedTokens: 0
@@ -188,15 +186,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             address(__terminal).balance,
             initTerminalBalance
                 - PRBMath.mulDiv(
-                    _distributionLimits[0].value,
-                    JBConstants.MAX_FEE,
-                    JBConstants.MAX_FEE + __terminal.FEE()
+                    _payoutLimits[0].amount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
         // Price for the amount (in USD) that is distributable based on the terminals current balance
         uint256 _usdDistributableAmount = PRBMath.mulDiv(
-            _ethPayAmount - _ethDistributionLimit, // ETH value
+            _ethPayAmount - _ethPayoutLimit, // ETH value
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
                 projectId: _projectId,
@@ -250,22 +246,22 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     }
 
     function testFuzzedInvalidAllowanceCurrencyOrdering(uint24 ALLOWCURRENCY) external {
-        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
-        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](2);
+        JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
+        JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
 
-        _distributionLimits[0] = JBCurrencyAmount({value: 1, currency: _ethCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _ethCurrency});
 
-        _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: ALLOWCURRENCY});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY});
 
-        _overflowAllowances[1] =
-            JBCurrencyAmount({value: 1, currency: ALLOWCURRENCY == 0 ? 0 : ALLOWCURRENCY - 1});
+        _surplusAllowances[1] =
+            JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY == 0 ? 0 : ALLOWCURRENCY - 1});
 
-        _fundAccessConstraints[0] = JBFundAccessConstraints({
+        _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: __terminal,
             token: JBTokenList.ETH,
-            distributionLimits: _distributionLimits,
-            overflowAllowances: _overflowAllowances
+            payoutLimits: _payoutLimits,
+            surplusAllowances: _surplusAllowances
         });
 
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
@@ -274,7 +270,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         _projectOwner = multisig();
 
@@ -291,7 +287,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         vm.prank(_projectOwner);
 
-        vm.expectRevert(abi.encodeWithSignature("INVALID_OVERFLOW_ALLOWANCE_CURRENCY_ORDERING()"));
+        vm.expectRevert(abi.encodeWithSignature("INVALID_SURPLUS_ALLOWANCE_CURRENCY_ORDERING()"));
 
         _controller.launchProjectFor({
             owner: _projectOwner,
@@ -303,24 +299,24 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     }
 
     function testFuzzedInvalidDistCurrencyOrdering(uint24 _distributionCurrency) external {
-        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+        JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
+        JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _distributionLimits[0] = JBCurrencyAmount({value: 1, currency: _distributionCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _distributionCurrency});
 
-        _distributionLimits[1] = JBCurrencyAmount({
-            value: 1,
+        _payoutLimits[1] = JBCurrencyAmount({
+            amount: 1,
             currency: _distributionCurrency == 0 ? 0 : _distributionCurrency - 1
         });
 
-        _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: 1});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
 
-        _fundAccessConstraints[0] = JBFundAccessConstraints({
+        _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: __terminal,
             token: JBTokenList.ETH,
-            distributionLimits: _distributionLimits,
-            overflowAllowances: _overflowAllowances
+            payoutLimits: _payoutLimits,
+            surplusAllowances: _surplusAllowances
         });
 
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
@@ -329,7 +325,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         _projectOwner = multisig();
 
@@ -346,7 +342,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         vm.prank(_projectOwner);
 
-        vm.expectRevert(abi.encodeWithSignature("INVALID_DISTRIBUTION_LIMIT_CURRENCY_ORDERING()"));
+        vm.expectRevert(abi.encodeWithSignature("INVALID_PAYOUT_LIMIT_CURRENCY_ORDERING()"));
 
         _controller.launchProjectFor({
             owner: _projectOwner,
@@ -358,42 +354,40 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     }
 
     function testFuzzedConfigureAccess(
-        uint256 _distributionLimit,
+        uint256 _payoutLimit,
         uint256 _allowanceLimit,
         uint256 _distributionCurrency,
         uint256 ALLOWCURRENCY
     ) external {
         _distributionCurrency =
             bound(uint256(_distributionCurrency), uint256(0), type(uint24).max - 1);
-        _distributionLimit =
-            bound(uint256(_distributionLimit), uint232(1), uint232(type(uint24).max - 1));
+        _payoutLimit = bound(uint256(_payoutLimit), uint232(1), uint232(type(uint24).max - 1));
         _allowanceLimit = bound(uint256(_allowanceLimit), uint232(1), uint232(type(uint24).max - 1));
         ALLOWCURRENCY = bound(uint256(ALLOWCURRENCY), uint256(0), type(uint24).max - 1);
 
-        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](2);
+        JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
+        JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
 
-        _distributionLimits[0] =
-            JBCurrencyAmount({value: _distributionLimit, currency: _distributionCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: _payoutLimit, currency: _distributionCurrency});
 
-        _distributionLimits[1] =
-            JBCurrencyAmount({value: _distributionLimit, currency: _distributionCurrency + 1});
-        _overflowAllowances[0] = JBCurrencyAmount({value: _allowanceLimit, currency: ALLOWCURRENCY});
-        _overflowAllowances[1] =
-            JBCurrencyAmount({value: _allowanceLimit, currency: ALLOWCURRENCY + 1});
-        _fundAccessConstraints[0] = JBFundAccessConstraints({
+        _payoutLimits[1] =
+            JBCurrencyAmount({amount: _payoutLimit, currency: _distributionCurrency + 1});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: _allowanceLimit, currency: ALLOWCURRENCY});
+        _surplusAllowances[1] =
+            JBCurrencyAmount({amount: _allowanceLimit, currency: ALLOWCURRENCY + 1});
+        _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: __terminal,
             token: JBTokenList.ETH,
-            distributionLimits: _distributionLimits,
-            overflowAllowances: _overflowAllowances
+            payoutLimits: _payoutLimits,
+            surplusAllowances: _surplusAllowances
         });
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -417,28 +411,27 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
     function testFailMultipleDistroLimitCurrenciesOverLimit() external {
         uint256 _ethPayAmount = 1.5 ether;
-        uint256 _ethDistributionLimit = 1 ether;
+        uint256 _ethPayoutLimit = 1 ether;
         uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // More than the treasury will have available.
-        uint256 _usdDistributionLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
 
-        // Package up fund access constraints
-        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
+        // Package up fund access limits
+        JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
+        JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _distributionLimits[0] =
-            JBCurrencyAmount({value: _ethDistributionLimit, currency: _ethCurrency});
-        _distributionLimits[1] = JBCurrencyAmount({
-            value: _usdDistributionLimit,
+        _payoutLimits[0] = JBCurrencyAmount({amount: _ethPayoutLimit, currency: _ethCurrency});
+        _payoutLimits[1] = JBCurrencyAmount({
+            amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
         });
-        _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: 1});
-        _fundAccessConstraints[0] = JBFundAccessConstraints({
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
+        _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: __terminal,
             token: JBTokenList.ETH,
-            distributionLimits: _distributionLimits,
-            overflowAllowances: _overflowAllowances
+            payoutLimits: _payoutLimits,
+            surplusAllowances: _surplusAllowances
         });
 
         // Package up ruleset config.
@@ -447,7 +440,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -536,18 +529,18 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         vm.deal(_beneficiary, _ethPayAmount);
         vm.prank(_beneficiary);
 
-        JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
-        JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
-        _distributionLimits[0] = JBCurrencyAmount({value: 1 ether, currency: _ethCurrency});
-        _distributionLimits[1] = JBCurrencyAmount({
-            value: 2000 * 10 ** 18,
+        JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
+        JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
+        _payoutLimits[0] = JBCurrencyAmount({amount: 1 ether, currency: _ethCurrency});
+        _payoutLimits[1] = JBCurrencyAmount({
+            amount: 2000 * 10 ** 18,
             currency: uint32(uint160(address(usdcToken())))
         });
-        _fundAccessConstraints[0] = JBFundAccessConstraints({
+        _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: __terminal,
             token: JBTokenList.ETH,
-            distributionLimits: _distributionLimits,
-            overflowAllowances: new JBCurrencyAmount[](0)
+            payoutLimits: _payoutLimits,
+            surplusAllowances: new JBCurrencyAmount[](0)
         });
 
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
@@ -556,7 +549,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);

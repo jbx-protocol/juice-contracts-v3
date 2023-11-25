@@ -707,7 +707,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
             return _nextImmediateStart;
         }
 
-        // The amount of seconds since the `_mustStartAtOrAfter` time which results in a start time that might satisfy the specified constraints.
+        // The amount of seconds since the `_mustStartAtOrAfter` time which results in a start time that might satisfy the specified limits.
         uint256 _timeFromImmediateStartMultiple =
             (_mustStartAtOrAfter - _nextImmediateStart) % _baseRuleset.duration;
 

@@ -11,7 +11,7 @@ import "../contracts/JBRulesets.sol";
 import "../contracts/JBDirectory.sol";
 import "../contracts/JBTokens.sol";
 import "../contracts/JBSplits.sol";
-import "../contracts/JBFundAccessConstraintsStore.sol";
+import "../contracts/JBFundAccessLimits.sol";
 import "../contracts/JBController.sol";
 import "../contracts/JBTerminalStore.sol";
 import "../contracts/JBMultiTerminal.sol";
@@ -25,7 +25,7 @@ contract Deploy is Script {
     JBRulesets _rulesetStore;
     JBTokens _tokenStore;
     JBSplits _splits;
-    JBFundAccessConstraintsStore _fundAccessConstraintsStore;
+    JBFundAccessLimits _fundAccessLimits;
     JBController _controller;
     JBTerminalStore _terminalStore;
     JBMultiTerminal _multiTerminal;
@@ -59,7 +59,7 @@ contract Deploy is Script {
             _rulesetStore
         );
         _splits = new JBSplits(_permissions, _projects, _directory);
-        _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(
+        _fundAccessLimits = new JBFundAccessLimits(
             _directory
         );
         _controller = new JBController(
@@ -69,7 +69,7 @@ contract Deploy is Script {
             _rulesetStore,
             _tokenStore,
             _splits,
-            _fundAccessConstraintsStore
+            _fundAccessLimits
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);

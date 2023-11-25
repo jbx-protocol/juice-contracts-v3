@@ -8,7 +8,7 @@ import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
+import {IJBFundAccessLimits} from "./interfaces/IJBFundAccessLimits.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
@@ -66,8 +66,8 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @notice The contract that stores splits for each project.
     IJBSplits public immutable override splits;
 
-    /// @notice A contract that stores fund access constraints for each project.
-    IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
+    /// @notice A contract that stores fund access limits for each project.
+    IJBFundAccessLimits public immutable override fundAccessLimits;
 
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override directory;
@@ -183,7 +183,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @param _rulesets A contract storing all ruleset configurations.
     /// @param _tokenStore A contract that manages token minting and burning.
     /// @param _splits A contract that stores splits for each project.
-    /// @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
+    /// @param _fundAccessLimits A contract that stores fund access limits for each project.
     constructor(
         IJBPermissions _permissions,
         IJBProjects _projects,
@@ -191,14 +191,14 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         IJBRulesets _rulesets,
         IJBTokens _tokenStore,
         IJBSplits _splits,
-        IJBFundAccessConstraintsStore _fundAccessConstraintsStore
+        IJBFundAccessLimits _fundAccessLimits
     ) JBPermissioned(_permissions) {
         projects = _projects;
         directory = _directory;
         rulesets = _rulesets;
         tokenStore = _tokenStore;
         splits = _splits;
-        fundAccessConstraintsStore = _fundAccessConstraintsStore;
+        fundAccessLimits = _fundAccessLimits;
     }
 
     //*********************************************************************//
@@ -635,9 +635,9 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             // Set splits for the group.
             splits.setSplitGroupsFor(_projectId, _ruleset.rulesetId, _rulesetConfig.splitGroups);
 
-            // Set the funds access constraints.
-            fundAccessConstraintsStore.setFor(
-                _projectId, _ruleset.rulesetId, _rulesetConfig.fundAccessConstraints
+            // Set the fund access limits.
+            fundAccessLimits.setFundAccessLimitsFor(
+                _projectId, _ruleset.rulesetId, _rulesetConfig.fundAccessLimitGroup
             );
 
             // Return the rulesetId timestamp if this is the last configuration being scheduled.

@@ -156,20 +156,20 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         return _accountingContextsOf[_projectId];
     }
 
-    /// @notice Gets the current overflowed amount in this terminal for a specified project, in terms of ETH.
-    /// @dev The current overflow is represented as a fixed point number with 18 decimals.
-    /// @param _projectId The ID of the project to get overflow for.
+    /// @notice Gets the current surplused amount in this terminal for a specified project, in terms of ETH.
+    /// @dev The current surplus is represented as a fixed point number with 18 decimals.
+    /// @param _projectId The ID of the project to get surplus for.
     /// @param _decimals The number of decimals included in the fixed point returned value.
     /// @param _currency The currency in which the ETH value is returned.
-    /// @return The current amount of ETH overflow that project has in this terminal, as a fixed point number with 18 decimals.
-    function currentOverflowOf(uint256 _projectId, uint256 _decimals, uint256 _currency)
+    /// @return The current amount of ETH surplus that project has in this terminal, as a fixed point number with 18 decimals.
+    function currentSurplusOf(uint256 _projectId, uint256 _decimals, uint256 _currency)
         external
         view
         virtual
         override
         returns (uint256)
     {
-        return STORE.currentOverflowOf(
+        return STORE.currentSurplusOf(
             this, _projectId, _accountingContextsOf[_projectId], _decimals, _currency
         );
     }
@@ -296,7 +296,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current ruleset's data source.
+    /// @notice Holders can redeem their tokens to claim the project's surplused tokens, or to trigger rules determined by the project's current ruleset's data source.
     /// @dev Only a token holder or a designated operator can redeem its tokens.
     /// @param _holder The account to redeem tokens for.
     /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -326,14 +326,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Distributes payouts for a project with the distribution limit of its current ruleset.
+    /// @notice Distributes payouts for a project with the payout limit of its current ruleset.
     /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
     /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
     /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
     /// @param _projectId The ID of the project having its payouts distributed.
     /// @param _token The token being distributed. This terminal ignores this property since it only manages one token.
     /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's distribution limit currency.
+    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's payout limit currency.
     /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
     /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
     function distributePayoutsOf(
@@ -346,13 +346,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         return _distributePayoutsOf(_projectId, _token, _amount, _currency, _minReturnedTokens);
     }
 
-    /// @notice Allows a project to send funds from its overflow up to the preconfigured allowance.
+    /// @notice Allows a project to send funds from its surplus up to the preconfigured allowance.
     /// @dev Only a project's owner or a designated operator can use its allowance.
     /// @dev Incurs the protocol fee.
     /// @param _projectId The ID of the project to use the allowance of.
     /// @param _token The token being distributed. This terminal ignores this property since it only manages one token.
     /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's overflow allowance currency.
+    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's surplus allowance currency.
     /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.
@@ -689,7 +689,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
     }
 
-    /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current ruleset's data source.
+    /// @notice Holders can redeem their tokens to claim the project's surplused tokens, or to trigger rules determined by the project's current ruleset's data source.
     /// @dev Only a token holder or a designated operator can redeem its tokens.
     /// @param _holder The account to redeem tokens for.
     /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -801,14 +801,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Distributes payouts for a project with the distribution limit of its current ruleset.
+    /// @notice Distributes payouts for a project with the payout limit of its current ruleset.
     /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
     /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
     /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
     /// @param _projectId The ID of the project having its payouts distributed.
     /// @param _token The token being distributed.
     /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's distribution limit currency.
+    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's payout limit currency.
     /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
     /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
     function _distributePayoutsOf(
@@ -876,13 +876,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Allows a project to send funds from its overflow up to the preconfigured allowance.
+    /// @notice Allows a project to send funds from its surplus up to the preconfigured allowance.
     /// @dev Only a project's owner or a designated operator can use its allowance.
     /// @dev Incurs the protocol fee.
     /// @param _projectId The ID of the project to use the allowance of.
     /// @param _token The address of the token who's allowance is being used.
     /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's overflow allowance currency.
+    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's surplus allowance currency.
     /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.

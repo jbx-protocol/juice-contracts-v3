@@ -23,7 +23,7 @@ interface IJBTerminalStore {
         view
         returns (uint256);
 
-    function usedDistributionLimitOf(
+    function usedPayoutLimitOf(
         IJBPaymentTerminal terminal,
         uint256 projectId,
         address token,
@@ -31,7 +31,7 @@ interface IJBTerminalStore {
         uint256 currency
     ) external view returns (uint256);
 
-    function usedOverflowAllowanceOf(
+    function usedSurplusAllowanceOf(
         IJBPaymentTerminal terminal,
         uint256 projectId,
         address token,
@@ -39,7 +39,7 @@ interface IJBTerminalStore {
         uint256 currency
     ) external view returns (uint256);
 
-    function currentOverflowOf(
+    function currentSurplusOf(
         IJBPaymentTerminal terminal,
         uint256 projectId,
         JBAccountingContext[] calldata tokenContexts,
@@ -47,26 +47,26 @@ interface IJBTerminalStore {
         uint256 currency
     ) external view returns (uint256);
 
-    function currentTotalOverflowOf(uint256 projectId, uint256 decimals, uint256 currency)
+    function currentTotalSurplusOf(uint256 projectId, uint256 decimals, uint256 currency)
         external
         view
         returns (uint256);
 
-    function currentReclaimableOverflowOf(
+    function currentReclaimableSurplusOf(
         IJBPaymentTerminal terminal,
         uint256 projectId,
         JBAccountingContext[] calldata tokenContexts,
         uint256 _decimals,
         uint256 _currency,
         uint256 tokenCount,
-        bool useTotalOverflow
+        bool useTotalSurplus
     ) external view returns (uint256);
 
-    function currentReclaimableOverflowOf(
+    function currentReclaimableSurplusOf(
         uint256 projectId,
         uint256 tokenCount,
         uint256 totalSupply,
-        uint256 overflow
+        uint256 surplus
     ) external view returns (uint256);
 
     function recordPaymentFrom(

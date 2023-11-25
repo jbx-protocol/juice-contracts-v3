@@ -11,7 +11,7 @@ import {ERC165, IERC165} from "@openzeppelin/contracts/utils/introspection/ERC16
 import {JBController} from "@juicebox/JBController.sol";
 import {JBDirectory} from "@juicebox/JBDirectory.sol";
 import {JBTerminalStore} from "@juicebox/JBTerminalStore.sol";
-import {JBFundAccessConstraintsStore} from "@juicebox/JBFundAccessConstraintsStore.sol";
+import {JBFundAccessLimits} from "@juicebox/JBFundAccessLimits.sol";
 import {JBRulesets} from "@juicebox/JBRulesets.sol";
 import {JBPermissions} from "@juicebox/JBPermissions.sol";
 import {JBPrices} from "@juicebox/JBPrices.sol";
@@ -27,7 +27,7 @@ import {JBDidPayData} from "@juicebox/structs/JBDidPayData.sol";
 import {JBDidRedeemData} from "@juicebox/structs/JBDidRedeemData.sol";
 import {JBFee} from "@juicebox/structs/JBFee.sol";
 import {JBFees} from "@juicebox/libraries/JBFees.sol";
-import {JBFundAccessConstraints} from "@juicebox/structs/JBFundAccessConstraints.sol";
+import {JBFundAccessLimitGroup} from "@juicebox/structs/JBFundAccessLimitGroup.sol";
 import {JBRuleset} from "@juicebox/structs/JBRuleset.sol";
 import {JBRulesetData} from "@juicebox/structs/JBRulesetData.sol";
 import {JBRulesetMetadata} from "@juicebox/structs/JBRulesetMetadata.sol";
@@ -100,7 +100,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBTokens private _jbTokens;
     JBSplits private _jbSplits;
     JBController private _jbController;
-    JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
+    JBFundAccessLimits private _jbFundAccessLimits;
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
     JBMultiTerminal private _jbMultiTerminal2;
@@ -153,8 +153,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbController;
     }
 
-    function jbAccessConstraintStore() internal view returns (JBFundAccessConstraintsStore) {
-        return _jbFundAccessConstraintsStore;
+    function jbAccessConstraintStore() internal view returns (JBFundAccessLimits) {
+        return _jbFundAccessLimits;
     }
 
     function jbTerminalStore() internal view returns (JBTerminalStore) {
@@ -210,10 +210,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbDirectory
         );
         vm.label(address(_jbSplits), "JBSplits");
-        _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(
+        _jbFundAccessLimits = new JBFundAccessLimits(
             _jbDirectory
         );
-        vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
+        vm.label(address(_jbFundAccessLimits), "JBFundAccessLimits");
         _jbController = new JBController(
             _jbpermissions,
             _jbProjects,
@@ -221,7 +221,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbRulesetStore,
             _jbTokens,
             _jbSplits,
-            _jbFundAccessConstraintsStore
+            _jbFundAccessLimits
         );
         vm.label(address(_jbController), "JBController");
 

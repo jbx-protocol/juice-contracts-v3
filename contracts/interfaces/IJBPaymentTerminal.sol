@@ -16,7 +16,7 @@ interface IJBPaymentTerminal is IERC165 {
         view
         returns (JBAccountingContext[] memory);
 
-    function currentOverflowOf(uint256 projectId, uint256 decimals, uint256 currency)
+    function currentSurplusOf(uint256 projectId, uint256 decimals, uint256 currency)
         external
         view
         returns (uint256);

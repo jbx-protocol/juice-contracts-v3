@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/// @custom:member value The value of the amount.
-/// @custom:member currency The currency of the value.
+/// @custom:member amount The amount of the currency.
+/// @custom:member currency The currency's index in `JBCurrencies`.
 struct JBCurrencyAmount {
-    uint256 value;
+    uint256 amount;
     uint256 currency;
 }

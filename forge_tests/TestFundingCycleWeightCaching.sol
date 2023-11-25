@@ -45,7 +45,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: true,
+            useTotalSurplusForRedemptions: true,
             useDataSourceForPay: false,
             useDataSourceForRedeem: false,
             dataSource: address(0),
@@ -71,7 +71,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         //     _rulesetConfigurations[0].data = _data;
         //     _rulesetConfigurations[0].metadata = _metadata;
         //     _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-        //     _rulesetConfigurations[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        //     _rulesetConfigurations[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         //     // Create the project to test.
         //     _projectId1 = _controller.launchProjectFor({
