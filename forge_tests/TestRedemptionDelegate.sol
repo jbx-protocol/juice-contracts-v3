@@ -149,7 +149,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             holder: address(this),
             projectId: _projectId,
             currentFundingCycleConfiguration: _fundingCycle.configuration,
-            projectTokenCount: _beneficiaryTokenBalance,
+            projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
                     JBTokens.ETH,
                     _halfPaid,
@@ -192,7 +192,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: address(this),
             projectId: _projectId,
-            count: _beneficiaryTokenBalance,
+            count: _beneficiaryTokenBalance / 2,
             token: JBTokens.ETH,
             minReclaimed: 0,
             beneficiary: payable(address(this)),
