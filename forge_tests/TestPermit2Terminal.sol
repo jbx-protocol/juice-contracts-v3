@@ -104,48 +104,60 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         });
     }
 
-    function testAddToBalance() public {
+    function testFuzzAddToBalance(uint256 _coins) public {
+        _coins = bound(_coins, 0, type(uint160).max);
+        uint48 _expires = uint48(block.timestamp + 5);
+        uint256 _deadline = block.timestamp + 100;
+
+        // prepare permit details for signing
         IAllowanceTransfer.PermitDetails memory details =
-            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(1e18), expiration: uint48(block.timestamp + 5), nonce: 0});
+            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(_coins), expiration: _expires, nonce: 0});
 
         IAllowanceTransfer.PermitSingle memory permit =
             IAllowanceTransfer.PermitSingle({
             details: details,
             spender: address(_terminal),
-            sigDeadline: block.timestamp + 100
+            sigDeadline: _deadline
         });
 
+        // Sign permit details
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
         JBSingleAllowanceData memory permitData = 
             JBSingleAllowanceData({
-                sigDeadline: block.timestamp + 100,
-                amount: uint160(1e18),
-                expiration: uint48(block.timestamp + 5),
+                sigDeadline: _deadline,
+                amount: uint160(_coins),
+                expiration: _expires,
                 nonce: uint48(0),
                 signature: sig
         });
 
+        // prepare data for metadata helper
         bytes4[] memory _ids = new bytes4[](1);
         bytes[] memory _datas = new bytes[](1);
-
         _datas[0] = abi.encode(permitData);
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
+        // Use jb metadata library to encode
         bytes memory _packedData = _helper.createMetadata(_ids, _datas);
 
-        deal(address(_usdc), from, 1e18);
+        // Give coins and approve permit2 contract
+        deal(address(_usdc), from, _coins);
         vm.prank(from);
-        IERC20(address(_usdc)).approve(address(permit2()), 1e18);
+        IERC20(address(_usdc)).approve(address(permit2()), _coins);
 
+        // Add to balance using permit2 data, which should transfer tokens
         vm.prank(from);
         _terminal.addToBalanceOf(
             _projectId,
             address(_usdc),
-            1e18,
+            _coins,
             false,
             "testing permit2",
             _packedData
         );
+
+        // Check that tokens were transfered
+        assertEq(_usdc.balanceOf(address(_terminal)), _coins);
     }
 }
