@@ -9,6 +9,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
     IJBController3_1 private _controller;
     IJBPaymentTerminal private _terminal;
+    IJBTerminalStore private _terminalStore;
     IJBTokenStore private _tokenStore;
     address private _projectOwner;
     address private _beneficiary;
@@ -26,6 +27,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _beneficiary = beneficiary();
         _terminal = jbPayoutRedemptionTerminal();
         _tokenStore = jbTokenStore();
+        _terminalStore = jbTerminalStore();
 
         JBFundingCycleData memory _data = JBFundingCycleData({
             duration: 0,
@@ -106,8 +108,8 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // Keep a reference to the current funding cycle.
         (JBFundingCycle memory _fundingCycle,) = _controller.currentFundingCycleOf(_projectId);
 
-        vm.deal(address(this), _ethPayAmount);
-        _terminal.pay{value: _ethPayAmount}({
+        vm.deal(address(this), _ethPayAmount * 2);
+        _terminal.pay{value: _ethPayAmount * 2}({
             projectId: _projectId,
             amount: _ethPayAmount,
             token: JBTokens.ETH,
@@ -136,7 +138,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         _allocations[0] = JBRedemptionDelegateAllocation3_1_1({
             delegate: IJBRedemptionDelegate3_1_1(_redDelegate),
-            amount: 0,
+            amount: _ethPayAmount,
             metadata: ""
         });
 
@@ -182,8 +184,10 @@ contract TestDelegates_Local is TestBaseWorkflow {
         vm.mockCall(
             _DATA_SOURCE,
             abi.encodeWithSelector(IJBFundingCycleDataSource3_1_1.redeemParams.selector),
-            abi.encode(0, _allocations)
+            abi.encode(_ethPayAmount, _allocations)
             );
+
+        /* emit log_uint(_terminalStore.balanceOf(_terminal, 2, JBTokens.ETH)); */
         
         _terminal.redeemTokensOf({
             holder: address(this),
@@ -194,6 +198,8 @@ contract TestDelegates_Local is TestBaseWorkflow {
             beneficiary: payable(address(this)),
             metadata: new bytes(0)
         });
+
+        
     }
 
     receive() external payable {}
