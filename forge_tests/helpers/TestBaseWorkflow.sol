@@ -82,6 +82,9 @@ import {JBBallotState} from "@juicebox/enums/JBBallotState.sol";
 import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
 
+import {JBDelegateMetadataHelper} from
+    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataHelper.sol";
+
 import {MockERC20} from "./../mock/MockERC20.sol";
 
 import "@paulrberg/contracts/math/PRBMath.sol";
@@ -106,6 +109,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
+    JBDelegateMetadataHelper private _metadataHelper;
 
     function multisig() internal view returns (address) {
         return _multisig;
@@ -167,6 +171,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbMultiTerminal;
     }
 
+    function metadataHelper() internal view returns (JBDelegateMetadataHelper) {
+        return _metadataHelper;
+    }
+
     //*********************************************************************//
     // --------------------------- test setup ---------------------------- //
     //*********************************************************************//
@@ -210,6 +218,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbFundAccessConstraintsStore
     );
         vm.label(address(_jbController), "JBController3_1");
+
+        _metadataHelper = new JBDelegateMetadataHelper();
 
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
