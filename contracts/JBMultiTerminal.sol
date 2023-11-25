@@ -1459,14 +1459,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         ) {
             emit ProcessFee(_projectId, _feeAmount, _wasHeld, _fee.beneficiary, _msgSender());
         } catch (bytes memory _reason) {
-            // TODO: Pick an option. 
-            // // Option A
-            // STORE.recordAddedBalanceFor(_projectId, _token, _feeAmount);
-
-            // // Option B
-            // _heldFeesOf[_projectId].push(
-            //     _fee
-            // );
+            STORE.recordAddedBalanceFor(_projectId, _token, _feeAmount);
 
             emit FeeReverted(
                 _projectId, _FEE_BENEFICIARY_PROJECT_ID, _feeAmount, _reason, _msgSender()
