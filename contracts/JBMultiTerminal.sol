@@ -1357,6 +1357,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
             emit DelegateDidRedeem(
                 _allocation.delegate, _data, _allocation.amount, _delegatedAmountFee, msg.sender
             );
+
+            unchecked {
+                ++_i;
+            }
         }
     }
 
