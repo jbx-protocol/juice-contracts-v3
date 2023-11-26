@@ -4,18 +4,18 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {PermitSignature} from '@permit2/src/test/utils/PermitSignature.sol';
+import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
 
     IJBController3_1 private _controller;
     IJBPaymentTerminal private _terminal;
-    /* IJBTerminalStore private _terminalStore;
-    IJBTokenStore private _tokenStore; */
+    IJBPrices private _prices;
+    IJBTokenStore private _tokenStore;
     IERC20 private _usdc;
     JBDelegateMetadataHelper private _helper;
     address private _projectOwner;
-    address private _beneficiary;
 
     uint256 _projectId;
 
@@ -24,15 +24,17 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     address from;
     uint256 fromPrivateKey;
 
+    // Price
+    uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+
     function setUp() public override {
         super.setUp();
 
         _controller = jbController();
         _projectOwner = multisig();
-        _beneficiary = beneficiary();
         _terminal = jbPayoutRedemptionTerminal();
-        /* _tokenStore = jbTokenStore();
-        _terminalStore = jbTerminalStore(); */
+        _prices = jbPrices();
+        _tokenStore = jbTokenStore();
         _helper = metadataHelper();
         _usdc = usdcToken();
 
@@ -101,9 +103,85 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
+
+        vm.startPrank(_projectOwner);
+        MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
+        vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
+
+        _prices.addFeedFor({
+            projectId: _projectId,
+            currency: uint32(uint160(JBTokens.ETH)),
+            base: uint32(uint160(address(usdcToken()))),
+            priceFeed: _priceFeedEthUsd
+        });
+
+        vm.stopPrank();
     }
 
-    function testFuzzAddToBalance(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
+    function testFuzzPayPermit2(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
+        // Setup: set fuzz boundaries
+        _coins = bound(_coins, 0, type(uint160).max);
+        _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
+        _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
+
+        // Setup: prepare permit details for signing
+        IAllowanceTransfer.PermitDetails memory details =
+            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(_coins), expiration: uint48(_expiration), nonce: 0});
+
+        IAllowanceTransfer.PermitSingle memory permit =
+            IAllowanceTransfer.PermitSingle({
+            details: details,
+            spender: address(_terminal),
+            sigDeadline: _deadline
+        });
+
+        // Setup: Sign permit details
+        bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
+
+        JBSingleAllowanceData memory permitData = 
+            JBSingleAllowanceData({
+                sigDeadline: _deadline,
+                amount: uint160(_coins),
+                expiration: uint48(_expiration),
+                nonce: uint48(0),
+                signature: sig
+        });
+
+        // Setup: prepare data for metadata helper
+        bytes4[] memory _ids = new bytes4[](1);
+        bytes[] memory _datas = new bytes[](1);
+        _datas[0] = abi.encode(permitData);
+        _ids[0] = bytes4(uint32(uint160(address(_terminal))));
+
+        // Setup: Use jb metadata library to encode
+        bytes memory _packedData = _helper.createMetadata(_ids, _datas);
+
+        // Setup: Give coins and approve permit2 contract
+        deal(address(_usdc), from, _coins);
+        vm.prank(from);
+        IERC20(address(_usdc)).approve(address(permit2()), _coins);
+
+        vm.prank(from);
+        uint256 _minted = _terminal.pay({
+            projectId: _projectId,
+            amount: _coins,
+            token: address(_usdc),
+            beneficiary: from,
+            minReturnedTokens: 0,
+            memo: "Take my permitted money!",
+            metadata: _packedData
+        });
+
+        emit log_uint(_minted);
+
+        // Check: that tokens were transfered
+        assertEq(_usdc.balanceOf(address(_terminal)), _coins);
+
+        // Check: that payer receives project token/balance
+        assertEq(_tokenStore.balanceOf(from, _projectId), _minted);
+    }
+
+    function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
         // Setup: set fuzz boundaries
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
