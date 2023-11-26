@@ -103,14 +103,15 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         });
     }
 
-    function testFuzzAddToBalance(uint256 _coins) public {
+    function testFuzzAddToBalance(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
+        // Setup: set fuzz boundaries
         _coins = bound(_coins, 0, type(uint160).max);
-        uint48 _expires = uint48(block.timestamp + 5);
-        uint256 _deadline = block.timestamp + 100;
+        _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
+        _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
-        // prepare permit details for signing
+        // Setup: prepare permit details for signing
         IAllowanceTransfer.PermitDetails memory details =
-            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(_coins), expiration: _expires, nonce: 0});
+            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(_coins), expiration: uint48(_expiration), nonce: 0});
 
         IAllowanceTransfer.PermitSingle memory permit =
             IAllowanceTransfer.PermitSingle({
@@ -119,33 +120,33 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             sigDeadline: _deadline
         });
 
-        // Sign permit details
+        // Setup: Sign permit details
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
         JBSingleAllowanceData memory permitData = 
             JBSingleAllowanceData({
                 sigDeadline: _deadline,
                 amount: uint160(_coins),
-                expiration: _expires,
+                expiration: uint48(_expiration),
                 nonce: uint48(0),
                 signature: sig
         });
 
-        // prepare data for metadata helper
+        // Setup: prepare data for metadata helper
         bytes4[] memory _ids = new bytes4[](1);
         bytes[] memory _datas = new bytes[](1);
         _datas[0] = abi.encode(permitData);
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
-        // Use jb metadata library to encode
+        // Setup: Use jb metadata library to encode
         bytes memory _packedData = _helper.createMetadata(_ids, _datas);
 
-        // Give coins and approve permit2 contract
+        // Setup: Give coins and approve permit2 contract
         deal(address(_usdc), from, _coins);
         vm.prank(from);
         IERC20(address(_usdc)).approve(address(permit2()), _coins);
 
-        // Add to balance using permit2 data, which should transfer tokens
+        // Test: Add to balance using permit2 data, which should transfer tokens
         vm.prank(from);
         _terminal.addToBalanceOf(
             _projectId,
@@ -156,7 +157,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             _packedData
         );
 
-        // Check that tokens were transfered
+        // Check: that tokens were transfered
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);
     }
 }
