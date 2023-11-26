@@ -10,13 +10,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
     IJBController3_1 private _controller;
     IJBPaymentTerminal private _terminal;
-    IJBTerminalStore private _terminalStore;
-    IJBTokenStore private _tokenStore;
+    /* IJBTerminalStore private _terminalStore;
+    IJBTokenStore private _tokenStore; */
     IERC20 private _usdc;
     JBDelegateMetadataHelper private _helper;
     address private _projectOwner;
     address private _beneficiary;
-    address private _payer;
 
     uint256 _projectId;
 

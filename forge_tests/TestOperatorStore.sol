@@ -10,7 +10,6 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
     JBFundingCycleMetadata private _metadata;
     IJBPaymentTerminal private _terminal;
     IJBOperatorStore private _opStore;
-    IJBProjects private _projects;
 
     address private _projectOwner;
     uint256 private _projectZero;
@@ -23,7 +22,6 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
         _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
         _opStore = jbOperatorStore();
-        _projects = jbProjects();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({

@@ -9,16 +9,12 @@ contract TestSplitStore_Local is TestBaseWorkflow {
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
     IJBMultiTerminal private _terminal;
-    IJBOperatorStore private _opStore;
-    IJBProjects private _projects;
     IJBTokenStore private _tokenStore;
 
     address private _projectOwner;
     address payable private _splitsGuy;
     uint256 private _projectId;
     uint256 _ethDistributionLimit = 4 ether;
-    uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
-    uint256 _usdDistributionLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
 
     function setUp() public override {
         super.setUp();
@@ -26,8 +22,6 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
-        _opStore = jbOperatorStore();
-        _projects = jbProjects();
         _tokenStore = jbTokenStore();
         _splitsGuy = payable(makeAddr("guy"));
 

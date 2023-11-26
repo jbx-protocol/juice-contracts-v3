@@ -9,11 +9,9 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
     IJBController3_1 private _controller;
     IJBPaymentTerminal private _terminal;
-    IJBTerminalStore private _terminalStore;
     IJBTokenStore private _tokenStore;
     address private _projectOwner;
     address private _beneficiary;
-    address private _payer;
 
     uint256 _projectId;
 
@@ -27,7 +25,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _beneficiary = beneficiary();
         _terminal = jbPayoutRedemptionTerminal();
         _tokenStore = jbTokenStore();
-        _terminalStore = jbTerminalStore();
 
         JBFundingCycleData memory _data = JBFundingCycleData({
             duration: 0,

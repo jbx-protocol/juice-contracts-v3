@@ -20,7 +20,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     IJBPrices private _prices;
     IJBMultiTerminal private _terminal;
     IJBTokenStore private _tokenStore;
-    address private _multisig;
     address private _projectOwner;
     address private _beneficiary;
     MockERC20 private _usdcToken;
@@ -33,7 +32,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
         _beneficiary = beneficiary();
-        _multisig = multisig();
         _usdcToken = usdcToken();
         _tokenStore = jbTokenStore();
         _controller = jbController();
@@ -1196,7 +1194,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Add a price feed to convert from ETH to USD currencies.
         {
-            vm.startPrank(_multisig);
+            vm.startPrank(_projectOwner);
             MockPriceFeed _priceFeedEthUsd =
                 new MockPriceFeed(_USD_PRICE_PER_ETH, _PRICE_FEED_DECIMALS);
             vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USDC");
