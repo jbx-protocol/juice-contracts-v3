@@ -39,13 +39,13 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_DELEGATE();
+    error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_HOOK();
     error RULESET_ALREADY_LAUNCHED();
     error INVALID_BASE_CURRENCY();
     error INVALID_REDEMPTION_RATE();
     error INVALID_RESERVED_RATE();
     error MIGRATION_NOT_ALLOWED();
-    error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
+    error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
     error NO_BURNABLE_TOKENS();
     error NOT_CURRENT_CONTROLLER();
     error ZERO_TOKENS_TO_MINT();
@@ -300,7 +300,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     }
 
     /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current ruleset configuration.
-    /// @dev Only a project's owner, a designated operator, one of its terminals, or the current data source can mint its tokens.
+    /// @dev Only a project's owner, a designated operator, one of its terminals, or the current data hook can mint its tokens.
     /// @param _projectId The ID of the project to which the tokens being minted belong.
     /// @param _tokenCount The amount of tokens to mint in total, counting however many should be reserved.
     /// @param _beneficiary The account that the tokens are being minted for.
@@ -326,21 +326,21 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             // Get a reference to the project's current ruleset.
             JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
-            // Minting limited to: project owner, authorized callers, project terminal and current ruleset data source
+            // Minting limited to: project owner, authorized callers, project terminal and current ruleset data hook
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
                 JBPermissionIDs.MINT_TOKENS,
                 directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
-                    || msg.sender == address(_ruleset.dataSource())
+                    || msg.sender == address(_ruleset.dataHook())
             );
 
-            // If the message sender is not a terminal or a datasource, the current ruleset must allow minting.
+            // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
                 !_ruleset.mintingAllowed()
                     && !directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
-                    && msg.sender != address(_ruleset.dataSource())
-            ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
+                    && msg.sender != address(_ruleset.dataHook())
+            ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
 
             // Determine the reserved rate to use.
             _reservedRate = _useReservedRate ? _ruleset.reservedRate() : 0;

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {JBRuleset} from "./../structs/JBRuleset.sol";
-import {JBPayDelegateAllocation} from "./../structs/JBPayDelegateAllocation.sol";
-import {JBRedeemDelegateAllocation} from "./../structs/JBRedeemDelegateAllocation.sol";
+import {JBPayHookPayload} from "./../structs/JBPayHookPayload.sol";
+import {JBRedeemHookPayload} from "./../structs/JBRedeemHookPayload.sol";
 import {JBAccountingContext} from "./../structs/JBAccountingContext.sol";
 import {JBTokenAmount} from "./../structs/JBTokenAmount.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
@@ -12,7 +12,7 @@ import {IJBPrices} from "./IJBPrices.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 
 interface IJBTerminalStore {
-    function RULESET_STORE() external view returns (IJBRulesets);
+    function RULESETS() external view returns (IJBRulesets);
 
     function DIRECTORY() external view returns (IJBDirectory);
 
@@ -80,7 +80,7 @@ interface IJBTerminalStore {
         returns (
             JBRuleset memory ruleset,
             uint256 tokenCount,
-            JBPayDelegateAllocation[] memory delegateAllocations
+            JBPayHookPayload[] memory hookPayloads
         );
 
     function recordRedemptionFor(
@@ -95,10 +95,10 @@ interface IJBTerminalStore {
         returns (
             JBRuleset memory ruleset,
             uint256 reclaimAmount,
-            JBRedeemDelegateAllocation[] memory delegateAllocations
+            JBRedeemHookPayload[] memory hookPayloads
         );
 
-    function recordDistributionFor(
+    function recordPayoutFor(
         uint256 projectId,
         JBAccountingContext calldata tokenContext,
         uint256 amount,
@@ -114,5 +114,7 @@ interface IJBTerminalStore {
 
     function recordAddedBalanceFor(uint256 projectId, address token, uint256 amount) external;
 
-    function recordMigration(uint256 projectId, address token) external returns (uint256 balance);
+    function recordTerminalMigration(uint256 projectId, address token)
+        external
+        returns (uint256 balance);
 }

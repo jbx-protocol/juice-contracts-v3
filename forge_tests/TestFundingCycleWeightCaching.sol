@@ -46,9 +46,9 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
             allowControllerMigration: false,
             holdFees: false,
             useTotalSurplusForRedemptions: true,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
     }

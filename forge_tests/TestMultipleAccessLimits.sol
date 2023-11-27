@@ -50,9 +50,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             allowControllerMigration: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
@@ -203,9 +203,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         );
 
         /* vm.prank(address(__terminal));
-        vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+        vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         // add 10000 to make up for the fidelity difference in prices. (0.0005/1)
-        jbTerminalStore().recordDistributionFor(_projectId, _accountingContexts[1], _usdDistributableAmount + 10000, uint32(uint160(address(usdcToken())))); */
+        jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[1], _usdDistributableAmount + 10000, uint32(uint160(address(usdcToken())))); */
 
         // Should succeed with _distributableAmount
         __terminal.distributePayoutsOf({
@@ -232,8 +232,8 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         /*  // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
         vm.prank(address(__terminal));
-        vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
-        jbTerminalStore().recordDistributionFor(_projectId, _accountingContexts[0], 1, _ethCurrency); */
+        vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
+        jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[0], 1, _ethCurrency); */
 
         // But distribution via USD limit will succeed
         __terminal.distributePayoutsOf({

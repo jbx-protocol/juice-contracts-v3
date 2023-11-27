@@ -33,8 +33,8 @@ import {JBDidRedeemData} from "./structs/JBDidRedeemData.sol";
 import {JBDidPayData} from "./structs/JBDidPayData.sol";
 import {JBFee} from "./structs/JBFee.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
-import {JBPayDelegateAllocation} from "./structs/JBPayDelegateAllocation.sol";
-import {JBRedeemDelegateAllocation} from "./structs/JBRedeemDelegateAllocation.sol";
+import {JBPayHookPayload} from "./structs/JBPayHookPayload.sol";
+import {JBRedeemHookPayload} from "./structs/JBRedeemHookPayload.sol";
 import {JBSingleAllowanceData} from "./structs/JBSingleAllowanceData.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitHookData} from "./structs/JBSplitHookData.sol";
@@ -57,7 +57,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
     error ACCOUNTING_CONTEXT_ALREADY_SET();
     error FEE_TOO_HIGH();
-    error INADEQUATE_DISTRIBUTION_AMOUNT();
+    error INADEQUATE_PAYOUT_AMOUNT();
     error INADEQUATE_RECLAIM_AMOUNT();
     error INADEQUATE_TOKEN_COUNT();
     error NO_MSG_VALUE_ALLOWED();
@@ -156,7 +156,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         return _accountingContextsOf[_projectId];
     }
 
-    /// @notice Gets the current surplused amount in this terminal for a specified project, in terms of ETH.
+    /// @notice Gets the current surplus amount in this terminal for a specified project, in terms of ETH.
     /// @dev The current surplus is represented as a fixed point number with 18 decimals.
     /// @param _projectId The ID of the project to get surplus for.
     /// @param _decimals The number of decimals included in the fixed point returned value.
@@ -244,10 +244,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _projectId The ID of the project being paid.
     /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
     /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
-    /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data source and delegate.
+    /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data hook and pay hook.
     /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+    /// @param _metadata Bytes to send along to the data hook, pay hook, and emitted event, if provided.
     /// @return The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
     function pay(
         uint256 _projectId,
@@ -293,17 +293,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
 
         // Add to balance.
-        _addToBalanceOf(
-            _projectId,
-            _token,
-            _amount,
-            _shouldRefundHeldFees,
-            _memo,
-            _metadata
-        );
+        _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
     }
 
-    /// @notice Holders can redeem their tokens to claim the project's surplused tokens, or to trigger rules determined by the project's current ruleset's data source.
+    /// @notice Holders can redeem their tokens to claim the project's surplus tokens, or to trigger rules determined by the project's current ruleset's data hook.
     /// @dev Only a token holder or a designated operator can redeem its tokens.
     /// @param _holder The account to redeem tokens for.
     /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -311,7 +304,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _token The token being reclaimed. This terminal ignores this property since it only manages one token.
     /// @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
     /// @param _beneficiary The address to send the terminal tokens to.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+    /// @param _metadata Bytes to send along to the data hook, redeem hook, and emitted event, if provided.
     /// @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
     function redeemTokensOf(
         address _holder,
@@ -403,7 +396,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
 
         // Record the migration in the store.
-        balance = STORE.recordMigration(_projectId, _token);
+        balance = STORE.recordTerminalMigration(_projectId, _token);
 
         // Transfer the balance if needed.
         if (balance != 0) {
@@ -594,10 +587,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
     /// @param _payer The address making the payment.
     /// @param _projectId The ID of the project being paid.
-    /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data source and delegate.
+    /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data hook and pay hook.
     /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+    /// @param _metadata Bytes to send along to the data hook, pay hook, and emitted event, if provided.
     /// @return beneficiaryTokenCount The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
     function _pay(
         address _token,
@@ -616,9 +609,9 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         // Keep a reference to the ruleset during which the payment is being made.
         JBRuleset memory _ruleset;
 
-        // Scoped section prevents stack too deep. `_delegateAllocations` and `_tokenCount` only used within scope.
+        // Scoped section prevents stack too deep. `_hookPayloads` and `_tokenCount` only used within scope.
         {
-            JBPayDelegateAllocation[] memory _delegateAllocations;
+            JBPayHookPayload[] memory _hookPayloads;
             JBTokenAmount memory _tokenAmount;
 
             uint256 _tokenCount;
@@ -630,7 +623,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
 
             // Record the payment.
-            (_ruleset, _tokenCount, _delegateAllocations) =
+            (_ruleset, _tokenCount, _hookPayloads) =
                 STORE.recordPaymentFrom(_payer, _tokenAmount, _projectId, _beneficiary, _metadata);
 
             // Mint the tokens if needed.
@@ -643,11 +636,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // The token count for the beneficiary must be greater than or equal to the minimum expected.
             if (beneficiaryTokenCount < _minReturnedTokens) revert INADEQUATE_TOKEN_COUNT();
 
-            // If delegate allocations were specified by the data source, fulfill them.
-            if (_delegateAllocations.length != 0) {
-                _fulfillPayDelegateAllocationsFor(
+            // If hook payloads were specified by the data hook, fulfill them.
+            if (_hookPayloads.length != 0) {
+                _fulfillPayHookPayloadsFor(
                     _projectId,
-                    _delegateAllocations,
+                    _hookPayloads,
                     _tokenAmount,
                     _payer,
                     _ruleset,
@@ -696,7 +689,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
     }
 
-    /// @notice Holders can redeem their tokens to claim the project's surplused tokens, or to trigger rules determined by the project's current ruleset's data source.
+    /// @notice Holders can redeem their tokens to claim the project's surplus tokens, or to trigger rules determined by the project's current ruleset's data hook.
     /// @dev Only a token holder or a designated operator can redeem its tokens.
     /// @param _holder The account to redeem tokens for.
     /// @param _projectId The ID of the project to which the tokens being redeemed belong.
@@ -704,7 +697,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
     /// @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
     /// @param _beneficiary The address to send the terminal tokens to.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+    /// @param _metadata Bytes to send along to the data hook, redeem hook, and emitted event, if provided.
     /// @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
     function _redeemTokensOf(
         address _holder,
@@ -724,10 +717,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
         // Scoped section prevents stack too deep.
         {
-            JBRedeemDelegateAllocation[] memory _delegateAllocations;
+            JBRedeemHookPayload[] memory _hookPayloads;
 
             // Record the redemption.
-            (_ruleset, reclaimAmount, _delegateAllocations) = STORE.recordRedemptionFor(
+            (_ruleset, reclaimAmount, _hookPayloads) = STORE.recordRedemptionFor(
                 _holder,
                 _projectId,
                 _accountingContextForTokenOf[_projectId][_token],
@@ -753,14 +746,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // Keep a reference to the amount being reclaimed that should have fees withheld from.
             uint256 _feeEligibleDistributionAmount;
 
-            // If delegate allocations were specified by the data source, fulfill them.
-            if (_delegateAllocations.length != 0) {
+            // If hook payloads were specified by the data hook, fulfill them.
+            if (_hookPayloads.length != 0) {
                 // Get a reference to the token's accounting context.
                 JBAccountingContext memory _context =
                     _accountingContextForTokenOf[_projectId][_token];
 
-                // Fulfill the delegates.
-                _feeEligibleDistributionAmount += _fulfillRedemptionDelegateAllocationsFor(
+                // Fulfill the redeem hooks.
+                _feeEligibleDistributionAmount += _fulfillRedemptionHookPayloadsFor(
                     _projectId,
                     JBTokenAmount(_token, reclaimAmount, _context.decimals, _context.currency),
                     _holder,
@@ -768,7 +761,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                     _metadata,
                     _ruleset,
                     _beneficiary,
-                    _delegateAllocations,
+                    _hookPayloads,
                     _feePercent
                 );
             }
@@ -826,12 +819,12 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _minReturnedTokens
     ) internal returns (uint256 netLeftoverDistributionAmount) {
         // Record the distribution.
-        (JBRuleset memory _ruleset, uint256 _distributedAmount) = STORE.recordDistributionFor(
+        (JBRuleset memory _ruleset, uint256 _distributedAmount) = STORE.recordPayoutFor(
             _projectId, _accountingContextForTokenOf[_projectId][_token], _amount, _currency
         );
 
         // The amount being distributed must be at least as much as was expected.
-        if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
+        if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
 
         // Get a reference to the project owner, which will receive tokens from paying the platform fee
         // and receive any extra distributable funds not allocated to payout splits.
@@ -909,7 +902,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
 
         // The amount being withdrawn must be at least as much as was expected.
-        if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_DISTRIBUTION_AMOUNT();
+        if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
 
         // Get a reference to the project owner, which will receive tokens from paying the platform fee.
         address _projectOwner = PROJECTS.ownerOf(_projectId);
@@ -1195,18 +1188,18 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
     }
 
-    /// @notice Fulfills payment allocations to a list of delegates.
-    /// @param _projectId The ID of the project being paid that is forwarding allocations to delegates.
-    /// @param _allocations The allocations being fulfilled.
+    /// @notice Fulfills payment payloads for a list of pay hooks.
+    /// @param _projectId The ID of the project being paid that is forwarding payloads to pay hooks.
+    /// @param _payloads The payloads being fulfilled.
     /// @param _tokenAmount The amount of tokens that were paid in to the project.
     /// @param _payer The address that sent the payment.
     /// @param _ruleset The ruleset during which the payment is being accepted during.
     /// @param _beneficiary The address receiving tokens that result from the payment.
     /// @param _beneficiaryTokenCount The amount of tokens that are being minted for the beneificary.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
-    function _fulfillPayDelegateAllocationsFor(
+    /// @param _metadata Bytes to send along to the data hook, pay hook, and emitted event, if provided.
+    function _fulfillPayHookPayloadsFor(
         uint256 _projectId,
-        JBPayDelegateAllocation[] memory _allocations,
+        JBPayHookPayload[] memory _payloads,
         JBTokenAmount memory _tokenAmount,
         address _payer,
         JBRuleset memory _ruleset,
@@ -1228,39 +1221,37 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _metadata
         );
 
-        // Keep a reference to the allocation being iterated on.
-        JBPayDelegateAllocation memory _allocation;
+        // Keep a reference to the payload being iterated on.
+        JBPayHookPayload memory _payload;
 
-        // Keep a reference to the number of allocations there are.
-        uint256 _numberOfAllocations = _allocations.length;
+        // Keep a reference to the number of payloads there are.
+        uint256 _numberOfpayloads = _payloads.length;
 
-        // Fulfill each allocation.
-        for (uint256 _i; _i < _numberOfAllocations;) {
-            // Set the allocation being iterated on.
-            _allocation = _allocations[_i];
+        // Fulfill each payload.
+        for (uint256 _i; _i < _numberOfpayloads;) {
+            // Set the payload being iterated on.
+            _payload = _payloads[_i];
 
-            // Pass the correct token forwardedAmount to the delegate
+            // Pass the correct token forwardedAmount to the hook
             _data.forwardedAmount = JBTokenAmount({
-                value: _allocation.amount,
+                value: _payload.amount,
                 token: _tokenAmount.token,
                 decimals: _tokenAmount.decimals,
                 currency: _tokenAmount.currency
             });
 
-            // Pass the correct metadata from the data source.
-            _data.dataSourceMetadata = _allocation.metadata;
+            // Pass the correct metadata from the data hook.
+            _data.dataHookMetadata = _payload.metadata;
 
             // Trigger any inherited pre-transfer logic.
-            _beforeTransferFor(
-                address(_allocation.delegate), _tokenAmount.token, _allocation.amount
-            );
+            _beforeTransferFor(address(_payload.hook), _tokenAmount.token, _payload.amount);
 
-            uint256 _payValue = _tokenAmount.token == JBTokenList.ETH ? _allocation.amount : 0;
+            uint256 _payValue = _tokenAmount.token == JBTokenList.ETH ? _payload.amount : 0;
 
-            // Fulfill the allocation.
-            _allocation.delegate.didPay{value: _payValue}(_data);
+            // Fulfill the payload.
+            _payload.hook.didPay{value: _payValue}(_data);
 
-            emit DelegateDidPay(_allocation.delegate, _data, _allocation.amount, msg.sender);
+            emit HookDidPay(_payload.hook, _data, _payload.amount, msg.sender);
 
             unchecked {
                 ++_i;
@@ -1268,18 +1259,18 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
     }
 
-    /// @notice Fulfills redemption allocations to a list of delegates.
-    /// @param _projectId The ID of the project being redeemed from that is forwarding allocations to delegates.
+    /// @notice Fulfills redemption payloads to a list of redeem hooks.
+    /// @param _projectId The ID of the project being redeemed from that is forwarding payloads to redeem hooks.
     /// @param _beneficiaryTokenAmount The amount of tokens that are being reclaimed from the project.
     /// @param _holder The address that is redeeming.
     /// @param _tokenCount The amount of tokens that are being redeemed by the holder.
-    /// @param _metadata Bytes to send along to the data source, delegate, and emitted event, if provided.
+    /// @param _metadata Bytes to send along to the data hook, redeem hook, and emitted event, if provided.
     /// @param _ruleset The ruleset during which the redemption is being made during.
     /// @param _beneficiary The address receiving reclaimed treasury tokens that result from the redemption.
-    /// @param _allocations The allocations being fulfilled.
-    /// @param _feePercent The percent fee that will apply to funds allocated to delegates.
-    /// @return feeEligibleDistributionAmount The amount of allocated funds to delegates that are eligible for fees.
-    function _fulfillRedemptionDelegateAllocationsFor(
+    /// @param _payloads The payloads being fulfilled.
+    /// @param _feePercent The percent fee that will apply to funds allocated to redeem hooks.
+    /// @return feeEligibleDistributionAmount The amount of allocated funds to redeem hooks that are eligible for fees.
+    function _fulfillRedemptionHookPayloadsFor(
         uint256 _projectId,
         JBTokenAmount memory _beneficiaryTokenAmount,
         address _holder,
@@ -1287,10 +1278,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         bytes memory _metadata,
         JBRuleset memory _ruleset,
         address payable _beneficiary,
-        JBRedeemDelegateAllocation[] memory _allocations,
+        JBRedeemHookPayload[] memory _payloads,
         uint256 _feePercent
     ) internal returns (uint256 feeEligibleDistributionAmount) {
-        // Keep a reference to the data that'll get send to delegates.
+        // Keep a reference to the data that'll get send to redeem hooks.
         JBDidRedeemData memory _data = JBDidRedeemData(
             _holder,
             _projectId,
@@ -1304,52 +1295,50 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _metadata
         );
 
-        // Keep a reference to the allocation being iterated on.
-        JBRedeemDelegateAllocation memory _allocation;
+        // Keep a reference to the payload being iterated on.
+        JBRedeemHookPayload memory _payload;
 
-        // Keep a reference to the number of allocations there are.
-        uint256 _numberOfAllocations = _allocations.length;
+        // Keep a reference to the number of payloads there are.
+        uint256 _numberOfpayloads = _payloads.length;
 
-        for (uint256 _i; _i < _numberOfAllocations;) {
-            // Set the allocation being iterated on.
-            _allocation = _allocations[_i];
+        for (uint256 _i; _i < _numberOfpayloads;) {
+            // Set the payload being iterated on.
+            _payload = _payloads[_i];
 
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(
-                address(_allocation.delegate), _beneficiaryTokenAmount.token, _allocation.amount
+                address(_payload.hook), _beneficiaryTokenAmount.token, _payload.amount
             );
 
-            // Get the fee for the delegated amount.
-            uint256 _delegatedAmountFee =
-                _feePercent == 0 ? 0 : JBFees.feeIn(_allocation.amount, _feePercent);
+            // Get the fee for the payload amount.
+            uint256 _payloadAmountFee =
+                _feePercent == 0 ? 0 : JBFees.feeIn(_payload.amount, _feePercent);
 
-            // Add the delegated amount to the amount eligible for having a fee taken.
-            if (_delegatedAmountFee != 0) {
-                feeEligibleDistributionAmount += _allocation.amount;
-                _allocation.amount -= _delegatedAmountFee;
+            // Add the payload amount to the amount eligible for having a fee taken.
+            if (_payloadAmountFee != 0) {
+                feeEligibleDistributionAmount += _payload.amount;
+                _payload.amount -= _payloadAmountFee;
             }
 
             // Set the value of the forwarded amount.
             _data.forwardedAmount = JBTokenAmount({
-                value: _allocation.amount,
+                value: _payload.amount,
                 token: _beneficiaryTokenAmount.token,
                 decimals: _beneficiaryTokenAmount.decimals,
                 currency: _beneficiaryTokenAmount.currency
             });
 
-            // Pass the correct metadata from the data source.
-            _data.dataSourceMetadata = _allocation.metadata;
+            // Pass the correct metadata from the data hook.
+            _data.dataHookMetadata = _payload.metadata;
 
             // Keep a reference to the value that will be forwarded.
             uint256 _payValue =
-                _beneficiaryTokenAmount.token == JBTokenList.ETH ? _allocation.amount : 0;
+                _beneficiaryTokenAmount.token == JBTokenList.ETH ? _payload.amount : 0;
 
-            // Fulfill the allocation.
-            _allocation.delegate.didRedeem{value: _payValue}(_data);
+            // Fulfill the payload.
+            _payload.hook.didRedeem{value: _payValue}(_data);
 
-            emit DelegateDidRedeem(
-                _allocation.delegate, _data, _allocation.amount, _delegatedAmountFee, msg.sender
-            );
+            emit HookDidRedeem(_payload.hook, _data, _payload.amount, _payloadAmountFee, msg.sender);
         }
     }
 

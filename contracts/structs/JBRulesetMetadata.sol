@@ -13,9 +13,9 @@ import {JBGlobalRulesetMetadata} from "./JBGlobalRulesetMetadata.sol";
 /// @custom:member allowControllerMigration A flag indicating if migrating controllers should be allowed during this ruleset.
 /// @custom:member holdFees A flag indicating if fees should be held during this ruleset.
 /// @custom:member useTotalSurplusForRedemptions A flag indicating if redemptions should use the project's balance held in all terminals instead of the project's local terminal balance from which the redemption is being fulfilled.
-/// @custom:member useDataSourceForPay A flag indicating if the data source should be used for pay transactions during this ruleset.
-/// @custom:member useDataSourceForRedeem A flag indicating if the data source should be used for redeem transactions during this ruleset.
-/// @custom:member dataSource The data source to use during this ruleset.
+/// @custom:member useDataHookForPay A flag indicating if the data hook should be used for pay transactions during this ruleset.
+/// @custom:member useDataHookForRedeem A flag indicating if the data hook should be used for redeem transactions during this ruleset.
+/// @custom:member dataHook The data hook to use during this ruleset.
 /// @custom:member metadata Metadata of the metadata, up to uint8 in size.
 struct JBRulesetMetadata {
     JBGlobalRulesetMetadata global;
@@ -28,8 +28,8 @@ struct JBRulesetMetadata {
     bool allowControllerMigration;
     bool holdFees;
     bool useTotalSurplusForRedemptions;
-    bool useDataSourceForPay;
-    bool useDataSourceForRedeem;
-    address dataSource;
+    bool useDataHookForPay;
+    bool useDataHookForRedeem;
+    address dataHook;
     uint256 metadata;
 }

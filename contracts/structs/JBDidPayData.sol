@@ -3,16 +3,16 @@ pragma solidity ^0.8.0;
 
 import {JBTokenAmount} from "./JBTokenAmount.sol";
 
-/// @custom:member payer The address from which the payment originated.
-/// @custom:member projectId The ID of the project for which the payment was made.
-/// @custom:member currentRulesetId The rulesetId of the ruleset during which the payment is being made.
+/// @custom:member payer The address the payment originated from.
+/// @custom:member projectId The ID of the project the payment was made to.
+/// @custom:member currentRulesetId The ID of the ruleset the payment is being made during.
 /// @custom:member amount The amount of the payment. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
-/// @custom:member forwardedAmount The amount of the payment that is being sent to the delegate. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
+/// @custom:member forwardedAmount The amount of the payment that is being sent to the pay hook. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member weight The current ruleset's weight used to determine how many tokens are being minted.
 /// @custom:member projectTokenCount The number of project tokens minted for the beneficiary.
-/// @custom:member beneficiary The address to which the tokens were minted.
-/// @custom:member dataSourceMetadata Extra data to send to the delegate sent by the data source.
-/// @custom:member payerMetadata Extra data to send to the delegate sent by the payer.
+/// @custom:member beneficiary The address the tokens were minted to.
+/// @custom:member dataHookMetadata Extra data to send to the pay hook (sent by the data hook).
+/// @custom:member payerMetadata Extra data to send to the pay hook (sent by the payer).
 struct JBDidPayData {
     address payer;
     uint256 projectId;
@@ -22,6 +22,6 @@ struct JBDidPayData {
     uint256 weight;
     uint256 projectTokenCount;
     address beneficiary;
-    bytes dataSourceMetadata;
+    bytes dataHookMetadata;
     bytes payerMetadata;
 }

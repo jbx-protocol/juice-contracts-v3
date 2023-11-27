@@ -58,15 +58,15 @@ library JBRulesetMetadataResolver {
         return ((_ruleset.metadata >> 85) & 1) == 1;
     }
 
-    function useDataSourceForPay(JBRuleset memory _ruleset) internal pure returns (bool) {
+    function useDataHookForPay(JBRuleset memory _ruleset) internal pure returns (bool) {
         return (_ruleset.metadata >> 86) & 1 == 1;
     }
 
-    function useDataSourceForRedeem(JBRuleset memory _ruleset) internal pure returns (bool) {
+    function useDataHookForRedeem(JBRuleset memory _ruleset) internal pure returns (bool) {
         return (_ruleset.metadata >> 87) & 1 == 1;
     }
 
-    function dataSource(JBRuleset memory _ruleset) internal pure returns (address) {
+    function dataHook(JBRuleset memory _ruleset) internal pure returns (address) {
         return address(uint160(_ruleset.metadata >> 88));
     }
 
@@ -106,12 +106,12 @@ library JBRulesetMetadataResolver {
         if (_metadata.holdFees) packed |= 1 << 84;
         // useTotalSurplusForRedemptions in bit 85.
         if (_metadata.useTotalSurplusForRedemptions) packed |= 1 << 85;
-        // use pay data source in bit 86.
-        if (_metadata.useDataSourceForPay) packed |= 1 << 86;
-        // use redeem data source in bit 87.
-        if (_metadata.useDataSourceForRedeem) packed |= 1 << 87;
-        // data source address in bits 88-247.
-        packed |= uint256(uint160(address(_metadata.dataSource))) << 88;
+        // use pay data hook in bit 86.
+        if (_metadata.useDataHookForPay) packed |= 1 << 86;
+        // use redeem data hook in bit 87.
+        if (_metadata.useDataHookForRedeem) packed |= 1 << 87;
+        // data hook address in bits 88-247.
+        packed |= uint256(uint160(address(_metadata.dataHook))) << 88;
         // metadata in bits 248-255 (8 bits).
         packed |= _metadata.metadata << 248;
     }
@@ -135,9 +135,9 @@ library JBRulesetMetadataResolver {
             controllerMigrationAllowed(_ruleset),
             shouldHoldFees(_ruleset),
             useTotalSurplusForRedemptions(_ruleset),
-            useDataSourceForPay(_ruleset),
-            useDataSourceForRedeem(_ruleset),
-            dataSource(_ruleset),
+            useDataHookForPay(_ruleset),
+            useDataHookForRedeem(_ruleset),
+            dataHook(_ruleset),
             metadata(_ruleset)
         );
     }

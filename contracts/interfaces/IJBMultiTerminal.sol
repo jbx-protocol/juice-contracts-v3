@@ -5,11 +5,11 @@ import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {JBFee} from "./../structs/JBFee.sol";
 import {JBAccountingContext} from "./../structs/JBAccountingContext.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
-import {IJBPayDelegate} from "./IJBPayDelegate.sol";
+import {IJBPayHook} from "./IJBPayHook.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IJBPrices} from "./IJBPrices.sol";
 import {IJBProjects} from "./IJBProjects.sol";
-import {IJBRedeemDelegate} from "./IJBRedeemDelegate.sol";
+import {IJBRedeemHook} from "./IJBRedeemHook.sol";
 import {IJBSplits} from "./IJBSplits.sol";
 import {IJBTerminalStore} from "./IJBTerminalStore.sol";
 import {JBDidPayData} from "./../structs/JBDidPayData.sol";
@@ -138,16 +138,16 @@ interface IJBMultiTerminal is IJBPaymentTerminal {
         address caller
     );
 
-    event DelegateDidRedeem(
-        IJBRedeemDelegate indexed delegate,
+    event HookDidRedeem(
+        IJBRedeemHook indexed hook,
         JBDidRedeemData data,
-        uint256 delegatedAmount,
+        uint256 payloadAmount,
         uint256 fee,
         address caller
     );
 
-    event DelegateDidPay(
-        IJBPayDelegate indexed delegate, JBDidPayData data, uint256 delegatedAmount, address caller
+    event HookDidPay(
+        IJBPayHook indexed hook, JBDidPayData data, uint256 payloadAmount, address caller
     );
 
     function PROJECTS() external view returns (IJBProjects);

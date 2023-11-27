@@ -64,9 +64,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             allowControllerMigration: false,
             holdFees: false,
             useTotalSurplusForRedemptions: true,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
     }
@@ -405,7 +405,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
             // Revert if there's no surplus, or if too much is being withdrawn.
         } else if (_ethCurrencySurplusAllowance + _ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary allowance of surplus.
@@ -460,11 +460,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Revert if the payout limit is greater than the balance.
         if (_ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
 
             // Revert if there's no payout limit.
         } else if (_ethCurrencyPayoutLimit == 0) {
-            vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+            vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
         }
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
@@ -682,7 +682,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
             // Revert if there's no surplus, or if too much is being withdrawn.
         } else if (_ethCurrencySurplusAllowance + _ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary allowance of surplus.
@@ -728,11 +728,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Revert if the payout limit is greater than the balance.
         if (_ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
 
             // Revert if there's no payout limit.
         } else if (_ethCurrencyPayoutLimit == 0) {
-            vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+            vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
         }
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
@@ -925,7 +925,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
             // Revert if there's no surplus, or if too much is being withdrawn.
         } else if (_ethCurrencySurplusAllowance + _ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary allowance of surplus.
@@ -974,11 +974,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Revert if the payout limit is greater than the balance.
         if (_ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
 
             // Revert if there's no payout limit.
         } else if (_ethCurrencyPayoutLimit == 0) {
-            vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+            vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
         }
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
@@ -1264,7 +1264,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _ethCurrencySurplusAllowance + _ethCurrencyPayoutLimit + _toEth(_usdCurrencyPayoutLimit)
                 > _ethPayAmount
         ) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary ETH allowance of surplus.
@@ -1331,7 +1331,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 && _toEth(_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit)
                     + _ethCurrencyPayoutLimit + _ethCurrencySurplusAllowance > _ethPayAmount
         ) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary ETH allowance of surplus.
@@ -1392,12 +1392,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         {
             // Revert if the payout limit is greater than the balance.
             if (_ethCurrencyPayoutLimit > _ethPayAmount) {
-                vm.expectRevert(
-                    abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()")
-                );
+                vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
                 // Revert if there's no payout limit.
             } else if (_ethCurrencyPayoutLimit == 0) {
-                vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+                vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
@@ -1443,19 +1441,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _ethCurrencyPayoutLimit <= _ethPayAmount
                     && _toEth(_usdCurrencyPayoutLimit) + _ethCurrencyPayoutLimit > _ethPayAmount
             ) {
-                vm.expectRevert(
-                    abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()")
-                );
+                vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
             } else if (
                 _ethCurrencyPayoutLimit > _ethPayAmount
                     && _toEth(_usdCurrencyPayoutLimit) > _ethPayAmount
             ) {
-                vm.expectRevert(
-                    abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()")
-                );
+                vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
                 // Revert if there's no payout limit.
             } else if (_usdCurrencyPayoutLimit == 0) {
-                vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+                vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
@@ -1928,7 +1922,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         if (_ethCurrencySurplusAllowance == 0) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
         } else if (_ethCurrencySurplusAllowance + _ethCurrencyPayoutLimit > _ethPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary ETH allowance of surplus.
@@ -1988,7 +1982,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
             // revert if the usd surplus allowance resolved to eth is greater than 0, and there is sufficient surplus to pull from including what was already pulled from.
         } else if (_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit > _usdcPayAmount) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
         // Use the full discretionary ETH allowance of surplus.
@@ -2068,12 +2062,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         {
             // Revert if the payout limit is greater than the balance.
             if (_ethCurrencyPayoutLimit > _ethPayAmount) {
-                vm.expectRevert(
-                    abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()")
-                );
+                vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
                 // Revert if there's no payout limit.
             } else if (_ethCurrencyPayoutLimit == 0) {
-                vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+                vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
@@ -2115,12 +2107,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Revert if the payout limit is greater than the balance.
             if (_usdCurrencyPayoutLimit > _usdcPayAmount) {
-                vm.expectRevert(
-                    abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()")
-                );
+                vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
                 // Revert if there's no payout limit.
             } else if (_usdCurrencyPayoutLimit == 0) {
-                vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
+                vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
