@@ -239,7 +239,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         }
 
         // The total supply can't exceed the maximum value storable in a uint224.
-        if (totalSupplyOf(_projectId) > type(uint224).max) revert OVERFLOW_ALERT();
+        if (totalSupplyOf(_projectId) > type(uint208).max) revert OVERFLOW_ALERT();
 
         emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, msg.sender);
     }
