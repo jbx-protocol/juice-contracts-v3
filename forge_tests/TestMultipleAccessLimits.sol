@@ -14,7 +14,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits;
-    IJBPaymentTerminal[] private _terminals;
     address private _projectOwner;
     address private _beneficiary;
 
@@ -55,8 +54,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             dataSource: address(0),
             metadata: 0
         });
-
-        _terminals.push(__terminal);
     }
 
     function launchProjectsForTestBelow()
