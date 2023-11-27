@@ -28,7 +28,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     //*********************************************************************//
 
     /// @notice A list of packed payout limits for a given project, ruleset, terminal, and token.
-    /// @dev bits 0-231: The maximum amount (in a specific currency) of the terminal's `token`s that the project can pay out during the applicable ruleset.
+    /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can pay out during the applicable ruleset.
     /// @dev bits 224-255: The currency that the payout limit is denominated in. If this currency is different from the terminal's `token`, the payout limit will vary depending on their exchange rate.
     /// @custom:param _projectId The ID of the project to get the packed payout limit data of.
     /// @custom:param _rulesetId The ID of the ruleset that the packed payout limit data applies to.
@@ -39,7 +39,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     ) internal _packedPayoutLimitsDataOf;
 
     /// @notice A list of packed surplus allowances for a given project, ruleset, terminal, and token.
-    /// @dev bits 0-231: The maximum amount (in a specific currency) of the terminal's `token`s that the project can access from its surplus during the applicable ruleset.
+    /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can access from its surplus during the applicable ruleset.
     /// @dev bits 224-255: The currency that the surplus allowance is denominated in. If this currency is different from the terminal's `token`, the surplus allowance will vary depending on their exchange rate.
     /// @custom:param _projectId The ID of the project to get the packed surplus allowance data of.
     /// @custom:param _rulesetId The ID of the ruleset that the packed surplus allowance data applies to.
@@ -170,7 +170,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
             // Set the data being iterated on.
             _packedSurplusAllowanceData = _packedSurplusAllowancesData[_i];
 
-            // The limit is in bits 0-231. The currency is in bits 224-255.
+            // The limit is in bits 0-223. The currency is in bits 224-255.
             surplusAllowances[_i] = JBCurrencyAmount({
                 currency: _packedSurplusAllowanceData >> 224,
                 amount: uint256(uint224(_packedSurplusAllowanceData))

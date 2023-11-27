@@ -57,7 +57,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @notice Mints ERC-721's that represent project ownership.
     IJBProjects public immutable override projects;
 
-    /// @notice The contract storing all ruleset configurations.
+    /// @notice The contract storing and managing project rulesets.
     IJBRulesets public immutable override rulesets;
 
     /// @notice The contract that manages token minting and burning.
@@ -180,7 +180,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @param _permissions A contract storing permissions.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _rulesets A contract storing all ruleset configurations.
+    /// @param _rulesets A contract storing and managing project rulesets.
     /// @param _tokenStore A contract that manages token minting and burning.
     /// @param _splits A contract that stores splits for each project.
     /// @param _fundAccessLimits A contract that stores fund access limits for each project.

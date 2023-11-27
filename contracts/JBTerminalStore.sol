@@ -59,7 +59,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override DIRECTORY;
 
-    /// @notice The contract storing all ruleset configurations.
+    /// @notice The contract storing and managing project rulesets.
     IJBRulesets public immutable override RULESET_STORE;
 
     /// @notice The contract that exposes price feeds.
@@ -225,7 +225,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     //*********************************************************************//
 
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _rulesets A contract storing all ruleset configurations.
+    /// @param _rulesets A contract storing and managing project rulesets.
     /// @param _prices A contract that exposes price feeds.
     constructor(IJBDirectory _directory, IJBRulesets _rulesets, IJBPrices _prices) {
         DIRECTORY = _directory;
