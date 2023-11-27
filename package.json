@@ -13,7 +13,6 @@
     "@chainlink/contracts": "^0.8.0",
     "@openzeppelin/contracts": "^5.0.0",
     "@paulrberg/contracts": "^3.7.0",
-    "@jbx-protocol/juice-delegate-metadata-lib": "https://github.com/jbx-protocol/juice-delegate-metadata-lib.git",
     "@permit2/src": "https://github.com/Uniswap/permit2"
   },
   "devDependencies": {
