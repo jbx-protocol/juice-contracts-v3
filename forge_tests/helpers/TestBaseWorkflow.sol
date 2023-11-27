@@ -110,6 +110,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
     JBDelegateMetadataHelper private _metadataHelper;
+    JBMultiTerminal private _jbMultiTerminal2;
 
     function multisig() internal view returns (address) {
         return _multisig;
@@ -169,6 +170,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
         return _jbMultiTerminal;
+    }
+
+    function jbPayoutRedemptionTerminal2() internal view returns (JBMultiTerminal) {
+        return _jbMultiTerminal2;
     }
 
     function metadataHelper() internal view returns (JBDelegateMetadataHelper) {
@@ -239,6 +244,16 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       IPermit2(_permit2),
       _multisig
     );
+
+        _jbMultiTerminal2 = new JBMultiTerminal(
+        _jbOperatorStore,
+        _jbProjects,
+        _jbDirectory,
+        _jbSplitsStore,
+        _jbTerminalStore,
+        IPermit2(_permit2),
+        _multisig
+        );
 
         vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
     }
