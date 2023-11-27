@@ -567,21 +567,21 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
         if (msg.sender == address(this)) return _amount;
 
-        // Keep a reference to the allowance context parsed from the metadata.
-        JBSingleAllowanceData memory _allowance;
-
-        bool _quoteExists;
-        bytes memory _parsedMetadata;
-
         // Unpack the allowance to use, if any, given by the frontend.
-        (_quoteExists, _parsedMetadata) =
+        (bool _quoteExists, bytes memory _parsedMetadata) =
             JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
-        if (_quoteExists) {
-            (_allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
-        }
 
-        // Set the allowance to `spend` tokens for the user if needed.
-        if (_allowance.amount > 0) _permitAllowance(_allowance, _token);
+        // Check if the metadata contained permit data.
+        if (_quoteExists) {
+            // Keep a reference to the allowance context parsed from the metadata.
+            (JBSingleAllowanceData memory _allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
+
+            // Make sure the permit allowance is enough for this payment. If not we revert early.
+            if (_allowance.amount < _amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+
+            // Set the allowance to `spend` tokens for the user.
+            _permitAllowance(_allowance, _token);
+        }
 
         // Get a reference to the balance before receiving tokens.
         uint256 _balanceBefore = _balance(_token);
