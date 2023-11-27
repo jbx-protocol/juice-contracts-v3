@@ -272,9 +272,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override returns (uint256) {
+        // Accept the funds.
+        _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
+
+        // Pay the project.
         return _pay(
             _token,
-            _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
+            _amount,
             _msgSender(),
             _projectId,
             _beneficiary,
@@ -299,11 +303,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override {
+        // Accept the funds.
+        _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
+
         // Add to balance.
         _addToBalanceOf(
             _projectId,
             _token,
-            _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
+            _amount,
             _shouldRefundHeldFees,
             _memo,
             _metadata
@@ -711,8 +718,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _token The token being accepted.
     /// @param _amount The amount of tokens being accepted.
     /// @param _metadata The metadata in which permit2 context is provided.
-    /// @return The amount of tokens that have been accepted.
-    function _acceptedTokenAmountFor(
+    /// @return amount The amount of tokens that have been accepted.
+    function _acceptFundsFor(
         uint256 _projectId,
         address _token,
         uint256 _amount,
