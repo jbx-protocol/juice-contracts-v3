@@ -19,7 +19,6 @@ interface IJBTokenStore {
         uint256 indexed projectId,
         uint256 amount,
         bool tokensWereClaimed,
-        bool preferClaimedTokens,
         address caller
     );
 
@@ -29,7 +28,6 @@ interface IJBTokenStore {
         uint256 amount,
         uint256 initialUnclaimedBalance,
         uint256 initialClaimedBalance,
-        bool preferClaimedTokens,
         address caller
     );
 
@@ -77,11 +75,9 @@ interface IJBTokenStore {
 
     function setFor(uint256 projectId, IJBToken token) external;
 
-    function burnFrom(address holder, uint256 projectId, uint256 amount, bool preferClaimedTokens)
-        external;
+    function burnFrom(address holder, uint256 projectId, uint256 amount) external;
 
-    function mintFor(address holder, uint256 projectId, uint256 amount, bool preferClaimedTokens)
-        external;
+    function mintFor(address holder, uint256 projectId, uint256 amount) external;
 
     function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
         external;

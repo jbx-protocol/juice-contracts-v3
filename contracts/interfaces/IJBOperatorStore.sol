@@ -9,7 +9,8 @@ interface IJBOperatorStore {
         address indexed account,
         uint256 indexed domain,
         uint256[] permissionIndexes,
-        uint256 packed
+        uint256 packed,
+        address caller
     );
 
     function permissionsOf(address operator, address account, uint256 domain)
@@ -31,7 +32,5 @@ interface IJBOperatorStore {
         uint256[] calldata permissionIndexes
     ) external view returns (bool);
 
-    function setOperator(JBOperatorData calldata operatorData) external;
-
-    function setOperators(JBOperatorData[] calldata operatorData) external;
+    function setOperatorOf(address account, JBOperatorData calldata operatorData) external;
 }

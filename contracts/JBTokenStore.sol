@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
@@ -91,7 +92,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
         // If the project has a current token, add the holder's balance to the total.
         if (_token != IJBToken(address(0))) {
-            balance = balance + _token.balanceOf(_holder, _projectId);
+            balance = balance + _token.balanceOf(_holder);
         }
     }
 
@@ -111,7 +112,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
         // If the project has a current token, add its total supply to the total.
         if (_token != IJBToken(address(0))) {
-            totalSupply = totalSupply + _token.totalSupply(_projectId);
+            totalSupply = totalSupply + _token.totalSupply();
         }
     }
 
@@ -147,7 +148,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function issueFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
         returns (IJBToken token)
     {
         // There must be a name.
@@ -160,7 +161,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
         // Deploy the token contract.
-        token = new JBToken(_name, _symbol, _projectId);
+        token = new JBToken(_name, _symbol, address(this));
 
         // Store the token contract.
         tokenOf[_projectId] = token;
@@ -206,22 +207,20 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     /// @param _holder The address receiving the new tokens.
     /// @param _projectId The ID of the project to which the tokens belong.
     /// @param _amount The amount of tokens to mint.
-    /// @param _preferClaimedTokens A flag indicating whether there's a preference for minted tokens to be claimed automatically into the `_holder`s wallet if the project currently has a token contract attached.
-    function mintFor(
-        address _holder,
-        uint256 _projectId,
-        uint256 _amount,
-        bool _preferClaimedTokens
-    ) external override onlyController(_projectId) {
+    function mintFor(address _holder, uint256 _projectId, uint256 _amount)
+        external
+        override
+        onlyController(_projectId)
+    {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
 
-        // Save a reference to whether there exists a token and the caller prefers these claimed tokens.
-        bool _shouldClaimTokens = _preferClaimedTokens && _token != IJBToken(address(0));
+        // Save a reference to whether there exists a token.
+        bool _shouldClaimTokens = _token != IJBToken(address(0));
 
         if (_shouldClaimTokens) {
             // If tokens should be claimed, mint tokens into the holder's wallet.
-            _token.mint(_projectId, _holder, _amount);
+            _token.mint(_holder, _amount);
         } else {
             // Otherwise, add the tokens to the unclaimed balance and total supply.
             unclaimedBalanceOf[_holder][_projectId] =
@@ -229,12 +228,10 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
             unclaimedTotalSupplyOf[_projectId] = unclaimedTotalSupplyOf[_projectId] + _amount;
         }
 
-        // The total supply can't exceed the maximum value storable in a uint224.
-        if (totalSupplyOf(_projectId) > type(uint224).max) revert OVERFLOW_ALERT();
+        // The total supply can't exceed the maximum value storable in a uint208.
+        if (totalSupplyOf(_projectId) > type(uint208).max) revert OVERFLOW_ALERT();
 
-        emit Mint(
-            _holder, _projectId, _amount, _shouldClaimTokens, _preferClaimedTokens, msg.sender
-        );
+        emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, msg.sender);
     }
 
     /// @notice Burns a project's tokens.
@@ -242,13 +239,11 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     /// @param _holder The address that owns the tokens being burned.
     /// @param _projectId The ID of the project to which the burned tokens belong.
     /// @param _amount The amount of tokens to burn.
-    /// @param _preferClaimedTokens A flag indicating whether there's a preference for tokens to burned from the `_holder`s wallet if the project currently has a token contract attached.
-    function burnFrom(
-        address _holder,
-        uint256 _projectId,
-        uint256 _amount,
-        bool _preferClaimedTokens
-    ) external override onlyController(_projectId) {
+    function burnFrom(address _holder, uint256 _projectId, uint256 _amount)
+        external
+        override
+        onlyController(_projectId)
+    {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
 
@@ -256,8 +251,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         uint256 _unclaimedBalance = unclaimedBalanceOf[_holder][_projectId];
 
         // Get a reference to the amount of the project's current token the holder has in their wallet.
-        uint256 _claimedBalance =
-            _token == IJBToken(address(0)) ? 0 : _token.balanceOf(_holder, _projectId);
+        uint256 _claimedBalance = _token == IJBToken(address(0)) ? 0 : _token.balanceOf(_holder);
 
         // There must be adequate tokens to burn across the holder's claimed and unclaimed balance.
         if (_amount > _claimedBalance + _unclaimedBalance) revert INSUFFICIENT_FUNDS();
@@ -267,16 +261,9 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
 
         // Get a reference to how many claimed tokens should be burned
         if (_claimedBalance != 0) {
-            if (_preferClaimedTokens) {
-                // If prefer converted, burn the claimed tokens before the unclaimed.
-                _claimedTokensToBurn = _claimedBalance < _amount ? _claimedBalance : _amount;
-            }
-            // Otherwise, burn unclaimed tokens before claimed tokens.
-            else {
-                unchecked {
-                    _claimedTokensToBurn =
-                        _unclaimedBalance < _amount ? _amount - _unclaimedBalance : 0;
-                }
+            // Burn unclaimed tokens before claimed tokens.
+            unchecked {
+                _claimedTokensToBurn = _unclaimedBalance < _amount ? _amount - _unclaimedBalance : 0;
             }
         }
 
@@ -296,17 +283,9 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         }
 
         // Burn the claimed tokens.
-        if (_claimedTokensToBurn > 0) _token.burn(_projectId, _holder, _claimedTokensToBurn);
+        if (_claimedTokensToBurn > 0) _token.burn(_holder, _claimedTokensToBurn);
 
-        emit Burn(
-            _holder,
-            _projectId,
-            _amount,
-            _unclaimedBalance,
-            _claimedBalance,
-            _preferClaimedTokens,
-            msg.sender
-        );
+        emit Burn(_holder, _projectId, _amount, _unclaimedBalance, _claimedBalance, msg.sender);
     }
 
     /// @notice Claims internally accounted for tokens into a holder's wallet.
@@ -318,7 +297,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
         external
         override
-        requirePermission(_holder, _projectId, JBOperations.CLAIM)
+        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
     {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
@@ -341,7 +320,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
         }
 
         // Mint the equivalent amount of the project's token for the holder.
-        _token.mint(_projectId, _beneficiary, _amount);
+        _token.mint(_beneficiary, _amount);
 
         emit Claim(_holder, _projectId, _unclaimedBalance, _amount, _beneficiary, msg.sender);
     }
@@ -355,7 +334,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
         external
         override
-        requirePermission(_holder, _projectId, JBOperations.TRANSFER)
+        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
     {
         // Get a reference to the current funding cycle for the project.
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);

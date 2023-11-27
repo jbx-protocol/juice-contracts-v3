@@ -10,9 +10,10 @@
   "version": "5.0.0",
   "license": "MIT",
   "dependencies": {
-    "@chainlink/contracts": "^0.1.6",
-    "@openzeppelin/contracts": "^4.5.0-rc.0",
-    "@paulrberg/contracts": "^3.4.0",
+    "@chainlink/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "@paulrberg/contracts": "^3.7.0",
+    "@jbx-protocol/juice-delegate-metadata-lib": "https://github.com/jbx-protocol/juice-delegate-metadata-lib.git",
     "@permit2/src": "https://github.com/Uniswap/permit2"
   },
   "devDependencies": {
@@ -37,12 +38,20 @@
     "solidity-coverage": "^0.8.0-beta.1"
   },
   "scripts": {
-    "chain": "hardhat node",
-    "account": "hardhat account",
-    "test": "mocha './test/**/*.test.js' -r esm --bail --timeout 20000 && FOUNDRY_PROFILE=fork foundry test",
-    "coverage": "node --require esm ./node_modules/.bin/hardhat coverage --network hardhat",
-    "clean": "rimraf ./cache && rimraf ./artifacts",
-    "compile": "yarn clean && hardhat compile",
-    "pretty": "prettier --write \"./**/*.{js,jsx,json,sol}\""
+    "preinstall": "if [ \"$CI\" != \"true\" ]; then forge install; fi",
+    "test": "forge test",
+    "test:fork": "FOUNDRY_PROFILE=CI forge test",
+    "size": "forge build --sizes",
+    "coverage": "forge coverage --match-path ./src/*.sol --report lcov --report summary",
+    "doc": "forge doc",
+    "tree": "forge tree",
+    "deploy:ethereum-mainnet": "source .env && forge script DeployEthereumMainnet --chain-id 1 --rpc-url $RPC_ETHEREUM_MAINNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_ETHEREUM_MAINNET -vvv",
+    "deploy:ethereum-goerli": "source .env && forge script DeployGoerli --chain-id 5 --rpc-url $RPC_ETHEREUM_GOERLI --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_ETHEREUM_GOERLI -vvv",
+    "deploy:ethereum-sepolia": "source .env && forge script DeploySepolia --chain-id 5 --rpc-url $RPC_ETHEREUM_SEPOLIA --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_ETHEREUM_SEPOLIA -vvv",
+    "deploy:optimism-mainnet": "source .env && forge script DeployOptimismMainnet --chain-id 1 --rpc-url $RPC_OPTIMISM_MAINNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_OPTIMISM_MAINNET -vvv",
+    "deploy:optimism-testnet": "source .env && forge script DeployOptimismTestnet --chain-id 1 --rpc-url $RPC_OPTIMISM_TESTNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_OPTIMISM_TESTNET -vvv",
+    "deploy:polygon-mainnet": "source .env && forge script DeployPolygonMainnet --chain-id 1 --rpc-url $RPC_POLYGON_MAINNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_POLYGON_MAINNET -vvv",
+    "deploy:polygon-mumbai": "source .env && forge script DeployPolygonMumbai --chain-id 1 --rpc-url $RPC_POLYGON_MUMBAI --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_POLYGON_MUMBAI -vvv",
+    "lint": "forge fmt"
   }
 }

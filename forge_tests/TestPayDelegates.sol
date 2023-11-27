@@ -3,43 +3,39 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// Payments can be forwarded to any number of pay delegates.
-contract TestPayDelegates_Local is TestBaseWorkflow {
-    event DelegateDidPay(
-        IJBPayDelegate3_1_1 indexed delegate,
-        JBDidPayData3_1_1 data,
-        uint256 delegatedAmount,
-        address caller
-    );
+contract TestDelegates_Local is TestBaseWorkflow {
+    uint8 private constant _WEIGHT_DECIMALS = 18;
+    uint8 private constant _NATIVE_TOKEN_DECIMALS = 18;
+    uint256 private constant _WEIGHT = 1000 * 10 ** _WEIGHT_DECIMALS;
+    uint256 private constant _DATA_SOURCE_WEIGHT = 2000 * 10 ** _WEIGHT_DECIMALS;
+    address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));
+    bytes private constant _PAYER_METADATA = bytes("Some payer metadata");
 
-    JBController3_1 private _controller;
-    JBProjectMetadata private _projectMetadata;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
-    JBGroupedSplits[] private _groupedSplits;
-    JBFundAccessConstraints[] private _fundAccessConstraints;
-    IJBPaymentTerminal[] private _terminals;
-    JBTokenStore private _tokenStore;
+    IJBController3_1 private _controller;
+    IJBPaymentTerminal private _terminal;
     address private _projectOwner;
     address private _beneficiary;
-    address private _dataSource = address(bytes20(keccak256("datasource")));
-    uint256 private _projectId;
+    address private _payer;
+
+    uint256 _projectId;
 
     function setUp() public override {
         super.setUp();
 
+        _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
-        _tokenStore = jbTokenStore();
-        _controller = jbController();
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-        _data = JBFundingCycleData({
+        _payer = address(1_234_567);
+        _terminal = jbPayoutRedemptionTerminal();
+
+        JBFundingCycleData memory _data = JBFundingCycleData({
             duration: 0,
-            weight: 0,
+            weight: _WEIGHT,
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
-        _metadata = JBFundingCycleMetadata({
+
+        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
@@ -47,116 +43,122 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: 1,
+            baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
-            pauseDistributions: false,
-            pauseRedeem: false,
-            pauseBurn: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            preferClaimedTokenOverride: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: true,
             useDataSourceForRedeem: true,
-            dataSource: _dataSource,
+            dataSource: _DATA_SOURCE,
             metadata: 0
         });
 
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        // Package up cycle config.
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
+        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
+        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
 
-        _terminals.push(jbETHPaymentTerminal());
-        _projectId = _controller.launchProjectFor(
-            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
-        );
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
+
+        _projectId = _controller.launchProjectFor({
+            owner: _projectOwner,
+            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
+            memo: ""
+        });
     }
 
     function testPayDelegates(uint256 _numberOfAllocations, uint256 _ethPayAmount) public {
-        // Bound the number of allocations to a reasonable number.
-        _numberOfAllocations = bound(_numberOfAllocations, 1, 100);
+        // Bound the number of allocations to a reasonable amount.
+        _numberOfAllocations = bound(_numberOfAllocations, 1, 20);
+        // Make sure the amount of tokens generated fits in a register, and that each allocation can get some.
+        _ethPayAmount =
+            bound(_ethPayAmount, _numberOfAllocations, type(uint256).max / _DATA_SOURCE_WEIGHT);
 
-        // Make sure there's enough ETH paid to allocate for each delegate.
-        _ethPayAmount = bound(_ethPayAmount, _numberOfAllocations, type(uint256).max - 1);
+        // epa * weight / epad < max*epad/weight
 
-        // Package up the allocations.
+        // Keep a reference to the allocations.
         JBPayDelegateAllocation3_1_1[] memory _allocations =
             new JBPayDelegateAllocation3_1_1[](_numberOfAllocations);
+
+        // Keep a refernce to the amounts that'll be allocated.
         uint256[] memory _payDelegateAmounts = new uint256[](_numberOfAllocations);
 
-        {
-            // Keep a reference to the decrementing amount to allocate to the delegates.
-            uint256 _ethToAllocate = _ethPayAmount;
+        // Keep a reference to the amount that'll be paid and allocated.
+        uint256 _totalToAllocate = _ethPayAmount;
 
-            // Allocate small amounts to each delegate except the last one.
-            for (uint256 i; i < _payDelegateAmounts.length - 1; i++) {
-                uint256 _amount = _ethToAllocate / (_payDelegateAmounts.length * 2);
-                _payDelegateAmounts[i] = _amount;
-                _ethToAllocate -= _amount;
-            }
-
-            // Allocate the larger chunk to the last delegate.
-            _payDelegateAmounts[_payDelegateAmounts.length - 1] = _ethToAllocate;
+        // Spread the paid amount through all allocations, in various chunks, omitted the last entry.
+        for (uint256 i; i < _numberOfAllocations - 1; i++) {
+            _payDelegateAmounts[i] = _totalToAllocate / (_payDelegateAmounts.length * 2);
+            _totalToAllocate -= _payDelegateAmounts[i];
         }
+
+        // Send the rest to the last entry.
+        _payDelegateAmounts[_payDelegateAmounts.length - 1] = _totalToAllocate;
 
         // Keep a reference to the current funding cycle.
         (JBFundingCycle memory _fundingCycle,) = _controller.currentFundingCycleOf(_projectId);
 
-        // Make some data to pass along to the delegate.
-        bytes memory _somePayerMetadata = bytes("Some payer metadata");
-
-        // Iterate through each delegate expected to be called.
-        for (uint256 i = 0; i < _payDelegateAmounts.length; i++) {
-            // Create a delegate address.
+        // Iterate through each allocation.
+        for (uint256 i = 0; i < _numberOfAllocations; i++) {
+            // Make up an address for the delegate.
             address _delegateAddress =
                 address(bytes20(keccak256(abi.encodePacked("PayDelegate", i))));
 
-            // Make some data to pass along to the delegate from the data source.
-            bytes memory _someData = new bytes(1);
-            _someData[0] = keccak256(abi.encodePacked(i))[0];
+            // Send along some metadata to the pay delegate.
+            bytes memory _dataSourceMetadata = bytes("Some data source metadata");
 
-            // Specify a call to the delegate, forwarding the specified amount.
+            // Package up the delegate allocation struct.
             _allocations[i] = JBPayDelegateAllocation3_1_1(
-                IJBPayDelegate3_1_1(_delegateAddress), _payDelegateAmounts[i], _someData
+                IJBPayDelegate3_1_1(_delegateAddress), _payDelegateAmounts[i], _dataSourceMetadata
             );
 
-            // Keep a reference to the data expected to be sent to the delegate being iterated on.
+            // Keep a reference to the data that'll be received by the delegate.
             JBDidPayData3_1_1 memory _didPayData = JBDidPayData3_1_1({
-                payer: _beneficiary,
+                payer: _payer,
                 projectId: _projectId,
                 currentFundingCycleConfiguration: _fundingCycle.configuration,
                 amount: JBTokenAmount(
                     JBTokens.ETH,
                     _ethPayAmount,
-                    JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
-                    JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
                     ),
                 forwardedAmount: JBTokenAmount(
                     JBTokens.ETH,
                     _payDelegateAmounts[i],
-                    JBSingleTokenPaymentTerminal(address(_terminals[0])).decimals(),
-                    JBSingleTokenPaymentTerminal(address(_terminals[0])).currency()
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
                     ),
-                weight: _fundingCycle.weight,
-                projectTokenCount: 0,
+                weight: _WEIGHT,
+                projectTokenCount: PRBMath.mulDiv(
+                    _ethPayAmount, _DATA_SOURCE_WEIGHT, 10 ** _NATIVE_TOKEN_DECIMALS
+                    ),
                 beneficiary: _beneficiary,
-                preferClaimedTokens: false,
-                memo: "",
-                dataSourceMetadata: _someData, // empty metadata
-                payerMetadata: _somePayerMetadata // empty metadata
+                dataSourceMetadata: _dataSourceMetadata,
+                payerMetadata: _PAYER_METADATA
             });
 
-            // Mock the delegate's didPay.
+            // Mock the delegate
             vm.mockCall(
-                _delegateAddress, abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector), ""
+                _delegateAddress,
+                abi.encodeWithSelector(IJBPayDelegate3_1_1.didPay.selector),
+                abi.encode(_didPayData)
             );
 
-            // Make sure the delegate gets called with the expected value.
+            // Assert that the delegate gets called with the expected value
             vm.expectCall(
                 _delegateAddress,
                 _payDelegateAmounts[i],
@@ -165,37 +167,36 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
 
             // Expect an event to be emitted for every delegate
             vm.expectEmit(true, true, true, true);
-            emit DelegateDidPay({
-                delegate: IJBPayDelegate3_1_1(_delegateAddress),
-                data: _didPayData,
-                delegatedAmount: _payDelegateAmounts[i],
-                caller: _beneficiary
-            });
+            emit DelegateDidPay(
+                IJBPayDelegate3_1_1(_delegateAddress), _didPayData, _payDelegateAmounts[i], _payer
+            );
         }
 
-        // Mock the dataSource's payParams to return the allocations.
         vm.mockCall(
-            _dataSource,
+            _DATA_SOURCE,
             abi.encodeWithSelector(IJBFundingCycleDataSource3_1_1.payParams.selector),
-            abi.encode(
-                0, // weight
-                "", // memo
-                _allocations // allocations
-            )
+            abi.encode(_DATA_SOURCE_WEIGHT, _allocations)
         );
 
-        // Make the payment.
-        vm.deal(_beneficiary, _ethPayAmount);
-        vm.prank(_beneficiary);
-        _terminals[0].pay{value: _ethPayAmount}(
-            _projectId,
-            _ethPayAmount,
-            address(0),
-            _beneficiary,
-            0,
-            false,
-            "Forge test",
-            _somePayerMetadata
-        );
+        vm.deal(_payer, _ethPayAmount);
+        vm.prank(_payer);
+
+        // Pay the project such that the _beneficiary receives project tokens.
+        _terminal.pay{value: _ethPayAmount}({
+            projectId: _projectId,
+            amount: _ethPayAmount,
+            token: JBTokens.ETH,
+            beneficiary: _beneficiary,
+            minReturnedTokens: 0,
+            memo: "Forge Test",
+            metadata: _PAYER_METADATA
+        });
     }
+
+    event DelegateDidPay(
+        IJBPayDelegate3_1_1 indexed delegate,
+        JBDidPayData3_1_1 data,
+        uint256 delegatedAmount,
+        address caller
+    );
 }

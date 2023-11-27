@@ -47,4 +47,6 @@ interface IJBFundingCycleStore {
         uint256 metadata,
         uint256 mustStartAtOrAfter
     ) external returns (JBFundingCycle memory fundingCycle);
+
+    function updateFundingCycleWeightCache(uint256 projectId) external;
 }

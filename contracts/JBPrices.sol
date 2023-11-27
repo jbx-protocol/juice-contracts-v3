@@ -8,7 +8,7 @@ import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
-import {JBOperations2} from "./libraries/JBOperations2.sol";
+import {JBOperations} from "./libraries/JBOperations.sol";
 
 /// @notice Manages and normalizes price feeds.
 contract JBPrices is Ownable, JBOperatable, IJBPrices {
@@ -77,7 +77,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
             return PRBMath.mulDiv(10 ** _decimals, 10 ** _decimals, _feed.currentPrice(_decimals));
         }
 
-        // Check in the 0 project if not found.
+        // Check in the default project if not found.
         if (_projectId != DEFAULT_PROJECT_ID) {
             return priceFor({
                 _projectId: DEFAULT_PROJECT_ID,
@@ -100,10 +100,9 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     /// @param _owner The address that will own the contract.
     constructor(IJBOperatorStore _operatorStore, IJBProjects _projects, address _owner)
         JBOperatable(_operatorStore)
+        Ownable(_owner)
     {
         projects = _projects;
-        // Transfer the ownership.
-        transferOwnership(_owner);
     }
 
     //*********************************************************************//
@@ -121,9 +120,9 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     {
         // If the message sender is the owner and the projectId being set is the default, no permissions necessary.
         // Otherwise, only the project owner or an operator can add a feed for the project.
-        if (msg.sender != owner() || _projectId != DEFAULT_PROJECT_ID) {
+        if (_projectId != DEFAULT_PROJECT_ID || msg.sender != owner()) {
             _requirePermission(
-                projects.ownerOf(_projectId), _projectId, JBOperations2.ADD_PRICE_FEED
+                projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
             );
         }
 

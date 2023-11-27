@@ -9,31 +9,28 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleData private _dataReconfiguration;
-    JBFundingCycleData private _dataWithoutBallot;
     JBFundingCycleMetadata private _metadata;
     JBReconfigurationBufferBallot private _ballot;
     JBGroupedSplits[] private _groupedSplits;
     JBFundAccessConstraints[] private _fundAccessConstraints;
+    IJBPaymentTerminal private _terminal;
+
     uint256 private _BALLOT_DURATION = 3 days;
     uint256 private _CYCLE_DURATION = 6;
 
     function setUp() public override {
         super.setUp();
 
+        _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
+
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _ballot = new JBReconfigurationBufferBallot(_BALLOT_DURATION);
         _data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
-            weight: 10_000 * 10 ** 18,
-            discountRate: 0,
-            ballot: _ballot
-        });
-        _dataWithoutBallot = JBFundingCycleData({
-            duration: _CYCLE_DURATION * 1 days,
             weight: 1000 * 10 ** 18,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(address(0))
+            ballot: _ballot
         });
         _dataReconfiguration = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
@@ -41,6 +38,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             discountRate: 0,
             ballot: JBReconfigurationBufferBallot(address(0))
         });
+        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
+
         _metadata = JBFundingCycleMetadata({
             global: JBGlobalFundingCycleMetadata({
                 allowSetTerminals: false,
@@ -49,16 +48,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: 1,
+            baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
-            pauseDistributions: false,
-            pauseRedeem: false,
-            pauseBurn: false,
-            allowMinting: true,
+            allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            preferClaimedTokenOverride: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
             useDataSourceForRedeem: false,
@@ -67,9 +62,37 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         });
     }
 
+    function launchProjectForTest() public returns (uint256) {
+        // Package up cycle config.
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
+        _cycleConfig[0].mustStartAtOrAfter = 0;
+        _cycleConfig[0].data = _data;
+        _cycleConfig[0].metadata = _metadata;
+        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
+        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+
+        // Package up terminal config.
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
+
+        uint256 projectId = _controller.launchProjectFor({
+            owner: address(multisig()),
+            projectMetadata: _projectMetadata,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
+            memo: ""
+        });
+
+        return projectId;
+    }
+
     function testReconfigureProject() public {
         // Package a funding cycle configuration.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -77,13 +100,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Deploy a project.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Keep a reference to the current funding cycle.
         JBFundingCycle memory _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -125,22 +142,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         uint256 _weightFirstReconfiguration = 1234 * 10 ** 18;
         uint256 _weightSecondReconfiguration = 6969 * 10 ** 18;
 
-        // Package up a funding cycle configuration.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = _groupedSplits;
-        _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
-
         // Launch a project.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Keep a reference to the current funding cycle.
         JBFundingCycle memory _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -156,7 +159,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         vm.warp(block.timestamp + _fundingCycle.duration);
 
         // Package up a reconfiguration.
-        JBFundingCycleConfiguration[] memory _firstReconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _firstReconfig = new JBFundingCycleConfig[](1);
         _firstReconfig[0].mustStartAtOrAfter = 0;
         _firstReconfig[0].data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
@@ -173,7 +176,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _controller.reconfigureFundingCyclesOf(projectId, _firstReconfig, "");
 
         // Package up another reconfiguration.
-        JBFundingCycleConfiguration[] memory _secondReconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _secondReconfig = new JBFundingCycleConfig[](1);
         _secondReconfig[0].mustStartAtOrAfter = 0;
         _secondReconfig[0].data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
@@ -228,7 +231,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             discountRate: 0,
             ballot: _ballot
         });
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -236,13 +239,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch a project to test.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Keep a reference to the initial, current, and queued cycles.
         JBFundingCycle memory initialFundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -262,7 +259,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
                 discountRate: 0,
                 ballot: _ballot
             });
-            JBFundingCycleConfiguration[] memory _reconfig = new JBFundingCycleConfiguration[](1);
+            JBFundingCycleConfig[] memory _reconfig = new JBFundingCycleConfig[](1);
             _reconfig[0].mustStartAtOrAfter = 0;
             _reconfig[0].data = _data;
             _reconfig[0].metadata = _metadata;
@@ -316,7 +313,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
     function testLaunchProjectWrongBallot() public {
         /// Pacakge the configuration.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -324,13 +321,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch the project.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Package another with a bad ballot.
         JBFundingCycleData memory _dataNew = JBFundingCycleData({
@@ -343,7 +334,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         vm.prank(multisig());
         vm.expectRevert(abi.encodeWithSignature("INVALID_BALLOT()"));
 
-        JBFundingCycleConfiguration[] memory _reconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _reconfig = new JBFundingCycleConfig[](1);
         _reconfig[0].mustStartAtOrAfter = 0;
         _reconfig[0].data = _dataNew;
         _reconfig[0].metadata = _metadata;
@@ -369,7 +360,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -377,13 +368,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch a project to test.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Get a reference to the current funding cycle.
         JBFundingCycle memory _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -396,7 +381,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         uint256 _currentConfiguration = _fundingCycle.configuration;
 
         // Package up a reconfiguration.
-        JBFundingCycleConfiguration[] memory _reconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _reconfig = new JBFundingCycleConfig[](1);
         _reconfig[0].mustStartAtOrAfter = 0;
         _reconfig[0].data = _dataReconfiguration;
         _reconfig[0].metadata = _metadata;
@@ -446,7 +431,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             discountRate: 0,
             ballot: IJBFundingCycleBallot(address(0))
         });
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -454,13 +439,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch a project to test with.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Get a reference to the current funding cycle.
         JBFundingCycle memory _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -470,7 +449,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_fundingCycle.weight, _data.weight);
 
         // Package a reconfiguration.
-        JBFundingCycleConfiguration[] memory _reconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _reconfig = new JBFundingCycleConfig[](1);
 
         _reconfig[0].mustStartAtOrAfter = 0;
         _reconfig[0].data = _dataReconfiguration;
@@ -503,26 +482,20 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         uint256 _initialTimestamp = block.timestamp;
 
         // Package up a reconfiguration.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightInitial,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(_ballot)
+            ballot: _ballot
         }); // 3days ballot;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Launch the project to test with.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Send the reconfiguration.
         JBFundingCycle memory _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -533,13 +506,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_fundingCycle.configuration, block.timestamp);
 
         // Package up a reconfiguration.
-        JBFundingCycleConfiguration[] memory _firstReconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _firstReconfig = new JBFundingCycleConfig[](1);
         _firstReconfig[0].mustStartAtOrAfter = 0;
         _firstReconfig[0].data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightFirstReconfiguration,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(_ballot)
+            ballot: _ballot
         }); // 3days ballot;
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].groupedSplits = _groupedSplits;
@@ -556,13 +529,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_queued.weight, _weightFirstReconfiguration);
 
         // Package up another reconfiguration
-        JBFundingCycleConfiguration[] memory _secondReconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _secondReconfig = new JBFundingCycleConfig[](1);
         _secondReconfig[0].mustStartAtOrAfter = block.timestamp + 9 days;
         _secondReconfig[0].data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightSecondReconfiguration,
             discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(_ballot)
+            ballot: _ballot
         }); // 3days ballot;
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].groupedSplits = _groupedSplits;
@@ -605,7 +578,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         uint256 _expectedTimestamp = block.timestamp;
 
         // Package up a reconfiguration.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
@@ -613,13 +586,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
         // Deploy a project to test.
-        uint256 projectId = _controller.launchProjectFor({
-            owner: multisig(),
-            projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: new IJBPaymentTerminal[](0),
-            memo: ""
-        });
+        uint256 projectId = launchProjectForTest();
 
         // Keep a reference to the current cycle.
         JBFundingCycle memory _fundingCycle = jbFundingCycleStore().currentOf(projectId);
@@ -629,7 +596,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_fundingCycle.weight, _data.weight);
 
         // Package up another configuration.
-        JBFundingCycleConfiguration[] memory _firstReconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _firstReconfig = new JBFundingCycleConfig[](1);
         _firstReconfig[0].mustStartAtOrAfter = block.timestamp + 3 days;
         _firstReconfig[0].data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
@@ -653,7 +620,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(queuedToOverwrite.weight, _weightFirstReconfiguration);
 
         // Package up another reconfiguration to overwrite.
-        JBFundingCycleConfiguration[] memory _secondReconfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _secondReconfig = new JBFundingCycleConfig[](1);
 
         _secondReconfig[0].mustStartAtOrAfter = block.timestamp + _BALLOT_DURATION;
         _secondReconfig[0].data = JBFundingCycleData({

@@ -2,56 +2,12 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {
-    ERC20Votes,
-    ERC20,
-    ERC20Permit
-} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import {ERC20Votes, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import {ERC20Permit, Nonces} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 
 /// @notice An ERC-20 token that can be used by a project in the `JBTokenStore`.
-contract JBToken is ERC20Votes, Ownable, IJBToken {
-    //*********************************************************************//
-    // --------------------------- custom errors ------------------------- //
-    //*********************************************************************//
-    error BAD_PROJECT();
-
-    //*********************************************************************//
-    // --------------------- public stored properties -------------------- //
-    //*********************************************************************//
-
-    /// @notice The ID of the project that this token should be exclusively used for. Send 0 to support any project.
-    uint256 public immutable override projectId;
-
-    //*********************************************************************//
-    // ------------------------- external views -------------------------- //
-    //*********************************************************************//
-
-    /// @notice The total supply of this ERC20.
-    /// @param _projectId the ID of the project to which the token belongs. This is ignored.
-    /// @return The total supply of this ERC20, as a fixed point number.
-    function totalSupply(uint256 _projectId) external view override returns (uint256) {
-        _projectId; // Prevents unused var compiler and natspec complaints.
-
-        return super.totalSupply();
-    }
-
-    /// @notice An account's balance of this ERC20.
-    /// @param _account The account to get a balance of.
-    /// @param _projectId is the ID of the project to which the token belongs. This is ignored.
-    /// @return The balance of the `_account` of this ERC20, as a fixed point number with 18 decimals.
-    function balanceOf(address _account, uint256 _projectId)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        _account; // Prevents unused var compiler and natspec complaints.
-        _projectId; // Prevents unused var compiler and natspec complaints.
-
-        return super.balanceOf(_account);
-    }
-
+contract JBToken is ERC20Votes, ERC20Permit, Ownable, IJBToken {
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
@@ -62,19 +18,31 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
         return super.decimals();
     }
 
+    /// @notice The total supply of this ERC20.
+    /// @return The total supply of this ERC20, as a fixed point number.
+    function totalSupply() public view override(ERC20, IJBToken) returns (uint256) {
+        return super.totalSupply();
+    }
+
+    /// @notice An account's balance of this ERC20.
+    /// @param _account The account to get a balance of.
+    /// @return The balance of the `_account` of this ERC20, as a fixed point number with 18 decimals.
+    function balanceOf(address _account) public view override(ERC20, IJBToken) returns (uint256) {
+        return super.balanceOf(_account);
+    }
+
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
     /// @param _name The name of the token.
     /// @param _symbol The symbol that the token should be represented by.
-    /// @param _projectId The ID of the project that this token should be exclusively used for. Send 0 to support any project.
-    constructor(string memory _name, string memory _symbol, uint256 _projectId)
+    /// @param _owner The owner of the token.
+    constructor(string memory _name, string memory _symbol, address _owner)
         ERC20(_name, _symbol)
         ERC20Permit(_name)
-    {
-        projectId = _projectId;
-    }
+        Ownable(_owner)
+    {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
@@ -82,70 +50,37 @@ contract JBToken is ERC20Votes, Ownable, IJBToken {
 
     /// @notice Mints more of the token.
     /// @dev Only the owner of this contract cant mint more of it.
-    /// @param _projectId The ID of the project to which the token belongs.
     /// @param _account The account to mint the tokens for.
     /// @param _amount The amount of tokens to mint, as a fixed point number with 18 decimals.
-    function mint(uint256 _projectId, address _account, uint256 _amount)
-        external
-        override
-        onlyOwner
-    {
-        // Can't mint for a wrong project.
-        if (_projectId != projectId) revert BAD_PROJECT();
-
+    function mint(address _account, uint256 _amount) external override onlyOwner {
         return _mint(_account, _amount);
     }
 
     /// @notice Burn some outstanding tokens.
     /// @dev Only the owner of this contract cant burn some of its supply.
-    /// @param _projectId The ID of the project to which the token belongs.
     /// @param _account The account to burn tokens from.
     /// @param _amount The amount of tokens to burn, as a fixed point number with 18 decimals.
-    function burn(uint256 _projectId, address _account, uint256 _amount)
-        external
-        override
-        onlyOwner
-    {
-        // Can't burn for a wrong project.
-        if (_projectId != projectId) revert BAD_PROJECT();
-
+    function burn(address _account, uint256 _amount) external override onlyOwner {
         return _burn(_account, _amount);
     }
 
-    /// @notice Approves an account to spend tokens on the `msg.sender`s behalf.
-    /// @param _projectId the ID of the project to which the token belongs.
-    /// @param _spender The address that will be spending tokens on the `msg.sender`s behalf.
-    /// @param _amount The amount the `_spender` is allowed to spend.
-    function approve(uint256 _projectId, address _spender, uint256 _amount) external override {
-        // Can't approve for a wrong project.
-        if (_projectId != projectId) revert BAD_PROJECT();
-
-        approve(_spender, _amount);
-    }
-
-    /// @notice Transfer tokens to an account.
-    /// @param _projectId The ID of the project to which the token belongs.
-    /// @param _to The destination address.
-    /// @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
-    function transfer(uint256 _projectId, address _to, uint256 _amount) external override {
-        // Can't transfer for a wrong project.
-        if (_projectId != projectId) revert BAD_PROJECT();
-
-        transfer(_to, _amount);
-    }
-
-    /// @notice Transfer tokens between accounts.
-    /// @param _projectId The ID of the project to which the token belongs.
-    /// @param _from The originating address.
-    /// @param _to The destination address.
-    /// @param _amount The amount of the transfer, as a fixed point number with 18 decimals.
-    function transferFrom(uint256 _projectId, address _from, address _to, uint256 _amount)
-        external
-        override
+    /// @notice required override.
+    function nonces(address owner)
+        public
+        view
+        virtual
+        override(ERC20Permit, Nonces)
+        returns (uint256)
     {
-        // Can't transfer for a wrong project.
-        if (_projectId != projectId) revert BAD_PROJECT();
+        return super.nonces(owner);
+    }
 
-        transferFrom(_from, _to, _amount);
+    /// @notice required override.
+    function _update(address from, address to, uint256 value)
+        internal
+        virtual
+        override(ERC20, ERC20Votes)
+    {
+        super._update(from, to, value);
     }
 }

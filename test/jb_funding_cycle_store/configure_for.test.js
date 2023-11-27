@@ -2192,7 +2192,7 @@ describe('JBFundingCycleStore::configureFor(...)', function () {
     });
 
     // 10000000 cycles into the future.
-    const cycleDiff = ethers.BigNumber.from(10000000);
+    const cycleDiff = ethers.BigNumber.from(10000000000);
 
     //keep 5 seconds before the end of the cycle so make all necessary checks before the cycle ends.
     await fastForward(

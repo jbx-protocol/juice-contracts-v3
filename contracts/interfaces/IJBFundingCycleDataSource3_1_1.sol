@@ -14,28 +14,21 @@ interface IJBFundingCycleDataSource3_1_1 is IERC165 {
     /// @notice The datasource implementation for JBPaymentTerminal.pay(..)
     /// @param data the data passed to the data source in terminal.pay(..), as a JBPayParamsData struct:
     /// @return weight the weight to use to override the funding cycle weight
-    /// @return memo the memo to override the pay(..) memo
     /// @return delegateAllocations The amount to send to delegates instead of adding to the local balance.
     function payParams(JBPayParamsData calldata data)
         external
         view
-        returns (
-            uint256 weight,
-            string memory memo,
-            JBPayDelegateAllocation3_1_1[] memory delegateAllocations
-        );
+        returns (uint256 weight, JBPayDelegateAllocation3_1_1[] memory delegateAllocations);
 
     /// @notice The datasource implementation for JBPaymentTerminal.redeemTokensOf(..)
     /// @param data the data passed to the data source in terminal.redeemTokensOf(..), as a JBRedeemParamsData struct:
     /// @return reclaimAmount The amount to claim, overriding the terminal logic.
-    /// @return memo The memo to override the redeemTokensOf(..) memo.
     /// @return delegateAllocations The amount to send to delegates instead of adding to the beneficiary.
     function redeemParams(JBRedeemParamsData calldata data)
         external
         view
         returns (
             uint256 reclaimAmount,
-            string memory memo,
             JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
         );
 }

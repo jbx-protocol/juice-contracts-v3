@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IJBSplitAllocator} from "./../interfaces/IJBSplitAllocator.sol";
 
-/// @custom:member preferClaimed A flag that only has effect if a projectId is also specified, and the project has a token contract attached. If so, this flag indicates if the tokens that result from making a payment to the project should be delivered claimed into the beneficiary's wallet, or unclaimed to save gas.
 /// @custom:member preferAddToBalance A flag indicating if a distribution to a project should prefer triggering it's addToBalance function instead of its pay function.
 /// @custom:member percent The percent of the whole group that this split occupies. This number is out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member projectId The ID of a project. If an allocator is not set but a projectId is set, funds will be sent to the protocol treasury belonging to the project who's ID is specified. Resulting tokens will be routed to the beneficiary with the claimed token preference respected.
@@ -11,7 +10,6 @@ import {IJBSplitAllocator} from "./../interfaces/IJBSplitAllocator.sol";
 /// @custom:member lockedUntil Specifies if the split should be unchangeable until the specified time, with the exception of extending the locked period.
 /// @custom:member allocator If an allocator is specified, funds will be sent to the allocator contract along with all properties of this split.
 struct JBSplit {
-    bool preferClaimed;
     bool preferAddToBalance;
     uint256 percent;
     uint256 projectId;

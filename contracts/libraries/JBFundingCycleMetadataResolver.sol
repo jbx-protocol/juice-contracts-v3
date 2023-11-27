@@ -27,32 +27,16 @@ library JBFundingCycleMetadataResolver {
     }
 
     function baseCurrency(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
-        // Currency is a number 0-16777215.
-        return uint256(uint24(_fundingCycle.metadata >> 48));
+        // Currency is a number 0-4294967296.
+        return uint256(uint32(_fundingCycle.metadata >> 48));
     }
 
     function payPaused(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 72) & 1) == 1;
-    }
-
-    function distributionsPaused(JBFundingCycle memory _fundingCycle)
-        internal
-        pure
-        returns (bool)
-    {
-        return ((_fundingCycle.metadata >> 73) & 1) == 1;
-    }
-
-    function redeemPaused(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 74) & 1) == 1;
-    }
-
-    function burnPaused(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 75) & 1) == 1;
+        return ((_fundingCycle.metadata >> 80) & 1) == 1;
     }
 
     function mintingAllowed(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 76) & 1) == 1;
+        return ((_fundingCycle.metadata >> 81) & 1) == 1;
     }
 
     function terminalMigrationAllowed(JBFundingCycle memory _fundingCycle)
@@ -60,7 +44,7 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return ((_fundingCycle.metadata >> 77) & 1) == 1;
+        return ((_fundingCycle.metadata >> 82) & 1) == 1;
     }
 
     function controllerMigrationAllowed(JBFundingCycle memory _fundingCycle)
@@ -68,19 +52,11 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return ((_fundingCycle.metadata >> 78) & 1) == 1;
+        return ((_fundingCycle.metadata >> 83) & 1) == 1;
     }
 
     function shouldHoldFees(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 79) & 1) == 1;
-    }
-
-    function preferClaimedTokenOverride(JBFundingCycle memory _fundingCycle)
-        internal
-        pure
-        returns (bool)
-    {
-        return ((_fundingCycle.metadata >> 80) & 1) == 1;
+        return ((_fundingCycle.metadata >> 84) & 1) == 1;
     }
 
     function useTotalOverflowForRedemptions(JBFundingCycle memory _fundingCycle)
@@ -88,7 +64,7 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return ((_fundingCycle.metadata >> 81) & 1) == 1;
+        return ((_fundingCycle.metadata >> 85) & 1) == 1;
     }
 
     function useDataSourceForPay(JBFundingCycle memory _fundingCycle)
@@ -96,7 +72,7 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return (_fundingCycle.metadata >> 82) & 1 == 1;
+        return (_fundingCycle.metadata >> 86) & 1 == 1;
     }
 
     function useDataSourceForRedeem(JBFundingCycle memory _fundingCycle)
@@ -104,15 +80,15 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return (_fundingCycle.metadata >> 83) & 1 == 1;
+        return (_fundingCycle.metadata >> 87) & 1 == 1;
     }
 
     function dataSource(JBFundingCycle memory _fundingCycle) internal pure returns (address) {
-        return address(uint160(_fundingCycle.metadata >> 84));
+        return address(uint160(_fundingCycle.metadata >> 88));
     }
 
     function metadata(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
-        return uint256(uint8(_fundingCycle.metadata >> 244));
+        return uint256(uint8(_fundingCycle.metadata >> 248));
     }
 
     /// @notice Pack the funding cycle metadata.
@@ -134,37 +110,29 @@ library JBFundingCycleMetadataResolver {
         // redemption rate in bits 32-47 (16 bits).
         // redemption rate is a number 0-10000.
         packed |= _metadata.redemptionRate << 32;
-        // base currency in bits 48-71 (24 bits).
+        // base currency in bits 48-79 (32 bits).
         // base currency is a number 0-16777215.
         packed |= _metadata.baseCurrency << 48;
-        // pause pay in bit 72.
-        if (_metadata.pausePay) packed |= 1 << 72;
-        // pause tap in bit 73.
-        if (_metadata.pauseDistributions) packed |= 1 << 73;
-        // pause redeem in bit 74.
-        if (_metadata.pauseRedeem) packed |= 1 << 74;
-        // pause burn in bit 75.
-        if (_metadata.pauseBurn) packed |= 1 << 75;
-        // allow minting in bit 76.
-        if (_metadata.allowMinting) packed |= 1 << 76;
-        // allow terminal migration in bit 77.
-        if (_metadata.allowTerminalMigration) packed |= 1 << 77;
-        // allow controller migration in bit 78.
-        if (_metadata.allowControllerMigration) packed |= 1 << 78;
-        // hold fees in bit 79.
-        if (_metadata.holdFees) packed |= 1 << 79;
-        // prefer claimed token override in bit 80.
-        if (_metadata.preferClaimedTokenOverride) packed |= 1 << 80;
-        // useTotalOverflowForRedemptions in bit 81.
-        if (_metadata.useTotalOverflowForRedemptions) packed |= 1 << 81;
-        // use pay data source in bit 82.
-        if (_metadata.useDataSourceForPay) packed |= 1 << 82;
-        // use redeem data source in bit 83.
-        if (_metadata.useDataSourceForRedeem) packed |= 1 << 83;
-        // data source address in bits 84-243.
-        packed |= uint256(uint160(address(_metadata.dataSource))) << 84;
-        // metadata in bits 244-252 (8 bits).
-        packed |= _metadata.metadata << 244;
+        // pause pay in bit 80.
+        if (_metadata.pausePay) packed |= 1 << 80;
+        // allow minting in bit 81.
+        if (_metadata.allowMinting) packed |= 1 << 81;
+        // allow terminal migration in bit 82.
+        if (_metadata.allowTerminalMigration) packed |= 1 << 82;
+        // allow controller migration in bit 83.
+        if (_metadata.allowControllerMigration) packed |= 1 << 83;
+        // hold fees in bit 84.
+        if (_metadata.holdFees) packed |= 1 << 84;
+        // useTotalOverflowForRedemptions in bit 85.
+        if (_metadata.useTotalOverflowForRedemptions) packed |= 1 << 85;
+        // use pay data source in bit 86.
+        if (_metadata.useDataSourceForPay) packed |= 1 << 86;
+        // use redeem data source in bit 87.
+        if (_metadata.useDataSourceForRedeem) packed |= 1 << 87;
+        // data source address in bits 88-247.
+        packed |= uint256(uint160(address(_metadata.dataSource))) << 88;
+        // metadata in bits 248-255 (8 bits).
+        packed |= _metadata.metadata << 248;
     }
 
     /// @notice Expand the funding cycle metadata.
@@ -181,14 +149,10 @@ library JBFundingCycleMetadataResolver {
             redemptionRate(_fundingCycle),
             baseCurrency(_fundingCycle),
             payPaused(_fundingCycle),
-            distributionsPaused(_fundingCycle),
-            redeemPaused(_fundingCycle),
-            burnPaused(_fundingCycle),
             mintingAllowed(_fundingCycle),
             terminalMigrationAllowed(_fundingCycle),
             controllerMigrationAllowed(_fundingCycle),
             shouldHoldFees(_fundingCycle),
-            preferClaimedTokenOverride(_fundingCycle),
             useTotalOverflowForRedemptions(_fundingCycle),
             useDataSourceForPay(_fundingCycle),
             useDataSourceForRedeem(_fundingCycle),

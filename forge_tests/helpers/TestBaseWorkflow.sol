@@ -10,9 +10,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC165, IERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {JBController3_1} from "@juicebox/JBController3_1.sol";
 import {JBDirectory} from "@juicebox/JBDirectory.sol";
-import {JBERC20PaymentTerminal3_1_2} from "@juicebox/JBERC20PaymentTerminal3_1_2.sol";
-import {JBSingleTokenPaymentTerminalStore3_1_1} from
-    "@juicebox/JBSingleTokenPaymentTerminalStore3_1_1.sol";
+import {JBTerminalStore} from "@juicebox/JBTerminalStore.sol";
 import {JBFundAccessConstraintsStore} from "@juicebox/JBFundAccessConstraintsStore.sol";
 import {JBFundingCycleStore} from "@juicebox/JBFundingCycleStore.sol";
 import {JBOperatorStore} from "@juicebox/JBOperatorStore.sol";
@@ -22,13 +20,9 @@ import {JBSplitsStore} from "@juicebox/JBSplitsStore.sol";
 import {JBToken} from "@juicebox/JBToken.sol";
 import {JBTokenStore} from "@juicebox/JBTokenStore.sol";
 import {JBReconfigurationBufferBallot} from "@juicebox/JBReconfigurationBufferBallot.sol";
-import {JBETHERC20SplitsPayerDeployer} from "@juicebox/JBETHERC20SplitsPayerDeployer.sol";
-import {JBETHERC20SplitsPayer} from "@juicebox/JBETHERC20SplitsPayer.sol";
-import {JBETHPaymentTerminal3_1_2} from "@juicebox/JBETHPaymentTerminal3_1_2.sol";
-import {JBPayoutRedemptionPaymentTerminal3_1_2} from
-    "@juicebox/abstract/JBPayoutRedemptionPaymentTerminal3_1_2.sol";
-import {JBSingleTokenPaymentTerminal} from "@juicebox/abstract/JBSingleTokenPaymentTerminal.sol";
+import {JBMultiTerminal} from "@juicebox/JBMultiTerminal.sol";
 import {JBCurrencyAmount} from "@juicebox/structs/JBCurrencyAmount.sol";
+import {JBAccountingContextConfig} from "@juicebox/structs/JBAccountingContextConfig.sol";
 import {JBDidPayData3_1_1} from "@juicebox/structs/JBDidPayData3_1_1.sol";
 import {JBDidRedeemData3_1_1} from "@juicebox/structs/JBDidRedeemData3_1_1.sol";
 import {JBFee} from "@juicebox/structs/JBFee.sol";
@@ -37,16 +31,18 @@ import {JBFundAccessConstraints} from "@juicebox/structs/JBFundAccessConstraints
 import {JBFundingCycle} from "@juicebox/structs/JBFundingCycle.sol";
 import {JBFundingCycleData} from "@juicebox/structs/JBFundingCycleData.sol";
 import {JBFundingCycleMetadata} from "@juicebox/structs/JBFundingCycleMetadata.sol";
-import {JBFundingCycleConfiguration} from "@juicebox/structs/JBFundingCycleConfiguration.sol";
+import {JBFundingCycleConfig} from "@juicebox/structs/JBFundingCycleConfig.sol";
 import {JBGroupedSplits} from "@juicebox/structs/JBGroupedSplits.sol";
 import {JBOperatorData} from "@juicebox/structs/JBOperatorData.sol";
 import {JBPayParamsData} from "@juicebox/structs/JBPayParamsData.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
+import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
+import {JBRedemptionDelegateAllocation3_1_1} from "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
 import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
@@ -55,47 +51,41 @@ import {JBSingleAllowanceData} from "@juicebox/structs/JBSingleAllowanceData.sol
 import {IJBController3_1} from "@juicebox/interfaces/IJBController3_1.sol";
 import {IJBMigratable} from "@juicebox/interfaces/IJBMigratable.sol";
 import {IJBOperatorStore} from "@juicebox/interfaces/IJBOperatorStore.sol";
-import {IJBSingleTokenPaymentTerminalStore3_1_1} from
-    "@juicebox/interfaces/IJBSingleTokenPaymentTerminalStore3_1_1.sol";
+import {IJBTerminalStore} from "@juicebox/interfaces/IJBTerminalStore.sol";
 import {IJBProjects} from "@juicebox/interfaces/IJBProjects.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1} from
-    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
 import {IJBDirectory} from "@juicebox/interfaces/IJBDirectory.sol";
 import {IJBFundingCycleStore} from "@juicebox/interfaces/IJBFundingCycleStore.sol";
 import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "@juicebox/interfaces/IJBTokenStore.sol";
 import {IJBSplitAllocator} from "@juicebox/interfaces/IJBSplitAllocator.sol";
 import {IJBPayDelegate3_1_1} from "@juicebox/interfaces/IJBPayDelegate3_1_1.sol";
+import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol";
 import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
-import {IJBPayoutRedemptionPaymentTerminal3_1} from
-    "@juicebox/interfaces/IJBPayoutRedemptionPaymentTerminal3_1.sol";
-import {IJBFeeHoldingTerminal} from "@juicebox/interfaces/IJBFeeHoldingTerminal.sol";
-import {IJBProjectPayer} from "@juicebox/interfaces/IJBProjectPayer.sol";
+import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
+import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
-import {IJBAllowanceTerminal3_1} from "@juicebox/interfaces/IJBAllowanceTerminal3_1.sol";
-import {IJBPayoutTerminal3_1} from "@juicebox/interfaces/IJBPayoutTerminal3_1.sol";
-import {IJBRedemptionTerminal} from "@juicebox/interfaces/IJBRedemptionTerminal.sol";
-import {IJBSingleTokenPaymentTerminal} from "@juicebox/interfaces/IJBSingleTokenPaymentTerminal.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
-import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
-import {IJBSplitsPayer} from "@juicebox/interfaces/IJBSplitsPayer.sol";
 
 import {JBTokens} from "@juicebox/libraries/JBTokens.sol";
+import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
+import {JBTokenStandards} from "@juicebox/libraries/JBTokenStandards.sol";
 import {JBFundingCycleMetadataResolver} from
     "@juicebox/libraries/JBFundingCycleMetadataResolver.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
-
 import {JBBallotState} from "@juicebox/enums/JBBallotState.sol";
 
 import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
 
-import "./AccessJBLib.sol";
+import {JBDelegateMetadataHelper} from
+    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataHelper.sol";
+
+import {MockERC20} from "./../mock/MockERC20.sol";
 
 import "@paulrberg/contracts/math/PRBMath.sol";
 import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
@@ -106,25 +96,21 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     // Multisig address used for testing.
     address private _multisig = address(123);
     address private _beneficiary = address(69_420);
+    MockERC20 private _usdcToken;
     address private _permit2;
     JBOperatorStore private _jbOperatorStore;
     JBProjects private _jbProjects;
     JBPrices private _jbPrices;
     JBDirectory private _jbDirectory;
     JBFundingCycleStore private _jbFundingCycleStore;
-    JBToken private _jbToken;
     JBTokenStore private _jbTokenStore;
     JBSplitsStore private _jbSplitsStore;
     JBController3_1 private _jbController;
     JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
-    JBSingleTokenPaymentTerminalStore3_1_1 private _jbPaymentTerminalStore3_1_1;
-    JBETHPaymentTerminal3_1_2 private _jbETHPaymentTerminal3_1_2;
-    JBERC20PaymentTerminal3_1_2 private _jbERC20PaymentTerminal3_1_2;
-    AccessJBLib private _accessJBLib;
-
-    function permit2() internal view returns (IPermit2) {
-        return IPermit2(_permit2);
-    }
+    JBTerminalStore private _jbTerminalStore;
+    JBMultiTerminal private _jbMultiTerminal;
+    JBDelegateMetadataHelper private _metadataHelper;
+    JBMultiTerminal private _jbMultiTerminal2;
 
     function multisig() internal view returns (address) {
         return _multisig;
@@ -132,6 +118,14 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     function beneficiary() internal view returns (address) {
         return _beneficiary;
+    }
+
+    function usdcToken() internal view returns (MockERC20) {
+        return _usdcToken;
+    }
+
+    function permit2() internal view returns (IPermit2) {
+        return IPermit2(_permit2);
     }
 
     function jbOperatorStore() internal view returns (JBOperatorStore) {
@@ -170,28 +164,20 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbFundAccessConstraintsStore;
     }
 
-    function jbPaymentTerminalStore()
-        internal
-        view
-        returns (JBSingleTokenPaymentTerminalStore3_1_1)
-    {
-        return _jbPaymentTerminalStore3_1_1;
+    function jbTerminalStore() internal view returns (JBTerminalStore) {
+        return _jbTerminalStore;
     }
 
-    function jbETHPaymentTerminal() internal view returns (JBETHPaymentTerminal3_1_2) {
-        return _jbETHPaymentTerminal3_1_2;
+    function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
+        return _jbMultiTerminal;
     }
 
-    function jbERC20PaymentTerminal() internal view returns (JBERC20PaymentTerminal3_1_2) {
-        return _jbERC20PaymentTerminal3_1_2;
+    function jbPayoutRedemptionTerminal2() internal view returns (JBMultiTerminal) {
+        return _jbMultiTerminal2;
     }
 
-    function jbToken() internal view returns (JBToken) {
-        return _jbToken;
-    }
-
-    function jbLibraries() internal view returns (AccessJBLib) {
-        return _accessJBLib;
+    function metadataHelper() internal view returns (JBDelegateMetadataHelper) {
+        return _metadataHelper;
     }
 
     //*********************************************************************//
@@ -202,25 +188,20 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     function setUp() public virtual {
         vm.label(_multisig, "projectOwner");
         vm.label(_beneficiary, "beneficiary");
-
         _jbOperatorStore = new JBOperatorStore();
         vm.label(address(_jbOperatorStore), "JBOperatorStore");
-
-        _jbProjects = new JBProjects(_jbOperatorStore);
+        _usdcToken = new MockERC20('USDC', 'USDC');
+        vm.label(address(_usdcToken), "ERC20");
+        _jbProjects = new JBProjects(_jbOperatorStore, _multisig);
         vm.label(address(_jbProjects), "JBProjects");
-
         _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
         vm.label(address(_jbPrices), "JBPrices");
-
-        address contractAtNoncePlusOne = addressFrom(address(this), 5);
-
+        address contractAtNoncePlusOne = addressFrom(address(this), 6);
         _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(contractAtNoncePlusOne));
         vm.label(address(_jbFundingCycleStore), "JBFundingCycleStore");
-
         _jbDirectory =
             new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
         vm.label(address(_jbDirectory), "JBDirectory");
-
         _jbTokenStore = new JBTokenStore(
       _jbOperatorStore,
       _jbProjects,
@@ -228,13 +209,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbFundingCycleStore
     );
         vm.label(address(_jbTokenStore), "JBTokenStore");
-
         _jbSplitsStore = new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory);
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
-
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
-
         _jbController = new JBController3_1(
       _jbOperatorStore,
       _jbProjects,
@@ -246,51 +224,38 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     );
         vm.label(address(_jbController), "JBController3_1");
 
+        _metadataHelper = new JBDelegateMetadataHelper();
+
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
-        _jbPaymentTerminalStore3_1_1 = new JBSingleTokenPaymentTerminalStore3_1_1(
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbPrices
-    );
-        vm.label(address(_jbPaymentTerminalStore3_1_1), "JBSingleTokenPaymentTerminalStore3_1_1");
-
-        _accessJBLib = new AccessJBLib();
-
-        _jbETHPaymentTerminal3_1_2 = new JBETHPaymentTerminal3_1_2(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbPrices,
-      address(_jbPaymentTerminalStore3_1_1),
-      _multisig
-    );
-        vm.label(address(_jbETHPaymentTerminal3_1_2), "JBETHPaymentTerminal3_1_2");
-
-        vm.prank(_multisig);
-        _jbToken = new JBToken('MyToken', 'MT', 1);
-
-        vm.prank(_multisig);
-        _jbToken.mint(1, _multisig, 100 * 10 ** 18);
+        _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbFundingCycleStore, _jbPrices);
+        vm.label(address(_jbTerminalStore), "JBSingleTokenPaymentTerminalStore");
 
         vm.prank(_multisig);
         _permit2 = deployPermit2();
 
-        _jbERC20PaymentTerminal3_1_2 = new JBERC20PaymentTerminal3_1_2(
-      _jbToken,
-      3, // UNIQUE SPLITS GROUP
+        _jbMultiTerminal = new JBMultiTerminal(
       _jbOperatorStore,
       _jbProjects,
       _jbDirectory,
       _jbSplitsStore,
-      _jbPrices,
-      address(_jbPaymentTerminalStore3_1_1),
-      _multisig,
-      IPermit2(_permit2)
+      _jbTerminalStore,
+      IPermit2(_permit2),
+      _multisig
     );
-        vm.label(address(_jbERC20PaymentTerminal3_1_2), "JBERC20PaymentTerminal3_1_2");
+
+        _jbMultiTerminal2 = new JBMultiTerminal(
+        _jbOperatorStore,
+        _jbProjects,
+        _jbDirectory,
+        _jbSplitsStore,
+        _jbTerminalStore,
+        IPermit2(_permit2),
+        _multisig
+        );
+
+        vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so
@@ -324,7 +289,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         }
     }
 
-    function strEqual(string memory a, string memory b) internal returns (bool) {
+    function strEqual(string memory a, string memory b) internal pure returns (bool) {
         return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
     }
 }

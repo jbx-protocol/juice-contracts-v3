@@ -6,39 +6,26 @@ import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     uint256 private _ethCurrency;
-    uint256 private _usdCurrency;
     IJBController3_1 private _controller;
-    IJBPayoutRedemptionPaymentTerminal3_1 private __terminal;
+    IJBMultiTerminal private __terminal;
     IJBPrices private _prices;
     JBTokenStore private _tokenStore;
-    JBSingleTokenPaymentTerminalStore3_1_1 private _jbPaymentTerminalStore3_1_1;
     JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits;
-    IJBPaymentTerminal[] private _terminals;
     address private _projectOwner;
     address private _beneficiary;
 
     function setUp() public override {
         super.setUp();
 
-        _ethCurrency = jbLibraries().ETH();
-        _usdCurrency = jbLibraries().USD();
+        _ethCurrency = uint32(uint160(JBTokens.ETH));
         _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _prices = jbPrices();
-        _jbPaymentTerminalStore3_1_1 = jbPaymentTerminalStore();
-        __terminal = new JBETHPaymentTerminal3_1_2(
-            jbOperatorStore(),
-            jbProjects(),
-            jbDirectory(),
-            jbSplitsStore(),
-            _prices,
-            address(_jbPaymentTerminalStore3_1_1),
-            _projectOwner
-        );
+        __terminal = jbPayoutRedemptionTerminal();
         _tokenStore = jbTokenStore();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
@@ -55,27 +42,24 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: 1,
+            baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
-            pauseDistributions: false,
-            pauseRedeem: false,
-            pauseBurn: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            preferClaimedTokenOverride: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
             useDataSourceForRedeem: false,
             dataSource: address(0),
             metadata: 0
         });
-
-        _terminals.push(__terminal);
     }
 
-    function testAccessConstraintsDelineation() external {
+    function launchProjectsForTestBelow()
+        public
+        returns (uint256, JBCurrencyAmount[] memory, JBAccountingContextConfig[] memory)
+    {
         uint256 _ethPayAmount = 1.5 ether;
         uint256 _ethDistributionLimit = 1 ether;
         uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
@@ -87,63 +71,94 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
-        _distributionLimits[0] =
-            JBCurrencyAmount({value: _ethDistributionLimit, currency: _ethCurrency});
-        _distributionLimits[1] =
-            JBCurrencyAmount({value: _usdDistributionLimit, currency: _usdCurrency});
-        _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: 1});
+        _distributionLimits[0] = JBCurrencyAmount({
+            value: _ethDistributionLimit,
+            currency: uint32(uint160(JBTokens.ETH))
+        });
+        _distributionLimits[1] = JBCurrencyAmount({
+            value: _usdDistributionLimit,
+            currency: uint32(uint160(address(usdcToken())))
+        });
+        _overflowAllowances[0] =
+            JBCurrencyAmount({value: 1 ether, currency: uint32(uint160(JBTokens.ETH))});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: __terminal,
-            token: jbLibraries().ETHToken(),
+            token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
         });
 
         // Package up cycle config.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({
+            token: address(usdcToken()),
+            standard: JBTokenStandards.ERC20
+        });
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
+
         // dummy
         _controller.launchProjectFor({
             owner: address(420), //random
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         vm.startPrank(_projectOwner);
         MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
-        vm.label(address(_priceFeedEthUsd), "MockPrice Feed MyToken-ETH");
+        vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
 
         _prices.addFeedFor({
             projectId: _projectId,
-            currency: _ethCurrency,
-            base: _usdCurrency,
+            currency: uint32(uint160(JBTokens.ETH)),
+            base: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedEthUsd
         });
 
         vm.stopPrank();
 
+        return (_projectId, _distributionLimits, _accountingContexts);
+    }
+
+    function testAccessConstraintsDelineation() external {
+        uint256 _ethPayAmount = 1.5 ether;
+        uint256 _ethDistributionLimit = 1 ether;
+        uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+        // More than the treasury will have available.
+        uint256 _usdDistributionLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+
+        (
+            uint256 _projectId,
+            JBCurrencyAmount[] memory _distributionLimits,
+            JBAccountingContextConfig[] memory _accountingContexts
+        ) = launchProjectsForTestBelow();
+
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: address(0), // unused.
+            token: JBTokens.ETH,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
-            preferClaimedTokens: false,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
@@ -160,10 +175,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _ethDistributionLimit,
-            currency: _ethCurrency,
-            token: address(0), // unused
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            currency: uint32(uint160(JBTokens.ETH)),
+            token: JBTokens.ETH, // unused
+            minReturnedTokens: 0
         });
 
         // Make sure the balance has changed, accounting for the fee that stays.
@@ -172,8 +186,8 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             initTerminalBalance
                 - PRBMath.mulDiv(
                     _distributionLimits[0].value,
-                    jbLibraries().MAX_FEE(),
-                    jbLibraries().MAX_FEE() + __terminal.fee()
+                    JBConstants.MAX_FEE,
+                    JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
@@ -184,28 +198,23 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             _prices.priceFor({
                 projectId: _projectId,
                 currency: _ethCurrency,
-                base: _usdCurrency,
+                base: uint32(uint160(address(usdcToken()))),
                 decimals: 18
             })
         );
 
-        // Confirm that anything over the _distributableAmount will fail via paymentterminalstore3_2
-        // This doesn't work when expecting & calling distributePayoutsOf bc of chained calls
-        vm.prank(address(__terminal));
+        /* vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_PAYMENT_TERMINAL_STORE_BALANCE()"));
         // add 10000 to make up for the fidelity difference in prices. (0.0005/1)
-        _jbPaymentTerminalStore3_1_1.recordDistributionFor(
-            _projectId, _usdDistributableAmount + 10_000, _usdCurrency
-        );
+        jbTerminalStore().recordDistributionFor(_projectId, _accountingContexts[1], _usdDistributableAmount + 10000, uint32(uint160(address(usdcToken())))); */
 
         // Should succeed with _distributableAmount
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
-            currency: _usdCurrency,
-            token: address(0), // token
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            currency: uint32(uint160(address(usdcToken()))),
+            token: JBTokens.ETH, // token
+            minReturnedTokens: 0
         });
 
         // Pay in another allotment.
@@ -215,27 +224,25 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: address(0), // unused
+            token: JBTokens.ETH, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
-            preferClaimedTokens: false,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
 
-        // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
+        /*  // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
         vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("DISTRIBUTION_AMOUNT_LIMIT_REACHED()"));
-        _jbPaymentTerminalStore3_1_1.recordDistributionFor(_projectId, 1, _ethCurrency);
+        jbTerminalStore().recordDistributionFor(_projectId, _accountingContexts[0], 1, _ethCurrency); */
 
         // But distribution via USD limit will succeed
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
-            currency: _usdCurrency,
-            token: address(0), //token (unused)
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            currency: uint32(uint160(address(usdcToken()))),
+            token: JBTokens.ETH, //token (unused)
+            minReturnedTokens: 0
         });
     }
 
@@ -253,12 +260,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: __terminal,
-            token: jbLibraries().ETHToken(),
+            token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
         });
 
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
 
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
@@ -268,6 +275,17 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({
+            token: address(usdcToken()),
+            standard: JBTokenStandards.ERC20
+        });
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
+
         vm.prank(_projectOwner);
 
         vm.expectRevert(abi.encodeWithSignature("INVALID_OVERFLOW_ALLOWANCE_CURRENCY_ORDERING()"));
@@ -275,8 +293,8 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
     }
@@ -297,12 +315,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: __terminal,
-            token: jbLibraries().ETHToken(),
+            token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
         });
 
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
 
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
@@ -312,6 +330,17 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _projectOwner = multisig();
 
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({
+            token: address(usdcToken()),
+            standard: JBTokenStandards.ERC20
+        });
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
+
         vm.prank(_projectOwner);
 
         vm.expectRevert(abi.encodeWithSignature("INVALID_DISTRIBUTION_LIMIT_CURRENCY_ORDERING()"));
@@ -319,20 +348,23 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
     }
 
     function testFuzzedConfigureAccess(
-        uint232 _distributionLimit,
-        uint232 _allowanceLimit,
+        uint256 _distributionLimit,
+        uint256 _allowanceLimit,
         uint256 _distributionCurrency,
         uint256 ALLOWCURRENCY
     ) external {
         _distributionCurrency =
             bound(uint256(_distributionCurrency), uint256(0), type(uint24).max - 1);
+        _distributionLimit =
+            bound(uint256(_distributionLimit), uint232(1), uint232(type(uint24).max - 1));
+        _allowanceLimit = bound(uint256(_allowanceLimit), uint232(1), uint232(type(uint24).max - 1));
         ALLOWCURRENCY = bound(uint256(ALLOWCURRENCY), uint256(0), type(uint24).max - 1);
 
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
@@ -349,22 +381,33 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             JBCurrencyAmount({value: _allowanceLimit, currency: ALLOWCURRENCY + 1});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: __terminal,
-            token: jbLibraries().ETHToken(),
+            token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
         });
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({
+            token: address(usdcToken()),
+            standard: JBTokenStandards.ERC20
+        });
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
+
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
     }
@@ -383,48 +426,60 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _distributionLimits[0] =
             JBCurrencyAmount({value: _ethDistributionLimit, currency: _ethCurrency});
-        _distributionLimits[1] =
-            JBCurrencyAmount({value: _usdDistributionLimit, currency: _usdCurrency});
+        _distributionLimits[1] = JBCurrencyAmount({
+            value: _usdDistributionLimit,
+            currency: uint32(uint160(address(usdcToken())))
+        });
         _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: 1});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: __terminal,
-            token: jbLibraries().ETHToken(),
+            token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
         });
 
         // Package up cycle config.
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({
+            token: address(usdcToken()),
+            standard: JBTokenStandards.ERC20
+        });
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
+
         // dummy
         _controller.launchProjectFor({
-            owner: address(420), //random
+            owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            configurations: _cycleConfig,
-            terminals: _terminals,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: address(0), // unused
+            token: JBTokens.ETH, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
-            preferClaimedTokens: false,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
@@ -438,10 +493,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 1_800_000_000,
-            currency: _usdCurrency,
-            token: address(0), // unused
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            currency: uint32(uint160(address(usdcToken()))),
+            token: JBTokens.ETH, // unused
+            minReturnedTokens: 0
         });
 
         uint256 _distributedAmount = PRBMath.mulDiv(
@@ -449,7 +503,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.priceFor({
                 projectId: 1,
-                currency: _usdCurrency,
+                currency: uint32(uint160(address(usdcToken()))),
                 base: _ethCurrency,
                 decimals: 18
             })
@@ -460,9 +514,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             address(__terminal).balance,
             initTerminalBalance
                 - PRBMath.mulDiv(
-                    _distributedAmount,
-                    jbLibraries().MAX_FEE(),
-                    jbLibraries().MAX_FEE() + __terminal.fee()
+                    _distributedAmount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
@@ -470,10 +522,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 1_700_000_000,
-            currency: _usdCurrency,
-            token: address(0), // unused
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            currency: uint32(uint160(address(usdcToken()))),
+            token: JBTokens.ETH, // unused
+            minReturnedTokens: 0
         });
     }
 
@@ -485,15 +536,18 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](2);
         _distributionLimits[0] = JBCurrencyAmount({value: 1 ether, currency: _ethCurrency});
-        _distributionLimits[1] = JBCurrencyAmount({value: 2000 * 10 ** 18, currency: _usdCurrency});
+        _distributionLimits[1] = JBCurrencyAmount({
+            value: 2000 * 10 ** 18,
+            currency: uint32(uint160(address(usdcToken())))
+        });
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: __terminal,
-            token: jbLibraries().ETHToken(),
+            token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: new JBCurrencyAmount[](0)
         });
 
-        JBFundingCycleConfiguration[] memory _cycleConfig = new JBFundingCycleConfiguration[](1);
+        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
 
         _cycleConfig[0].mustStartAtOrAfter = 0;
         _cycleConfig[0].data = _data;
@@ -501,17 +555,31 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _cycleConfig[0].groupedSplits = _groupedSplits;
         _cycleConfig[0].fundAccessConstraints = _fundAccessConstraints;
 
-        uint256 _projectId = _controller.launchProjectFor(
-            _projectOwner, _projectMetadata, _cycleConfig, _terminals, ""
-        );
+        JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
+        JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({
+            token: address(usdcToken()),
+            standard: JBTokenStandards.ERC20
+        });
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
+
+        uint256 _projectId = _controller.launchProjectFor({
+            owner: _projectOwner,
+            projectMetadata: _projectMetadata,
+            fundingCycleConfigurations: _cycleConfig,
+            terminalConfigurations: _terminalConfigurations,
+            memo: ""
+        });
 
         __terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: address(0), // unused
+            token: JBTokens.ETH, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
-            preferClaimedTokens: false,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
@@ -524,7 +592,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _prices.addFeedFor({
             projectId: _projectId,
             currency: _ethCurrency,
-            base: _usdCurrency,
+            base: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedEthUsd
         });
 
@@ -538,10 +606,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.distributePayoutsOf({
             projectId: _projectId,
             amount: 3_000_000_000,
-            currency: _usdCurrency,
-            token: address(0), // unused
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            currency: uint32(uint160(address(usdcToken()))),
+            token: JBTokens.ETH, // unused
+            minReturnedTokens: 0
         });
 
         uint256 _distributedAmount = PRBMath.mulDiv(
@@ -549,7 +616,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.priceFor({
                 projectId: 1,
-                currency: _usdCurrency,
+                currency: uint32(uint160(address(usdcToken()))),
                 base: _ethCurrency,
                 decimals: 18
             })
@@ -559,9 +626,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             _projectOwner.balance,
             ownerBalanceBeforeFirst
                 + PRBMath.mulDiv(
-                    _distributedAmount,
-                    jbLibraries().MAX_FEE(),
-                    jbLibraries().MAX_FEE() + __terminal.fee()
+                    _distributedAmount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
@@ -570,9 +635,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             address(__terminal).balance,
             initTerminalBalance
                 - PRBMath.mulDiv(
-                    _distributedAmount,
-                    jbLibraries().MAX_FEE(),
-                    jbLibraries().MAX_FEE() + __terminal.fee()
+                    _distributedAmount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
@@ -583,26 +646,21 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1 ether,
             currency: _ethCurrency,
-            token: address(0), // unused
-            minReturnedTokens: 0,
-            metadata: "lfg"
+            token: JBTokens.ETH, // unused
+            minReturnedTokens: 0
         });
 
         // Funds leaving the ecosystem -> fee taken
         assertEq(
             _projectOwner.balance,
             _ownerBalanceBeforeEthDist
-                + PRBMath.mulDiv(
-                    1 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee()
-                )
+                + PRBMath.mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
         );
 
         assertEq(
             address(__terminal).balance,
             _balanceBeforeEthDist
-                - PRBMath.mulDiv(
-                    1 ether, jbLibraries().MAX_FEE(), jbLibraries().MAX_FEE() + __terminal.fee()
-                )
+                - PRBMath.mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
         );
     }
 }

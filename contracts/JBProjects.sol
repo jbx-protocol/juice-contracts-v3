@@ -3,10 +3,9 @@ pragma solidity ^0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {
-    ERC721Votes,
-    ERC721,
-    EIP712
-} from "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
+    ERC721Votes, ERC721
+} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
@@ -74,10 +73,12 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
     //*********************************************************************//
 
     /// @param _operatorStore A contract storing operator assignments.
-    constructor(IJBOperatorStore _operatorStore)
+    /// @param _owner The owner of the contract who can set metadata.
+    constructor(IJBOperatorStore _operatorStore, address _owner)
         ERC721("Juicebox Projects", "JUICEBOX")
         EIP712("Juicebox Projects", "1")
         JBOperatable(_operatorStore)
+        Ownable(_owner)
     // solhint-disable-next-line no-empty-blocks
     {}
 
@@ -117,7 +118,7 @@ contract JBProjects is JBOperatable, ERC721Votes, Ownable, IJBProjects {
     function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
         external
         override
-        requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_METADATA)
+        requirePermission(ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
     {
         // Set the project's new metadata content within the specified domain.
         metadataContentOf[_projectId][_metadata.domain] = _metadata.content;
