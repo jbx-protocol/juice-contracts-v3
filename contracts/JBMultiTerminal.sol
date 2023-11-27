@@ -469,7 +469,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _amount = (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
 
             // Process the fee.
-            _processFee(_projectId, _token, _heldFee, _amount, _feeTerminal, true);
+            _processFee(_projectId, _token, _heldFee.amount, _heldFee.beneficiary, _feeTerminal, true);
 
             unchecked {
                 ++_i;
@@ -1420,11 +1420,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     ) internal returns (uint256 feeAmount) {
         // Get a reference to the fee amount.
         feeAmount = JBFees.feeIn(_amount, _feePercent);
-        JBFee memory _fee = JBFee(_amount, uint32(_feePercent), _beneficiary);
 
         if (_shouldHoldFees) {
             // Store the held fee.
-            _heldFeesOf[_projectId].push(_fee);
+            _heldFeesOf[_projectId].push(JBFee(_amount, uint32(_feePercent), _beneficiary));
 
             emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, _msgSender());
         } else {
@@ -1433,36 +1432,36 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 DIRECTORY.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, _token);
 
             // Process the fee.
-            _processFee(_projectId, _token, _fee, feeAmount, _feeTerminal, false);
+            _processFee(_projectId, _token, feeAmount, _beneficiary, _feeTerminal, false);
         }
     }
 
     /// @notice Process a fee of the specified amount from a project.
     /// @param _projectId The project ID the fee is being paid from.
     /// @param _token The token the fee is being paid in.
-    /// @param _feeAmount The fee amount, as a floating point number with 18 decimals.
+    /// @param _amount The fee amount, as a floating point number with 18 decimals.
     /// @param _feeTerminal The terminal that'll receive the fees. This'll be filled if one isn't provided.
     function _processFee(
         uint256 _projectId,
         address _token,
-        JBFee memory _fee,
-        uint256 _feeAmount,
+        uint256 _amount,
+        address _beneficiary,
         IJBPaymentTerminal _feeTerminal,
         bool _wasHeld
     ) internal {
         try this.executeProcessFee(
             _projectId,
             _token,
-            _feeAmount,
-            _fee.beneficiary,
+            _amount,
+            _beneficiary,
             _feeTerminal
         ) {
-            emit ProcessFee(_projectId, _feeAmount, _wasHeld, _fee.beneficiary, _msgSender());
+            emit ProcessFee(_projectId, _amount, _wasHeld, _beneficiary, _msgSender());
         } catch (bytes memory _reason) {
-            STORE.recordAddedBalanceFor(_projectId, _token, _feeAmount);
+            STORE.recordAddedBalanceFor(_projectId, _token, _amount);
 
             emit FeeReverted(
-                _projectId, _FEE_BENEFICIARY_PROJECT_ID, _feeAmount, _reason, _msgSender()
+                _projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, _msgSender()
             );
         }
     }
