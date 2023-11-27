@@ -258,10 +258,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override returns (uint256) {
+        // Accept the funds.
+        (uint256 _amount, address _payer) = _acceptFundsFor(_projectId, _token, _amount, _metadata);
+
+        // Pay the project.
         return _pay(
             _token,
-            _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
-            msg.sender,
+            _amount,
+            _payer,
             _projectId,
             _beneficiary,
             _minReturnedTokens,
@@ -285,11 +289,14 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override {
+        // Accept the funds.
+        (uint256 _amount,) = _acceptFundsFor(_projectId, _token, _amount, _metadata);
+
         // Add to balance.
         _addToBalanceOf(
             _projectId,
             _token,
-            _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
+            _amount,
             _shouldRefundHeldFees,
             _memo,
             _metadata
@@ -539,26 +546,27 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @param _token The token being accepted.
     /// @param _amount The amount of tokens being accepted.
     /// @param _metadata The metadata in which permit2 context is provided.
-    /// @return The amount of tokens that have been accepted.
-    function _acceptedTokenAmountFor(
+    /// @return amount The amount of tokens that have been accepted.
+    /// @return payer The payer of the funds.
+    function _acceptFundsFor(
         uint256 _projectId,
         address _token,
         uint256 _amount,
         bytes calldata _metadata
-    ) internal returns (uint256) {
+    ) internal returns (uint256, address) {
         // Make sure the project has set an accounting context for the token being paid.
         if (_accountingContextForTokenOf[_projectId][_token].token == address(0)) {
             revert TOKEN_NOT_ACCEPTED();
         }
 
         // If the terminal's token is ETH, override `_amount` with msg.value.
-        if (_token == JBTokens.ETH) return msg.value;
+        if (_token == JBTokens.ETH) return (msg.value, msg.sender);
 
         // Amount must be greater than 0.
         if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
 
         // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
-        if (msg.sender == address(this)) return _amount;
+        if (msg.sender == address(this)) return (_amount, msg.sender);
 
         // Keep a reference to the allowance context parsed from the metadata.
         JBSingleAllowanceData memory _allowance;
@@ -583,7 +591,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         _transferFor(msg.sender, payable(address(this)), _token, _amount);
 
         // The amount should reflect the change in balance.
-        return _balance(_token) - _balanceBefore;
+        return (_balance(_token) - _balanceBefore, msg.sender);
     }
 
     /// @notice Contribute tokens to a project.
