@@ -1856,7 +1856,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Add a price feed to convert from ETH to USD currencies.
         {
-            vm.startPrank(_multisig);
+            vm.startPrank(_projectOwner);
             MockPriceFeed _priceFeedEthUsd =
                 new MockPriceFeed(_USD_PRICE_PER_ETH, _PRICE_FEED_DECIMALS);
             vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USDC");
