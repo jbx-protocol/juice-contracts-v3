@@ -14,7 +14,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     IJBPrices private _prices;
     IJBTokenStore private _tokenStore;
     IERC20 private _usdc;
-    JBDelegateMetadataHelper private _helper;
+    MetadataResolverHelper private _helper;
     address private _projectOwner;
 
     uint256 _projectId;
