@@ -64,6 +64,10 @@ import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDele
 import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBRedemptionTerminal} from "@juicebox/interfaces/terminal/IJBRedemptionTerminal.sol";
+import {IJBPayoutTerminal} from "@juicebox/interfaces/terminal/IJBPayoutTerminal.sol";
+import {IJBPermitPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPermitPaymentTerminal.sol";
+import {IJBFeeTerminal} from "@juicebox/interfaces/terminal/IJBFeeTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";

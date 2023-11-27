@@ -6,7 +6,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 // Project can issue token, receive payments in exchange for tokens, burn some of the claimed tokens, allow holders to redeem rest of tokens.
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     IJBController3_1 private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBMultiTerminal private _terminal;
     JBTokenStore private _tokenStore;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
@@ -116,7 +116,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         uint256 _terminalBalance = _ethPayAmount;
         assertEq(
             jbTerminalStore().balanceOf(
-                IJBPaymentTerminal(address(_terminal)), _projectId, JBTokens.ETH
+                address(_terminal), _projectId, JBTokens.ETH
             ),
             _terminalBalance
         );
@@ -165,7 +165,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // Make sure the ETH balance in terminal is up to date.
         assertEq(
             jbTerminalStore().balanceOf(
-                IJBPaymentTerminal(address(_terminal)), _projectId, JBTokens.ETH
+                address(_terminal), _projectId, JBTokens.ETH
             ),
             _terminalBalance - _reclaimAmt
         );
