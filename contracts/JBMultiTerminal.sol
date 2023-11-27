@@ -100,8 +100,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
     /// @notice Fees that are being held to be processed later.
     /// @custom:param _projectId The ID of the project for which fees are being held.
-    /// @custom:param _projectId The token the fee is denominated in.
-    mapping(uint256 _projectId => mapping(address _token => JBFee[])) internal _heldFeesOf;
+    /// @custom:param _token The token the fee is denominated in.
+    mapping(uint256 => mapping(address => JBFee[])) internal _heldFeesOf;
 
     //*********************************************************************//
     // ------------------------- public constants ------------------------ //
@@ -187,6 +187,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
     /// @notice The fees that are currently being held to be processed later for each project.
     /// @param _projectId The ID of the project for which fees are being held.
+    /// @param _token The token the fees are held in.
     /// @return An array of fees that are being held.
     function heldFeesOf(uint256 _projectId, address _token) external view override returns (JBFee[] memory) {
         return _heldFeesOf[_projectId][_token];
@@ -1476,6 +1477,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
     /// @notice Refund fees based on the specified amount.
     /// @param _projectId The project for which fees are being refunded.
+    /// @param _token The token the fees are held in.
     /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
     /// @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
     function _refundHeldFees(uint256 _projectId, address _token, uint256 _amount)
