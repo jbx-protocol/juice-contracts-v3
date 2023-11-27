@@ -227,7 +227,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
             totalCreditSupplyOf[_projectId] = totalCreditSupplyOf[_projectId] + _amount;
         }
 
-        // The total supply can't exceed the maximum value storable in a uint224.
+        // The total supply can't exceed the maximum value storable in a uint208.
         if (totalSupplyOf(_projectId) > type(uint208).max) revert OVERFLOW_ALERT();
 
         emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, msg.sender);

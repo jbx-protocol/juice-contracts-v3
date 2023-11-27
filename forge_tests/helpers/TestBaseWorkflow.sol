@@ -40,8 +40,9 @@ import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
 import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
-import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalRulesetMetadata.sol";
+import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
 import {JBPayHookPayload} from "@juicebox/structs/JBPayHookPayload.sol";
+import {JBRedemptionDelegateAllocation3_1_1} from "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitHookData} from "@juicebox/structs/JBSplitHookData.sol";
 import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
@@ -60,6 +61,9 @@ import {IJBTokens} from "@juicebox/interfaces/IJBTokens.sol";
 import {IJBSplitHook} from "@juicebox/interfaces/IJBSplitHook.sol";
 import {IJBPayHook} from "@juicebox/interfaces/IJBPayHook.sol";
 import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.sol";
+import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol";
+import {IJBFundingCycleDataSource3_1_1} from
+    "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBPermissioned} from "@juicebox/interfaces/IJBPermissioned.sol";
@@ -73,12 +77,15 @@ import {JBRulesetMetadataResolver} from "@juicebox/libraries/JBRulesetMetadataRe
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitGroupIDs} from "@juicebox/libraries/JBSplitGroupIDs.sol";
 import {JBPermissionIDs} from "@juicebox/libraries/JBPermissionIDs.sol";
+import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
 
 import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
 
+import {JBDelegateMetadataHelper} from
+    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataHelper.sol";
+
 import {MockERC20} from "./../mock/MockERC20.sol";
-// import './AccessJBLib.sol';
 
 import "@paulrberg/contracts/math/PRBMath.sol";
 import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
@@ -96,13 +103,13 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBPrices private _jbPrices;
     JBDirectory private _jbDirectory;
     JBRulesets private _jbRulesetStore;
-    //   JBERC20Token private _jbToken;
     JBTokens private _jbTokens;
     JBSplits private _jbSplits;
     JBController private _jbController;
     JBFundAccessLimits private _jbFundAccessLimits;
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
+    JBDelegateMetadataHelper private _metadataHelper;
     JBMultiTerminal private _jbMultiTerminal2;
 
     function multisig() internal view returns (address) {
@@ -169,6 +176,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbMultiTerminal2;
     }
 
+    function metadataHelper() internal view returns (JBDelegateMetadataHelper) {
+        return _metadataHelper;
+    }
+
     //*********************************************************************//
     // --------------------------- test setup ---------------------------- //
     //*********************************************************************//
@@ -224,6 +235,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbFundAccessLimits
         );
         vm.label(address(_jbController), "JBController");
+
+        _metadataHelper = new JBDelegateMetadataHelper();
 
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
