@@ -80,7 +80,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _surplusAllowances[0] =
             JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBTokenList.ETH))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokenList.ETH,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
@@ -255,7 +255,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY == 0 ? 0 : ALLOWCURRENCY - 1});
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokenList.ETH,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
@@ -310,7 +310,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokenList.ETH,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
@@ -374,7 +374,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _surplusAllowances[1] =
             JBCurrencyAmount({amount: _allowanceLimit, currency: ALLOWCURRENCY + 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokenList.ETH,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
@@ -425,7 +425,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
         _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokenList.ETH,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
@@ -534,7 +534,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             currency: uint32(uint160(address(usdcToken())))
         });
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokenList.ETH,
             payoutLimits: _payoutLimits,
             surplusAllowances: new JBCurrencyAmount[](0)

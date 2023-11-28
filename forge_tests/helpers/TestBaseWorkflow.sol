@@ -40,12 +40,12 @@ import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
 import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
-import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
+import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalRulesetMetadata.sol";
 import {JBPayHookPayload} from "@juicebox/structs/JBPayHookPayload.sol";
-import {JBRedemptionDelegateAllocation3_1_1} from "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
+import {JBRedemptionDelegateAllocation3_1_1} from
+    "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitHookData} from "@juicebox/structs/JBSplitHookData.sol";
-import {IJBPaymentTerminal} from "@juicebox/interfaces/IJBPaymentTerminal.sol";
 import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
 import {JBSingleAllowanceData} from "@juicebox/structs/JBSingleAllowanceData.sol";
 import {IJBController} from "@juicebox/interfaces/IJBController.sol";
@@ -64,7 +64,11 @@ import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.so
 import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol";
 import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
-import {IJBMultiTerminal} from "@juicebox/interfaces/IJBMultiTerminal.sol";
+import {IJBMultiTerminal} from "@juicebox/interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBRedemptionTerminal} from "@juicebox/interfaces/terminal/IJBRedemptionTerminal.sol";
+import {IJBPayoutTerminal} from "@juicebox/interfaces/terminal/IJBPayoutTerminal.sol";
+import {IJBPermitPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPermitPaymentTerminal.sol";
+import {IJBFeeTerminal} from "@juicebox/interfaces/terminal/IJBFeeTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBPermissioned} from "@juicebox/interfaces/IJBPermissioned.sol";
 import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";
@@ -82,8 +86,7 @@ import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
 import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
 
-import {JBDelegateMetadataHelper} from
-    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataHelper.sol";
+import {MetadataResolverHelper} from "./MetadataResolverHelper.sol";
 
 import {MockERC20} from "./../mock/MockERC20.sol";
 
@@ -109,7 +112,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBFundAccessLimits private _jbFundAccessLimits;
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
-    JBDelegateMetadataHelper private _metadataHelper;
+    MetadataResolverHelper private _metadataHelper;
     JBMultiTerminal private _jbMultiTerminal2;
 
     function multisig() internal view returns (address) {
@@ -176,7 +179,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbMultiTerminal2;
     }
 
-    function metadataHelper() internal view returns (JBDelegateMetadataHelper) {
+    function metadataHelper() internal view returns (MetadataResolverHelper) {
         return _metadataHelper;
     }
 
@@ -236,7 +239,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         );
         vm.label(address(_jbController), "JBController");
 
-        _metadataHelper = new JBDelegateMetadataHelper();
+        _metadataHelper = new MetadataResolverHelper();
 
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
@@ -261,14 +264,14 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _multisig
         );
         vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
-        _jbMultiTerminal2 = new JBMultiTerminal(
-        _jbpermissions,
-        _jbProjects,
-        _jbDirectory,
-        _jbSplits,
-        _jbTerminalStore,
-        IPermit2(_permit2),
-        _multisig
+        _jbMultJJiTerminal2 = new JBMultiTerminal(
+            _jbpermissions,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplits,
+            _jbTerminalStore,
+            IPermit2(_permit2),
+            _multisig
         );
         vm.label(address(_jbMultiTerminal2), "JBMultiTerminal2");
     }

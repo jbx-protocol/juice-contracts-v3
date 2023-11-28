@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IJBRulesets} from "./IJBRulesets.sol";
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
+import {IJBPaymentTerminal} from "./terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 
 interface IJBDirectory {

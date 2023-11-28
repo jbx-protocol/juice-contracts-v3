@@ -5,7 +5,6 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
 import {IJBFundAccessLimits} from "./interfaces/IJBFundAccessLimits.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {JBFundAccessLimitGroup} from "./structs/JBFundAccessLimitGroup.sol";
 import {JBCurrencyAmount} from "./structs/JBCurrencyAmount.sol";
 
@@ -34,9 +33,8 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     /// @custom:param _rulesetId The ID of the ruleset that the packed payout limit data applies to.
     /// @custom:param _terminal The terminal the payouts are being limited in.
     /// @custom:param _token The token payouts are being limited for.
-    mapping(
-        uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[])))
-    ) internal _packedPayoutLimitsDataOf;
+    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[]))))
+        internal _packedPayoutLimitsDataOf;
 
     /// @notice A list of packed surplus allowances for a given project, ruleset, terminal, and token.
     /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can access from its surplus during the applicable ruleset.
@@ -45,9 +43,8 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     /// @custom:param _rulesetId The ID of the ruleset that the packed surplus allowance data applies to.
     /// @custom:param _terminal The terminal the surplus allowance comes from.
     /// @custom:param _token The token that the surplus allowance applies to.
-    mapping(
-        uint256 => mapping(uint256 => mapping(IJBPaymentTerminal => mapping(address => uint256[])))
-    ) internal _packedSurplusAllowancesDataOf;
+    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[]))))
+        internal _packedSurplusAllowancesDataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
@@ -64,7 +61,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     function payoutLimitsOf(
         uint256 _projectId,
         uint256 _rulesetId,
-        IJBPaymentTerminal _terminal,
+        address _terminal,
         address _token
     ) external view override returns (JBCurrencyAmount[] memory payoutLimits) {
         // Get a reference to the packed data.
@@ -108,7 +105,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     function payoutLimitOf(
         uint256 _projectId,
         uint256 _rulesetId,
-        IJBPaymentTerminal _terminal,
+        address _terminal,
         address _token,
         uint256 _currency
     ) external view override returns (uint256 payoutLimit) {
@@ -149,7 +146,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     function surplusAllowancesOf(
         uint256 _projectId,
         uint256 _rulesetId,
-        IJBPaymentTerminal _terminal,
+        address _terminal,
         address _token
     ) external view override returns (JBCurrencyAmount[] memory surplusAllowances) {
         // Get a reference to the packed data.
@@ -193,7 +190,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     function surplusAllowanceOf(
         uint256 _projectId,
         uint256 _rulesetId,
-        IJBPaymentTerminal _terminal,
+        address _terminal,
         address _token,
         uint256 _currency
     ) external view override returns (uint256 surplusAllowance) {

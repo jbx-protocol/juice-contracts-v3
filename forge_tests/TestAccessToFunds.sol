@@ -93,7 +93,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-                terminal: _terminal,
+                terminal: address(_terminal),
                 token: JBTokenList.ETH,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
@@ -161,7 +161,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethPayAmount);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethPayAmount
+        );
 
         // Use the full discretionary allowance of surplus.
         vm.prank(_projectOwner);
@@ -181,13 +184,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         );
         assertEq(_beneficiary.balance, _beneficiaryEthBalance);
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
             _ethPayAmount - _ethCurrencySurplusAllowance
         );
 
         // Make sure the fee was paid correctly.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
             _ethCurrencySurplusAllowance - _beneficiaryEthBalance
         );
         assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
@@ -220,7 +223,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the fee was paid correctly.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
             (_ethCurrencySurplusAllowance - _beneficiaryEthBalance)
                 + (_ethCurrencyPayoutLimit - _projectOwnerEthBalance)
         );
@@ -278,7 +281,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // // Make sure the fee was paid correctly.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
             (_ethCurrencySurplusAllowance - _beneficiaryEthBalance)
                 + (_ethCurrencyPayoutLimit - _projectOwnerEthBalance) + _feeAmount
         );
@@ -331,7 +334,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-                terminal: _terminal,
+                terminal: address(_terminal),
                 token: JBTokenList.ETH,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
@@ -396,7 +399,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethPayAmount);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethPayAmount
+        );
 
         // Revert if there's no allowance.
         if (_ethCurrencySurplusAllowance == 0) {
@@ -431,13 +437,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _ethCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
                 _ethCurrencySurplusAllowance - _beneficiaryEthBalance
             );
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
@@ -483,13 +489,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _ethCurrencySurplusAllowance - _ethCurrencyPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
                 (_ethCurrencySurplusAllowance - _beneficiaryEthBalance)
                     + (_ethCurrencyPayoutLimit - _projectOwnerEthBalance)
             );
@@ -549,7 +555,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
                 (_ethCurrencySurplusAllowance - _beneficiaryEthBalance)
                     + (_ethCurrencyPayoutLimit - _projectOwnerEthBalance) + _feeAmount
             );
@@ -604,7 +610,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-                terminal: _terminal,
+                terminal: address(_terminal),
                 token: JBTokenList.ETH,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
@@ -673,7 +679,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethPayAmount);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethPayAmount
+        );
 
         // Revert if there's no allowance.
         if (_ethCurrencySurplusAllowance == 0) {
@@ -709,12 +718,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             // Make sure the fee stays in the treasury.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _beneficiaryEthBalance
             );
 
             // Make sure the fee was not taken.
-            assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH), 0);
+            assertEq(
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH), 0
+            );
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
 
             // Make sure the beneficiary got no tokens.
@@ -752,12 +763,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_projectOwner.balance, _projectOwnerEthBalance);
             // Make sure the fee stays in the treasury.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance
             );
 
             // Make sure the fee was paid correctly.
-            assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH), 0);
+            assertEq(
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH), 0
+            );
             assertEq(
                 address(_terminal).balance,
                 _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance
@@ -806,13 +819,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_beneficiary.balance, _beneficiaryEthBalance + _ethReclaimAmount - _feeAmount);
             // Make sure the fee stays in the treasury.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance
                     - (_ethReclaimAmount - _feeAmount)
             );
 
             // Make sure the fee was paid correctly.
-            assertEq(jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH), 0);
+            assertEq(
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH), 0
+            );
             assertEq(
                 address(_terminal).balance,
                 _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance
@@ -859,7 +874,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-                terminal: _terminal,
+                terminal: address(_terminal),
                 token: JBTokenList.ETH,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
@@ -916,7 +931,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the terminal holds the full ETH balance.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethPayAmount);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethPayAmount
+        );
 
         // Revert if there's no allowance.
         if (_ethCurrencySurplusAllowance == 0) {
@@ -951,7 +969,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _beneficiaryEthBalance
             );
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
@@ -997,7 +1015,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance
             );
             assertEq(
@@ -1066,7 +1084,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_beneficiary.balance, _beneficiaryEthBalance + _ethReclaimAmount - _feeAmount);
 
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _beneficiaryEthBalance - _projectOwnerEthBalance
                     - (_ethReclaimAmount - _feeAmount)
             );
@@ -1133,7 +1151,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-                terminal: _terminal,
+                terminal: address(_terminal),
                 token: JBTokenList.ETH,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
@@ -1233,10 +1251,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the terminal holds the full ETH balance.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethPayAmount);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethPayAmount
+        );
         // Make sure the usdc is accounted for.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _projectId, address(_usdcToken)), _usdcPayAmount
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, address(_usdcToken)),
+            _usdcPayAmount
         );
         assertEq(_usdcToken.balanceOf(address(_terminal)), _usdcPayAmount);
 
@@ -1293,13 +1315,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _ethCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
                 _ethCurrencySurplusAllowance - _beneficiaryEthBalance
             );
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
@@ -1357,13 +1379,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _ethCurrencySurplusAllowance - _toEth(_usdCurrencySurplusAllowance)
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
                 _ethCurrencySurplusAllowance + _toEth(_usdCurrencySurplusAllowance)
                     - _beneficiaryEthBalance
             );
@@ -1414,14 +1436,16 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerEthBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                     _ethPayAmount - _ethCurrencySurplusAllowance
                         - _toEth(_usdCurrencySurplusAllowance) - _ethCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH
+                    ),
                     _ethCurrencySurplusAllowance + _toEth(_usdCurrencySurplusAllowance)
                         - _beneficiaryEthBalance + _ethCurrencyPayoutLimit - _projectOwnerEthBalance
                 );
@@ -1469,7 +1493,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerEthBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                     _ethPayAmount - _ethCurrencySurplusAllowance
                         - _toEth(_usdCurrencySurplusAllowance) - _ethCurrencyPayoutLimit
                         - _toEth(_usdCurrencyPayoutLimit)
@@ -1477,7 +1501,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
                 // Make sure the fee was paid correctly.
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH
+                    ),
                     (
                         _ethCurrencySurplusAllowance + _toEth(_usdCurrencySurplusAllowance)
                             - _beneficiaryEthBalance
@@ -1514,11 +1540,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Make sure it's correct.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethBalance);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethBalance
+        );
 
         // Make sure the usdc surplus is correct.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _projectId, address(_usdcToken)), _usdcPayAmount
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, address(_usdcToken)),
+            _usdcPayAmount
         );
 
         // Make sure the total token supply is correct.
@@ -1651,7 +1681,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 );
 
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _projectId, address(_usdcToken)),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, address(_usdcToken)),
                     _usdcPayAmount - _usdcReclaimAmount
                 );
 
@@ -1661,7 +1691,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
                 // Make sure the fee was paid correctly.
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, address(_usdcToken)),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal), _FEE_PROJECT_ID, address(_usdcToken)
+                    ),
                     _usdcFeeAmount
                 );
                 assertEq(
@@ -1696,7 +1728,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the balance is adjusted by the reclaim amount.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
             _ethBalance - _ethReclaimAmount
         );
     }
@@ -1765,7 +1797,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
-                terminal: _terminal,
+                terminal: address(_terminal),
                 token: JBTokenList.ETH,
                 payoutLimits: _payoutLimits1,
                 surplusAllowances: _surplusAllowances1
@@ -1894,10 +1926,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the terminal holds the full ETH balance.
-        assertEq(jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH), _ethPayAmount);
+        assertEq(
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            _ethPayAmount
+        );
         // Make sure the usdc is accounted for.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal2, _projectId, address(_usdcToken)), _usdcPayAmount
+            jbTerminalStore().balanceOf(address(_terminal2), _projectId, address(_usdcToken)),
+            _usdcPayAmount
         );
         assertEq(_usdcToken.balanceOf(address(_terminal2)), _usdcPayAmount);
 
@@ -1948,13 +1984,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryEthBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                 _ethPayAmount - _ethCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH),
                 _ethCurrencySurplusAllowance - _beneficiaryEthBalance
             );
             assertEq(address(_terminal).balance, _ethPayAmount - _beneficiaryEthBalance);
@@ -2008,13 +2044,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_usdcToken.balanceOf(_beneficiary), _beneficiaryUsdcBalance);
             assertEq(
-                jbTerminalStore().balanceOf(_terminal2, _projectId, address(_usdcToken)),
+                jbTerminalStore().balanceOf(address(_terminal2), _projectId, address(_usdcToken)),
                 _usdcPayAmount - _usdCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, address(_usdcToken)),
+                jbTerminalStore().balanceOf(
+                    address(_terminal), _FEE_PROJECT_ID, address(_usdcToken)
+                ),
                 _usdCurrencySurplusAllowance - _beneficiaryUsdcBalance
             );
             assertEq(
@@ -2084,13 +2122,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerEthBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
                     _ethPayAmount - _ethCurrencySurplusAllowance - _ethCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, JBTokenList.ETH),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.ETH
+                    ),
                     _ethCurrencySurplusAllowance - _beneficiaryEthBalance + _ethCurrencyPayoutLimit
                         - _projectOwnerEthBalance
                 );
@@ -2129,13 +2169,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_usdcToken.balanceOf(_projectOwner), _projectOwnerUsdcBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal2, _projectId, address(_usdcToken)),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal2), _projectId, address(_usdcToken)
+                    ),
                     _usdcPayAmount - _usdCurrencySurplusAllowance - _usdCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal, _FEE_PROJECT_ID, address(_usdcToken)),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal), _FEE_PROJECT_ID, address(_usdcToken)
+                    ),
                     _usdCurrencySurplusAllowance - _beneficiaryUsdcBalance + _usdCurrencyPayoutLimit
                         - _projectOwnerUsdcBalance
                 );
@@ -2306,7 +2350,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 }
 
                 assertEq(
-                    jbTerminalStore().balanceOf(_terminal2, _projectId, address(_usdcToken)),
+                    jbTerminalStore().balanceOf(
+                        address(_terminal2), _projectId, address(_usdcToken)
+                    ),
                     _usdcSurplus - _usdcReclaimAmount
                 );
 
@@ -2361,7 +2407,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the balance is adjusted by the reclaim amount.
         assertEq(
-            jbTerminalStore().balanceOf(_terminal, _projectId, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
             _projectEthBalance - _ethReclaimAmount
         );
     }

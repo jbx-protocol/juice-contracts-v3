@@ -11,21 +11,20 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {JBDelegateMetadataLib} from
-    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
+import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
+import {JBMetadataResolver} from "./libraries/JBMetadataResolver.sol";
 import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
 import {JBTokenList} from "./libraries/JBTokenList.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
@@ -42,6 +41,14 @@ import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
+import {
+    IJBMultiTerminal,
+    IJBFeeTerminal,
+    IJBPaymentTerminal,
+    IJBRedemptionTerminal,
+    IJBPayoutTerminal,
+    IJBPermitPaymentTerminal
+} from "./interfaces/terminal/IJBMultiTerminal.sol";
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
@@ -116,7 +123,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     IJBTerminalStore public immutable override STORE;
 
     /// @notice The permit2 utility.
-    IPermit2 public immutable PERMIT2;
+    IPermit2 public immutable override PERMIT2;
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -170,7 +177,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         returns (uint256)
     {
         return STORE.currentSurplusOf(
-            this, _projectId, _accountingContextsOf[_projectId], _decimals, _currency
+            address(this), _projectId, _accountingContextsOf[_projectId], _decimals, _currency
         );
     }
 
@@ -192,7 +199,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return _interfaceId == type(IJBMultiTerminal).interfaceId
             || _interfaceId == type(IJBPermissioned).interfaceId
-            || _interfaceId == type(IJBPaymentTerminal).interfaceId;
+            || _interfaceId == type(IJBPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBRedemptionTerminal).interfaceId
+            || _interfaceId == type(IJBPayoutTerminal).interfaceId
+            || _interfaceId == type(IJBPermitPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBMultiTerminal).interfaceId
+            || _interfaceId == type(IJBFeeTerminal).interfaceId
+            || _interfaceId == type(IERC165).interfaceId;
     }
 
     //*********************************************************************//
@@ -559,16 +572,19 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         if (msg.sender == address(this)) return _amount;
 
         // Unpack the allowance to use, if any, given by the frontend.
-        (bool _quoteExists, bytes memory _parsedMetadata) =
-            JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
+        (bool _exists, bytes memory _parsedMetadata) =
+            JBMetadataResolver.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
 
         // Check if the metadata contained permit data.
-        if (_quoteExists) {
+        if (_exists) {
             // Keep a reference to the allowance context parsed from the metadata.
-            (JBSingleAllowanceData memory _allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
+            (JBSingleAllowanceData memory _allowance) =
+                abi.decode(_parsedMetadata, (JBSingleAllowanceData));
 
             // Make sure the permit allowance is enough for this payment. If not we revert early.
-            if (_allowance.amount < _amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            if (_allowance.amount < _amount) {
+                revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            }
 
             // Set the allowance to `spend` tokens for the user.
             _permitAllowance(_allowance, _token);
@@ -1340,17 +1356,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // Fulfill the payload.
             _payload.hook.didRedeem{value: _payValue}(_data);
 
-<<<<<<< HEAD
             emit HookDidRedeem(_payload.hook, _data, _payload.amount, _payloadAmountFee, msg.sender);
-=======
-            emit DelegateDidRedeem(
-                _allocation.delegate, _data, _allocation.amount, _delegatedAmountFee, msg.sender
-            );
 
             unchecked {
                 ++_i;
             }
->>>>>>> transition/adjusted-file-names
         }
     }
 

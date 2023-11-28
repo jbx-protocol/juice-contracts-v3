@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from "./../interfaces/IJBPaymentTerminal.sol";
+import {IJBPayoutTerminal} from "./../interfaces/terminal/IJBPayoutTerminal.sol";
 import {JBCurrencyAmount} from "./JBCurrencyAmount.sol";
 
 /// @dev Payout limit example: if the `amount` is 5, the `currency` is 1 (USD), and the terminal's token is ETH, then the project can pay out 5 USD worth of ETH during a ruleset.
@@ -13,7 +13,7 @@ import {JBCurrencyAmount} from "./JBCurrencyAmount.sol";
 /// @custom:member payoutLimits A list of payout limits. The payout limits cumulatively dictate the maximum value of `token`s a project can pay out from its balance in a terminal during a ruleset. Each payout limit can have a unique currency and amount.
 /// @custom:member surplusAllowances A list of surplus allowances. The surplus allowances cumulatively dictates the maximum value of `token`s a project can pay out from its surplus (balance less payouts) in a terminal during a ruleset. Each surplus allowance can have a unique currency and amount.
 struct JBFundAccessLimitGroup {
-    IJBPaymentTerminal terminal;
+    address terminal;
     address token;
     JBCurrencyAmount[] payoutLimits;
     JBCurrencyAmount[] surplusAllowances;
