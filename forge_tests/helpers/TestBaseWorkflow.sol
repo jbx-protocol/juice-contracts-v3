@@ -45,7 +45,7 @@ import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalRulesetMetadata
 import {JBPayHookPayload} from "@juicebox/structs/JBPayHookPayload.sol";
 import {JBRedeemHookPayload} from "@juicebox/structs/JBRedeemHookPayload.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
-import {JBSplitHookData} from "@juicebox/structs/JBSplitHookData.sol";
+import {JBSplitHookPayload} from "@juicebox/structs/JBSplitHookPayload.sol";
 import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
 import {JBSingleAllowanceData} from "@juicebox/structs/JBSingleAllowanceData.sol";
 import {IJBController} from "@juicebox/interfaces/IJBController.sol";

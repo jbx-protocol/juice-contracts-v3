@@ -12,7 +12,7 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
         uint256 indexed projectId,
         address beneficiary,
         uint256 amount,
-        uint256 distributedAmount,
+        uint256 amountPaidOut,
         uint256 fee,
         uint256 beneficiaryDistributionAmount,
         address caller
@@ -34,8 +34,8 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
         uint256 indexed projectId,
         address beneficiary,
         uint256 amount,
-        uint256 distributedAmount,
-        uint256 netDistributedamount,
+        uint256 amountPaidOut,
+        uint256 netAmountPaidOut,
         string memo,
         address caller
     );
@@ -60,5 +60,5 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
         uint256 minReturnedTokens,
         address payable beneficiary,
         string calldata memo
-    ) external returns (uint256 netDistributedAmount);
+    ) external returns (uint256 netAmountPaidOut);
 }

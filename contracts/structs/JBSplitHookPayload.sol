@@ -9,7 +9,7 @@ import {JBSplit} from "./JBSplit.sol";
 /// @custom:member projectId The project the split belongs to.
 /// @custom:member group The group the split belongs to.
 /// @custom:member split The split which specified the hook.
-struct JBSplitHookData {
+struct JBSplitHookPayload {
     address token;
     uint256 amount;
     uint256 decimals;

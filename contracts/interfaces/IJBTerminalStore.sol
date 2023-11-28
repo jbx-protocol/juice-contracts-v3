@@ -102,7 +102,7 @@ interface IJBTerminalStore {
         JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
-    ) external returns (JBRuleset memory ruleset, uint256 distributedAmount);
+    ) external returns (JBRuleset memory ruleset, uint256 amountPaidOut);
 
     function recordUsedAllowanceOf(
         uint256 projectId,

@@ -491,7 +491,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             minReturnedTokens: 0
         });
 
-        uint256 _distributedAmount = PRBMath.mulDiv(
+        uint256 _amountPaidOut = PRBMath.mulDiv(
             1_800_000_000,
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
@@ -507,7 +507,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             address(__terminal).balance,
             initTerminalBalance
                 - PRBMath.mulDiv(
-                    _distributedAmount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
+                    _amountPaidOut, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
@@ -604,7 +604,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             minReturnedTokens: 0
         });
 
-        uint256 _distributedAmount = PRBMath.mulDiv(
+        uint256 _amountPaidOut = PRBMath.mulDiv(
             3_000_000_000,
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
@@ -619,7 +619,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             _projectOwner.balance,
             ownerBalanceBeforeFirst
                 + PRBMath.mulDiv(
-                    _distributedAmount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
+                    _amountPaidOut, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
@@ -628,7 +628,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             address(__terminal).balance,
             initTerminalBalance
                 - PRBMath.mulDiv(
-                    _distributedAmount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
+                    _amountPaidOut, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 

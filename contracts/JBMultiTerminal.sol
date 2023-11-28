@@ -34,7 +34,7 @@ import {JBPayHookPayload} from "./structs/JBPayHookPayload.sol";
 import {JBRedeemHookPayload} from "./structs/JBRedeemHookPayload.sol";
 import {JBSingleAllowanceData} from "./structs/JBSingleAllowanceData.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
-import {JBSplitHookData} from "./structs/JBSplitHookData.sol";
+import {JBSplitHookPayload} from "./structs/JBSplitHookPayload.sol";
 import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
@@ -367,7 +367,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
+    /// @return netAmountPaidOut The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
     function useAllowanceOf(
         uint256 _projectId,
         address _token,
@@ -381,7 +381,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         virtual
         override
         requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIds.USE_ALLOWANCE)
-        returns (uint256 netDistributedAmount)
+        returns (uint256 netAmountPaidOut)
     {
         return _useAllowanceOf(
             _projectId, _token, _amount, _currency, _minReturnedTokens, _beneficiary, _memo
@@ -835,12 +835,12 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _minReturnedTokens
     ) internal returns (uint256 netLeftoverDistributionAmount) {
         // Record the distribution.
-        (JBRuleset memory _ruleset, uint256 _distributedAmount) = STORE.recordPayoutFor(
+        (JBRuleset memory _ruleset, uint256 _amountPaidOut) = STORE.recordPayoutFor(
             _projectId, _accountingContextForTokenOf[_projectId][_token], _amount, _currency
         );
 
         // The amount being distributed must be at least as much as was expected.
-        if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
+        if (_amountPaidOut < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
 
         // Get a reference to the project owner, which will receive tokens from paying the platform fee
         // and receive any extra distributable funds not allocated to payout splits.
@@ -854,7 +854,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         // Also get a reference to the amount that was distributed to splits from which fees should be taken.
         (uint256 _leftoverDistributionAmount, uint256 _feeEligibleDistributionAmount) =
         _distributeToPayoutSplitsOf(
-            _projectId, _token, _ruleset.rulesetId, _distributedAmount, _feePercent
+            _projectId, _token, _ruleset.rulesetId, _amountPaidOut, _feePercent
         );
 
         // Take the fee.
@@ -885,7 +885,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _projectId,
             _projectOwner,
             _amount,
-            _distributedAmount,
+            _amountPaidOut,
             _feeTaken,
             netLeftoverDistributionAmount,
             msg.sender
@@ -902,7 +902,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _minReturnedTokens The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return netDistributedAmount The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
+    /// @return netAmountPaidOut The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
     function _useAllowanceOf(
         uint256 _projectId,
         address _token,
@@ -911,14 +911,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _minReturnedTokens,
         address payable _beneficiary,
         string memory _memo
-    ) internal returns (uint256 netDistributedAmount) {
+    ) internal returns (uint256 netAmountPaidOut) {
         // Record the use of the allowance.
-        (JBRuleset memory _ruleset, uint256 _distributedAmount) = STORE.recordUsedAllowanceOf(
+        (JBRuleset memory _ruleset, uint256 _amountPaidOut) = STORE.recordUsedAllowanceOf(
             _projectId, _accountingContextForTokenOf[_projectId][_token], _amount, _currency
         );
 
         // The amount being withdrawn must be at least as much as was expected.
-        if (_distributedAmount < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
+        if (_amountPaidOut < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
 
         // Get a reference to the project owner, which will receive tokens from paying the platform fee.
         address _projectOwner = PROJECTS.ownerOf(_projectId);
@@ -928,16 +928,16 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _feePercent = isFeelessAddress[msg.sender] ? 0 : FEE;
 
         unchecked {
-            // Take a fee from the `_distributedAmount`, if needed.
+            // Take a fee from the `_amountPaidOut`, if needed.
             // The net amount is the withdrawn amount without the fee.
-            netDistributedAmount = _distributedAmount
+            netAmountPaidOut = _amountPaidOut
                 - (
                     _feePercent == 0
                         ? 0
                         : _takeFeeFrom(
                             _projectId,
                             _token,
-                            _distributedAmount,
+                            _amountPaidOut,
                             _feePercent,
                             _projectOwner,
                             _ruleset.shouldHoldFees()
@@ -946,8 +946,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
 
         // Transfer any remaining balance to the beneficiary.
-        if (netDistributedAmount != 0) {
-            _transferFor(address(this), _beneficiary, _token, netDistributedAmount);
+        if (netAmountPaidOut != 0) {
+            _transferFor(address(this), _beneficiary, _token, netAmountPaidOut);
         }
 
         emit UseAllowance(
@@ -956,8 +956,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _projectId,
             _beneficiary,
             _amount,
-            _distributedAmount,
-            netDistributedAmount,
+            _amountPaidOut,
+            netAmountPaidOut,
             _memo,
             msg.sender
         );
@@ -1067,7 +1067,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _beforeTransferFor(address(_split.splitHook), _token, netPayoutAmount);
 
             // Create the data to send to the split hook.
-            JBSplitHookData memory _data = JBSplitHookData({
+            JBSplitHookPayload memory _data = JBSplitHookPayload({
                 token: _token,
                 amount: netPayoutAmount,
                 decimals: _accountingContextForTokenOf[_projectId][_token].decimals,
