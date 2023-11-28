@@ -93,7 +93,7 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
         _cycleConfig[0].metadata = _metadata;
         _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
         _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
-        
+
         vm.prank(makeAddr("zeroOwner"));
         uint256 configured = _controller.reconfigureFundingCyclesOf(_projectOne, _cycleConfig, "");
 
@@ -114,7 +114,7 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
                 operator: address(0),
                 domain: _projectOne,
                 permissionIndexes: permIndexes
-                });
+            });
 
             // Set em.
             vm.prank(_projectOwner);
@@ -136,14 +136,15 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
                 operator: address(0),
                 domain: _projectOne,
                 permissionIndexes: permIndexes
-                });
+            });
 
             // Set em.
             vm.prank(_projectOwner);
             _opStore.setOperatorOf(_projectOwner, opData[0]);
 
             // verify
-            bool _check = _opStore.hasPermission(address(0), _projectOwner, _projectOne, permIndexes[i]);
+            bool _check =
+                _opStore.hasPermission(address(0), _projectOwner, _projectOne, permIndexes[i]);
             assertEq(_check, true);
         }
     }
@@ -154,5 +155,4 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
 
         assertEq(_check, true);
     } */
-
 }
