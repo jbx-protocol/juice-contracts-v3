@@ -100,7 +100,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
     /// @notice Fees that are being held to be processed later.
     /// @custom:param _projectId The ID of the project for which fees are being held.
-    mapping(uint256 => JBFee[]) internal _heldFeesOf;
+    /// @custom:param _token The token the fee is denominated in.
+    mapping(uint256 => mapping(address => JBFee[])) internal _heldFeesOf;
 
     //*********************************************************************//
     // ------------------------- public constants ------------------------ //
@@ -186,9 +187,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
     /// @notice The fees that are currently being held to be processed later for each project.
     /// @param _projectId The ID of the project for which fees are being held.
+    /// @param _token The token the fees are held in.
     /// @return An array of fees that are being held.
-    function heldFeesOf(uint256 _projectId) external view override returns (JBFee[] memory) {
-        return _heldFeesOf[_projectId];
+    function heldFeesOf(uint256 _projectId, address _token) external view override returns (JBFee[] memory) {
+        return _heldFeesOf[_projectId][_token];
     }
 
     //*********************************************************************//
@@ -449,10 +451,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         )
     {
         // Get a reference to the project's held fees.
-        JBFee[] memory _heldFees = _heldFeesOf[_projectId];
+        JBFee[] memory _heldFees = _heldFeesOf[_projectId][_token];
 
         // Delete the held fees.
-        delete _heldFeesOf[_projectId];
+        delete _heldFeesOf[_projectId][_token];
 
         // Keep a reference to the amount.
         uint256 _amount;
@@ -866,7 +868,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         bytes memory _metadata
     ) internal {
         // Refund any held fees to make sure the project doesn't pay double for funds going in and out of the protocol.
-        uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
+        uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _token,  _amount) : 0;
 
         // Record the added funds with any refunded fees.
         STORE.recordAddedBalanceFor(_projectId, _token, _amount + _refundedFees);
@@ -1434,9 +1436,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
         if (_shouldHoldFees) {
             // Store the held fee.
-            _heldFeesOf[_projectId].push(JBFee(_amount, uint32(_feePercent), _beneficiary));
+            _heldFeesOf[_projectId][_token].push(JBFee(_amount, uint32(_feePercent), _beneficiary));
 
-            emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, _msgSender());
+            emit HoldFee(_projectId, _token, _amount, _feePercent, _beneficiary, _msgSender());
         } else {
             // Get the terminal that'll receive the fee if one wasn't provided.
             IJBPaymentTerminal _feeTerminal =
@@ -1467,29 +1469,30 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _beneficiary,
             _feeTerminal
         ) {
-            emit ProcessFee(_projectId, _amount, _wasHeld, _beneficiary, _msgSender());
+            emit ProcessFee(_projectId, _token, _amount, _wasHeld, _beneficiary, _msgSender());
         } catch (bytes memory _reason) {
             STORE.recordAddedBalanceFor(_projectId, _token, _amount);
 
             emit FeeReverted(
-                _projectId, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, _msgSender()
+                _projectId, _token, _FEE_BENEFICIARY_PROJECT_ID, _amount, _reason, _msgSender()
             );
         }
     }
 
     /// @notice Refund fees based on the specified amount.
     /// @param _projectId The project for which fees are being refunded.
+    /// @param _token The token the fees are held in.
     /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
     /// @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
-    function _refundHeldFees(uint256 _projectId, uint256 _amount)
+    function _refundHeldFees(uint256 _projectId, address _token, uint256 _amount)
         internal
         returns (uint256 refundedFees)
     {
         // Get a reference to the project's held fees.
-        JBFee[] memory _heldFees = _heldFeesOf[_projectId];
+        JBFee[] memory _heldFees = _heldFeesOf[_projectId][_token];
 
         // Delete the current held fees.
-        delete _heldFeesOf[_projectId];
+        delete _heldFeesOf[_projectId][_token];
 
         // Get a reference to the leftover amount once all fees have been settled.
         uint256 leftoverAmount = _amount;
@@ -1506,7 +1509,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _heldFee = _heldFees[_i];
 
             if (leftoverAmount == 0) {
-                _heldFeesOf[_projectId].push(_heldFee);
+                _heldFeesOf[_projectId][_token].push(_heldFee);
             } else {
                 // Notice here we take feeIn the stored .amount
                 uint256 _feeAmount =
@@ -1523,7 +1526,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                         _heldFee.fee == 0 ? 0 : JBFees.feeFrom(leftoverAmount, _heldFee.fee);
 
                     unchecked {
-                        _heldFeesOf[_projectId].push(
+                        _heldFeesOf[_projectId][_token].push(
                             JBFee(
                                 _heldFee.amount - (leftoverAmount + _feeAmount),
                                 _heldFee.fee,
@@ -1541,7 +1544,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             }
         }
 
-        emit RefundHeldFees(_projectId, _amount, refundedFees, leftoverAmount, _msgSender());
+        emit RefundHeldFees(_projectId, _token, _amount, refundedFees, leftoverAmount, _msgSender());
     }
 
     /// @notice Transfers tokens.
