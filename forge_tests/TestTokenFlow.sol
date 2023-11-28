@@ -90,11 +90,8 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             _tokenStore.issueFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
         } else {
             // Create a new IJBToken and change it's owner to the tokenStore
-            IJBToken _newToken = new JBToken({
-                _name: 'NewTestName', 
-                _symbol: 'NewTestSymbol', 
-                _owner: _projectOwner
-            });
+            IJBToken _newToken =
+                new JBToken({_name: "NewTestName", _symbol: "NewTestSymbol", _owner: _projectOwner});
 
             Ownable(address(_newToken)).transferOwnership(address(_tokenStore));
 

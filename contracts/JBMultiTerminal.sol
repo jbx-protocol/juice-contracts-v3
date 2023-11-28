@@ -11,21 +11,19 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {JBDelegateMetadataLib} from
-    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol";
 import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
+import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
 import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
+import {JBMetadataResolver} from "./libraries/JBMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBTokens} from "./libraries/JBTokens.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
@@ -43,6 +41,14 @@ import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {
+    IJBMultiTerminal,
+    IJBFeeTerminal,
+    IJBPaymentTerminal,
+    IJBRedemptionTerminal,
+    IJBPayoutTerminal,
+    IJBPermitPaymentTerminal
+} from "./interfaces/terminal/IJBMultiTerminal.sol";
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
@@ -117,7 +123,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     IJBTerminalStore public immutable override STORE;
 
     /// @notice The permit2 utility.
-    IPermit2 public immutable PERMIT2;
+    IPermit2 public immutable override PERMIT2;
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -171,7 +177,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         returns (uint256)
     {
         return STORE.currentOverflowOf(
-            this, _projectId, _accountingContextsOf[_projectId], _decimals, _currency
+            address(this), _projectId, _accountingContextsOf[_projectId], _decimals, _currency
         );
     }
 
@@ -191,9 +197,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @param _interfaceId The ID of the interface to check for adherance to.
     /// @return A flag indicating if the provided interface ID is supported.
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
-        return _interfaceId == type(IJBMultiTerminal).interfaceId
-            || _interfaceId == type(IJBOperatable).interfaceId
-            || _interfaceId == type(IJBPaymentTerminal).interfaceId;
+        return _interfaceId == type(IJBPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBRedemptionTerminal).interfaceId
+            || _interfaceId == type(IJBPayoutTerminal).interfaceId
+            || _interfaceId == type(IJBPermitPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBMultiTerminal).interfaceId
+            || _interfaceId == type(IJBFeeTerminal).interfaceId
+            || _interfaceId == type(IERC165).interfaceId;
     }
 
     //*********************************************************************//
@@ -293,14 +303,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
 
         // Add to balance.
-        _addToBalanceOf(
-            _projectId,
-            _token,
-            _amount,
-            _shouldRefundHeldFees,
-            _memo,
-            _metadata
-        );
+        _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
     }
 
     /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -568,16 +571,19 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         if (msg.sender == address(this)) return _amount;
 
         // Unpack the allowance to use, if any, given by the frontend.
-        (bool _quoteExists, bytes memory _parsedMetadata) =
-            JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
+        (bool _exists, bytes memory _parsedMetadata) =
+            JBMetadataResolver.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
 
         // Check if the metadata contained permit data.
-        if (_quoteExists) {
+        if (_exists) {
             // Keep a reference to the allowance context parsed from the metadata.
-            (JBSingleAllowanceData memory _allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
+            (JBSingleAllowanceData memory _allowance) =
+                abi.decode(_parsedMetadata, (JBSingleAllowanceData));
 
             // Make sure the permit allowance is enough for this payment. If not we revert early.
-            if (_allowance.amount < _amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            if (_allowance.amount < _amount) {
+                revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            }
 
             // Set the allowance to `spend` tokens for the user.
             _permitAllowance(_allowance, _token);

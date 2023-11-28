@@ -6,7 +6,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 // Projects can issue a token, be paid to receieve claimed tokens,  burn some of the claimed tokens, redeem rest of tokens
 contract TestRedeem_Local is TestBaseWorkflow {
     IJBController3_1 private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBMultiTerminal private _terminal;
     JBTokenStore private _tokenStore;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
@@ -57,14 +57,14 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
-            JBAccountingContextConfig[] memory _accountingContextConfigs =
-                new JBAccountingContextConfig[](1);
-            _accountingContextConfigs[0] =
-                JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
-            _terminalConfigurations[0] = JBTerminalConfig({
-                terminal: _terminal,
-                accountingContextConfigs: _accountingContextConfigs
-            });
+        JBAccountingContextConfig[] memory _accountingContextConfigs =
+            new JBAccountingContextConfig[](1);
+        _accountingContextConfigs[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _terminalConfigurations[0] = JBTerminalConfig({
+            terminal: _terminal,
+            accountingContextConfigs: _accountingContextConfigs
+        });
 
         // First project for fee collection
         _controller.launchProjectFor({
@@ -111,9 +111,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Make sure the ETH balance in terminal is up to date.
         uint256 _ethTerminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(
-                IJBPaymentTerminal(address(_terminal)), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _ethTerminalBalance
         );
 
@@ -166,9 +164,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Make sure the ETH balance in terminal should be up to date (with 1 wei precision).
         assertApproxEqAbs(
-            jbTerminalStore().balanceOf(
-                IJBPaymentTerminal(address(_terminal)), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _ethTerminalBalance - _ethReclaimAmt - (_ethReclaimAmt * 25 / 1000),
             1
         );

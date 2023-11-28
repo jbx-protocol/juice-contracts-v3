@@ -82,7 +82,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _overflowAllowances[0] =
             JBCurrencyAmount({value: 1 ether, currency: uint32(uint160(JBTokens.ETH))});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
@@ -259,7 +259,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             JBCurrencyAmount({value: 1, currency: ALLOWCURRENCY == 0 ? 0 : ALLOWCURRENCY - 1});
 
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
@@ -314,7 +314,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: 1});
 
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
@@ -380,7 +380,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _overflowAllowances[1] =
             JBCurrencyAmount({value: _allowanceLimit, currency: ALLOWCURRENCY + 1});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
@@ -432,7 +432,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
         _overflowAllowances[0] = JBCurrencyAmount({value: 1, currency: 1});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
@@ -541,7 +541,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             currency: uint32(uint160(address(usdcToken())))
         });
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: __terminal,
+            terminal: address(__terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: new JBCurrencyAmount[](0)
