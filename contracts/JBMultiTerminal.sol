@@ -654,7 +654,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // The project must have a terminal to send funds to.
             if(_terminal == IJBPaymentTerminal(address(0))) revert("404");
 
-            // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
+            // This distribution is eligible for a fee if the funds are leaving this contract and the terminal isn't listed as feeless.
             if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)])
             {
                 unchecked {
