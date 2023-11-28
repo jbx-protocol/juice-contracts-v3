@@ -110,7 +110,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         _overflowAllowances[0] =
             JBCurrencyAmount({value: 2 ether, currency: uint32(uint160(JBTokens.ETH))});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: _terminal,
+            terminal: address(_terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances
@@ -244,7 +244,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
             JBCurrencyAmount({value: _ethDistributionLimit, currency: _currencyId});
         _overflowAllowances[0] = JBCurrencyAmount({value: 2 ether, currency: _currencyId});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
-            terminal: _terminal,
+            terminal: address(_terminal),
             token: JBTokens.ETH,
             distributionLimits: _distributionLimits,
             overflowAllowances: _overflowAllowances

@@ -8,7 +8,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
     address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));
 
     IJBController3_1 private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBMultiTerminal private _terminal;
     IJBTokenStore private _tokenStore;
     address private _projectOwner;
     address private _beneficiary;
@@ -126,9 +126,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // Make sure the ETH balance in terminal is up to date.
         uint256 _ethTerminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(
-                IJBPaymentTerminal(address(_terminal)), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _ethTerminalBalance
         );
 

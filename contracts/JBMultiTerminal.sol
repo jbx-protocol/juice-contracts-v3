@@ -13,11 +13,10 @@ import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
+import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTerminalStore} from "./interfaces/IJBTerminalStore.sol";
 import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
@@ -42,6 +41,14 @@ import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
+import {
+    IJBMultiTerminal,
+    IJBFeeTerminal,
+    IJBPaymentTerminal,
+    IJBRedemptionTerminal,
+    IJBPayoutTerminal,
+    IJBPermitPaymentTerminal
+} from "./interfaces/terminal/IJBMultiTerminal.sol";
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
@@ -116,7 +123,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     IJBTerminalStore public immutable override STORE;
 
     /// @notice The permit2 utility.
-    IPermit2 public immutable PERMIT2;
+    IPermit2 public immutable override PERMIT2;
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -170,7 +177,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         returns (uint256)
     {
         return STORE.currentOverflowOf(
-            this, _projectId, _accountingContextsOf[_projectId], _decimals, _currency
+            address(this), _projectId, _accountingContextsOf[_projectId], _decimals, _currency
         );
     }
 
@@ -190,9 +197,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
     /// @param _interfaceId The ID of the interface to check for adherance to.
     /// @return A flag indicating if the provided interface ID is supported.
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
-        return _interfaceId == type(IJBMultiTerminal).interfaceId
-            || _interfaceId == type(IJBOperatable).interfaceId
-            || _interfaceId == type(IJBPaymentTerminal).interfaceId;
+        return _interfaceId == type(IJBPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBRedemptionTerminal).interfaceId
+            || _interfaceId == type(IJBPayoutTerminal).interfaceId
+            || _interfaceId == type(IJBPermitPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBMultiTerminal).interfaceId
+            || _interfaceId == type(IJBFeeTerminal).interfaceId
+            || _interfaceId == type(IERC165).interfaceId;
     }
 
     //*********************************************************************//

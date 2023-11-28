@@ -13,7 +13,6 @@ import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBFundAccessConstraintsStore} from "./IJBFundAccessConstraintsStore.sol";
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBMigratable} from "./IJBMigratable.sol";
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBSplitsStore} from "./IJBSplitsStore.sol";
 import {IJBTokenStore} from "./IJBTokenStore.sol";
