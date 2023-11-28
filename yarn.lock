@@ -567,13 +567,6 @@
   resolved "https://registry.yarnpkg.com/@fastify/busboy/-/busboy-2.1.0.tgz#0709e9f4cb252351c609c6e6d8d6779a8d25edff"
   integrity sha512-+KpH+QxZU7O4675t3mnkQKcZZg56u+K/Ct2K+N2AZYNVK8kyeo/bI18tI8aPm3tvNNRyTWfj6s5tnGNlcbQRsA==
 
-"@jbx-protocol/juice-delegate-metadata-lib@https://github.com/jbx-protocol/juice-delegate-metadata-lib.git":
-  version "1.0.1"
-  resolved "https://github.com/jbx-protocol/juice-delegate-metadata-lib.git#da5a4b405dd77812ee819145a5c71885119339d3"
-  dependencies:
-    ds-test "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-    forge-std "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
-
 "@ljharb/resumer@~0.0.1":
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@ljharb/resumer/-/resumer-0.0.1.tgz#8a940a9192dd31f6a1df17564bbd26dc6ad3e68d"
@@ -3465,10 +3458,6 @@ dotignore@~0.1.2:
   dependencies:
     minimatch "^3.0.4"
 
-"ds-test@https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0":
-  version "1.0.0"
-  resolved "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-
 duplexer3@^0.1.4:
   version "0.1.5"
   resolved "https://registry.yarnpkg.com/duplexer3/-/duplexer3-0.1.5.tgz#0b5e4d7bad5de8901ea4440624c8e1d20099217e"
@@ -4497,10 +4486,6 @@ forever-agent@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
-
-"forge-std@https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e":
-  version "1.5.6"
-  resolved "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
 
 form-data@^2.2.0:
   version "2.5.1"
