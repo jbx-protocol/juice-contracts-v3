@@ -57,14 +57,14 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
-            JBAccountingContextConfig[] memory _accountingContextConfigs =
-                new JBAccountingContextConfig[](1);
-            _accountingContextConfigs[0] =
-                JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
-            _terminalConfigurations[0] = JBTerminalConfig({
-                terminal: _terminal,
-                accountingContextConfigs: _accountingContextConfigs
-            });
+        JBAccountingContextConfig[] memory _accountingContextConfigs =
+            new JBAccountingContextConfig[](1);
+        _accountingContextConfigs[0] =
+            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _terminalConfigurations[0] = JBTerminalConfig({
+            terminal: _terminal,
+            accountingContextConfigs: _accountingContextConfigs
+        });
 
         // First project for fee collection
         _controller.launchProjectFor({

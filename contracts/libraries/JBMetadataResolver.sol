@@ -51,7 +51,11 @@ library JBMetadataResolver {
      * @return _found          Whether the {id:data} was found
      * @return _targetData The data for the ID (can be empty)
      */
-    function getMetadata(bytes4 _id, bytes calldata _metadata) internal pure returns (bool _found, bytes memory _targetData) {
+    function getMetadata(bytes4 _id, bytes calldata _metadata)
+        internal
+        pure
+        returns (bool _found, bytes memory _targetData)
+    {
         // Either no data or empty one with only one selector (32+4+1)
         if (_metadata.length <= MIN_METADATA_LENGTH) return (false, "");
 
@@ -59,16 +63,20 @@ library JBMetadataResolver {
         uint256 _firstOffset = uint8(_metadata[RESERVED_SIZE + ID_SIZE]);
 
         // Parse the id's to find _id, stop when next offset == 0 or current = first offset
-        for (uint256 _i = RESERVED_SIZE; _metadata[_i + ID_SIZE] != bytes1(0) && _i < _firstOffset * WORD_SIZE;) {
+        for (
+            uint256 _i = RESERVED_SIZE;
+            _metadata[_i + ID_SIZE] != bytes1(0) && _i < _firstOffset * WORD_SIZE;
+        ) {
             uint256 _currentOffset = uint256(uint8(_metadata[_i + ID_SIZE]));
 
             // _id found?
             if (bytes4(_metadata[_i:_i + ID_SIZE]) == _id) {
                 // Are we at the end of the lookup table (either at the start of data's or next offset is 0/in the padding)
                 // If not, only return until from this offset to the begining of the next offset
-                uint256 _end = (_i + NEXT_ID_OFFSET >= _firstOffset * WORD_SIZE || _metadata[_i + NEXT_ID_OFFSET] == 0)
-                    ? _metadata.length
-                    : uint256(uint8(_metadata[_i + NEXT_ID_OFFSET])) * WORD_SIZE;
+                uint256 _end = (
+                    _i + NEXT_ID_OFFSET >= _firstOffset * WORD_SIZE
+                        || _metadata[_i + NEXT_ID_OFFSET] == 0
+                ) ? _metadata.length : uint256(uint8(_metadata[_i + NEXT_ID_OFFSET])) * WORD_SIZE;
 
                 return (true, _metadata[_currentOffset * WORD_SIZE:_end]);
             }
@@ -87,7 +95,11 @@ library JBMetadataResolver {
      *
      * @return _newMetadata    The new metadata with the entry added
      */
-    function addToMetadata(bytes4 _idToAdd, bytes calldata _dataToAdd, bytes calldata _originalMetadata) internal pure returns (bytes memory _newMetadata) {
+    function addToMetadata(
+        bytes4 _idToAdd,
+        bytes calldata _dataToAdd,
+        bytes calldata _originalMetadata
+    ) internal pure returns (bytes memory _newMetadata) {
         // Get the first data offset - upcast to avoid overflow (same for other offset)...
         uint256 _firstOffset = uint8(_originalMetadata[RESERVED_SIZE + ID_SIZE]);
 
@@ -104,23 +116,27 @@ library JBMetadataResolver {
 
         // Iterate to find the last entry of the table, _lastOffset - we start from the end as the first value encountered
         // will be the last offset
-        for(uint256 _i = _firstOffset * WORD_SIZE - 1; _i > _lastWordOfTable * WORD_SIZE - 1;) {
-
+        for (uint256 _i = _firstOffset * WORD_SIZE - 1; _i > _lastWordOfTable * WORD_SIZE - 1;) {
             // If the byte is not 0, this is the last offset we're looking for
             if (_originalMetadata[_i] != 0) {
                 _lastOffset = uint8(_originalMetadata[_i]);
                 _lastOffsetIndex = _i;
 
                 // No rounding as this should be padded to 32B
-                _numberOfWordslastData = (_originalMetadata.length - _lastOffset * WORD_SIZE) / WORD_SIZE;
+                _numberOfWordslastData =
+                    (_originalMetadata.length - _lastOffset * WORD_SIZE) / WORD_SIZE;
 
                 // Copy the reserved word and the table and remove the previous padding
-                _newMetadata = _originalMetadata[0 : _lastOffsetIndex + 1];
+                _newMetadata = _originalMetadata[0:_lastOffsetIndex + 1];
 
                 // Check if the new entry is still fitting in this word
-                if(_i + TOTAL_ID_SIZE >= _firstOffset * WORD_SIZE) {
+                if (_i + TOTAL_ID_SIZE >= _firstOffset * WORD_SIZE) {
                     // Increment every offset by 1 (as the table now takes one more word)
-                    for (uint256 _j = RESERVED_SIZE + ID_SIZE; _j < _lastOffsetIndex + 1; _j += TOTAL_ID_SIZE) {
+                    for (
+                        uint256 _j = RESERVED_SIZE + ID_SIZE;
+                        _j < _lastOffsetIndex + 1;
+                        _j += TOTAL_ID_SIZE
+                    ) {
                         _newMetadata[_j] = bytes1(uint8(_originalMetadata[_j]) + 1);
                     }
 
@@ -137,21 +153,27 @@ library JBMetadataResolver {
         }
 
         // Add the new entry after the last entry of the table, the new offset is the last offset + the number of words taken by the last data
-        _newMetadata = abi.encodePacked(_newMetadata, _idToAdd, bytes1(uint8(_lastOffset + _numberOfWordslastData)));
+        _newMetadata = abi.encodePacked(
+            _newMetadata, _idToAdd, bytes1(uint8(_lastOffset + _numberOfWordslastData))
+        );
 
         // Pad as needed - inlined for gas saving
-        uint256 _paddedLength =
-            _newMetadata.length % WORD_SIZE == 0 ? _newMetadata.length : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
+        uint256 _paddedLength = _newMetadata.length % WORD_SIZE == 0
+            ? _newMetadata.length
+            : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
         assembly {
             mstore(_newMetadata, _paddedLength)
         }
 
         // Add existing data at the end
-        _newMetadata = abi.encodePacked(_newMetadata, _originalMetadata[_firstOffset * WORD_SIZE : _originalMetadata.length]);
+        _newMetadata = abi.encodePacked(
+            _newMetadata, _originalMetadata[_firstOffset * WORD_SIZE:_originalMetadata.length]
+        );
 
         // Pad as needed
-        _paddedLength =
-            _newMetadata.length % WORD_SIZE == 0 ? _newMetadata.length : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
+        _paddedLength = _newMetadata.length % WORD_SIZE == 0
+            ? _newMetadata.length
+            : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
         assembly {
             mstore(_newMetadata, _paddedLength)
         }
@@ -160,8 +182,9 @@ library JBMetadataResolver {
         _newMetadata = abi.encodePacked(_newMetadata, _dataToAdd);
 
         // Pad again again as needed
-        _paddedLength =
-            _newMetadata.length % WORD_SIZE == 0 ? _newMetadata.length : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
+        _paddedLength = _newMetadata.length % WORD_SIZE == 0
+            ? _newMetadata.length
+            : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
 
         assembly {
             mstore(_newMetadata, _paddedLength)

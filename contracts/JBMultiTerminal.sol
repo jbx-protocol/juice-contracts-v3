@@ -292,14 +292,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
 
         // Add to balance.
-        _addToBalanceOf(
-            _projectId,
-            _token,
-            _amount,
-            _shouldRefundHeldFees,
-            _memo,
-            _metadata
-        );
+        _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
     }
 
     /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -573,10 +566,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         // Check if the metadata contained permit data.
         if (_exists) {
             // Keep a reference to the allowance context parsed from the metadata.
-            (JBSingleAllowanceData memory _allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
+            (JBSingleAllowanceData memory _allowance) =
+                abi.decode(_parsedMetadata, (JBSingleAllowanceData));
 
             // Make sure the permit allowance is enough for this payment. If not we revert early.
-            if (_allowance.amount < _amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            if (_allowance.amount < _amount) {
+                revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            }
 
             // Set the allowance to `spend` tokens for the user.
             _permitAllowance(_allowance, _token);

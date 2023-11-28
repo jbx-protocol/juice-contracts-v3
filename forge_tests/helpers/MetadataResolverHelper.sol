@@ -29,7 +29,6 @@ import {JBMetadataResolver} from "@juicebox/libraries/JBMetadataResolver.sol";
  *         This contract is intended to expose the library functions as a helper for frontends.
  */
 contract MetadataResolverHelper {
-
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -47,7 +46,11 @@ contract MetadataResolverHelper {
      * @return _found          Whether the metadata was found
      * @return _targetMetadata The metadata for the delegate
      */
-    function getMetadata(bytes4 _id, bytes calldata _metadata) public pure returns (bool _found, bytes memory _targetMetadata) {
+    function getMetadata(bytes4 _id, bytes calldata _metadata)
+        public
+        pure
+        returns (bool _found, bytes memory _targetMetadata)
+    {
         return JBMetadataResolver.getMetadata(_id, _metadata);
     }
 
@@ -75,7 +78,8 @@ contract MetadataResolverHelper {
         uint256 _offset = 1;
 
         // ... and after the id/offset lookup table, rounding up to 32 bytes words if not a multiple
-        _offset += ((_ids.length * JBMetadataResolver.TOTAL_ID_SIZE) - 1) / JBMetadataResolver.WORD_SIZE + 1;
+        _offset += ((_ids.length * JBMetadataResolver.TOTAL_ID_SIZE) - 1)
+            / JBMetadataResolver.WORD_SIZE + 1;
 
         // For each id, add it to the lookup table with the next free offset, then increment the offset by the data length (rounded up)
         for (uint256 _i; _i < _ids.length;) {
@@ -85,13 +89,14 @@ contract MetadataResolverHelper {
             // Overflowing a bytes1?
             if (_offset > 2 ** 8) revert METADATA_TOO_LONG();
             unchecked {
-                ++ _i;
+                ++_i;
             }
         }
 
         // Pad the table to a multiple of 32B
-        uint256 _paddedLength =
-            _metadata.length % JBMetadataResolver.WORD_SIZE == 0 ? _metadata.length : (_metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
+        uint256 _paddedLength = _metadata.length % JBMetadataResolver.WORD_SIZE == 0
+            ? _metadata.length
+            : (_metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
         assembly {
             mstore(_metadata, _paddedLength)
         }
@@ -99,8 +104,9 @@ contract MetadataResolverHelper {
         // Add each metadata to the array, each padded to 32 bytes
         for (uint256 _i; _i < _metadatas.length; _i++) {
             _metadata = abi.encodePacked(_metadata, _metadatas[_i]);
-            _paddedLength =
-                _metadata.length % JBMetadataResolver.WORD_SIZE == 0 ? _metadata.length : (_metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
+            _paddedLength = _metadata.length % JBMetadataResolver.WORD_SIZE == 0
+                ? _metadata.length
+                : (_metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
 
             assembly {
                 mstore(_metadata, _paddedLength)
@@ -117,7 +123,11 @@ contract MetadataResolverHelper {
      *
      * @return _newMetadata    The new metadata with the delegate added
      */
-    function addToMetadata(bytes4 _idToAdd, bytes calldata _dataToAdd, bytes calldata _originalMetadata) public pure returns (bytes memory _newMetadata) {
+    function addToMetadata(
+        bytes4 _idToAdd,
+        bytes calldata _dataToAdd,
+        bytes calldata _originalMetadata
+    ) public pure returns (bytes memory _newMetadata) {
         return JBMetadataResolver.addToMetadata(_idToAdd, _dataToAdd, _originalMetadata);
     }
 }
