@@ -52,10 +52,40 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
     }
 
-    function equals(JBFundingCycle memory configured, JBFundingCycle memory stored) internal view returns (bool) {
+    function equals(JBFundingCycle memory configured, JBFundingCycle memory stored)
+        internal
+        view
+        returns (bool)
+    {
         // Just compare the output of hashing all fields packed
-        return(keccak256(abi.encodePacked(configured.number, configured.configuration, configured.basedOn, configured.start, configured.duration, configured.weight, configured.discountRate, configured.ballot, configured.metadata)) 
-        == keccak256(abi.encodePacked(stored.number, stored.configuration, stored.basedOn, stored.start, stored.duration, stored.weight, stored.discountRate, stored.ballot, stored.metadata)));
+        return (
+            keccak256(
+                abi.encodePacked(
+                    configured.number,
+                    configured.configuration,
+                    configured.basedOn,
+                    configured.start,
+                    configured.duration,
+                    configured.weight,
+                    configured.discountRate,
+                    configured.ballot,
+                    configured.metadata
+                )
+            )
+                == keccak256(
+                    abi.encodePacked(
+                        stored.number,
+                        stored.configuration,
+                        stored.basedOn,
+                        stored.start,
+                        stored.duration,
+                        stored.weight,
+                        stored.discountRate,
+                        stored.ballot,
+                        stored.metadata
+                    )
+                )
+        );
     }
 
     function testLaunchProject() public {
@@ -107,7 +137,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     function testLaunchProjectFuzzWeight(uint256 _weight) public {
         _weight = bound(_weight, 0, type(uint88).max);
         uint256 _projectId;
-        
+
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
@@ -162,7 +192,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     function testLaunchOverweight(uint256 _weight) public {
         _weight = bound(_weight, type(uint88).max, type(uint256).max);
         uint256 _projectId;
-        
+
         _data = JBFundingCycleData({
             duration: 14,
             weight: _weight,
@@ -191,11 +221,11 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             vm.expectRevert(abi.encodeWithSignature("INVALID_WEIGHT()"));
 
             _projectId = _controller.launchProjectFor({
-            owner: _projectOwner,
-            projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
-            terminalConfigurations: _terminalConfigurations,
-            memo: ""
+                owner: _projectOwner,
+                projectMetadata: _projectMetadata,
+                fundingCycleConfigurations: _cycleConfig,
+                terminalConfigurations: _terminalConfigurations,
+                memo: ""
             });
         } else {
             _projectId = _controller.launchProjectFor({
@@ -226,6 +256,5 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
             assertEq(same, true);
         }
-
     }
 }
