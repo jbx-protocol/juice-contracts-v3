@@ -190,7 +190,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         vm.label(_beneficiary, "beneficiary");
         _jbOperatorStore = new JBOperatorStore();
         vm.label(address(_jbOperatorStore), "JBOperatorStore");
-        _usdcToken = new MockERC20('USDC', 'USDC');
+        _usdcToken = new MockERC20("USDC", "USDC");
         vm.label(address(_usdcToken), "ERC20");
         _jbProjects = new JBProjects(_jbOperatorStore, _multisig);
         vm.label(address(_jbProjects), "JBProjects");
@@ -202,26 +202,22 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbDirectory =
             new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig);
         vm.label(address(_jbDirectory), "JBDirectory");
-        _jbTokenStore = new JBTokenStore(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore
-    );
+        _jbTokenStore =
+            new JBTokenStore(_jbOperatorStore, _jbProjects, _jbDirectory, _jbFundingCycleStore);
         vm.label(address(_jbTokenStore), "JBTokenStore");
         _jbSplitsStore = new JBSplitsStore(_jbOperatorStore, _jbProjects, _jbDirectory);
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
         _jbController = new JBController3_1(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbTokenStore,
-      _jbSplitsStore,
-      _jbFundAccessConstraintsStore
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbTokenStore,
+            _jbSplitsStore,
+            _jbFundAccessConstraintsStore
+        );
         vm.label(address(_jbController), "JBController3_1");
 
         _metadataHelper = new MetadataResolverHelper();
@@ -236,23 +232,23 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _permit2 = deployPermit2();
 
         _jbMultiTerminal = new JBMultiTerminal(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbTerminalStore,
-      IPermit2(_permit2),
-      _multisig
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbTerminalStore,
+            IPermit2(_permit2),
+            _multisig
+        );
 
         _jbMultiTerminal2 = new JBMultiTerminal(
-        _jbOperatorStore,
-        _jbProjects,
-        _jbDirectory,
-        _jbSplitsStore,
-        _jbTerminalStore,
-        IPermit2(_permit2),
-        _multisig
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbTerminalStore,
+            IPermit2(_permit2),
+            _multisig
         );
 
         vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
