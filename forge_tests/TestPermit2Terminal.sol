@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {PermitSignature} from '@permit2/src/test/utils/PermitSignature.sol';
+import {PermitSignature} from "@permit2/src/test/utils/PermitSignature.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
@@ -14,7 +14,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     IJBPrices private _prices;
     IJBTokenStore private _tokenStore;
     IERC20 private _usdc;
-    JBDelegateMetadataHelper private _helper;
+    MetadataResolverHelper private _helper;
     address private _projectOwner;
 
     uint256 _projectId;
@@ -83,7 +83,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _accountingContexts[0] =
             JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
         _accountingContexts[1] =
-                JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
+            JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -125,11 +125,14 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
         // Setup: prepare permit details for signing
-        IAllowanceTransfer.PermitDetails memory details =
-            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(_coins), expiration: uint48(_expiration), nonce: 0});
+        IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
+            token: address(_usdc),
+            amount: uint160(_coins),
+            expiration: uint48(_expiration),
+            nonce: 0
+        });
 
-        IAllowanceTransfer.PermitSingle memory permit =
-            IAllowanceTransfer.PermitSingle({
+        IAllowanceTransfer.PermitSingle memory permit = IAllowanceTransfer.PermitSingle({
             details: details,
             spender: address(_terminal),
             sigDeadline: _deadline
@@ -138,13 +141,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         // Setup: Sign permit details
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
-        JBSingleAllowanceData memory permitData = 
-            JBSingleAllowanceData({
-                sigDeadline: _deadline,
-                amount: uint160(_coins),
-                expiration: uint48(_expiration),
-                nonce: uint48(0),
-                signature: sig
+        JBSingleAllowanceData memory permitData = JBSingleAllowanceData({
+            sigDeadline: _deadline,
+            amount: uint160(_coins),
+            expiration: uint48(_expiration),
+            nonce: uint48(0),
+            signature: sig
         });
 
         // Setup: prepare data for metadata helper
@@ -181,18 +183,23 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         assertEq(_tokenStore.balanceOf(from, _projectId), _minted);
     }
 
-    function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
+    function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline)
+        public
+    {
         // Setup: set fuzz boundaries
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
         _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
         // Setup: prepare permit details for signing
-        IAllowanceTransfer.PermitDetails memory details =
-            IAllowanceTransfer.PermitDetails({token: address(_usdc), amount: uint160(_coins), expiration: uint48(_expiration), nonce: 0});
+        IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
+            token: address(_usdc),
+            amount: uint160(_coins),
+            expiration: uint48(_expiration),
+            nonce: 0
+        });
 
-        IAllowanceTransfer.PermitSingle memory permit =
-            IAllowanceTransfer.PermitSingle({
+        IAllowanceTransfer.PermitSingle memory permit = IAllowanceTransfer.PermitSingle({
             details: details,
             spender: address(_terminal),
             sigDeadline: _deadline
@@ -201,13 +208,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         // Setup: Sign permit details
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
-        JBSingleAllowanceData memory permitData = 
-            JBSingleAllowanceData({
-                sigDeadline: _deadline,
-                amount: uint160(_coins),
-                expiration: uint48(_expiration),
-                nonce: uint48(0),
-                signature: sig
+        JBSingleAllowanceData memory permitData = JBSingleAllowanceData({
+            sigDeadline: _deadline,
+            amount: uint160(_coins),
+            expiration: uint48(_expiration),
+            nonce: uint48(0),
+            signature: sig
         });
 
         // Setup: prepare data for metadata helper
@@ -227,12 +233,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         // Test: Add to balance using permit2 data, which should transfer tokens
         vm.prank(from);
         _terminal.addToBalanceOf(
-            _projectId,
-            address(_usdc),
-            _coins,
-            false,
-            "testing permit2",
-            _packedData
+            _projectId, address(_usdc), _coins, false, "testing permit2", _packedData
         );
 
         // Check: that tokens were transfered

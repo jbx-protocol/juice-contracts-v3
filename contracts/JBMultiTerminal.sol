@@ -11,8 +11,6 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {JBDelegateMetadataLib} from
-    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol";
 import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
@@ -26,6 +24,7 @@ import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
+import {JBMetadataResolver} from "./libraries/JBMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBTokens} from "./libraries/JBTokens.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
@@ -293,14 +292,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
 
         // Add to balance.
-        _addToBalanceOf(
-            _projectId,
-            _token,
-            _amount,
-            _shouldRefundHeldFees,
-            _memo,
-            _metadata
-        );
+        _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
     }
 
     /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -568,16 +560,19 @@ contract JBMultiTerminal is JBOperatable, Ownable, IJBMultiTerminal {
         if (msg.sender == address(this)) return _amount;
 
         // Unpack the allowance to use, if any, given by the frontend.
-        (bool _quoteExists, bytes memory _parsedMetadata) =
-            JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
+        (bool _exists, bytes memory _parsedMetadata) =
+            JBMetadataResolver.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
 
         // Check if the metadata contained permit data.
-        if (_quoteExists) {
+        if (_exists) {
             // Keep a reference to the allowance context parsed from the metadata.
-            (JBSingleAllowanceData memory _allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
+            (JBSingleAllowanceData memory _allowance) =
+                abi.decode(_parsedMetadata, (JBSingleAllowanceData));
 
             // Make sure the permit allowance is enough for this payment. If not we revert early.
-            if (_allowance.amount < _amount) revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            if (_allowance.amount < _amount) {
+                revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            }
 
             // Set the allowance to `spend` tokens for the user.
             _permitAllowance(_allowance, _token);

@@ -79,16 +79,10 @@ contract TestSplitStore_Local is TestBaseWorkflow {
             allocator: IJBSplitAllocator(address(0))
         });
 
-        _splitsGroup[0] = JBGroupedSplits({
-            group: uint32(uint160(JBTokens.ETH)),
-            splits: _splits
-        });
+        _splitsGroup[0] = JBGroupedSplits({group: uint32(uint160(JBTokens.ETH)), splits: _splits});
 
         // A dummy used to check that splits groups of "0" don't bypass distribution limits.
-        _splitsGroup[1] = JBGroupedSplits({
-            group: 0,
-            splits: _splits
-        });
+        _splitsGroup[1] = JBGroupedSplits({group: 0, splits: _splits});
 
         // Configure a reserve rate split recipient.
         _reserveRateSplits[0] = JBSplit({
@@ -101,10 +95,8 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         });
 
         // Reserved rate split group
-        _splitsGroup[2] = JBGroupedSplits({
-            group: JBSplitsGroups.RESERVED_TOKENS,
-            splits: _reserveRateSplits
-        });
+        _splitsGroup[2] =
+            JBGroupedSplits({group: JBSplitsGroups.RESERVED_TOKENS, splits: _reserveRateSplits});
 
         // Package up fund access constraints
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
@@ -185,9 +177,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
 
         // Calculate the amount returned after fees are processed
         uint256 _beneficiaryEthBalance = PRBMath.mulDiv(
-            _ethDistributionLimit,
-            JBConstants.MAX_FEE,
-            JBConstants.MAX_FEE + _terminal.FEE()
+            _ethDistributionLimit, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE()
         );
 
         assertEq(_splitsGuy.balance, _beneficiaryEthBalance);
@@ -243,22 +233,16 @@ contract TestSplitStore_Local is TestBaseWorkflow {
             allocator: IJBSplitAllocator(address(0))
         });
 
-        _splitsGroup[0] = JBGroupedSplits({
-            group: _currencyId,
-            splits: _splits
-        });
+        _splitsGroup[0] = JBGroupedSplits({group: _currencyId, splits: _splits});
 
         // Package up fund access constraints
         JBFundAccessConstraints[] memory _fundAccessConstraints = new JBFundAccessConstraints[](1);
         JBCurrencyAmount[] memory _distributionLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _overflowAllowances = new JBCurrencyAmount[](1);
 
-        _distributionLimits[0] = JBCurrencyAmount({
-            value: _ethDistributionLimit,
-            currency: _currencyId
-        });
-        _overflowAllowances[0] =
-            JBCurrencyAmount({value: 2 ether, currency: _currencyId});
+        _distributionLimits[0] =
+            JBCurrencyAmount({value: _ethDistributionLimit, currency: _currencyId});
+        _overflowAllowances[0] = JBCurrencyAmount({value: 2 ether, currency: _currencyId});
         _fundAccessConstraints[0] = JBFundAccessConstraints({
             terminal: _terminal,
             token: JBTokens.ETH,
@@ -291,5 +275,4 @@ contract TestSplitStore_Local is TestBaseWorkflow {
             memo: ""
         });
     }
-
 }
