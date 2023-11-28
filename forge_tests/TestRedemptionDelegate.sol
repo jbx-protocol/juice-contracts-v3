@@ -126,9 +126,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // Make sure the ETH balance in terminal is up to date.
         uint256 _ethTerminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(
-                address(_terminal), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _ethTerminalBalance
         );
 

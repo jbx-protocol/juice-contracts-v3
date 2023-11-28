@@ -111,9 +111,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Make sure the ETH balance in terminal is up to date.
         uint256 _ethTerminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(
-                address(_terminal), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _ethTerminalBalance
         );
 
@@ -166,9 +164,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Make sure the ETH balance in terminal should be up to date (with 1 wei precision).
         assertApproxEqAbs(
-            jbTerminalStore().balanceOf(
-                address(_terminal), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _ethTerminalBalance - _ethReclaimAmt - (_ethReclaimAmt * 25 / 1000),
             1
         );

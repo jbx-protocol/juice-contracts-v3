@@ -115,9 +115,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // Make sure the ETH balance in terminal is up to date.
         uint256 _terminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(
-                address(_terminal), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _terminalBalance
         );
 
@@ -164,9 +162,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         // Make sure the ETH balance in terminal is up to date.
         assertEq(
-            jbTerminalStore().balanceOf(
-                address(_terminal), _projectId, JBTokens.ETH
-            ),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
             _terminalBalance - _reclaimAmt
         );
     }
