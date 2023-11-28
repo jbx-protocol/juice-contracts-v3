@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
-import {JBSplitGroupIDs} from "@juicebox/libraries/JBSplitGroupIDs.sol";
+import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 
 contract AccessJBLib {
     function ETH() external pure returns (uint256) {

@@ -79,7 +79,7 @@ import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
 import {JBTokenStandards} from "@juicebox/libraries/JBTokenStandards.sol";
 import {JBRulesetMetadataResolver} from "@juicebox/libraries/JBRulesetMetadataResolver.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
-import {JBSplitGroupIDs} from "@juicebox/libraries/JBSplitGroupIDs.sol";
+import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 

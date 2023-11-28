@@ -96,7 +96,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
 
         // Reserved rate split group
         _splitsGroup[2] =
-            JBSplitGroup({groupId: JBSplitGroupIDs.RESERVED_TOKENS, splits: _reserveRateSplits});
+            JBSplitGroup({groupId: JBSplitGroupIds.RESERVED_TOKENS, splits: _reserveRateSplits});
 
         // Package up fund access constraints
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);

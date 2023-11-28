@@ -21,7 +21,7 @@ import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
-import {JBSplitGroupIDs} from "./libraries/JBSplitGroupIDs.sol";
+import {JBSplitGroupIds} from "./libraries/JBSplitGroupIds.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "./structs/JBRulesetMetadata.sol";
@@ -498,7 +498,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         uint256 _leftoverTokenCount = tokenCount == 0
             ? 0
             : _distributeToReservedTokenSplitsOf(
-                _projectId, _ruleset.rulesetId, JBSplitGroupIDs.RESERVED_TOKENS, tokenCount
+                _projectId, _ruleset.rulesetId, JBSplitGroupIds.RESERVED_TOKENS, tokenCount
             );
 
         // Mint any leftover tokens to the project owner.
