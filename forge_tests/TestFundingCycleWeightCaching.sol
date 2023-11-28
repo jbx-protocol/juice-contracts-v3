@@ -22,7 +22,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-        _rulesets = jbRulesetStore();
+        _rulesets = jbRulesets();
         _controller = jbController();
         _data = JBRulesetData({
             duration: _DURATION,
@@ -93,8 +93,8 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // }
 
         // // Keep a reference to the current rulesets.
-        // JBRuleset memory _ruleset1 = jbRulesetStore().currentOf(_projectId1);
-        // JBRuleset memory _ruleset2 = jbRulesetStore().currentOf(_projectId2);
+        // JBRuleset memory _ruleset1 = jbRulesets().currentOf(_projectId1);
+        // JBRuleset memory _ruleset2 = jbRulesets().currentOf(_projectId2);
 
         // // Go a few rolled over rulesets into the future.
         // vm.warp(block.timestamp + (_DURATION * 10));
@@ -154,8 +154,8 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // assertLe(_gasDiff2, _GAS_LIMIT);
 
         // // Renew the reference to the current ruleset.
-        // _ruleset1 = jbRulesetStore().currentOf(_projectId1);
-        // _ruleset2 = jbRulesetStore().currentOf(_projectId2);
+        // _ruleset1 = jbRulesets().currentOf(_projectId1);
+        // _ruleset2 = jbRulesets().currentOf(_projectId2);
 
         // // The cached call should have been cheaper.
         // assertLe(_gasDiff2, _gasDiff1);

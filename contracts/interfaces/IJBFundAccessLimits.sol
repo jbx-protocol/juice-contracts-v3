@@ -24,6 +24,10 @@ interface IJBFundAccessLimits is IERC165 {
         uint256 rulesetId,
         address terminal,
         address token,
+        uint256 currency
+    ) external view returns (uint256 payoutLimit);
+
+    function surplusAllowancesOf(
         uint256 projectId,
         uint256 rulesetId,
         address terminal,

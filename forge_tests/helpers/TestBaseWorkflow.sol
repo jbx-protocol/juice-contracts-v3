@@ -20,6 +20,7 @@ import {JBSplits} from "@juicebox/JBSplits.sol";
 import {JBERC20Token} from "@juicebox/JBERC20Token.sol";
 import {JBTokens} from "@juicebox/JBTokens.sol";
 import {JBDeadline} from "@juicebox/JBDeadline.sol";
+import {JBApprovalStatus} from "@juicebox/enums/JBApprovalStatus.sol";
 import {JBMultiTerminal} from "@juicebox/JBMultiTerminal.sol";
 import {JBCurrencyAmount} from "@juicebox/structs/JBCurrencyAmount.sol";
 import {JBAccountingContextConfig} from "@juicebox/structs/JBAccountingContextConfig.sol";
@@ -42,8 +43,7 @@ import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalRulesetMetadata.sol";
 import {JBPayHookPayload} from "@juicebox/structs/JBPayHookPayload.sol";
-import {JBRedemptionDelegateAllocation3_1_1} from
-    "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
+import {JBRedeemHookPayload} from "@juicebox/structs/JBRedeemHookPayload.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitHookData} from "@juicebox/structs/JBSplitHookData.sol";
 import {IJBToken} from "@juicebox/interfaces/IJBToken.sol";
@@ -61,14 +61,14 @@ import {IJBTokens} from "@juicebox/interfaces/IJBTokens.sol";
 import {IJBSplitHook} from "@juicebox/interfaces/IJBSplitHook.sol";
 import {IJBPayHook} from "@juicebox/interfaces/IJBPayHook.sol";
 import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.sol";
-import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol";
-import {IJBFundingCycleDataSource3_1_1} from
-    "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
+import {IJBRedeemHook} from "@juicebox/interfaces/IJBRedeemHook.sol";
+import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/terminal/IJBMultiTerminal.sol";
 import {IJBRedemptionTerminal} from "@juicebox/interfaces/terminal/IJBRedemptionTerminal.sol";
 import {IJBPayoutTerminal} from "@juicebox/interfaces/terminal/IJBPayoutTerminal.sol";
 import {IJBPermitPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPermitPaymentTerminal.sol";
 import {IJBFeeTerminal} from "@juicebox/interfaces/terminal/IJBFeeTerminal.sol";
+import {IJBPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBPermissioned} from "@juicebox/interfaces/IJBPermissioned.sol";
 import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";
@@ -80,8 +80,8 @@ import {JBTokenStandards} from "@juicebox/libraries/JBTokenStandards.sol";
 import {JBRulesetMetadataResolver} from "@juicebox/libraries/JBRulesetMetadataResolver.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitGroupIDs} from "@juicebox/libraries/JBSplitGroupIDs.sol";
-import {JBPermissionIDs} from "@juicebox/libraries/JBPermissionIDs.sol";
-import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
+import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
+import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 
 import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
@@ -101,11 +101,11 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     address private _beneficiary = address(69_420);
     MockERC20 private _usdcToken;
     address private _permit2;
-    JBPermissions private _jbpermissions;
+    JBPermissions private _jbPermissions;
     JBProjects private _jbProjects;
     JBPrices private _jbPrices;
     JBDirectory private _jbDirectory;
-    JBRulesets private _jbRulesetStore;
+    JBRulesets private _jbRulesets;
     JBTokens private _jbTokens;
     JBSplits private _jbSplits;
     JBController private _jbController;
@@ -131,8 +131,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return IPermit2(_permit2);
     }
 
-    function jbpermissions() internal view returns (JBPermissions) {
-        return _jbpermissions;
+    function jbPermissions() internal view returns (JBPermissions) {
+        return _jbPermissions;
     }
 
     function jbProjects() internal view returns (JBProjects) {
@@ -147,8 +147,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbDirectory;
     }
 
-    function jbRulesetStore() internal view returns (JBRulesets) {
-        return _jbRulesetStore;
+    function jbRulesets() internal view returns (JBRulesets) {
+        return _jbRulesets;
     }
 
     function jbTokens() internal view returns (JBTokens) {
@@ -191,48 +191,30 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     function setUp() public virtual {
         vm.label(_multisig, "projectOwner");
         vm.label(_beneficiary, "beneficiary");
-        _jbpermissions = new JBPermissions();
-        vm.label(address(_jbpermissions), "JBPermissions");
+        _jbPermissions = new JBPermissions();
+        vm.label(address(_jbPermissions), "JBPermissions");
         _usdcToken = new MockERC20("USDC", "USDC");
         vm.label(address(_usdcToken), "ERC20");
-        _jbProjects = new JBProjects(_jbpermissions, _multisig);
+        _jbProjects = new JBProjects(_jbPermissions, _multisig);
         vm.label(address(_jbProjects), "JBProjects");
-        _jbPrices = new JBPrices(_jbpermissions, _jbProjects, _multisig);
+        _jbPrices = new JBPrices(_jbPermissions, _jbProjects, _multisig);
         vm.label(address(_jbPrices), "JBPrices");
         address contractAtNoncePlusOne = addressFrom(address(this), 6);
-        _jbRulesetStore = new JBRulesets(
-            IJBDirectory(contractAtNoncePlusOne)
-        );
-        vm.label(address(_jbRulesetStore), "JBRulesets");
-        _jbDirectory = new JBDirectory(
-            _jbpermissions,
-            _jbProjects,
-            _jbRulesetStore,
-            _multisig
-        );
+        _jbRulesets = new JBRulesets(IJBDirectory(contractAtNoncePlusOne));
+        vm.label(address(_jbRulesets), "JBRulesets");
+        _jbDirectory = new JBDirectory(_jbPermissions, _jbProjects, _jbRulesets, _multisig);
         vm.label(address(_jbDirectory), "JBDirectory");
-        _jbTokens = new JBTokens(
-            _jbpermissions,
-            _jbProjects,
-            _jbDirectory,
-            _jbRulesetStore
-        );
+        _jbTokens = new JBTokens(_jbPermissions, _jbProjects, _jbDirectory, _jbRulesets);
         vm.label(address(_jbTokens), "JBTokens");
-        _jbSplits = new JBSplits(
-            _jbpermissions,
-            _jbProjects,
-            _jbDirectory
-        );
+        _jbSplits = new JBSplits(_jbPermissions, _jbProjects, _jbDirectory);
         vm.label(address(_jbSplits), "JBSplits");
-        _jbFundAccessLimits = new JBFundAccessLimits(
-            _jbDirectory
-        );
+        _jbFundAccessLimits = new JBFundAccessLimits(_jbDirectory);
         vm.label(address(_jbFundAccessLimits), "JBFundAccessLimits");
         _jbController = new JBController(
-            _jbpermissions,
+            _jbPermissions,
             _jbProjects,
             _jbDirectory,
-            _jbRulesetStore,
+            _jbRulesets,
             _jbTokens,
             _jbSplits,
             _jbFundAccessLimits
@@ -244,18 +226,14 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
-        _jbTerminalStore = new JBTerminalStore(
-            _jbDirectory,
-            _jbRulesetStore,
-            _jbPrices
-        );
+        _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbRulesets, _jbPrices);
         vm.label(address(_jbTerminalStore), "JBSingleTokenPaymentTerminalStore");
 
         vm.prank(_multisig);
         _permit2 = deployPermit2();
 
         _jbMultiTerminal = new JBMultiTerminal(
-            _jbpermissions,
+            _jbPermissions,
             _jbProjects,
             _jbDirectory,
             _jbSplits,
@@ -264,8 +242,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _multisig
         );
         vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
-        _jbMultJJiTerminal2 = new JBMultiTerminal(
-            _jbpermissions,
+        _jbMultiTerminal2 = new JBMultiTerminal(
+            _jbPermissions,
             _jbProjects,
             _jbDirectory,
             _jbSplits,

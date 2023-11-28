@@ -5,11 +5,11 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // launch project, issue token or sets the token, mint token, burn token
 contract TestTokenFlow_Local is TestBaseWorkflow {
-    IJBController3_1 private _controller;
-    IJBTokenStore private _tokenStore;
+    IJBController private _controller;
+    IJBTokens private _tokens;
     JBProjectMetadata private _projectMetadata;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata _metadata;
     IJBPaymentTerminal private _terminal;
     uint256 private _projectId;
     address private _projectOwner;
@@ -21,56 +21,56 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _controller = jbController();
-        _tokenStore = jbTokenStore();
+        _tokens = jbTokens();
         _terminal = jbPayoutRedemptionTerminal();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 0,
             weight: 1000 * 10 ** 18,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         _projectId = _controller.launchProjectFor({
             owner: address(_projectOwner),
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -87,19 +87,26 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         if (_issueToken) {
             // Issue an ERC-20 token for project
-            _tokenStore.issueFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
+            _tokens.deployERC20TokenFor({
+                projectId: _projectId,
+                name: "TestName",
+                symbol: "TestSymbol"
+            });
         } else {
-            // Create a new IJBToken and change it's owner to the tokenStore
-            IJBToken _newToken =
-                new JBToken({_name: "NewTestName", _symbol: "NewTestSymbol", _owner: _projectOwner});
+            // Create a new IJBToken and change it's owner to the tokens
+            IJBToken _newToken = new JBERC20Token({
+                _name: "NewTestName",
+                _symbol: "NewTestSymbol",
+                _owner: _projectOwner
+            });
 
-            Ownable(address(_newToken)).transferOwnership(address(_tokenStore));
+            Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
             // Set the projects token to _newToken
-            _tokenStore.setFor(_projectId, _newToken);
+            _tokens.setTokenFor(_projectId, _newToken);
 
             // Make sure the project's new JBToken is set.
-            assertEq(address(_tokenStore.tokenOf(_projectId)), address(_newToken));
+            assertEq(address(_tokens.tokenOf(_projectId)), address(_newToken));
         }
 
         // Expect revert if there are no tokens being minted.
@@ -118,7 +125,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             _mintAmount * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
 
         // Make sure the beneficiary has the correct amount of tokens.
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _expectedTokenBalance);
 
         if (_burnAmount == 0) {
             vm.expectRevert(abi.encodeWithSignature("NO_BURNABLE_TOKENS()"));
@@ -139,7 +146,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         });
 
         // Make sure the total balance of tokens is updated.
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _expectedTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _expectedTokenBalance);
     }
 
     function testMintUnclaimedAtLimit() public {
@@ -148,7 +155,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _terminal.pay{value: 1 ether}({
             projectId: _projectId,
             amount: 1 ether,
-            token: JBTokens.ETH,
+            token: JBTokenList.ETH,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -159,7 +166,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         vm.startPrank(_projectOwner);
 
         // Issue an ERC-20 token for project,
-        _tokenStore.issueFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
+        _tokens.deployERC20TokenFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
 
         // Mint claimed tokens to beneficiary: since this is 1000 over uint(208) it will revert.
         vm.expectRevert(abi.encodeWithSignature("OVERFLOW_ALERT()"));

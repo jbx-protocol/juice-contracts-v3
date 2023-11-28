@@ -8,7 +8,7 @@ import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 
 /// @notice Manages and normalizes price feeds. Price feeds are contracts which return the "pricing currency" cost of 1 "unit currency".
 contract JBPrices is Ownable, JBPermissioned, IJBPrices {
@@ -126,7 +126,7 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
         // Otherwise, only a project's owner or an operator can add a feed for a project.
         if (msg.sender != owner() || _projectId != DEFAULT_PROJECT_ID) {
             _requirePermission(
-                projects.ownerOf(_projectId), _projectId, JBPermissionIDs.ADD_PRICE_FEED
+                projects.ownerOf(_projectId), _projectId, JBPermissionIds.ADD_PRICE_FEED
             );
         }
 

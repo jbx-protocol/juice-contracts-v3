@@ -12,7 +12,7 @@ import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTokenUriResolver} from "./interfaces/IJBTokenUriResolver.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 
 /// @notice Stores project ownership and metadata.
@@ -119,7 +119,7 @@ contract JBProjects is JBPermissioned, ERC721Votes, Ownable, IJBProjects {
     function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
         external
         override
-        requirePermission(ownerOf(_projectId), _projectId, JBPermissionIDs.SET_PROJECT_METADATA)
+        requirePermission(ownerOf(_projectId), _projectId, JBPermissionIds.SET_PROJECT_METADATA)
     {
         // Set the project's new metadata content within the specified domain.
         metadataContentOf[_projectId][_metadata.domain] = _metadata.content;

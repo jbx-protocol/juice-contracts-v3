@@ -5,11 +5,11 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // Project can issue token, receive payments in exchange for tokens, burn some of the claimed tokens, allow holders to redeem rest of tokens.
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     IJBMultiTerminal private _terminal;
-    JBTokenStore private _tokenStore;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata _metadata;
+    JBTokens private _tokens;
+    JBRulesetData private _data;
+    JBRulesetMetadata _metadata;
     uint256 private _projectId;
     address private _projectOwner;
     address private _beneficiary;
@@ -21,31 +21,31 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _beneficiary = beneficiary();
         _controller = jbController();
         _terminal = jbPayoutRedemptionTerminal();
-        _tokenStore = jbTokenStore();
-        _data = JBFundingCycleData({
+        _tokens = jbTokens();
+        _data = JBRulesetData({
             duration: 0,
             weight: 1000 * 10 ** 18,
-            discountRate: 0,
-            ballot: JBReconfigurationBufferBallot(address(0))
+            decayRate: 0,
+            approvalHook: JBDeadline(address(0))
         });
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
@@ -53,18 +53,18 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _terminals[0] = (_terminal);
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -72,7 +72,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -80,7 +80,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -95,13 +95,13 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     ) external {
         // Issue an ERC-20 token for project.
         vm.prank(_projectOwner);
-        _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        _tokens.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
 
         // Make a payment.
         _terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: JBTokens.ETH, //unused
+            token: JBTokenList.ETH, //unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -110,12 +110,12 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary should have a balance of JBTokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the ETH balance in terminal is up to date.
         uint256 _terminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
             _terminalBalance
         );
 
@@ -137,7 +137,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         // verify: beneficiary should have a new balance of JBTokens
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Redeem tokens.
         if (_redeemTokenAmount > _beneficiaryTokenBalance) {
@@ -150,7 +150,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         uint256 _reclaimAmt = _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            token: JBTokens.ETH, // unused
+            token: JBTokenList.ETH, // unused
             count: _redeemTokenAmount,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
@@ -158,11 +158,11 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a new balance of JBTokens.
-        assertEq(_tokenStore.balanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the ETH balance in terminal is up to date.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
             _terminalBalance - _reclaimAmt
         );
     }

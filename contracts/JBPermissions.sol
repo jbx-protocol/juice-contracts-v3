@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBPermissionsData} from "./structs/JBPermissionsData.sol";
 
 /// @notice Stores permissions for all addresses and operators. Addresses can give permissions to any other address (i.e. an *operator*) to execute specific operations on their behalf.
@@ -99,7 +99,7 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
     )
         external
         override
-        requirePermission(_account, _permissionsData.projectId, JBPermissionIDs.ROOT)
+        requirePermission(_account, _permissionsData.projectId, JBPermissionIds.ROOT)
     {
         // Pack the permission IDs into a uint256.
         uint256 _packed = _packedPermissions(_permissionsData.permissionIds);

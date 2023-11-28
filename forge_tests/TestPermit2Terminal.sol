@@ -9,10 +9,10 @@ import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
 
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     IJBPaymentTerminal private _terminal;
     IJBPrices private _prices;
-    IJBTokenStore private _tokenStore;
+    IJBTokens private _tokens;
     IERC20 private _usdc;
     MetadataResolverHelper private _helper;
     address private _projectOwner;
@@ -34,7 +34,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _projectOwner = multisig();
         _terminal = jbPayoutRedemptionTerminal();
         _prices = jbPrices();
-        _tokenStore = jbTokenStore();
+        _tokens = jbTokens();
         _helper = metadataHelper();
         _usdc = usdcToken();
 
@@ -42,46 +42,46 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         from = vm.addr(fromPrivateKey);
         DOMAIN_SEPARATOR = permit2().DOMAIN_SEPARATOR();
 
-        JBFundingCycleData memory _data = JBFundingCycleData({
+        JBRulesetData memory _data = JBRulesetData({
             duration: 0,
             weight: _WEIGHT,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        JBRulesetMetadata memory _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _accountingContexts[1] =
             JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
         _terminalConfigurations[0] =
@@ -91,7 +91,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 0}),
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -99,7 +99,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -108,10 +108,10 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
         vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
 
-        _prices.addFeedFor({
+        _prices.addPriceFeedFor({
             projectId: _projectId,
-            currency: uint32(uint160(JBTokens.ETH)),
-            base: uint32(uint160(address(usdcToken()))),
+            pricingCurrency: uint32(uint160(JBTokenList.ETH)),
+            unitCurrency: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedEthUsd
         });
 
@@ -180,7 +180,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);
 
         // Check: that payer receives project token/balance
-        assertEq(_tokenStore.balanceOf(from, _projectId), _minted);
+        assertEq(_tokens.totalBalanceOf(from, _projectId), _minted);
     }
 
     function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline)

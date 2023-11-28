@@ -3,13 +3,13 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestOperatorStore_Local is TestBaseWorkflow {
-    IJBController3_1 private _controller;
+contract TestPermissions_Local is TestBaseWorkflow {
+    IJBController private _controller;
     JBProjectMetadata private _projectMetadata;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata private _metadata;
     IJBPaymentTerminal private _terminal;
-    IJBOperatorStore private _opStore;
+    IJBPermissions private _permissions;
 
     address private _projectOwner;
     uint256 private _projectZero;
@@ -21,57 +21,57 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
-        _opStore = jbOperatorStore();
+        _permissions = jbPermissions();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 0,
             weight: 0,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         _projectZero = _controller.launchProjectFor({
             owner: makeAddr("zeroOwner"),
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -79,7 +79,7 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
         _projectOne = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -87,71 +87,71 @@ contract TestOperatorStore_Local is TestBaseWorkflow {
 
     function testFailMostBasicAccess() public {
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         vm.prank(makeAddr("zeroOwner"));
-        uint256 configured = _controller.reconfigureFundingCyclesOf(_projectOne, _cycleConfig, "");
+        uint256 configured = _controller.queueRulesetsOf(_projectOne, _rulesetConfig, "");
 
         assertEq(configured, block.timestamp);
     }
 
     function testFailSetOperators() public {
         // Pack up our permission data
-        JBOperatorData[] memory opData = new JBOperatorData[](1);
+        JBPermissionsData[] memory opData = new JBPermissionsData[](1);
 
-        uint256[] memory permIndexes = new uint256[](257);
+        uint256[] memory permIds = new uint256[](257);
 
         // Push an index higher than 255
         for (uint256 i; i < 257; i++) {
-            permIndexes[i] = i;
+            permIds[i] = i;
 
-            opData[0] = JBOperatorData({
+            opData[0] = JBPermissionsData({
                 operator: address(0),
-                domain: _projectOne,
-                permissionIndexes: permIndexes
+                projectId: _projectOne,
+                permissionIds: permIds
             });
 
             // Set em.
             vm.prank(_projectOwner);
-            _opStore.setOperatorOf(_projectOwner, opData[0]);
+            _permissions.setPermissionsForOperator(_projectOwner, opData[0]);
         }
     }
 
     function testSetOperators() public {
         // Pack up our permission data
-        JBOperatorData[] memory opData = new JBOperatorData[](1);
+        JBPermissionsData[] memory opData = new JBPermissionsData[](1);
 
-        uint256[] memory permIndexes = new uint256[](256);
+        uint256[] memory permIds = new uint256[](256);
 
         // Push an index higher than 255
         for (uint256 i; i < 256; i++) {
-            permIndexes[i] = i;
+            permIds[i] = i;
 
-            opData[0] = JBOperatorData({
+            opData[0] = JBPermissionsData({
                 operator: address(0),
-                domain: _projectOne,
-                permissionIndexes: permIndexes
+                projectId: _projectOne,
+                permissionIds: permIds
             });
 
             // Set em.
             vm.prank(_projectOwner);
-            _opStore.setOperatorOf(_projectOwner, opData[0]);
+            _permissions.setPermissionsForOperator(_projectOwner, opData[0]);
 
             // verify
             bool _check =
-                _opStore.hasPermission(address(0), _projectOwner, _projectOne, permIndexes[i]);
+                _permissions.hasPermission(address(0), _projectOwner, _projectOne, permIds[i]);
             assertEq(_check, true);
         }
     }
 
     /* function testBasicAccessSetup() public {
         vm.prank(address(_projectOwner));
-        bool _check = _opStore.hasPermission(address(_projectOwner), address(_projectOwner), 0, 2);
+        bool _check = _permissions.hasPermission(address(_projectOwner), address(_projectOwner), 0, 2);
 
         assertEq(_check, true);
     } */

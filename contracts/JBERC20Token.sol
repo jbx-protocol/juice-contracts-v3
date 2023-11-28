@@ -6,7 +6,7 @@ import {ERC20Votes, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/
 import {ERC20Permit, Nonces} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 
-/// @notice An ERC-20 token that can be used by a project in the `JBTokenStore`.
+/// @notice An ERC-20 token that can be used by a project in the `JBTokens`.
 contract JBERC20Token is ERC20Votes, ERC20Permit, Ownable, IJBToken {
     //*********************************************************************//
     // -------------------------- public views --------------------------- //

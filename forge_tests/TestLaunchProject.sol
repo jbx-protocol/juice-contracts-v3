@@ -5,12 +5,12 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // Projects can be launched.
 contract TestLaunchProject_Local is TestBaseWorkflow {
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     JBProjectMetadata private _projectMetadata;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata private _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata private _metadata;
     IJBPaymentTerminal private _terminal;
-    IJBFundingCycleStore private _fcStore;
+    IJBRulesets private _rulesets;
 
     address private _projectOwner;
 
@@ -20,39 +20,39 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
-        _fcStore = jbFundingCycleStore();
+        _rulesets = jbRulesets();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 0,
             weight: 0,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
     }
 
-    function equals(JBFundingCycle memory configured, JBFundingCycle memory stored)
+    function equals(JBRuleset memory configured, JBRuleset memory stored)
         internal
         view
         returns (bool)
@@ -61,27 +61,27 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         return (
             keccak256(
                 abi.encodePacked(
-                    configured.number,
-                    configured.configuration,
-                    configured.basedOn,
+                    configured.cycleNumber,
+                    configured.rulesetId,
+                    configured.basedOnId,
                     configured.start,
                     configured.duration,
                     configured.weight,
-                    configured.discountRate,
-                    configured.ballot,
+                    configured.decayRate,
+                    configured.approvalHook,
                     configured.metadata
                 )
             )
                 == keccak256(
                     abi.encodePacked(
-                        stored.number,
-                        stored.configuration,
-                        stored.basedOn,
+                        stored.cycleNumber,
+                        stored.rulesetId,
+                        stored.basedOnId,
                         stored.start,
                         stored.duration,
                         stored.weight,
-                        stored.discountRate,
-                        stored.ballot,
+                        stored.decayRate,
+                        stored.approvalHook,
                         stored.metadata
                     )
                 )
@@ -90,42 +90,42 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
     function testLaunchProject() public {
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         uint256 projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         // Get a reference to the first funding cycle.
-        JBFundingCycle memory fundingCycle = _fcStore.currentOf(projectId);
+        JBRuleset memory fundingCycle = _rulesets.currentOf(projectId);
 
         // Reference configured attributes for sake of comparison
-        JBFundingCycle memory configured = JBFundingCycle({
-            number: 1,
-            configuration: block.timestamp,
-            basedOn: 0,
+        JBRuleset memory configured = JBRuleset({
+            cycleNumber: 1,
+            rulesetId: block.timestamp,
+            basedOnId: 0,
             start: block.timestamp,
             duration: _data.duration,
             weight: _data.weight,
-            discountRate: _data.discountRate,
-            ballot: _data.ballot,
+            decayRate: _data.decayRate,
+            approvalHook: _data.approvalHook,
             metadata: fundingCycle.metadata
         });
 
@@ -138,49 +138,49 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _weight = bound(_weight, 0, type(uint88).max);
         uint256 _projectId;
 
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 14,
             weight: _weight,
-            discountRate: 450_000_000,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 450_000_000,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
-        JBFundingCycle memory fundingCycle = _fcStore.currentOf(_projectId);
+        JBRuleset memory fundingCycle = _rulesets.currentOf(_projectId);
 
         // Reference configured attributes for sake of comparison
-        JBFundingCycle memory configured = JBFundingCycle({
-            number: 1,
-            configuration: block.timestamp,
-            basedOn: 0,
+        JBRuleset memory configured = JBRuleset({
+            cycleNumber: 1,
+            rulesetId: block.timestamp,
+            basedOnId: 0,
             start: block.timestamp,
             duration: _data.duration,
             weight: _weight,
-            discountRate: _data.discountRate,
-            ballot: _data.ballot,
+            decayRate: _data.decayRate,
+            approvalHook: _data.approvalHook,
             metadata: fundingCycle.metadata
         });
 
@@ -193,26 +193,26 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _weight = bound(_weight, type(uint88).max, type(uint256).max);
         uint256 _projectId;
 
-        _data = JBFundingCycleData({
+        _data = JBRulesetData({
             duration: 14,
             weight: _weight,
-            discountRate: 450_000_000,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 450_000_000,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -223,7 +223,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                fundingCycleConfigurations: _cycleConfig,
+                rulesetConfigurations: _rulesetConfig,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
@@ -231,24 +231,24 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
                 projectMetadata: _projectMetadata,
-                fundingCycleConfigurations: _cycleConfig,
+                rulesetConfigurations: _rulesetConfig,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
             });
 
             // Reference for sake of comparison
-            JBFundingCycle memory fundingCycle = _fcStore.currentOf(_projectId);
+            JBRuleset memory fundingCycle = _rulesets.currentOf(_projectId);
 
             // Reference configured attributes for sake of comparison
-            JBFundingCycle memory configured = JBFundingCycle({
-                number: 1,
-                configuration: block.timestamp,
-                basedOn: 0,
+            JBRuleset memory configured = JBRuleset({
+                cycleNumber: 1,
+                rulesetId: block.timestamp,
+                basedOnId: 0,
                 start: block.timestamp,
                 duration: _data.duration,
                 weight: _weight,
-                discountRate: _data.discountRate,
-                ballot: _data.ballot,
+                decayRate: _data.decayRate,
+                approvalHook: _data.approvalHook,
                 metadata: fundingCycle.metadata
             });
 

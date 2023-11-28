@@ -7,14 +7,14 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 contract TestEIP165_Local is TestBaseWorkflow {
     bytes4 private constant _notSupportedInterface = 0xffffffff;
 
-    function testJBController3_1() public {
-        JBController3_1 _controller = jbController();
+    function testJBController() public {
+        JBController _controller = jbController();
 
         // Should support these interfaces
         assertTrue(_controller.supportsInterface(type(IERC165).interfaceId));
         assertTrue(_controller.supportsInterface(type(IJBMigratable).interfaceId));
-        assertTrue(_controller.supportsInterface(type(IJBOperatable).interfaceId));
-        assertTrue(_controller.supportsInterface(type(IJBController3_1).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBPermissioned).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBController).interfaceId));
 
         // Make sure it doesn't always return true
         assertTrue(!_controller.supportsInterface(_notSupportedInterface));
@@ -44,18 +44,18 @@ contract TestEIP165_Local is TestBaseWorkflow {
         assertTrue(_projects.supportsInterface(type(IERC721).interfaceId));
         assertTrue(_projects.supportsInterface(type(IERC721Metadata).interfaceId));
         assertTrue(_projects.supportsInterface(type(IJBProjects).interfaceId));
-        assertTrue(_projects.supportsInterface(type(IJBOperatable).interfaceId));
+        assertTrue(_projects.supportsInterface(type(IJBPermissioned).interfaceId));
 
         // Make sure it doesn't always return true
         assertTrue(!_projects.supportsInterface(_notSupportedInterface));
     }
 
-    function testJBReconfigurationBufferBallot() public {
-        JBReconfigurationBufferBallot _ballot = new JBReconfigurationBufferBallot(3000);
+    function testJBDeadline() public {
+        JBDeadline _ballot = new JBDeadline(3000);
 
         // Should support these interfaces
         assertTrue(_ballot.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(_ballot.supportsInterface(type(IJBFundingCycleBallot).interfaceId));
+        assertTrue(_ballot.supportsInterface(type(IJBRulesetApprovalHook).interfaceId));
 
         // Make sure it doesn't always return true
         assertTrue(!_ballot.supportsInterface(_notSupportedInterface));

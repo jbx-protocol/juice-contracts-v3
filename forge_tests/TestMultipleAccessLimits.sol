@@ -9,10 +9,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBMultiTerminal private __terminal;
     IJBPrices private _prices;
-    JBTokens private _tokenStore;
+    JBTokens private _tokens;
     JBProjectMetadata private _projectMetadata;
-    JBFundingCycleData private _data;
-    JBFundingCycleMetadata _metadata;
+    JBRulesetData private _data;
+    JBRulesetMetadata _metadata;
     JBSplitGroup[] private _splitGroups;
     address private _projectOwner;
     address private _beneficiary;
@@ -26,7 +26,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _beneficiary = beneficiary();
         _prices = jbPrices();
         __terminal = jbPayoutRedemptionTerminal();
-        _tokenStore = jbTokens();
+        _tokens = jbTokens();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBRulesetData({
             duration: 0,
@@ -165,7 +165,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary has a balance of JBTokenList.
         assertEq(
-            _tokenStore.totalBalanceOf(_beneficiary, _projectId),
+            _tokens.totalBalanceOf(_beneficiary, _projectId),
             PRBMathUD60x18.mul(_ethPayAmount, _data.weight)
         );
 
@@ -479,7 +479,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Make sure beneficiary has a balance of JBTokens
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
-        assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
         uint256 initTerminalBalance = address(__terminal).balance;
 
         // First dist should be fine based on price
@@ -591,7 +591,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary has a balance of JBTokens
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
-        assertEq(_tokenStore.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
 
         uint256 initTerminalBalance = address(__terminal).balance;
         uint256 ownerBalanceBeforeFirst = _projectOwner.balance;

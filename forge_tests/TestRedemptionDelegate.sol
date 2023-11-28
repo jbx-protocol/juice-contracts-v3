@@ -5,11 +5,11 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestDelegates_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
-    address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));
+    address private constant _DATA_SOURCE = address(bytes20(keccak256("datahook")));
 
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     IJBMultiTerminal private _terminal;
-    IJBTokenStore private _tokenStore;
+    IJBTokens private _tokens;
     address private _projectOwner;
     address private _beneficiary;
 
@@ -24,48 +24,48 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _terminal = jbPayoutRedemptionTerminal();
-        _tokenStore = jbTokenStore();
+        _tokens = jbTokens();
 
-        JBFundingCycleData memory _data = JBFundingCycleData({
+        JBRulesetData memory _data = JBRulesetData({
             duration: 0,
             weight: _WEIGHT,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
+        JBRulesetMetadata memory _metadata = JBRulesetMetadata({
+            global: JBGlobalRulesetMetadata({
                 allowSetTerminals: false,
                 allowSetController: false,
                 pauseTransfers: false
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
             allowMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: true,
-            dataSource: _DATA_SOURCE,
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: true,
+            dataHook: _DATA_SOURCE,
             metadata: 0
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -73,7 +73,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 0}),
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -81,20 +81,20 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _tokens.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
 
         // Make sure the project's new JBToken is set.
-        assertEq(address(_tokenStore.tokenOf(_projectId)), address(_token));
+        assertEq(address(_tokens.tokenOf(_projectId)), address(_token));
     }
 
-    function testRedemptionDelegate() public {
+    function testRedeemHook() public {
         // Reference and bound pay amount
         uint256 _ethPayAmount = 10 ether;
         uint256 _halfPaid = 5 ether;
@@ -104,13 +104,13 @@ contract TestDelegates_Local is TestBaseWorkflow {
         vm.label(_redDelegate, "Redemption Delegate");
 
         // Keep a reference to the current funding cycle.
-        (JBFundingCycle memory _fundingCycle,) = _controller.currentFundingCycleOf(_projectId);
+        (JBRuleset memory _fundingCycle,) = _controller.currentRulesetOf(_projectId);
 
         vm.deal(address(this), _ethPayAmount);
         uint256 _ficiaryAllocation = _terminal.pay{value: _ethPayAmount}({
             projectId: _projectId,
             amount: _ethPayAmount,
-            token: JBTokens.ETH,
+            token: JBTokenList.ETH,
             beneficiary: address(this),
             minReturnedTokens: 0,
             memo: "Forge Test",
@@ -119,55 +119,54 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary has a balance of tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _WEIGHT);
-        assertEq(_tokenStore.balanceOf(address(this), _projectId), _beneficiaryTokenBalance);
+        assertEq(_tokens.totalBalanceOf(address(this), _projectId), _beneficiaryTokenBalance);
         assertEq(_ficiaryAllocation, _beneficiaryTokenBalance);
         emit log_uint(_beneficiaryTokenBalance);
 
         // Make sure the ETH balance in terminal is up to date.
         uint256 _ethTerminalBalance = _ethPayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
             _ethTerminalBalance
         );
 
         // Reference allocations
-        JBRedemptionDelegateAllocation3_1_1[] memory _allocations =
-            new JBRedemptionDelegateAllocation3_1_1[](1);
+        JBRedeemHookPayload[] memory _allocations = new JBRedeemHookPayload[](1);
 
-        _allocations[0] = JBRedemptionDelegateAllocation3_1_1({
-            delegate: IJBRedemptionDelegate3_1_1(_redDelegate),
+        _allocations[0] = JBRedeemHookPayload({
+            hook: IJBRedeemHook(_redDelegate),
             amount: _halfPaid,
             metadata: ""
         });
 
         // Redemption Data
-        JBDidRedeemData3_1_1 memory _redeemData = JBDidRedeemData3_1_1({
+        JBDidRedeemData memory _redeemData = JBDidRedeemData({
             holder: address(this),
             projectId: _projectId,
-            currentFundingCycleConfiguration: _fundingCycle.configuration,
+            currentRulesetId: _fundingCycle.rulesetId,
             projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
-                JBTokens.ETH,
+                JBTokenList.ETH,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).currency
                 ),
             forwardedAmount: JBTokenAmount(
-                JBTokens.ETH,
+                JBTokenList.ETH,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).currency
                 ),
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             beneficiary: payable(address(this)),
-            dataSourceMetadata: "",
+            dataHookMetadata: "",
             redeemerMetadata: ""
         });
 
         // Mock the delegate
         vm.mockCall(
             _redDelegate,
-            abi.encodeWithSelector(IJBRedemptionDelegate3_1_1.didRedeem.selector),
+            abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector),
             abi.encode(_redeemData)
         );
 
@@ -175,12 +174,12 @@ contract TestDelegates_Local is TestBaseWorkflow {
         vm.expectCall(
             _redDelegate,
             _halfPaid,
-            abi.encodeWithSelector(IJBRedemptionDelegate3_1_1.didRedeem.selector, _redeemData)
+            abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector, _redeemData)
         );
 
         vm.mockCall(
             _DATA_SOURCE,
-            abi.encodeWithSelector(IJBFundingCycleDataSource3_1_1.redeemParams.selector),
+            abi.encodeWithSelector(IJBPayRedeemDataHook.redeemParams.selector),
             abi.encode(_halfPaid, _allocations)
         );
 
@@ -188,7 +187,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             holder: address(this),
             projectId: _projectId,
             count: _beneficiaryTokenBalance / 2,
-            token: JBTokens.ETH,
+            token: JBTokenList.ETH,
             minReclaimed: 0,
             beneficiary: payable(address(this)),
             metadata: new bytes(0)

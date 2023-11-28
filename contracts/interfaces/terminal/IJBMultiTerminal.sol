@@ -10,7 +10,7 @@ import {IJBPayoutTerminal} from "./IJBPayoutTerminal.sol";
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {IJBFeeTerminal} from "./IJBFeeTerminal.sol";
 import {IJBPermitPaymentTerminal} from "./IJBPermitPaymentTerminal.sol";
-import {IJBSplitsStore} from "../IJBSplitsStore.sol";
+import {IJBSplits} from "../IJBSplits.sol";
 
 interface IJBMultiTerminal is
     IJBPaymentTerminal,
@@ -25,5 +25,5 @@ interface IJBMultiTerminal is
 
     function DIRECTORY() external view returns (IJBDirectory);
 
-    function SPLITS() external view returns (IJBSplitsStore);
+    function SPLITS() external view returns (IJBSplits);
 }

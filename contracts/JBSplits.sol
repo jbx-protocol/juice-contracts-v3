@@ -8,7 +8,7 @@ import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBSplitGroup} from "./structs/JBSplitGroup.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 
@@ -117,7 +117,7 @@ contract JBSplits is JBPermissioned, IJBSplits {
         requirePermissionAllowingOverride(
             projects.ownerOf(_projectId),
             _projectId,
-            JBPermissionIDs.SET_SPLITS,
+            JBPermissionIds.SET_SPLITS,
             address(directory.controllerOf(_projectId)) == msg.sender
         )
     {

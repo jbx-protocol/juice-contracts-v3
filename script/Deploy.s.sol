@@ -23,7 +23,7 @@ contract Deploy is Script {
     JBPrices _prices;
     JBDirectory _directory;
     JBRulesets _rulesetStore;
-    JBTokens _tokenStore;
+    JBTokens _tokens;
     JBSplits _splits;
     JBFundAccessLimits _fundAccessLimits;
     JBController _controller;
@@ -46,46 +46,18 @@ contract Deploy is Script {
         //4
         _rulesetStore = new JBRulesets(IJBDirectory(_directoryAddress));
         // 5
-        _directory = new JBDirectory(
-            _permissions,
-            _projects,
-            _rulesetStore,
-            address(this)
-        );
-        _tokenStore = new JBTokens(
-            _permissions,
-            _projects,
-            _directory,
-            _rulesetStore
-        );
+        _directory = new JBDirectory(_permissions, _projects, _rulesetStore, address(this));
+        _tokens = new JBTokens(_permissions, _projects, _directory, _rulesetStore);
         _splits = new JBSplits(_permissions, _projects, _directory);
-        _fundAccessLimits = new JBFundAccessLimits(
-            _directory
-        );
+        _fundAccessLimits = new JBFundAccessLimits(_directory);
         _controller = new JBController(
-            _permissions,
-            _projects,
-            _directory,
-            _rulesetStore,
-            _tokenStore,
-            _splits,
-            _fundAccessLimits
+            _permissions, _projects, _directory, _rulesetStore, _tokens, _splits, _fundAccessLimits
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
-        _terminalStore = new JBTerminalStore(
-            _directory,
-            _rulesetStore,
-            _prices
-        );
+        _terminalStore = new JBTerminalStore(_directory, _rulesetStore, _prices);
         _multiTerminal = new JBMultiTerminal(
-            _permissions,
-            _projects,
-            _directory,
-            _splits,
-            _terminalStore,
-            _PERMIT2,
-            _manager
+            _permissions, _projects, _directory, _splits, _terminalStore, _PERMIT2, _manager
         );
     }
 

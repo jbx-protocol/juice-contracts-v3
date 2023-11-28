@@ -5,7 +5,7 @@ import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
 import {ERC165, IERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract MockMaliciousAllocator is ERC165, IJBSplitHook {
+contract MockMaliciousSplitHook is ERC165, IJBSplitHook {
     error NopeNotGonnaDoIt();
 
     uint256 revertMode;

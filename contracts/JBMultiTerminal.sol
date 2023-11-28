@@ -13,9 +13,7 @@ import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBMultiTerminal} from "./interfaces/IJBMultiTerminal.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
 import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
@@ -25,7 +23,7 @@ import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBMetadataResolver} from "./libraries/JBMetadataResolver.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBTokenList} from "./libraries/JBTokenList.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
 import {JBDidRedeemData} from "./structs/JBDidRedeemData.sol";
@@ -331,7 +329,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         external
         virtual
         override
-        requirePermission(_holder, _projectId, JBPermissionIDs.REDEEM_TOKENS)
+        requirePermission(_holder, _projectId, JBPermissionIds.REDEEM_TOKENS)
         returns (uint256 reclaimAmount)
     {
         return _redeemTokensOf(
@@ -382,7 +380,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         external
         virtual
         override
-        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIDs.USE_ALLOWANCE)
+        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIds.USE_ALLOWANCE)
         returns (uint256 netDistributedAmount)
     {
         return _useAllowanceOf(
@@ -400,7 +398,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         external
         virtual
         override
-        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIDs.MIGRATE_TERMINAL)
+        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIds.MIGRATE_TERMINAL)
         returns (uint256 balance)
     {
         // The terminal being migrated to must accept the same token as this terminal.
@@ -436,7 +434,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         requirePermissionAllowingOverride(
             PROJECTS.ownerOf(_projectId),
             _projectId,
-            JBPermissionIDs.PROCESS_FEES,
+            JBPermissionIds.PROCESS_FEES,
             msg.sender == owner()
         )
     {
@@ -497,7 +495,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         requirePermissionAllowingOverride(
             PROJECTS.ownerOf(_projectId),
             _projectId,
-            JBPermissionIDs.SET_ACCOUNTING_CONTEXT,
+            JBPermissionIds.SET_ACCOUNTING_CONTEXT,
             msg.sender == DIRECTORY.controllerOf(_projectId)
         )
     {

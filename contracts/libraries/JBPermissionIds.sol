@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-library JBPermissionIDs {
+library JBPermissionIds {
     uint256 public constant ROOT = 1;
     uint256 public constant QUEUE_RULESETS = 2;
     uint256 public constant REDEEM_TOKENS = 3;

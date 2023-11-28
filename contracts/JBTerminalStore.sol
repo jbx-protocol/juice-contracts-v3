@@ -518,7 +518,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 _amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
-                    _projectId, _currency, _balanceContext.currency, _MAX_FIXED_POINT_FIDELITY
+                    _projectId, _currency, _accountingContext.currency, _MAX_FIXED_POINT_FIDELITY
                 )
             );
 

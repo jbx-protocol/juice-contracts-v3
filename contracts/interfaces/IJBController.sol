@@ -70,7 +70,7 @@ interface IJBController is IERC165 {
 
     function rulesets() external view returns (IJBRulesets);
 
-    function tokenStore() external view returns (IJBTokens);
+    function tokens() external view returns (IJBTokens);
 
     function splits() external view returns (IJBSplits);
 

@@ -11,7 +11,7 @@ import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBERC20Token} from "./JBERC20Token.sol";
 
@@ -148,7 +148,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
     function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.ISSUE_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.ISSUE_TOKEN)
         returns (IJBToken token)
     {
         // There must be a name.
@@ -179,7 +179,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.SET_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.SET_TOKEN)
     {
         // Can't set to the zero address.
         if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
@@ -297,7 +297,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
         uint256 _projectId,
         uint256 _amount,
         address _beneficiary
-    ) external override requirePermission(_holder, _projectId, JBPermissionIDs.CLAIM_TOKENS) {
+    ) external override requirePermission(_holder, _projectId, JBPermissionIds.CLAIM_TOKENS) {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
 
@@ -335,7 +335,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
         uint256 _projectId,
         address _recipient,
         uint256 _amount
-    ) external override requirePermission(_holder, _projectId, JBPermissionIDs.TRANSFER_TOKENS) {
+    ) external override requirePermission(_holder, _projectId, JBPermissionIds.TRANSFER_TOKENS) {
         // Get a reference to the project's current ruleset.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 

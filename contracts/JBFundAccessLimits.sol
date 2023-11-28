@@ -9,7 +9,7 @@ import {JBFundAccessLimitGroup} from "./structs/JBFundAccessLimitGroup.sol";
 import {JBCurrencyAmount} from "./structs/JBCurrencyAmount.sol";
 
 /// @notice Stores and manages terminal fund access limits for each project.
-/// @dev See the `JBFundAccessLimitGroup` struct to learn about payout limits and overflow allowances.
+/// @dev See the `JBFundAccessLimitGroup` struct to learn about payout limits and surplus allowances.
 contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
@@ -237,7 +237,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
     /// @dev Payout limits and surplus allowances must be specified in strictly increasing order (by currency) to prevent duplicates.
     /// @param _projectId The ID of the project whose fund access limits are being set.
     /// @param _rulesetId The ID of the ruleset that the limits will apply within.
-    /// @param _fundAccessLimitGroup An array containing payout limits and overflow allowances for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal.
+    /// @param _fundAccessLimitGroup An array containing payout limits and surplus allowances for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal.
     function setFundAccessLimitsFor(
         uint256 _projectId,
         uint256 _rulesetId,

@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
 import {JBSplit} from "../../structs/JBSplit.sol";
-import {IJBSplitsStore} from "../IJBSplitsStore.sol";
+import {IJBSplits} from "../IJBSplits.sol";
 
 interface IJBPayoutTerminal is IJBPaymentTerminal {
     event DistributePayouts(
-        uint256 indexed fundingCycleConfiguration,
+        uint256 indexed rulesetConfiguration,
         uint256 indexed fundingCycleNumber,
         uint256 indexed projectId,
         address beneficiary,
@@ -29,7 +29,7 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
     );
 
     event UseAllowance(
-        uint256 indexed fundingCycleConfiguration,
+        uint256 indexed rulesetConfiguration,
         uint256 indexed fundingCycleNumber,
         uint256 indexed projectId,
         address beneficiary,

@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
-import {IJBRedemptionDelegate3_1_1} from "../IJBRedemptionDelegate3_1_1.sol";
-import {JBDidRedeemData3_1_1} from "../../structs/JBDidRedeemData3_1_1.sol";
+import {IJBRedeemHook} from "../IJBRedeemHook.sol";
+import {JBDidRedeemData} from "../../structs/JBDidRedeemData.sol";
 
 interface IJBRedemptionTerminal is IJBPaymentTerminal {
     event RedeemTokens(
-        uint256 indexed fundingCycleConfiguration,
+        uint256 indexed rulesetConfiguration,
         uint256 indexed fundingCycleNumber,
         uint256 indexed projectId,
         address holder,
@@ -18,9 +18,9 @@ interface IJBRedemptionTerminal is IJBPaymentTerminal {
         address caller
     );
 
-    event DelegateDidRedeem(
-        IJBRedemptionDelegate3_1_1 indexed delegate,
-        JBDidRedeemData3_1_1 data,
+    event HookDidRedeem(
+        IJBRedeemHook indexed delegate,
+        JBDidRedeemData data,
         uint256 delegatedAmount,
         uint256 fee,
         address caller

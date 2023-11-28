@@ -13,14 +13,14 @@ import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
+import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBSplitGroupIDs} from "./libraries/JBSplitGroupIDs.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
@@ -61,7 +61,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     IJBRulesets public immutable override rulesets;
 
     /// @notice The contract that manages token minting and burning.
-    IJBTokens public immutable override tokenStore;
+    IJBTokens public immutable override tokens;
 
     /// @notice The contract that stores splits for each project.
     IJBSplits public immutable override splits;
@@ -153,7 +153,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @return The current total amount of outstanding tokens for the project.
     function totalOutstandingTokensOf(uint256 _projectId) public view override returns (uint256) {
         // Add the reserved tokens to the total supply.
-        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
+        return tokens.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
     }
 
     /// @notice Indicates if this contract adheres to the specified interface.
@@ -181,7 +181,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _rulesets A contract storing and managing project rulesets.
-    /// @param _tokenStore A contract that manages token minting and burning.
+    /// @param _tokens A contract that manages token minting and burning.
     /// @param _splits A contract that stores splits for each project.
     /// @param _fundAccessLimits A contract that stores fund access limits for each project.
     constructor(
@@ -189,14 +189,14 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         IJBProjects _projects,
         IJBDirectory _directory,
         IJBRulesets _rulesets,
-        IJBTokens _tokenStore,
+        IJBTokens _tokens,
         IJBSplits _splits,
         IJBFundAccessLimits _fundAccessLimits
     ) JBPermissioned(_permissions) {
         projects = _projects;
         directory = _directory;
         rulesets = _rulesets;
-        tokenStore = _tokenStore;
+        tokens = _tokens;
         splits = _splits;
         fundAccessLimits = _fundAccessLimits;
     }
@@ -256,7 +256,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.QUEUE_RULESETS)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.QUEUE_RULESETS)
         returns (uint256 rulesetId)
     {
         // If there is a previous configuration, queueRulesetsOf should be called instead
@@ -290,7 +290,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.QUEUE_RULESETS)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.QUEUE_RULESETS)
         returns (uint256 rulesetId)
     {
         // Queue the next ruleset.
@@ -330,7 +330,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
-                JBPermissionIDs.MINT_TOKENS,
+                JBPermissionIds.MINT_TOKENS,
                 directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
                     || msg.sender == address(_ruleset.dataHook())
             );
@@ -355,7 +355,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             );
 
             // Mint the tokens.
-            tokenStore.mintFor(_beneficiary, _projectId, beneficiaryTokenCount);
+            tokens.mintFor(_beneficiary, _projectId, beneficiaryTokenCount);
         }
 
         // Add reserved tokens if needed
@@ -392,7 +392,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         requirePermissionAllowingOverride(
             _holder,
             _projectId,
-            JBPermissionIDs.BURN_TOKENS,
+            JBPermissionIds.BURN_TOKENS,
             directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
         )
     {
@@ -400,7 +400,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         if (_tokenCount == 0) revert NO_BURNABLE_TOKENS();
 
         // Burn the tokens.
-        tokenStore.burnFrom(_holder, _projectId, _tokenCount);
+        tokens.burnFrom(_holder, _projectId, _tokenCount);
 
         emit BurnTokens(_holder, _projectId, _tokenCount, _memo, msg.sender);
     }
@@ -435,7 +435,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIDs.MIGRATE_CONTROLLER)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.MIGRATE_CONTROLLER)
     {
         // Keep a reference to the directory.
         IJBDirectory _directory = directory;
@@ -480,7 +480,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         returns (uint256 tokenCount)
     {
         // Keep a reference to the token store.
-        IJBTokens _tokenStore = tokenStore;
+        IJBTokens _tokens = tokens;
 
         // Get the current ruleset to read the reserved rate from.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
@@ -503,7 +503,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
 
         // Mint any leftover tokens to the project owner.
         if (_leftoverTokenCount > 0) {
-            _tokenStore.mintFor(_owner, _projectId, _leftoverTokenCount);
+            _tokens.mintFor(_owner, _projectId, _leftoverTokenCount);
         }
 
         emit DistributeReservedTokens(
@@ -531,7 +531,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         uint256 _amount
     ) internal returns (uint256 leftoverAmount) {
         // Keep a reference to the token store.
-        IJBTokens _tokenStore = tokenStore;
+        IJBTokens _tokens = tokens;
 
         // Set the leftover amount to the initial amount.
         leftoverAmount = _amount;
@@ -553,7 +553,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
 
             // Mints tokens for the split if needed.
             if (_tokenCount > 0) {
-                _tokenStore.mintFor(
+                _tokens.mintFor(
                     // If a split hook is set in the splits, set it as the beneficiary.
                     // Otherwise if a projectId is set in the split, set the project's owner as the beneficiary.
                     // If the split has a beneficiary send to the split's beneficiary. Otherwise send to the msg.sender.
@@ -569,7 +569,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
                 // If there's a split hook set, trigger its `process` function.
                 if (_split.splitHook != IJBSplitHook(address(0))) {
                     // Get a reference to the project's token.
-                    address _token = address(_tokenStore.tokenOf(_projectId));
+                    address _token = address(_tokens.tokenOf(_projectId));
 
                     // Process.
                     _split.splitHook.process(
@@ -661,9 +661,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         uint256 _numberOfTerminalConfigs = _terminalConfigs.length;
 
         // Set a array of terminals to populate.
-        IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](
-            _numberOfTerminalConfigs
-        );
+        IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](_numberOfTerminalConfigs);
 
         // Keep a reference to the terminal configuration beingiterated on.
         JBTerminalConfig memory _terminalConfig;

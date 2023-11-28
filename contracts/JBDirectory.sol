@@ -6,10 +6,10 @@ import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
-import {IJBPaymentTerminal} from "./interfaces/IJBPaymentTerminal.sol";
+import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
-import {JBPermissionIDs} from "./libraries/JBPermissionIDs.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 
 /// @notice Tracks which terminal contracts each project is currently accepting funds through, and which controller contract is managing each project's tokens and rulesets.
@@ -185,7 +185,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         requirePermissionAllowingOverride(
             projects.ownerOf(_projectId),
             _projectId,
-            JBPermissionIDs.SET_CONTROLLER,
+            JBPermissionIds.SET_CONTROLLER,
             (
                 msg.sender == address(controllerOf[_projectId])
                     || (isAllowedToSetFirstController[msg.sender] && controllerOf[_projectId] == address(0))
@@ -223,7 +223,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         requirePermissionAllowingOverride(
             projects.ownerOf(_projectId),
             _projectId,
-            JBPermissionIDs.SET_TERMINALS,
+            JBPermissionIds.SET_TERMINALS,
             msg.sender == address(controllerOf[_projectId])
         )
     {
@@ -274,7 +274,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         requirePermission(
             projects.ownerOf(_projectId),
             _projectId,
-            JBPermissionIDs.SET_PRIMARY_TERMINAL
+            JBPermissionIds.SET_PRIMARY_TERMINAL
         )
     {
         // Can't set the primary terminal for a token if the terminal doesn't accept the token.
