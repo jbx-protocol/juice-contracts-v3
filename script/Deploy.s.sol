@@ -45,7 +45,7 @@ contract Deploy is Script {
         // 1
         _operatorStore = new JBOperatorStore();
         // 2
-        _projects = new JBProjects(_operatorStore, IJBDirectory(_directoryAddress), _manager);
+        _projects = new JBProjects(IJBDirectory(_directoryAddress), _manager);
         // 3
         _prices = new JBPrices(_operatorStore, _projects, IJBDirectory(_directoryAddress), _manager);
         //4

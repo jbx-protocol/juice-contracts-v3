@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {JBProjectMetadata} from "./../structs/JBProjectMetadata.sol";
 import {IJBTokenUriResolver} from "./IJBTokenUriResolver.sol";
+import {IJBControllerUtility} from "./IJBControllerUtility.sol";
 
-interface IJBProjects is IERC721 {
+interface IJBProjects is IERC721, IJBControllerUtility {
     event Create(
         uint256 indexed projectId, address indexed owner, JBProjectMetadata metadata, address caller
     );

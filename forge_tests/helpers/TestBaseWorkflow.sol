@@ -184,7 +184,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
         _usdcToken = new MockERC20('USDC', 'USDC');
 
-        _jbProjects = new JBProjects(_jbOperatorStore, IJBDirectory(_jbDirectory), _multisig);
+        _jbProjects = new JBProjects(IJBDirectory(_jbDirectory), _multisig);
 
         _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _jbDirectory, _multisig);
 
