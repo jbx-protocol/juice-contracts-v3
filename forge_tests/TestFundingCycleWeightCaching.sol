@@ -32,10 +32,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         });
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false
-            }),
+            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
