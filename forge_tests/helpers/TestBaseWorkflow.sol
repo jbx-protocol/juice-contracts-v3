@@ -213,8 +213,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
       _jbFundingCycleStore
     );
         vm.label(address(_jbTokenStore), "JBTokenStore");
-        _jbSplitsStore =
-            new JBSplitsStore(_jbOperatorStore, _jbProjects, IJBDirectory(_jbDirectory));
+        _jbSplitsStore = new JBSplitsStore(IJBDirectory(_jbDirectory));
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
