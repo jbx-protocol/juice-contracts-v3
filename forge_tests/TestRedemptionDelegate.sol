@@ -34,15 +34,12 @@ contract TestRedmeptionDelegates_Local is TestBaseWorkflow {
         });
 
         JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
+            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,

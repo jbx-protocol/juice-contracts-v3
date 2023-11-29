@@ -41,15 +41,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
+            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,

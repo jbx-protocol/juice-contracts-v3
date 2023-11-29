@@ -34,15 +34,12 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         });
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
+            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,

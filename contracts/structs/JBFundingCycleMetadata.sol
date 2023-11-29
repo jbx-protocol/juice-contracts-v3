@@ -8,6 +8,7 @@ import {JBGlobalFundingCycleMetadata} from "./JBGlobalFundingCycleMetadata.sol";
 /// @custom:member redemptionRate The redemption rate of the funding cycle. This number is a percentage calculated out of `JBConstants.MAX_REDEMPTION_RATE`.
 /// @custom:member baseCurrency The currency on which to base the funding cycle's weight.
 /// @custom:member pausePay A flag indicating if the pay functionality should be paused during the funding cycle.
+/// @custom:member pauseTokenCreditTransfers A flag indicating if the project token transfer functionality should be paused during the funding cycle.
 /// @custom:member allowMinting A flag indicating if minting tokens should be allowed during this funding cycle.
 /// @custom:member allowTerminalMigration A flag indicating if migrating terminals should be allowed during this funding cycle.
 /// @custom:member allowControllerMigration A flag indicating if migrating controllers should be allowed during this funding cycle.
@@ -23,6 +24,7 @@ struct JBFundingCycleMetadata {
     uint256 redemptionRate;
     uint256 baseCurrency;
     bool pausePay;
+    bool pauseTokenCreditTransfers;
     bool allowMinting;
     bool allowTerminalMigration;
     bool allowControllerMigration;

@@ -588,7 +588,7 @@ contract JBController3_1 is
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
         // Must not be paused.
-        if (_fundingCycle.global().pauseTransfers) revert TRANSFERS_PAUSED();
+        if (_fundingCycle.tokenCreditTransfersPaused()) revert TRANSFERS_PAUSED();
 
         tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
     }
