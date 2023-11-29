@@ -5,7 +5,6 @@ import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
 import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
 import {JBGlobalFundingCycleMetadata} from "./../structs/JBGlobalFundingCycleMetadata.sol";
 import {JBConstants} from "./JBConstants.sol";
-import {JBGlobalFundingCycleMetadataResolver} from "./JBGlobalFundingCycleMetadataResolver.sol";
 
 library JBFundingCycleMetadataResolver {
     function global(JBFundingCycle memory _fundingCycle)
@@ -13,8 +12,9 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (JBGlobalFundingCycleMetadata memory)
     {
-        return
-            JBGlobalFundingCycleMetadataResolver.expandMetadata(uint8(_fundingCycle.metadata >> 4));
+        return JBGlobalFundingCycleMetadata(
+            ((_fundingCycle.metadata >> 4) & 1) == 1, ((_fundingCycle.metadata >> 5) & 1) == 1
+        );
     }
 
     function reservedRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
@@ -109,10 +109,10 @@ library JBFundingCycleMetadataResolver {
     {
         // version 1 in the bits 0-3 (4 bits).
         packed = 1;
-        // global metadata in bits 4-5 (2 bits).
-        packed |= JBGlobalFundingCycleMetadataResolver.packFundingCycleGlobalMetadata(
-            _metadata.global
-        ) << 4;
+        // allow set terminals in bit 4.
+        if (_metadata.global.allowSetTerminals) packed |= 1 << 4;
+        // allow set controller in bit 5.
+        if (_metadata.global.allowSetController) packed |= 1 << 5;
         // reserved rate in bits 6-21 (16 bits).
         packed |= _metadata.reservedRate << 6;
         // redemption rate in bits 22-37 (16 bits).
