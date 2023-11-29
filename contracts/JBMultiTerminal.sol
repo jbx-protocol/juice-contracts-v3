@@ -615,9 +615,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         if (_split.allocator != IJBSplitAllocator(address(0))) {
             // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
             if (_feePercent != 0 && !isFeelessAddress[address(_split.allocator)]) {
-                unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
-                }
+                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
             }
 
             // Create the data to send to the allocator.
@@ -651,9 +649,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // This distribution is eligible for a fee if the funds are leaving this contract and the terminal isn't listed as feeless.
             if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)])
             {
-                unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
-                }
+                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
             }
 
             // Trigger any inherited pre-transfer logic.
@@ -688,9 +684,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // This distribution is eligible for a fee since the funds are leaving this contract and the beneficiary isn't listed as feeless.
             // Don't enforce feeless address for the beneficiary since the funds are leaving the ecosystem.
             if (_feePercent != 0) {
-                unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
-                }
+                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
             }
 
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
@@ -1101,24 +1095,22 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
         uint256 _feePercent = isFeelessAddress[_msgSender()] ? 0 : FEE;
 
-        unchecked {
-            // Take a fee from the `_distributedAmount`, if needed.
-            // The net amount is the withdrawn amount without the fee.
-            netDistributedAmount = _distributedAmount
-                - (
-                    _feePercent == 0
-                        ? 0
-                        : _takeFeeFrom(
-                            _projectId,
-                            _token,
-                            _distributedAmount,
-                            _feePercent,
-                            _projectOwner,
-                            _fundingCycle.shouldHoldFees()
-                        )
-                );
-        }
-
+        // Take a fee from the `_distributedAmount`, if needed.
+        // The net amount is the withdrawn amount without the fee.
+        netDistributedAmount = _distributedAmount
+            - (
+                _feePercent == 0
+                    ? 0
+                    : _takeFeeFrom(
+                        _projectId,
+                        _token,
+                        _distributedAmount,
+                        _feePercent,
+                        _projectOwner,
+                        _fundingCycle.shouldHoldFees()
+                    )
+            );
+    
         // Transfer any remaining balance to the beneficiary.
         if (netDistributedAmount != 0) {
             _transferFor(address(this), _beneficiary, _token, netDistributedAmount);
