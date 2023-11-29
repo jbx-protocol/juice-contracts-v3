@@ -17,6 +17,7 @@ import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
+import {IJBProjectMetadataRegistry} from "./interfaces/IJBProjectMetadataRegistry.sol";
 import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "./interfaces/IJBTokenStore.sol";
@@ -185,6 +186,7 @@ contract JBController3_1 is
         returns (bool)
     {
         return _interfaceId == type(IJBController3_1).interfaceId
+            || _interfaceId == type(IJBProjectMetadataRegistry).interfaceId
             || _interfaceId == type(IJBMigratable).interfaceId
             || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
     }

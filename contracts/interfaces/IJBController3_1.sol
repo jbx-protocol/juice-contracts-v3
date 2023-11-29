@@ -14,12 +14,13 @@ import {IJBFundAccessConstraintsStore} from "./IJBFundAccessConstraintsStore.sol
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBMigratable} from "./IJBMigratable.sol";
 import {IJBProjects} from "./IJBProjects.sol";
+import {IJBProjectMetadataRegistry} from "./IJBProjectMetadataRegistry.sol";
 import {IJBSplitsStore} from "./IJBSplitsStore.sol";
 import {IJBTokenStore} from "./IJBTokenStore.sol";
 import {JBGroupedSplits} from "./../structs/JBGroupedSplits.sol";
 import {IJBToken} from "./../interfaces/IJBToken.sol";
 
-interface IJBController3_1 is IERC165 {
+interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry {
     event LaunchProject(
         uint256 configuration,
         uint256 projectId,
@@ -94,11 +95,6 @@ interface IJBController3_1 is IERC165 {
 
     function reservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
 
-    function metadataContentOf(uint256 projectId, uint256 domain)
-        external
-        view
-        returns (string memory);
-
     function totalOutstandingTokensOf(uint256 projectId) external view returns (uint256);
 
     function getFundingCycleOf(uint256 projectId, uint256 configuration)
@@ -162,8 +158,6 @@ interface IJBController3_1 is IERC165 {
         returns (uint256);
 
     function migrate(uint256 projectId, IJBMigratable to) external;
-
-    function setMetadataOf(uint256 projectId, JBProjectMetadata calldata metadata) external;
 
     function setSplitsOf(
         uint256 projectId,
