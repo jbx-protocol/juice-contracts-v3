@@ -44,7 +44,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     error INVALID_BASE_CURRENCY();
     error INVALID_REDEMPTION_RATE();
     error INVALID_RESERVED_RATE();
-    error MIGRATION_NOT_ALLOWED();
+    error CONTROLLER_MIGRATION_NOT_ALLOWED();
     error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
     error NO_BURNABLE_TOKENS();
     error NOT_CURRENT_CONTROLLER();
@@ -459,7 +459,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
 
         // Migration must be allowed.
         if (!_ruleset.controllerMigrationAllowed()) {
-            revert MIGRATION_NOT_ALLOWED();
+            revert CONTROLLER_MIGRATION_NOT_ALLOWED();
         }
 
         // All reserved tokens must be minted before migrating.
