@@ -3,7 +3,6 @@ pragma solidity ^0.8.16;
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
@@ -19,7 +18,7 @@ import {JBToken} from "./JBToken.sol";
 /// @dev Token balances can be either represented internally or claimed as ERC-20s into wallets. This contract manages these two representations and allows claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev Each project can bring their own token if they prefer, and swap between tokens at any time.
-contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
+contract JBTokenStore is JBControllerUtility, IJBTokenStore {
     // A library that parses the packed funding cycle metadata into a friendlier format.
     using JBFundingCycleMetadataResolver for JBFundingCycle;
 
@@ -42,9 +41,6 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
-
-    /// @notice Mints ERC-721's that represent project ownership and transfers.
-    IJBProjects public immutable override projects;
 
     /// @notice The contract storing all funding cycle configurations.
     IJBFundingCycleStore public immutable override fundingCycleStore;
@@ -120,17 +116,11 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _operatorStore A contract storing operator assignments.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _fundingCycleStore A contract storing all funding cycle configurations.
-    constructor(
-        IJBOperatorStore _operatorStore,
-        IJBProjects _projects,
-        IJBDirectory _directory,
-        IJBFundingCycleStore _fundingCycleStore
-    ) JBOperatable(_operatorStore) JBControllerUtility(_directory) {
-        projects = _projects;
+    constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore)
+        JBControllerUtility(_directory)
+    {
         fundingCycleStore = _fundingCycleStore;
     }
 
@@ -148,12 +138,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function issueFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
-        requirePermissionAllowingOverride(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.ISSUE_TOKEN,
-            address(directory.controllerOf(_projectId)) == _msgSender()
-        )
+        onlyController(_projectId)
         returns (IJBToken token)
     {
         // There must be a name.
@@ -184,12 +169,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function setFor(uint256 _projectId, IJBToken _token)
         external
         override
-        requirePermissionAllowingOverride(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.SET_TOKEN,
-            address(directory.controllerOf(_projectId)) == _msgSender()
-        )
+        onlyController(_projectId)
     {
         // Can't set to the zero address.
         if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
@@ -307,7 +287,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
         external
         override
-        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
+        onlyController(_projectId)
     {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
@@ -344,7 +324,7 @@ contract JBTokenStore is JBControllerUtility, JBOperatable, IJBTokenStore {
     function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
         external
         override
-        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
+        onlyController(_projectId)
     {
         // Get a reference to the current funding cycle for the project.
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);

@@ -60,8 +60,6 @@ contract Deploy is Script {
             address(this)
         );
         _tokenStore = new JBTokenStore(
-            _operatorStore,
-            _projects,
             _directory,
             _fundingCycleStore
         );

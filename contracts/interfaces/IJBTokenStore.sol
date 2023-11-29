@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBToken} from "./IJBToken.sol";
+import {IJBControllerUtility} from "./IJBControllerUtility.sol";
 
-interface IJBTokenStore {
+interface IJBTokenStore is IJBControllerUtility {
     event Issue(
         uint256 indexed projectId,
         IJBToken indexed token,
@@ -53,8 +54,6 @@ interface IJBTokenStore {
     function tokenOf(uint256 projectId) external view returns (IJBToken);
 
     function projectIdOf(IJBToken token) external view returns (uint256);
-
-    function projects() external view returns (IJBProjects);
 
     function fundingCycleStore() external view returns (IJBFundingCycleStore);
 

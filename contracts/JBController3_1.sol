@@ -493,6 +493,7 @@ contract JBController3_1 is
     )
         external
         virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
     {
         // Set splits for the group.
@@ -507,6 +508,7 @@ contract JBController3_1 is
     function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
         external
         virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
     {
         projects.setMetadataOf(_projectId, _metadata);
@@ -521,6 +523,8 @@ contract JBController3_1 is
     /// @return token The token that was issued.
     function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
+        virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
         returns (IJBToken token)
     {
@@ -533,9 +537,41 @@ contract JBController3_1 is
     /// @param _token The new token.
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
+        virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
     {
         tokenStore.setFor(_projectId, _token);
+    }
+
+    /// @notice Claims internally accounted for tokens into a holder's wallet.
+    /// @dev Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
+    /// @param _holder The owner of the tokens being claimed.
+    /// @param _projectId The ID of the project whose tokens are being claimed.
+    /// @param _amount The amount of tokens to claim.
+    /// @param _beneficiary The account into which the claimed tokens will go.
+    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+        external
+        virtual
+        override
+        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
+    {
+        tokenStore.claimFor(_holder, _projectId, _amount, _beneficiary);
+    }
+
+    /// @notice Allows a holder to transfer unclaimed tokens to another account.
+    /// @dev Only a token holder or an operator can transfer its unclaimed tokens.
+    /// @param _holder The address to transfer tokens from.
+    /// @param _projectId The ID of the project whose tokens are being transferred.
+    /// @param _recipient The recipient of the tokens.
+    /// @param _amount The amount of tokens to transfer.
+    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+        external
+        virtual
+        override
+        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
+    {
+        tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
     }
 
     //*********************************************************************//

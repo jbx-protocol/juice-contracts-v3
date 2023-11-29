@@ -61,8 +61,8 @@ contract JBProjects is JBControllerUtility, ERC721Votes, Ownable, IJBProjects {
         override(IERC165, ERC721)
         returns (bool)
     {
-        return _interfaceId == type(IJBProjects).interfaceId
-            ||  super.supportsInterface(_interfaceId);
+        return
+            _interfaceId == type(IJBProjects).interfaceId || super.supportsInterface(_interfaceId);
     }
 
     //*********************************************************************//

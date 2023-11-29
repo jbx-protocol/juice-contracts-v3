@@ -207,8 +207,6 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         vm.label(address(_jbOperatorStore), "JBOperatorStore");
 
         _jbTokenStore = new JBTokenStore(
-      _jbOperatorStore,
-      _jbProjects,
       _jbDirectory,
       _jbFundingCycleStore
     );

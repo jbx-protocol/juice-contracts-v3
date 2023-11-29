@@ -16,6 +16,8 @@ import {IJBMigratable} from "./IJBMigratable.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBSplitsStore} from "./IJBSplitsStore.sol";
 import {IJBTokenStore} from "./IJBTokenStore.sol";
+import {JBGroupedSplits} from "./../structs/JBGroupedSplits.sol";
+import {IJBToken} from "./../interfaces/IJBToken.sol";
 
 interface IJBController3_1 is IERC165 {
     event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
@@ -147,4 +149,24 @@ interface IJBController3_1 is IERC165 {
         returns (uint256);
 
     function migrate(uint256 projectId, IJBMigratable to) external;
+
+    function setSplitsOf(
+        uint256 _projectId,
+        uint256 _domain,
+        JBGroupedSplits[] calldata _groupedSplits
+    ) external;
+
+    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata) external;
+
+    function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+        external
+        returns (IJBToken token);
+
+    function setTokenFor(uint256 _projectId, IJBToken _token) external;
+
+    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+        external;
+
+    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+        external;
 }
