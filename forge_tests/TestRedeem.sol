@@ -91,7 +91,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _controller.issueTokenFor(_projectId, "TestName", "TestSymbol");
 
         // Pay the project.
         _terminal.pay{value: _ethPayAmount}({

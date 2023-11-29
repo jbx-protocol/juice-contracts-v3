@@ -20,7 +20,13 @@ import {JBGroupedSplits} from "./../structs/JBGroupedSplits.sol";
 import {IJBToken} from "./../interfaces/IJBToken.sol";
 
 interface IJBController3_1 is IERC165 {
-    event LaunchProject(uint256 configuration, uint256 projectId, string memo, address caller);
+    event LaunchProject(
+        uint256 configuration,
+        uint256 projectId,
+        JBProjectMetadata metadata,
+        string memo,
+        address caller
+    );
 
     event LaunchFundingCycles(
         uint256 configuration, uint256 projectId, string memo, address caller
@@ -72,6 +78,8 @@ interface IJBController3_1 is IERC165 {
 
     event PrepMigration(uint256 indexed projectId, address from, address caller);
 
+    event SetMetadata(uint256 indexed projectId, JBProjectMetadata metadata, address caller);
+
     function projects() external view returns (IJBProjects);
 
     function fundingCycleStore() external view returns (IJBFundingCycleStore);
@@ -85,6 +93,11 @@ interface IJBController3_1 is IERC165 {
     function directory() external view returns (IJBDirectory);
 
     function reservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
+
+    function metadataContentOf(uint256 projectId, uint256 domain)
+        external
+        view
+        returns (string memory);
 
     function totalOutstandingTokensOf(uint256 projectId) external view returns (uint256);
 
@@ -150,23 +163,23 @@ interface IJBController3_1 is IERC165 {
 
     function migrate(uint256 projectId, IJBMigratable to) external;
 
+    function setMetadataOf(uint256 projectId, JBProjectMetadata calldata metadata) external;
+
     function setSplitsOf(
-        uint256 _projectId,
-        uint256 _domain,
-        JBGroupedSplits[] calldata _groupedSplits
+        uint256 projectId,
+        uint256 domain,
+        JBGroupedSplits[] calldata groupedSplits
     ) external;
 
-    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata) external;
-
-    function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+    function issueTokenFor(uint256 projectId, string calldata name, string calldata symbol)
         external
         returns (IJBToken token);
 
     function setTokenFor(uint256 _projectId, IJBToken _token) external;
 
-    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+    function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
         external;
 
-    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+    function transferFrom(address holder, uint256 projectId, address recipient, uint256 amount)
         external;
 }

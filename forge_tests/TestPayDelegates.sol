@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestDelegates_Local is TestBaseWorkflow {
+contract TestPayDelegates_Local is TestBaseWorkflow {
     uint8 private constant _WEIGHT_DECIMALS = 18;
     uint8 private constant _NATIVE_TOKEN_DECIMALS = 18;
     uint256 private constant _WEIGHT = 1000 * 10 ** _WEIGHT_DECIMALS;

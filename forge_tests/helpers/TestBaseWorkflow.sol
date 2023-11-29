@@ -191,15 +191,19 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     // Deploys and initializes contracts for testing.
     function setUp() public virtual {
-        _jbDirectory = JBDirectory(addressFrom(address(this), 6));
+        _jbDirectory = JBDirectory(addressFrom(address(this), 7));
 
         _jbOperatorStore = new JBOperatorStore();
 
         _usdcToken = new MockERC20('USDC', 'USDC');
 
-        _jbProjects = new JBProjects(IJBDirectory(_jbDirectory), _multisig);
+        _jbProjects = new JBProjects(_multisig);
 
-        _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _jbDirectory, _multisig);
+        _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
+
+        _jbTokenStore = new JBTokenStore(
+            _jbDirectory
+        );
 
         _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(_jbDirectory));
 
@@ -218,12 +222,8 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         vm.label(address(_jbDirectory), "JBDirectory");
         vm.label(address(_usdcToken), "ERC20");
         vm.label(address(_jbOperatorStore), "JBOperatorStore");
-
-        _jbTokenStore = new JBTokenStore(
-      _jbDirectory,
-      _jbFundingCycleStore
-    );
         vm.label(address(_jbTokenStore), "JBTokenStore");
+
         _jbSplitsStore = new JBSplitsStore(IJBDirectory(_jbDirectory));
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);

@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestDelegates_Local is TestBaseWorkflow {
+contract TestRedmeptionDelegates_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
     address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));
 
@@ -88,7 +88,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _controller.issueTokenFor(_projectId, "TestName", "TestSymbol");
 
         // Make sure the project's new JBToken is set.
         assertEq(address(_tokenStore.tokenOf(_projectId)), address(_token));

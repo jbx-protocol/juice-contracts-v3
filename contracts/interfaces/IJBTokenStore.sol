@@ -55,8 +55,6 @@ interface IJBTokenStore is IJBControllerUtility {
 
     function projectIdOf(IJBToken token) external view returns (uint256);
 
-    function fundingCycleStore() external view returns (IJBFundingCycleStore);
-
     function unclaimedBalanceOf(address holder, uint256 projectId)
         external
         view

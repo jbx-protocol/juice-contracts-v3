@@ -59,6 +59,7 @@ contract JBController3_1 is
     error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
     error NO_BURNABLE_TOKENS();
     error NOT_CURRENT_CONTROLLER();
+    error TRANSFERS_PAUSED();
     error ZERO_TOKENS_TO_MINT();
 
     //*********************************************************************//
@@ -89,6 +90,11 @@ contract JBController3_1 is
 
     /// @notice The current undistributed reserved token balance of.
     mapping(uint256 => uint256) public override reservedTokenBalanceOf;
+
+    /// @notice The metadata for each project, which can be used across several domains.
+    /// @custom:param _projectId The ID of the project to which the metadata belongs.
+    /// @custom:param _domain The domain within which the metadata applies. Applications can use the domain namespace as they wish.
+    mapping(uint256 => mapping(uint256 => string)) public override metadataContentOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
@@ -236,7 +242,12 @@ contract JBController3_1 is
         IJBDirectory _directory = directory;
 
         // Mint the project into the wallet of the owner.
-        projectId = projects.createFor(_owner, _projectMetadata);
+        projectId = projects.createFor(_owner);
+
+        // Set project metadata if one was provided.
+        if (bytes(_projectMetadata.content).length > 0) {
+            metadataContentOf[projectId][_projectMetadata.domain] = _projectMetadata.content;
+        }
 
         // Set this contract as the project's controller in the directory.
         _directory.setControllerOf(projectId, address(this));
@@ -247,7 +258,7 @@ contract JBController3_1 is
         // Configure the terminals.
         _configureTerminals(projectId, _terminalConfigurations);
 
-        emit LaunchProject(_configuration, projectId, _memo, _msgSender());
+        emit LaunchProject(_configuration, projectId, _projectMetadata, _memo, _msgSender());
     }
 
     /// @notice Creates a funding cycle for an already existing project ERC-721.
@@ -480,6 +491,22 @@ contract JBController3_1 is
         emit Migrate(_projectId, _to, _msgSender());
     }
 
+    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
+    /// @dev Only a project's controller can set its metadata.
+    /// @dev Applications can use the domain namespace as they wish.
+    /// @param _projectId The ID of the project who's metadata is being changed.
+    /// @param _metadata A struct containing metadata content, and domain within which the metadata applies.
+    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
+        external
+        override
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+    {
+        // Set the project's new metadata content within the specified domain.
+        metadataContentOf[_projectId][_metadata.domain] = _metadata.content;
+
+        emit SetMetadata(_projectId, _metadata, _msgSender());
+    }
+
     /// @notice Sets a project's splits.
     /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
     /// @dev The new splits must include any currently set splits that are locked.
@@ -498,20 +525,6 @@ contract JBController3_1 is
     {
         // Set splits for the group.
         splitsStore.set(_projectId, _domain, _groupedSplits);
-    }
-
-    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
-    /// @dev Only a project's owner or operator can set its metadata.
-    /// @dev Applications can use the domain namespace as they wish.
-    /// @param _projectId The ID of the project who's metadata is being changed.
-    /// @param _metadata A struct containing metadata content, and domain within which the metadata applies.
-    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
-        external
-        virtual
-        override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
-    {
-        projects.setMetadataOf(_projectId, _metadata);
     }
 
     /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
@@ -571,6 +584,12 @@ contract JBController3_1 is
         override
         requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
     {
+        // Get a reference to the current funding cycle for the project.
+        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+
+        // Must not be paused.
+        if (_fundingCycle.global().pauseTransfers) revert TRANSFERS_PAUSED();
+
         tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
     }
 

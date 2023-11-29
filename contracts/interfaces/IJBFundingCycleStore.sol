@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import {JBBallotState} from "./../enums/JBBallotState.sol";
 import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
 import {JBFundingCycleData} from "./../structs/JBFundingCycleData.sol";
+import {IJBControllerUtility} from "./IJBControllerUtility.sol";
 
-interface IJBFundingCycleStore {
+interface IJBFundingCycleStore is IJBControllerUtility {
     event Configure(
         uint256 indexed configuration,
         uint256 indexed projectId,

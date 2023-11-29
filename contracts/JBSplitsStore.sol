@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {JBOperatable} from "./abstract/JBOperatable.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";

@@ -4,14 +4,11 @@ pragma solidity ^0.8.16;
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokenStore} from "./interfaces/IJBTokenStore.sol";
-import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
-import {JBFundingCycle} from "./structs/JBFundingCycle.sol";
 import {JBToken} from "./JBToken.sol";
 
 /// @notice Manage token minting, burning, and account balances.
@@ -19,9 +16,6 @@ import {JBToken} from "./JBToken.sol";
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev Each project can bring their own token if they prefer, and swap between tokens at any time.
 contract JBTokenStore is JBControllerUtility, IJBTokenStore {
-    // A library that parses the packed funding cycle metadata into a friendlier format.
-    using JBFundingCycleMetadataResolver for JBFundingCycle;
-
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -35,15 +29,7 @@ contract JBTokenStore is JBControllerUtility, IJBTokenStore {
     error RECIPIENT_ZERO_ADDRESS();
     error TOKEN_NOT_FOUND();
     error TOKENS_MUST_HAVE_18_DECIMALS();
-    error TRANSFERS_PAUSED();
     error OVERFLOW_ALERT();
-
-    //*********************************************************************//
-    // ---------------- public immutable stored properties --------------- //
-    //*********************************************************************//
-
-    /// @notice The contract storing all funding cycle configurations.
-    IJBFundingCycleStore public immutable override fundingCycleStore;
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -117,12 +103,7 @@ contract JBTokenStore is JBControllerUtility, IJBTokenStore {
     //*********************************************************************//
 
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _fundingCycleStore A contract storing all funding cycle configurations.
-    constructor(IJBDirectory _directory, IJBFundingCycleStore _fundingCycleStore)
-        JBControllerUtility(_directory)
-    {
-        fundingCycleStore = _fundingCycleStore;
-    }
+    constructor(IJBDirectory _directory) JBControllerUtility(_directory) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
@@ -326,12 +307,6 @@ contract JBTokenStore is JBControllerUtility, IJBTokenStore {
         override
         onlyController(_projectId)
     {
-        // Get a reference to the current funding cycle for the project.
-        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
-
-        // Must not be paused.
-        if (_fundingCycle.global().pauseTransfers) revert TRANSFERS_PAUSED();
-
         // Can't transfer to the zero address.
         if (_recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();
 
