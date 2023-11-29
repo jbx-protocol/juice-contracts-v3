@@ -36,7 +36,6 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
         });
 
         JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
@@ -44,7 +43,9 @@ contract TestPayDelegates_Local is TestBaseWorkflow {
             pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: true,

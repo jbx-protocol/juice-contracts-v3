@@ -181,11 +181,8 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
             _projectId,
             JBOperations.SET_CONTROLLER,
             (
-                msg.sender == address(controllerOf[_projectId])
-                    || (
-                        isAllowedToSetFirstController[msg.sender]
-                            && address(controllerOf[_projectId]) == address(0)
-                    )
+                isAllowedToSetFirstController[msg.sender]
+                    && address(controllerOf[_projectId]) == address(0)
             )
         )
     {

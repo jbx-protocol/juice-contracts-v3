@@ -178,14 +178,14 @@ contract JBController3_1 is
     /// @param _projectId The ID of the project the flag is for.
     /// @return The flag
     function setTerminalsAllowed(uint256 _projectId) external view returns (bool) {
-        return fundingCycleStore.currentOf(_projectId).expandMetadata().global.allowSetTerminals;
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetTerminals;
     }
 
     /// @notice A flag indicating if the project currently allows its controller to be set.
     /// @param _projectId The ID of the project the flag is for.
     /// @return The flag
     function setControllerAllowed(uint256 _projectId) external view returns (bool) {
-        return fundingCycleStore.currentOf(_projectId).expandMetadata().global.allowSetController;
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetController;
     }
 
     //*********************************************************************//
@@ -471,9 +471,9 @@ contract JBController3_1 is
 
     /// @notice Allows other controllers to signal to this one that a migration is expected for the specified project.
     /// @dev This controller should not yet be the project's controller.
-    /// @param _projectId The ID of the project that will be migrated to this controller.
     /// @param _from The controller being migrated from.
-    function prepForMigrationOf(uint256 _projectId, IERC165 _from) external virtual override {
+    /// @param _projectId The ID of the project that will be migrated to this controller.
+    function receiveMigrationFrom(IERC165 _from, uint256 _projectId) external virtual override {
         _projectId; // Prevents unused var compiler and natspec complaints.
         _from; // Prevents unused var compiler and natspec complaints.
 
@@ -500,9 +500,6 @@ contract JBController3_1 is
         // Keep a reference to the directory.
         IJBDirectory _directory = directory;
 
-        // This controller must be the project's current controller.
-        if (_directory.controllerOf(_projectId) != IERC165(this)) revert NOT_CURRENT_CONTROLLER();
-
         // Get a reference to the project's current funding cycle.
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
@@ -513,10 +510,7 @@ contract JBController3_1 is
         if (reservedTokenBalanceOf[_projectId] != 0) _distributeReservedTokensOf(_projectId, "");
 
         // Make sure the new controller is prepped for the migration.
-        _to.prepForMigrationOf(_projectId, IERC165(this));
-
-        // Set the new controller.
-        _directory.setControllerOf(_projectId, IERC165(_to));
+        _to.receiveMigrationFrom(IERC165(this), _projectId);
 
         emit Migrate(_projectId, _to, _msgSender());
     }

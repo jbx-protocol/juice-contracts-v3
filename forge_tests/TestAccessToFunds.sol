@@ -48,7 +48,6 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2, //50%
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2, //50%
             baseCurrency: uint32(uint160(JBTokens.ETH)),
@@ -56,7 +55,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: true,
             useDataSourceForPay: false,

@@ -29,7 +29,6 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             ballot: JBReconfigurationBufferBallot(address(0))
         });
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({allowSetTerminals: false, allowSetController: false}),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
@@ -37,7 +36,9 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,

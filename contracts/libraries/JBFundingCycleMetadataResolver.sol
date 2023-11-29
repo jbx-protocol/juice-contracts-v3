@@ -3,36 +3,25 @@ pragma solidity ^0.8.16;
 
 import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
 import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
-import {JBGlobalFundingCycleMetadata} from "./../structs/JBGlobalFundingCycleMetadata.sol";
 import {JBConstants} from "./JBConstants.sol";
 
 library JBFundingCycleMetadataResolver {
-    function global(JBFundingCycle memory _fundingCycle)
-        internal
-        pure
-        returns (JBGlobalFundingCycleMetadata memory)
-    {
-        return JBGlobalFundingCycleMetadata(
-            ((_fundingCycle.metadata >> 4) & 1) == 1, ((_fundingCycle.metadata >> 5) & 1) == 1
-        );
-    }
-
     function reservedRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
-        return uint256(uint16(_fundingCycle.metadata >> 6));
+        return uint256(uint16(_fundingCycle.metadata >> 4));
     }
 
     function redemptionRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
         // Redemption rate is a number 0-10000.
-        return uint256(uint16(_fundingCycle.metadata >> 22));
+        return uint256(uint16(_fundingCycle.metadata >> 20));
     }
 
     function baseCurrency(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
         // Currency is a number 0-4294967296.
-        return uint256(uint32(_fundingCycle.metadata >> 38));
+        return uint256(uint32(_fundingCycle.metadata >> 36));
     }
 
     function payPaused(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 70) & 1) == 1;
+        return ((_fundingCycle.metadata >> 68) & 1) == 1;
     }
 
     function tokenCreditTransfersPaused(JBFundingCycle memory _fundingCycle)
@@ -40,11 +29,11 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return ((_fundingCycle.metadata >> 71) & 1) == 1;
+        return ((_fundingCycle.metadata >> 69) & 1) == 1;
     }
 
     function mintingAllowed(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
-        return ((_fundingCycle.metadata >> 72) & 1) == 1;
+        return ((_fundingCycle.metadata >> 70) & 1) == 1;
     }
 
     function terminalMigrationAllowed(JBFundingCycle memory _fundingCycle)
@@ -52,10 +41,26 @@ library JBFundingCycleMetadataResolver {
         pure
         returns (bool)
     {
-        return ((_fundingCycle.metadata >> 73) & 1) == 1;
+        return ((_fundingCycle.metadata >> 71) & 1) == 1;
+    }
+
+    function setTerminalsAllowed(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 72) & 1) == 1;
     }
 
     function controllerMigrationAllowed(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 73) & 1) == 1;
+    }
+
+    function setControllerAllowed(JBFundingCycle memory _fundingCycle)
         internal
         pure
         returns (bool)
@@ -96,7 +101,7 @@ library JBFundingCycleMetadataResolver {
     }
 
     function metadata(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
-        return uint256(uint8(_fundingCycle.metadata >> 239));
+        return uint256(uint16(_fundingCycle.metadata >> 239));
     }
 
     /// @notice Pack the funding cycle metadata.
@@ -109,28 +114,28 @@ library JBFundingCycleMetadataResolver {
     {
         // version 1 in the bits 0-3 (4 bits).
         packed = 1;
-        // allow set terminals in bit 4.
-        if (_metadata.global.allowSetTerminals) packed |= 1 << 4;
-        // allow set controller in bit 5.
-        if (_metadata.global.allowSetController) packed |= 1 << 5;
-        // reserved rate in bits 6-21 (16 bits).
-        packed |= _metadata.reservedRate << 6;
-        // redemption rate in bits 22-37 (16 bits).
+        // reserved rate in bits 4-19 (16 bits).
+        packed |= _metadata.reservedRate << 4;
+        // redemption rate in bits 20-35 (16 bits).
         // redemption rate is a number 0-10000.
-        packed |= _metadata.redemptionRate << 22;
-        // base currency in bits 38-69 (32 bits).
+        packed |= _metadata.redemptionRate << 20;
+        // base currency in bits 36-67 (32 bits).
         // base currency is a number 0-16777215.
-        packed |= _metadata.baseCurrency << 38;
-        // pause pay in bit 70.
-        if (_metadata.pausePay) packed |= 1 << 70;
-        // pause transfers in bit 71.
-        if (_metadata.pauseTokenCreditTransfers) packed |= 1 << 71;
-        // allow minting in bit 72.
-        if (_metadata.allowMinting) packed |= 1 << 72;
-        // allow terminal migration in bit 73.
-        if (_metadata.allowTerminalMigration) packed |= 1 << 73;
-        // allow controller migration in bit 74.
-        if (_metadata.allowControllerMigration) packed |= 1 << 74;
+        packed |= _metadata.baseCurrency << 36;
+        // pause pay in bit 68.
+        if (_metadata.pausePay) packed |= 1 << 68;
+        // pause transfers in bit 69.
+        if (_metadata.pauseTokenCreditTransfers) packed |= 1 << 69;
+        // allow minting in bit 70.
+        if (_metadata.allowMinting) packed |= 1 << 70;
+        // allow terminal migration in bit 71.
+        if (_metadata.allowTerminalMigration) packed |= 1 << 71;
+        // allow set terminals in bit 72.
+        if (_metadata.allowSetTerminals) packed |= 1 << 72;
+        // allow controller migration in bit 73.
+        if (_metadata.allowControllerMigration) packed |= 1 << 73;
+        // allow set controller in bit 74.
+        if (_metadata.allowSetController) packed |= 1 << 74;
         // hold fees in bit 75.
         if (_metadata.holdFees) packed |= 1 << 75;
         // useTotalOverflowForRedemptions in bit 76.
@@ -154,7 +159,6 @@ library JBFundingCycleMetadataResolver {
         returns (JBFundingCycleMetadata memory)
     {
         return JBFundingCycleMetadata(
-            global(_fundingCycle),
             reservedRate(_fundingCycle),
             redemptionRate(_fundingCycle),
             baseCurrency(_fundingCycle),
@@ -162,7 +166,9 @@ library JBFundingCycleMetadataResolver {
             tokenCreditTransfersPaused(_fundingCycle),
             mintingAllowed(_fundingCycle),
             terminalMigrationAllowed(_fundingCycle),
+            setTerminalsAllowed(_fundingCycle),
             controllerMigrationAllowed(_fundingCycle),
+            setControllerAllowed(_fundingCycle),
             shouldHoldFees(_fundingCycle),
             useTotalOverflowForRedemptions(_fundingCycle),
             useDataSourceForPay(_fundingCycle),

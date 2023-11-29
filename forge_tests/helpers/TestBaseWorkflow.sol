@@ -38,7 +38,6 @@ import {JBPayParamsData} from "@juicebox/structs/JBPayParamsData.sol";
 import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
 import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
-import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
 import {JBRedemptionDelegateAllocation3_1_1} from
     "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
