@@ -13,8 +13,6 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {JBDelegateMetadataLib} from
-    "@jbx-protocol/juice-delegate-metadata-lib/src/JBDelegateMetadataLib.sol";
 import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
@@ -27,6 +25,7 @@ import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBFees} from "./libraries/JBFees.sol";
 import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
+import {JBMetadataResolver} from "./libraries/JBMetadataResolver.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBTokens} from "./libraries/JBTokens.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
@@ -272,9 +271,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override returns (uint256) {
+        // Accept the funds.
+        _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
+
+        // Pay the project.
         return _pay(
             _token,
-            _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
+            _amount,
             _msgSender(),
             _projectId,
             _beneficiary,
@@ -299,15 +302,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override {
+        // Accept the funds.
+        _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
+
         // Add to balance.
-        _addToBalanceOf(
-            _projectId,
-            _token,
-            _acceptedTokenAmountFor(_projectId, _token, _amount, _metadata),
-            _shouldRefundHeldFees,
-            _memo,
-            _metadata
-        );
+        _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
     }
 
     /// @notice Holders can redeem their tokens to claim the project's overflowed tokens, or to trigger rules determined by the project's current funding cycle's data source.
@@ -558,8 +557,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _token The token being accepted.
     /// @param _amount The amount of tokens being accepted.
     /// @param _metadata The metadata in which permit2 context is provided.
-    /// @return The amount of tokens that have been accepted.
-    function _acceptedTokenAmountFor(
+    /// @return amount The amount of tokens that have been accepted.
+    function _acceptFundsFor(
         uint256 _projectId,
         address _token,
         uint256 _amount,
@@ -579,21 +578,24 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
         if (_msgSender() == address(this)) return _amount;
 
-        // Keep a reference to the allowance context parsed from the metadata.
-        JBSingleAllowanceData memory _allowance;
-
-        bool _quoteExists;
-        bytes memory _parsedMetadata;
-
         // Unpack the allowance to use, if any, given by the frontend.
-        (_quoteExists, _parsedMetadata) =
-            JBDelegateMetadataLib.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
-        if (_quoteExists) {
-            (_allowance) = abi.decode(_parsedMetadata, (JBSingleAllowanceData));
-        }
+        (bool _exists, bytes memory _parsedMetadata) =
+            JBMetadataResolver.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
 
-        // Set the allowance to `spend` tokens for the user if needed.
-        if (_allowance.amount > 0) _permitAllowance(_allowance, _token);
+        // Check if the metadata contained permit data.
+        if (_exists) {
+            // Keep a reference to the allowance context parsed from the metadata.
+            (JBSingleAllowanceData memory _allowance) =
+                abi.decode(_parsedMetadata, (JBSingleAllowanceData));
+
+            // Make sure the permit allowance is enough for this payment. If not we revert early.
+            if (_allowance.amount < _amount) {
+                revert PERMIT_ALLOWANCE_NOT_ENOUGH(_amount, _allowance.amount);
+            }
+
+            // Set the allowance to `spend` tokens for the user.
+            _permitAllowance(_allowance, _token);
+        }
 
         // Get a reference to the balance before receiving tokens.
         uint256 _balanceBefore = _balance(_token);
@@ -1376,6 +1378,10 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             emit DelegateDidRedeem(
                 _allocation.delegate, _data, _allocation.amount, _delegatedAmountFee, _msgSender()
             );
+
+            unchecked {
+                ++_i;
+            }
         }
     }
 

@@ -42,6 +42,8 @@ import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
 import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
+import {JBRedemptionDelegateAllocation3_1_1} from
+    "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
 import {JBSplitAllocationData} from "@juicebox/structs/JBSplitAllocationData.sol";
 import {IJBPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPaymentTerminal.sol";
@@ -59,9 +61,14 @@ import {IJBSplitsStore} from "@juicebox/interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "@juicebox/interfaces/IJBTokenStore.sol";
 import {IJBSplitAllocator} from "@juicebox/interfaces/IJBSplitAllocator.sol";
 import {IJBPayDelegate3_1_1} from "@juicebox/interfaces/IJBPayDelegate3_1_1.sol";
+import {IJBRedemptionDelegate3_1_1} from "@juicebox/interfaces/IJBRedemptionDelegate3_1_1.sol";
 import {IJBFundingCycleDataSource3_1_1} from
     "@juicebox/interfaces/IJBFundingCycleDataSource3_1_1.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBRedemptionTerminal} from "@juicebox/interfaces/terminal/IJBRedemptionTerminal.sol";
+import {IJBPayoutTerminal} from "@juicebox/interfaces/terminal/IJBPayoutTerminal.sol";
+import {IJBPermitPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPermitPaymentTerminal.sol";
+import {IJBFeeTerminal} from "@juicebox/interfaces/terminal/IJBFeeTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBOperatable} from "@juicebox/interfaces/IJBOperatable.sol";
 import {IJBFundingCycleBallot} from "@juicebox/interfaces/IJBFundingCycleBallot.sol";
@@ -75,12 +82,14 @@ import {JBFundingCycleMetadataResolver} from
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitsGroups} from "@juicebox/libraries/JBSplitsGroups.sol";
 import {JBOperations} from "@juicebox/libraries/JBOperations.sol";
+import {JBBallotState} from "@juicebox/enums/JBBallotState.sol";
 
 import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
 
+import {MetadataResolverHelper} from "./MetadataResolverHelper.sol";
+
 import {MockERC20} from "./../mock/MockERC20.sol";
-// import './AccessJBLib.sol';
 
 import "@paulrberg/contracts/math/PRBMath.sol";
 import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
@@ -99,13 +108,13 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     JBPrices private _jbPrices;
     JBDirectory private _jbDirectory;
     JBFundingCycleStore private _jbFundingCycleStore;
-    //   JBToken private _jbToken;
     JBTokenStore private _jbTokenStore;
     JBSplitsStore private _jbSplitsStore;
     JBController3_1 private _jbController;
     JBFundAccessConstraintsStore private _jbFundAccessConstraintsStore;
     JBTerminalStore private _jbTerminalStore;
     JBMultiTerminal private _jbMultiTerminal;
+    MetadataResolverHelper private _metadataHelper;
     JBMultiTerminal private _jbMultiTerminal2;
 
     function multisig() internal view returns (address) {
@@ -172,6 +181,10 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbMultiTerminal2;
     }
 
+    function metadataHelper() internal view returns (MetadataResolverHelper) {
+        return _metadataHelper;
+    }
+
     //*********************************************************************//
     // --------------------------- test setup ---------------------------- //
     //*********************************************************************//
@@ -216,16 +229,18 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");
         _jbController = new JBController3_1(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbFundingCycleStore,
-      _jbTokenStore,
-      _jbSplitsStore,
-      _jbFundAccessConstraintsStore,
-      _trustedForwarder
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbFundingCycleStore,
+            _jbTokenStore,
+            _jbSplitsStore,
+            _jbFundAccessConstraintsStore,
+            _trustedForwarder
+            );
         vm.label(address(_jbController), "JBController3_1");
+
+        _metadataHelper = new MetadataResolverHelper();
 
         vm.prank(_multisig);
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
@@ -237,25 +252,25 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _permit2 = deployPermit2();
 
         _jbMultiTerminal = new JBMultiTerminal(
-      _jbOperatorStore,
-      _jbProjects,
-      _jbDirectory,
-      _jbSplitsStore,
-      _jbTerminalStore,
-      IPermit2(_permit2),
-      _trustedForwarder,
-      _multisig
-    );
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbTerminalStore,
+            IPermit2(_permit2),
+            _trustedForwarder,
+            _multisig
+        );
 
         _jbMultiTerminal2 = new JBMultiTerminal(
-        _jbOperatorStore,
-        _jbProjects,
-        _jbDirectory,
-        _jbSplitsStore,
-        _jbTerminalStore,
-        IPermit2(_permit2),
-        _trustedForwarder,
-        _multisig
+            _jbOperatorStore,
+            _jbProjects,
+            _jbDirectory,
+            _jbSplitsStore,
+            _jbTerminalStore,
+            IPermit2(_permit2),
+            _trustedForwarder,
+            _multisig
         );
 
         vm.label(address(_jbMultiTerminal), "JBMultiTerminal");

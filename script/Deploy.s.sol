@@ -49,24 +49,12 @@ contract Deploy is Script {
         // 3
         _prices = new JBPrices(_operatorStore, _projects, IJBDirectory(_directoryAddress), _manager);
         //4
-        _fundingCycleStore = new JBFundingCycleStore(
-            IJBDirectory(_directoryAddress)
-        );
+        _fundingCycleStore = new JBFundingCycleStore(IJBDirectory(_directoryAddress));
         // 5
-        _directory = new JBDirectory(
-            _operatorStore,
-            _projects,
-            _fundingCycleStore,
-            address(this)
-        );
-        _tokenStore = new JBTokenStore(
-            _directory,
-            _fundingCycleStore
-        );
+        _directory = new JBDirectory(_operatorStore, _projects, _fundingCycleStore, address(this));
+        _tokenStore = new JBTokenStore(_directory, _fundingCycleStore);
         _splitsStore = new JBSplitsStore(_directory);
-        _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(
-            _directory
-        );
+        _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(_directory);
         _controller = new JBController3_1(
             _operatorStore,
             _projects,
@@ -79,11 +67,7 @@ contract Deploy is Script {
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
-        _terminalStore = new JBTerminalStore(
-            _directory,
-            _fundingCycleStore,
-            _prices
-        );
+        _terminalStore = new JBTerminalStore(_directory, _fundingCycleStore, _prices);
         _multiTerminal = new JBMultiTerminal(
             _operatorStore,
             _projects,
