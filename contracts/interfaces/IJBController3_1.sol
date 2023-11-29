@@ -6,12 +6,12 @@ import {JBBallotState} from "./../enums/JBBallotState.sol";
 import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
 import {JBFundingCycleConfig} from "./../structs/JBFundingCycleConfig.sol";
 import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
-import {JBProjectMetadata} from "./../structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./../structs/JBTerminalConfig.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBFundAccessConstraintsStore} from "./IJBFundAccessConstraintsStore.sol";
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
+import {IJBDirectoryAccessControl} from "./IJBDirectoryAccessControl.sol";
 import {IJBMigratable} from "./IJBMigratable.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBProjectMetadataRegistry} from "./IJBProjectMetadataRegistry.sol";
@@ -20,13 +20,9 @@ import {IJBTokenStore} from "./IJBTokenStore.sol";
 import {JBGroupedSplits} from "./../structs/JBGroupedSplits.sol";
 import {IJBToken} from "./../interfaces/IJBToken.sol";
 
-interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry {
+interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAccessControl {
     event LaunchProject(
-        uint256 configuration,
-        uint256 projectId,
-        JBProjectMetadata metadata,
-        string memo,
-        address caller
+        uint256 configuration, uint256 projectId, string metadata, string memo, address caller
     );
 
     event LaunchFundingCycles(
@@ -79,7 +75,7 @@ interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry {
 
     event PrepMigration(uint256 indexed projectId, address from, address caller);
 
-    event SetMetadata(uint256 indexed projectId, JBProjectMetadata metadata, address caller);
+    event SetMetadata(uint256 indexed projectId, string metadata, address caller);
 
     function projects() external view returns (IJBProjects);
 
@@ -119,7 +115,7 @@ interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry {
 
     function launchProjectFor(
         address owner,
-        JBProjectMetadata calldata projectMetadata,
+        string calldata projectMetadata,
         JBFundingCycleConfig[] calldata fundingCycleConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo

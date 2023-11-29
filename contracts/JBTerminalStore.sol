@@ -185,7 +185,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         if (_currentOverflow == 0) return 0;
 
         // Get the number of outstanding tokens the project has.
-        uint256 _totalSupply = IJBController3_1(DIRECTORY.controllerOf(_projectId))
+        uint256 _totalSupply = IJBController3_1(address(DIRECTORY.controllerOf(_projectId)))
             .totalOutstandingTokensOf(_projectId);
 
         // Can't redeem more tokens that is in the supply.
@@ -405,7 +405,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
 
         // Get the number of outstanding tokens the project has.
-        uint256 _totalSupply = IJBController3_1(DIRECTORY.controllerOf(_projectId))
+        uint256 _totalSupply = IJBController3_1(address(DIRECTORY.controllerOf(_projectId)))
             .totalOutstandingTokensOf(_projectId);
 
         // Can't redeem more tokens that is in the supply.
@@ -510,7 +510,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             .token][fundingCycle.number][_currency] + _amount;
 
         // Amount must be within what is still distributable.
-        uint256 _distributionLimit = IJBController3_1(DIRECTORY.controllerOf(_projectId))
+        uint256 _distributionLimit = IJBController3_1(address(DIRECTORY.controllerOf(_projectId)))
             .fundAccessConstraintsStore().distributionLimitOf(
             _projectId, fundingCycle.configuration, msg.sender, _accountingContext.token, _currency
         );
@@ -573,7 +573,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             .token][fundingCycle.configuration][_currency] + _amount;
 
         // There must be sufficient allowance available.
-        uint256 _overflowAllowance = IJBController3_1(DIRECTORY.controllerOf(_projectId))
+        uint256 _overflowAllowance = IJBController3_1(address(DIRECTORY.controllerOf(_projectId)))
             .fundAccessConstraintsStore().overflowAllowanceOf(
             _projectId, fundingCycle.configuration, msg.sender, _accountingContext.token, _currency
         );
@@ -776,7 +776,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         // Get a reference to the distribution limit during the funding cycle for the token.
         JBCurrencyAmount[] memory _distributionLimits = IJBController3_1(
-            DIRECTORY.controllerOf(_projectId)
+            address(DIRECTORY.controllerOf(_projectId))
         ).fundAccessConstraintsStore().distributionLimitsOf(
             _projectId, _fundingCycle.configuration, address(_terminal), _accountingContext.token
         );

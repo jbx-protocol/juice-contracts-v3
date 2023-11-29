@@ -12,6 +12,7 @@ import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
 import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
+import {IJBDirectoryAccessControl} from "./interfaces/IJBDirectoryAccessControl.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
@@ -30,7 +31,6 @@ import {JBSplitsGroups} from "./libraries/JBSplitsGroups.sol";
 import {JBFundingCycle} from "./structs/JBFundingCycle.sol";
 import {JBFundingCycleConfig} from "./structs/JBFundingCycleConfig.sol";
 import {JBFundingCycleMetadata} from "./structs/JBFundingCycleMetadata.sol";
-import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
@@ -94,12 +94,24 @@ contract JBController3_1 is
 
     /// @notice The metadata for each project, which can be used across several domains.
     /// @custom:param _projectId The ID of the project to which the metadata belongs.
-    /// @custom:param _domain The domain within which the metadata applies. Applications can use the domain namespace as they wish.
-    mapping(uint256 => mapping(uint256 => string)) public override metadataContentOf;
+    mapping(uint256 => string) public override metadataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
+
+    /// @notice Gets the current total amount of outstanding tokens for a project.
+    /// @param _projectId The ID of the project to get total outstanding tokens of.
+    /// @return The current total amount of outstanding tokens for the project.
+    function totalOutstandingTokensOf(uint256 _projectId)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        // Add the reserved tokens to the total supply.
+        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
+    }
 
     /// @notice A project's funding cycle for the specified configuration along with its metadata.
     /// @param _projectId The ID of the project to which the funding cycle belongs.
@@ -162,17 +174,17 @@ contract JBController3_1 is
         metadata = fundingCycle.expandMetadata();
     }
 
+    function setTerminalsAllowed(uint256 _projectId) external view returns (bool) {
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().global.allowSetTerminals;
+    }
+
+    function setControllerAllowed(uint256 _projectId) external view returns (bool) {
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().global.allowSetController;
+    }
+
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
-
-    /// @notice Gets the current total amount of outstanding tokens for a project.
-    /// @param _projectId The ID of the project to get total outstanding tokens of.
-    /// @return The current total amount of outstanding tokens for the project.
-    function totalOutstandingTokensOf(uint256 _projectId) public view override returns (uint256) {
-        // Add the reserved tokens to the total supply.
-        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
-    }
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
@@ -187,6 +199,7 @@ contract JBController3_1 is
     {
         return _interfaceId == type(IJBController3_1).interfaceId
             || _interfaceId == type(IJBProjectMetadataRegistry).interfaceId
+            || _interfaceId == type(IJBDirectoryAccessControl).interfaceId
             || _interfaceId == type(IJBMigratable).interfaceId
             || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
     }
@@ -228,14 +241,14 @@ contract JBController3_1 is
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
-    /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
+    /// @param _projectMetadata Metadata to associate with the project. This can be updated any time by the owner of the project.
     /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return projectId The ID of the project.
     function launchProjectFor(
         address _owner,
-        JBProjectMetadata calldata _projectMetadata,
+        string calldata _projectMetadata,
         JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
@@ -247,12 +260,12 @@ contract JBController3_1 is
         projectId = projects.createFor(_owner);
 
         // Set project metadata if one was provided.
-        if (bytes(_projectMetadata.content).length > 0) {
-            metadataContentOf[projectId][_projectMetadata.domain] = _projectMetadata.content;
+        if (bytes(_projectMetadata).length > 0) {
+            metadataOf[projectId] = _projectMetadata;
         }
 
         // Set this contract as the project's controller in the directory.
-        _directory.setControllerOf(projectId, address(this));
+        _directory.setControllerOf(projectId, IERC165(this));
 
         // Configure the first funding cycle.
         uint256 _configuration = _configureFundingCycles(projectId, _fundingCycleConfigurations);
@@ -293,7 +306,7 @@ contract JBController3_1 is
         }
 
         // Set this contract as the project's controller in the directory.
-        directory.setControllerOf(_projectId, address(this));
+        directory.setControllerOf(_projectId, IERC165(this));
 
         // Configure the first funding cycle.
         configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
@@ -454,9 +467,18 @@ contract JBController3_1 is
     /// @dev This controller should not yet be the project's controller.
     /// @param _projectId The ID of the project that will be migrated to this controller.
     /// @param _from The controller being migrated from.
-    function prepForMigrationOf(uint256 _projectId, address _from) external virtual override {
+    function prepForMigrationOf(uint256 _projectId, IERC165 _from) external virtual override {
         _projectId; // Prevents unused var compiler and natspec complaints.
         _from; // Prevents unused var compiler and natspec complaints.
+
+        // Copy the main metadata if relevant.
+        if (
+            _from.supportsInterface(type(IJBProjectMetadataRegistry).interfaceId)
+                && directory.controllerOf(_projectId) == _from
+        ) {
+            metadataOf[_projectId] =
+                IJBProjectMetadataRegistry(address(_from)).metadataOf(_projectId);
+        }
     }
 
     /// @notice Allows a project to migrate from this controller to another.
@@ -473,7 +495,7 @@ contract JBController3_1 is
         IJBDirectory _directory = directory;
 
         // This controller must be the project's current controller.
-        if (_directory.controllerOf(_projectId) != address(this)) revert NOT_CURRENT_CONTROLLER();
+        if (_directory.controllerOf(_projectId) != IERC165(this)) revert NOT_CURRENT_CONTROLLER();
 
         // Get a reference to the project's current funding cycle.
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
@@ -485,10 +507,10 @@ contract JBController3_1 is
         if (reservedTokenBalanceOf[_projectId] != 0) _distributeReservedTokensOf(_projectId, "");
 
         // Make sure the new controller is prepped for the migration.
-        _to.prepForMigrationOf(_projectId, address(this));
+        _to.prepForMigrationOf(_projectId, IERC165(this));
 
         // Set the new controller.
-        _directory.setControllerOf(_projectId, address(_to));
+        _directory.setControllerOf(_projectId, IERC165(_to));
 
         emit Migrate(_projectId, _to, _msgSender());
     }
@@ -497,14 +519,14 @@ contract JBController3_1 is
     /// @dev Only a project's controller can set its metadata.
     /// @dev Applications can use the domain namespace as they wish.
     /// @param _projectId The ID of the project who's metadata is being changed.
-    /// @param _metadata A struct containing metadata content, and domain within which the metadata applies.
-    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
+    /// @param _metadata A struct containing metadata content.
+    function setMetadataOf(uint256 _projectId, string calldata _metadata)
         external
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
     {
         // Set the project's new metadata content within the specified domain.
-        metadataContentOf[_projectId][_metadata.domain] = _metadata.content;
+        metadataOf[_projectId] = _metadata;
 
         emit SetMetadata(_projectId, _metadata, _msgSender());
     }

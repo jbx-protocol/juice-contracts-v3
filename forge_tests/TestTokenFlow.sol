@@ -7,7 +7,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 contract TestTokenFlow_Local is TestBaseWorkflow {
     IJBController3_1 private _controller;
     IJBTokenStore private _tokenStore;
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
     IJBPaymentTerminal private _terminal;
@@ -23,7 +22,6 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _controller = jbController();
         _tokenStore = jbTokenStore();
         _terminal = jbPayoutRedemptionTerminal();
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 0,
             weight: 1000 * 10 ** 18,
@@ -66,7 +64,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: address(_projectOwner),
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

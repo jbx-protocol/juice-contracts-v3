@@ -503,7 +503,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             PROJECTS.ownerOf(_projectId),
             _projectId,
             JBOperations.SET_ACCOUNTING_CONTEXT,
-            _msgSender() == DIRECTORY.controllerOf(_projectId)
+            _msgSender() == address(DIRECTORY.controllerOf(_projectId))
         )
     {
         // Keep a reference to the number of accounting context configurations.
@@ -654,8 +654,9 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             // Mint the tokens if needed.
             if (_tokenCount != 0) {
                 // Set token count to be the number of tokens minted for the beneficiary instead of the total amount.
-                beneficiaryTokenCount = IJBController3_1(DIRECTORY.controllerOf(_projectId))
-                    .mintTokensOf(_projectId, _tokenCount, _beneficiary, "", true);
+                beneficiaryTokenCount = IJBController3_1(
+                    address(DIRECTORY.controllerOf(_projectId))
+                ).mintTokensOf(_projectId, _tokenCount, _beneficiary, "", true);
             }
 
             // The token count for the beneficiary must be greater than or equal to the minimum expected.
@@ -767,7 +768,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             // Burn the project tokens.
             if (_tokenCount != 0) {
-                IJBController3_1(DIRECTORY.controllerOf(_projectId)).burnTokensOf(
+                IJBController3_1(address(DIRECTORY.controllerOf(_projectId))).burnTokensOf(
                     _holder, _projectId, _tokenCount, ""
                 );
             }

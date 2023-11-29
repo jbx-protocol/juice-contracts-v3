@@ -5,7 +5,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestSplitStore_Local is TestBaseWorkflow {
     IJBController3_1 private _controller;
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
     IJBMultiTerminal private _terminal;
@@ -25,7 +24,6 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         _tokenStore = jbTokenStore();
         _splitsGuy = payable(makeAddr("guy"));
 
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 3 days,
             weight: 1000 * 10 ** 18,
@@ -132,7 +130,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         // dummy project to receive fees
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -140,7 +138,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -266,7 +264,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         // dummy project to receive fees
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

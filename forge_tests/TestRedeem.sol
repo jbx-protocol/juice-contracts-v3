@@ -66,7 +66,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // First project for fee collection
         _controller.launchProjectFor({
             owner: address(420), // random
-            projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+            projectMetadata: "whatever",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
             memo: ""
@@ -75,7 +75,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Create the project to test.
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

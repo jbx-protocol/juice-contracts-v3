@@ -10,7 +10,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     IJBMultiTerminal private __terminal;
     IJBPrices private _prices;
     JBTokenStore private _tokenStore;
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata _metadata;
     JBGroupedSplits[] private _groupedSplits;
@@ -27,7 +26,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _prices = jbPrices();
         __terminal = jbPayoutRedemptionTerminal();
         _tokenStore = jbTokenStore();
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 0,
             weight: 1000 * 10 ** 18,
@@ -107,7 +105,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // dummy
         _controller.launchProjectFor({
             owner: address(420), //random
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -115,7 +113,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -289,7 +287,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -344,7 +342,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -402,7 +400,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -457,7 +455,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // dummy
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -465,7 +463,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -565,7 +563,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
