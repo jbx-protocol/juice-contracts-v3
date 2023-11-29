@@ -183,8 +183,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         if (_currentSurplus == 0) return 0;
 
         // Get the number of outstanding tokens the project has.
-        uint256 _totalSupply =
-            IJBController(DIRECTORY.controllerOf(_projectId)).totalOutstandingTokensOf(_projectId);
+        uint256 _totalSupply = IJBController(DIRECTORY.controllerOf(_projectId))
+            .totalTokenSupplyWithReservedTokensOf(_projectId);
 
         // Can't redeem more tokens that is in the supply.
         if (_tokenCount > _totalSupply) return 0;
@@ -397,8 +397,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
 
         // Get the total number of outstanding project tokens.
-        uint256 _totalSupply =
-            IJBController(DIRECTORY.controllerOf(_projectId)).totalOutstandingTokensOf(_projectId);
+        uint256 _totalSupply = IJBController(DIRECTORY.controllerOf(_projectId))
+            .totalTokenSupplyWithReservedTokensOf(_projectId);
 
         // Can't redeem more tokens that are in the supply.
         if (_tokenCount > _totalSupply) revert INSUFFICIENT_TOKENS();

@@ -26,7 +26,7 @@ interface IJBController is IERC165 {
 
     event DistributeReservedTokens(
         uint256 indexed rulesetId,
-        uint256 indexed rulesetNumber,
+        uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
         address beneficiary,
         uint256 tokenCount,
@@ -35,7 +35,7 @@ interface IJBController is IERC165 {
         address caller
     );
 
-    event DistributeToReservedTokenSplit(
+    event SendReservedTokensToSplit(
         uint256 indexed projectId,
         uint256 indexed domain,
         uint256 indexed group,
@@ -62,7 +62,7 @@ interface IJBController is IERC165 {
         address caller
     );
 
-    event Migrate(uint256 indexed projectId, IJBMigratable to, address caller);
+    event MigrateController(uint256 indexed projectId, IJBMigratable to, address caller);
 
     event PrepMigration(uint256 indexed projectId, address from, address caller);
 
@@ -78,9 +78,15 @@ interface IJBController is IERC165 {
 
     function directory() external view returns (IJBDirectory);
 
-    function reservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
+    function undistributedReservedTokenBalanceOf(uint256 projectId)
+        external
+        view
+        returns (uint256);
 
-    function totalOutstandingTokensOf(uint256 projectId) external view returns (uint256);
+    function totalTokenSupplyWithReservedTokensOf(uint256 projectId)
+        external
+        view
+        returns (uint256);
 
     function getRulesetOf(uint256 projectId, uint256 rulesetId)
         external
@@ -142,5 +148,5 @@ interface IJBController is IERC165 {
         external
         returns (uint256);
 
-    function migrate(uint256 projectId, IJBMigratable to) external;
+    function migrateController(uint256 projectId, IJBMigratable to) external;
 }

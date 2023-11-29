@@ -16,7 +16,7 @@ import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 
 /// @notice Stores project ownership and metadata.
-/// @dev Projects are represented as ERC-721's.
+/// @dev Projects are represented as ERC-721s.
 contract JBProjects is JBPermissioned, ERC721Votes, Ownable, IJBProjects {
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //

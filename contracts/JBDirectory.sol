@@ -43,7 +43,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
-    /// @notice Mints ERC-721's that represent project ownership and transfers.
+    /// @notice Mints ERC-721s that represent project ownership and transfers.
     IJBProjects public immutable override projects;
 
     /// @notice The contract storing and managing project rulesets.
@@ -155,7 +155,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     //*********************************************************************//
 
     /// @param _permissions A contract storing permissions.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _rulesets A contract storing and managing project rulesets.
     /// @param _owner The address that will own the contract.
     constructor(

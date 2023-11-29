@@ -121,7 +121,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
     //*********************************************************************//
 
     /// @param _permissions A contract storing protocol permission assignments.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _rulesets A contract storing project rulesets.
     constructor(

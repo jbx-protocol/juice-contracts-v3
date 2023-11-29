@@ -30,7 +30,7 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
-    /// @notice Mints ERC-721's that represent project ownership and transfers.
+    /// @notice Mints ERC-721s that represent project ownership and transfers.
     IJBProjects public immutable override projects;
 
     //*********************************************************************//
@@ -98,7 +98,7 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
     //*********************************************************************//
 
     /// @param _permissions A contract storing permissions.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _owner The address that will own the contract.
     constructor(IJBPermissions _permissions, IJBProjects _projects, address _owner)
         JBPermissioned(_permissions)

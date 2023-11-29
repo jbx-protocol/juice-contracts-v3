@@ -59,7 +59,7 @@ contract JBSplits is JBPermissioned, IJBSplits {
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
-    /// @notice Mints ERC-721's that represent project ownership and transfers.
+    /// @notice Mints ERC-721s that represent project ownership and transfers.
     IJBProjects public immutable override projects;
 
     /// @notice The directory of terminals and controllers for projects.
@@ -88,7 +88,7 @@ contract JBSplits is JBPermissioned, IJBSplits {
     //*********************************************************************//
 
     /// @param _permissions A contract storing protocol-wide permissions.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     constructor(IJBPermissions _permissions, IJBProjects _projects, IJBDirectory _directory)
         JBPermissioned(_permissions)

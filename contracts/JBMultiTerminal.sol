@@ -108,7 +108,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
-    /// @notice Mints ERC-721's that represent project ownership and transfers.
+    /// @notice Mints ERC-721s that represent project ownership and transfers.
     IJBProjects public immutable override PROJECTS;
 
     /// @notice The directory of terminals and controllers for PROJECTS.
@@ -225,7 +225,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     //*********************************************************************//
 
     /// @param _permissions A contract storing permissions.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     /// @param _splits A contract that stores splits for each project.
     /// @param _store A contract that stores the terminal's data.

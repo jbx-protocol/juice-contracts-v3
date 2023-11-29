@@ -26,7 +26,7 @@ interface IJBTerminalStore {
         address terminal,
         uint256 projectId,
         address token,
-        uint256 rulesetNumber,
+        uint256 rulesetCycleNumber,
         uint256 currency
     ) external view returns (uint256);
 

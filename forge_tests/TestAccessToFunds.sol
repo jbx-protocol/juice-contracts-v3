@@ -1553,7 +1553,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the total token supply is correct.
         assertEq(
-            _controller.totalOutstandingTokensOf(_projectId),
+            _controller.totalTokenSupplyWithReservedTokensOf(_projectId),
             PRBMath.mulDiv(
                 _beneficiaryTokenBalance,
                 JBConstants.MAX_RESERVED_RATE,
@@ -2217,7 +2217,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the total token supply is correct.
         assertEq(
-            jbController().totalOutstandingTokensOf(_projectId),
+            jbController().totalTokenSupplyWithReservedTokensOf(_projectId),
             PRBMath.mulDiv(
                 _beneficiaryTokenBalance,
                 JBConstants.MAX_RESERVED_RATE,
