@@ -76,9 +76,9 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
 
-    /// @notice The reserved token balance that has not yet been distributed for a project.
-    /// @custom:param projectId The ID of the project to get the undistributed reserved token balance of.
-    mapping(uint256 => uint256) public override undistributedReservedTokenBalanceOf;
+    /// @notice The reserved token balance that has not yet been realized (sent out to the reserved split group) for a project.
+    /// @custom:param projectId The ID of the project to get the pending reserved token balance of.
+    mapping(uint256 => uint256) public override pendingReservedTokenBalanceOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
@@ -149,9 +149,9 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
 
-    /// @notice Gets the current token supply of a project, including reserved tokens that have not yet been distributed.
+    /// @notice Gets the current token supply of a project, including pending reserved tokens.
     /// @param _projectId The ID of the project to get the total token supply of.
-    /// @return The current total token supply of the project, including reserved tokens that have not yet been distributed.
+    /// @return The current total token supply of the project, including pending reserved tokens that have not been sent to splits yet.
     function totalTokenSupplyWithReservedTokensOf(uint256 _projectId)
         public
         view
@@ -159,7 +159,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         returns (uint256)
     {
         // Add the reserved tokens to the total supply.
-        return tokens.totalSupplyOf(_projectId) + undistributedReservedTokenBalanceOf[_projectId];
+        return tokens.totalSupplyOf(_projectId) + pendingReservedTokenBalanceOf[_projectId];
     }
 
     /// @notice Indicates if this contract adheres to the specified interface.
@@ -366,9 +366,9 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             tokens.mintFor(_beneficiary, _projectId, beneficiaryTokenCount);
         }
 
-        // Add reserved tokens to the undistributed balance if needed
+        // Add reserved tokens to the pending balance if needed
         if (_reservedRate > 0) {
-            undistributedReservedTokenBalanceOf[_projectId] += _tokenCount - beneficiaryTokenCount;
+            pendingReservedTokenBalanceOf[_projectId] += _tokenCount - beneficiaryTokenCount;
         }
 
         emit MintTokens(
@@ -413,18 +413,18 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         emit BurnTokens(_holder, _projectId, _tokenCount, _memo, msg.sender);
     }
 
-    /// @notice Sends a project's undistributed reserved tokens to its reserved token splits.
+    /// @notice Sends a project's pending reserved tokens to its reserved token splits.
     /// @dev If the project has no reserved token splits, or they don't add up to 100%, the leftover tokens are minted to the project's owner.
     /// @param _projectId The ID of the project to which the reserved tokens belong.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return The amount of reserved tokens minted and sent.
-    function distributeReservedTokensOf(uint256 _projectId, string calldata _memo)
+    function sendReservedTokensToSplitsOf(uint256 _projectId, string calldata _memo)
         external
         virtual
         override
         returns (uint256)
     {
-        return _distributeReservedTokensOf(_projectId, _memo);
+        return _sendReservedTokensToSplitsOf(_projectId, _memo);
     }
 
     /// @notice Allows other controllers to signal to this one that a migration is expected for the specified project.
@@ -463,8 +463,8 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         }
 
         // All reserved tokens must be minted before migrating.
-        if (undistributedReservedTokenBalanceOf[_projectId] != 0) {
-            _distributeReservedTokensOf(_projectId, "");
+        if (pendingReservedTokenBalanceOf[_projectId] != 0) {
+            _sendReservedTokensToSplitsOf(_projectId, "");
         }
 
         // Make sure the new controller is prepped for the migration.
@@ -480,12 +480,12 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     // ------------------------ internal functions ----------------------- //
     //*********************************************************************//
 
-    /// @notice Sends all undistributed reserved tokens to the project's reserved token splits.
+    /// @notice Sends pending reserved tokens to the project's reserved token splits.
     /// @dev If the project has no reserved token splits, or they don't add up to 100%, the leftover tokens are minted to the project's owner.
     /// @param _projectId The ID of the project the reserved tokens belong to.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return tokenCount The number of reserved tokens minted/sent.
-    function _distributeReservedTokensOf(uint256 _projectId, string memory _memo)
+    function _sendReservedTokensToSplitsOf(uint256 _projectId, string memory _memo)
         internal
         returns (uint256 tokenCount)
     {
@@ -496,18 +496,18 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Get a reference to the number of tokens that need to be minted.
-        tokenCount = undistributedReservedTokenBalanceOf[_projectId];
+        tokenCount = pendingReservedTokenBalanceOf[_projectId];
 
         // Reset the reserved token balance
-        undistributedReservedTokenBalanceOf[_projectId] = 0;
+        pendingReservedTokenBalanceOf[_projectId] = 0;
 
         // Get a reference to the project owner.
         address _owner = projects.ownerOf(_projectId);
 
-        // Distribute tokens to splits and get a reference to the leftover amount to mint after all splits have gotten their share.
+        // Send tokens to splits and get a reference to the leftover amount to mint after all splits have gotten their share.
         uint256 _leftoverTokenCount = tokenCount == 0
             ? 0
-            : _distributeTokensToSplitGroupOf(
+            : _sendTokensToSplitGroupOf(
                 _projectId, _ruleset.rulesetId, JBSplitGroupIds.RESERVED_TOKENS, tokenCount
             );
 
@@ -516,7 +516,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             _tokens.mintFor(_owner, _projectId, _leftoverTokenCount);
         }
 
-        emit DistributeReservedTokens(
+        emit SendReservedTokensToSplits(
             _ruleset.rulesetId,
             _ruleset.cycleNumber,
             _projectId,
@@ -528,14 +528,14 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         );
     }
 
-    /// @notice Distribute `_amount` project tokens to the specified split group.
-    /// @dev This is used to distribute reserved tokens to the reserved token splits.
+    /// @notice Send `_amount` project tokens to the specified group of splits.
+    /// @dev This is used to send reserved tokens to the reserved token splits.
     /// @param _projectId The ID of the project that the split group belongs to.
-    /// @param _domain The domain of the split group to distribute tokens to.
-    /// @param _groupId The group of the splits to distribute the tokens between.
-    /// @param _amount The total number of tokens to distribute.
+    /// @param _domain The domain of the split group to send tokens to.
+    /// @param _groupId The group of the splits to send the tokens between.
+    /// @param _amount The total number of tokens to sent.
     /// @return leftoverAmount If the splits percents dont add up to 100%, the leftover amount is returned.
-    function _distributeTokensToSplitGroupOf(
+    function _sendTokensToSplitGroupOf(
         uint256 _projectId,
         uint256 _domain,
         uint256 _groupId,
@@ -683,7 +683,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             _terminalConfig = _terminalConfigs[_i];
 
             // Set the accounting contexts.
-            _terminalConfig.terminal.setAccountingContextsFor(
+            _terminalConfig.terminal.addAccountingContextsFor(
                 _projectId, _terminalConfig.accountingContextConfigs
             );
 

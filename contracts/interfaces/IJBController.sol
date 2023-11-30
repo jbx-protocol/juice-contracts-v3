@@ -24,7 +24,7 @@ interface IJBController is IERC165 {
 
     event QueueRulesets(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
-    event DistributeReservedTokens(
+    event SendReservedTokensToSplits(
         uint256 indexed rulesetId,
         uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
@@ -78,10 +78,7 @@ interface IJBController is IERC165 {
 
     function directory() external view returns (IJBDirectory);
 
-    function undistributedReservedTokenBalanceOf(uint256 projectId)
-        external
-        view
-        returns (uint256);
+    function pendingReservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
 
     function totalTokenSupplyWithReservedTokensOf(uint256 projectId)
         external
@@ -144,7 +141,7 @@ interface IJBController is IERC165 {
         string calldata memo
     ) external;
 
-    function distributeReservedTokensOf(uint256 projectId, string memory memo)
+    function sendReservedTokensToSplitsOf(uint256 projectId, string memory memo)
         external
         returns (uint256);
 

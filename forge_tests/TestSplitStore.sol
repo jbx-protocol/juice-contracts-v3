@@ -195,7 +195,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         });
 
         vm.prank(_projectOwner);
-        _controller.distributeReservedTokensOf(_projectId, "");
+        _controller.sendReservedTokensToSplitsOf(_projectId, "");
 
         // 10 Ether paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens distributed
         uint256 _reserveRateDistributionAmount = PRBMath.mulDiv(

@@ -70,7 +70,7 @@ interface IJBTerminal is IERC165 {
         external
         returns (uint256 balance);
 
-    function setAccountingContextsFor(
+    function addAccountingContextsFor(
         uint256 projectId,
         JBAccountingContextConfig[] calldata accountingContexts
     ) external;

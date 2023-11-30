@@ -51,7 +51,7 @@ interface IJBPayoutTerminal is IJBTerminal {
         uint256 amount,
         uint256 currency,
         uint256 minReturnedTokens
-    ) external returns (uint256 netLeftoverDistributionAmount);
+    ) external returns (uint256 netLeftoverPayoutAmount);
 
     function useAllowanceOf(
         uint256 projectId,
