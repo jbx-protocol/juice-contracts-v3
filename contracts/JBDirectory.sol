@@ -194,7 +194,6 @@ contract JBDirectory is JBOperatable, Ownable, IJBDirectory {
 
         // Get a reference to the flag indicating if the project is allowed to set terminals.
         bool _allowSetController = address(_currentController) == address(0)
-            || msg.sender == address(_currentController)
             || !_currentController.supportsInterface(type(IJBDirectoryAccessControl).interfaceId)
             ? true
             : IJBDirectoryAccessControl(address(_currentController)).setControllerAllowed(_projectId);
