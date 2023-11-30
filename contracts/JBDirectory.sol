@@ -6,7 +6,7 @@ import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
-import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
@@ -32,12 +32,12 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
 
     /// @notice For each project ID, the terminals that are currently managing its funds.
     /// @custom:member _projectId The ID of the project to get terminals of.
-    mapping(uint256 => IJBPaymentTerminal[]) private _terminalsOf;
+    mapping(uint256 => IJBTerminal[]) private _terminalsOf;
 
     /// @notice The project's primary terminal for a given token.
     /// @custom:member _projectId The ID of the project to get the primary terminal of.
     /// @custom:member _token The token to get the project's primary terminal for.
-    mapping(uint256 => mapping(address => IJBPaymentTerminal)) private _primaryTerminalOf;
+    mapping(uint256 => mapping(address => IJBTerminal)) private _primaryTerminalOf;
 
     //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
@@ -72,7 +72,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         external
         view
         override
-        returns (IJBPaymentTerminal[] memory)
+        returns (IJBTerminal[] memory)
     {
         return _terminalsOf[_projectId];
     }
@@ -86,14 +86,14 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         external
         view
         override
-        returns (IJBPaymentTerminal)
+        returns (IJBTerminal)
     {
         // Keep a reference to the primary terminal for the provided project ID and token.
-        IJBPaymentTerminal _primaryTerminal = _primaryTerminalOf[_projectId][_token];
+        IJBTerminal _primaryTerminal = _primaryTerminalOf[_projectId][_token];
 
         // If a primary terminal for the token was specifically set and it's one of the project's terminals, return it.
         if (
-            _primaryTerminal != IJBPaymentTerminal(address(0))
+            _primaryTerminal != IJBTerminal(address(0))
                 && isTerminalOf(_projectId, _primaryTerminal)
         ) return _primaryTerminal;
 
@@ -103,7 +103,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         // Return the first terminal which accepts the specified token.
         for (uint256 _i; _i < _numberOfTerminals;) {
             // Keep a reference to the terminal being iterated on.
-            IJBPaymentTerminal _terminal = _terminalsOf[_projectId][_i];
+            IJBTerminal _terminal = _terminalsOf[_projectId][_i];
 
             // If the terminal accepts the specified token, return it.
             if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0)) {
@@ -116,7 +116,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         }
 
         // Not found.
-        return IJBPaymentTerminal(address(0));
+        return IJBTerminal(address(0));
     }
 
     //*********************************************************************//
@@ -127,7 +127,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @param _projectId The ID of the project to check for the terminal.
     /// @param _terminal The address of the terminal to check for.
     /// @return A flag indicating whether or not the specified terminal is a terminal of the specified project.
-    function isTerminalOf(uint256 _projectId, IJBPaymentTerminal _terminal)
+    function isTerminalOf(uint256 _projectId, IJBTerminal _terminal)
         public
         view
         override
@@ -217,7 +217,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @dev Unless the caller is the project's controller, the project's ruleset must allow setting terminals.
     /// @param _projectId The ID of the project having its terminals set.
     /// @param _terminals An array of terminal addresses to set for the project.
-    function setTerminalsOf(uint256 _projectId, IJBPaymentTerminal[] calldata _terminals)
+    function setTerminalsOf(uint256 _projectId, IJBTerminal[] calldata _terminals)
         external
         override
         requirePermissionAllowingOverride(
@@ -268,7 +268,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @param _projectId The ID of the project a primary token is being set for.
     /// @param _token The token to set the primary terminal for.
     /// @param _terminal The terminal to make the primary terminal for the project and token.
-    function setPrimaryTerminalOf(uint256 _projectId, address _token, IJBPaymentTerminal _terminal)
+    function setPrimaryTerminalOf(uint256 _projectId, address _token, IJBTerminal _terminal)
         external
         override
         requirePermission(
@@ -317,7 +317,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @dev Unless the caller is the project's controller, the project's ruleset must allow setting terminals.
     /// @param _projectId The ID of the project to add the terminal to.
     /// @param _terminal The terminal to add.
-    function _addTerminalIfNeeded(uint256 _projectId, IJBPaymentTerminal _terminal) private {
+    function _addTerminalIfNeeded(uint256 _projectId, IJBTerminal _terminal) private {
         // Ensure that the terminal has not already been added.
         if (isTerminalOf(_projectId, _terminal)) return;
 

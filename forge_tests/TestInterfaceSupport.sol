@@ -25,10 +25,10 @@ contract TestEIP165_Local is TestBaseWorkflow {
 
         // Should support these interfaces
         assertTrue(_terminal.supportsInterface(type(IJBMultiTerminal).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBPaymentTerminal).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBRedemptionTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBRedeemTerminal).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBPayoutTerminal).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBPermitPaymentTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBPermitTerminal).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBFeeTerminal).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IERC165).interfaceId));
 

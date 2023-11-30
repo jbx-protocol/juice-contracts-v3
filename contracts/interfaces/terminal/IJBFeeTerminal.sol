@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./IJBTerminal.sol";
 import {JBFee} from "../../structs/JBFee.sol";
 
-interface IJBFeeTerminal is IJBPaymentTerminal {
+/// @notice A terminal that can process and hold fees.
+interface IJBFeeTerminal is IJBTerminal {
     event HoldFee(
         uint256 indexed projectId,
         uint256 indexed amount,
@@ -21,14 +22,14 @@ interface IJBFeeTerminal is IJBPaymentTerminal {
         address caller
     );
 
-    event RefundHeldFees(
+    event UnlockHeldFees(
         uint256 indexed projectId,
         uint256 indexed amount,
-        uint256 indexed refundedFees,
+        uint256 indexed unlockedFees,
         uint256 leftoverAmount,
         address caller
     );
-    event SetFeelessAddress(address indexed addrs, bool indexed flag, address caller);
+    event SetFeelessAddress(address indexed account, bool indexed isFeeless, address caller);
 
     event FeeReverted(
         uint256 indexed projectId,
@@ -44,7 +45,7 @@ interface IJBFeeTerminal is IJBPaymentTerminal {
 
     function isFeelessAddress(address account) external view returns (bool);
 
-    function processFees(uint256 projectId, address token) external;
+    function processHeldFees(uint256 projectId, address token) external;
 
     function setFeelessAddress(address account, bool flag) external;
 }

@@ -49,7 +49,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](1);
+        IJBTerminal[] memory _terminals = new IJBTerminal[](1);
         _terminals[0] = (_terminal);
 
         // Package up cycle config.

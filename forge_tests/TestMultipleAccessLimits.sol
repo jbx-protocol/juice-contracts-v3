@@ -170,7 +170,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         );
 
         // First dist meets our ETH limit
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethPayoutLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
@@ -205,7 +205,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[1], _usdDistributableAmount + 10000, uint32(uint160(address(usdcToken())))); */
 
         // Should succeed with _distributableAmount
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: uint32(uint160(address(usdcToken()))),
@@ -233,7 +233,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[0], 1, _ethCurrency); */
 
         // But distribution via USD limit will succeed
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: uint32(uint160(address(usdcToken()))),
@@ -483,7 +483,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 initTerminalBalance = address(__terminal).balance;
 
         // First dist should be fine based on price
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 1_800_000_000,
             currency: uint32(uint160(address(usdcToken()))),
@@ -512,7 +512,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         );
 
         // Next dist should be fine based on price
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 1_700_000_000,
             currency: uint32(uint160(address(usdcToken()))),
@@ -596,7 +596,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 initTerminalBalance = address(__terminal).balance;
         uint256 ownerBalanceBeforeFirst = _projectOwner.balance;
 
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 3_000_000_000,
             currency: uint32(uint160(address(usdcToken()))),
@@ -635,7 +635,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _balanceBeforeEthDist = address(__terminal).balance;
         uint256 _ownerBalanceBeforeEthDist = _projectOwner.balance;
 
-        __terminal.distributePayoutsOf({
+        __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 1 ether,
             currency: _ethCurrency,

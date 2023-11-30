@@ -8,11 +8,12 @@ import {JBDidPayData} from "../../structs/JBDidPayData.sol";
 import {IJBPayHook} from "../../interfaces/IJBPayHook.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-interface IJBPaymentTerminal is IERC165 {
-    event Migrate(
+/// @notice A terminal that accepts payments and can be migrated.
+interface IJBTerminal is IERC165 {
+    event MigrateTerminal(
         uint256 indexed projectId,
         address indexed token,
-        IJBPaymentTerminal indexed to,
+        IJBTerminal indexed to,
         uint256 amount,
         address caller
     );
@@ -20,7 +21,7 @@ interface IJBPaymentTerminal is IERC165 {
     event AddToBalance(
         uint256 indexed projectId,
         uint256 amount,
-        uint256 refundedFees,
+        uint256 unlockedFees,
         string memo,
         bytes metadata,
         address caller
@@ -34,8 +35,8 @@ interface IJBPaymentTerminal is IERC165 {
     );
 
     event Pay(
-        uint256 indexed rulesetConfiguration,
-        uint256 indexed fundingCycleNumber,
+        uint256 indexed rulesetId,
+        uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
         address payer,
         address beneficiary,
@@ -47,7 +48,7 @@ interface IJBPaymentTerminal is IERC165 {
     );
 
     event HookDidPay(
-        IJBPayHook indexed delegate, JBDidPayData data, uint256 delegatedAmount, address caller
+        IJBPayHook indexed hook, JBDidPayData data, uint256 payloadAmount, address caller
     );
 
     function accountingContextForTokenOf(uint256 projectId, address token)
@@ -65,7 +66,7 @@ interface IJBPaymentTerminal is IERC165 {
         view
         returns (uint256);
 
-    function migrateBalanceOf(uint256 projectId, address token, IJBPaymentTerminal to)
+    function migrateBalanceOf(uint256 projectId, address token, IJBTerminal to)
         external
         returns (uint256 balance);
 
@@ -88,7 +89,7 @@ interface IJBPaymentTerminal is IERC165 {
         uint256 projectId,
         address token,
         uint256 amount,
-        bool shouldRefundHeldFees,
+        bool shouldUnlockHeldFees,
         string calldata memo,
         bytes calldata metadata
     ) external payable;

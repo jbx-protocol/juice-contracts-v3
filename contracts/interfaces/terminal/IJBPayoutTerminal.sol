@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./IJBTerminal.sol";
 import {JBSplit} from "../../structs/JBSplit.sol";
 import {IJBSplits} from "../IJBSplits.sol";
 
-interface IJBPayoutTerminal is IJBPaymentTerminal {
-    event DistributePayouts(
-        uint256 indexed rulesetConfiguration,
-        uint256 indexed fundingCycleNumber,
+/// @notice A terminal that can distribute payouts.
+interface IJBPayoutTerminal is IJBTerminal {
+    event SendPayouts(
+        uint256 indexed rulesetId,
+        uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
         address beneficiary,
         uint256 amount,
@@ -18,7 +19,7 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
         address caller
     );
 
-    event DistributeToPayoutSplit(
+    event SendPayoutToSplit(
         uint256 indexed projectId,
         uint256 indexed domain,
         uint256 indexed group,
@@ -29,8 +30,8 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
     );
 
     event UseAllowance(
-        uint256 indexed rulesetConfiguration,
-        uint256 indexed fundingCycleNumber,
+        uint256 indexed rulesetId,
+        uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
         address beneficiary,
         uint256 amount,
@@ -44,7 +45,7 @@ interface IJBPayoutTerminal is IJBPaymentTerminal {
         uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller
     );
 
-    function distributePayoutsOf(
+    function sendPayoutsOf(
         uint256 projectId,
         address token,
         uint256 amount,

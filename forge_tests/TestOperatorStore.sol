@@ -8,7 +8,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetMetadata private _metadata;
-    IJBPaymentTerminal private _terminal;
+    IJBTerminal private _terminal;
     IJBPermissions private _permissions;
 
     address private _projectOwner;

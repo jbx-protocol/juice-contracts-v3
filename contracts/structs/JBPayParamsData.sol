@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from "./../interfaces/terminal/IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./../interfaces/terminal/IJBTerminal.sol";
 import {JBTokenAmount} from "./JBTokenAmount.sol";
 
 /// @custom:member terminal The terminal that is facilitating the payment.

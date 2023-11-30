@@ -13,7 +13,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
     JBDeadline private _ballot;
     JBSplitGroup[] private _splitGroup;
     JBFundAccessLimitGroup[] private _fundAccessLimitGroup;
-    IJBPaymentTerminal private _terminal;
+    IJBTerminal private _terminal;
 
     uint256 private _BALLOT_DURATION = 3 days;
     uint256 private _CYCLE_DURATION = 6;

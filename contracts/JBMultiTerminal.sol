@@ -42,10 +42,10 @@ import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {
     IJBMultiTerminal,
     IJBFeeTerminal,
-    IJBPaymentTerminal,
-    IJBRedemptionTerminal,
+    IJBTerminal,
+    IJBRedeemTerminal,
     IJBPayoutTerminal,
-    IJBPermitPaymentTerminal
+    IJBPermitTerminal
 } from "./interfaces/terminal/IJBMultiTerminal.sol";
 
 /// @notice Generic terminal managing all inflows and outflows of funds into the protocol ecosystem.
@@ -197,10 +197,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return _interfaceId == type(IJBMultiTerminal).interfaceId
             || _interfaceId == type(IJBPermissioned).interfaceId
-            || _interfaceId == type(IJBPaymentTerminal).interfaceId
-            || _interfaceId == type(IJBRedemptionTerminal).interfaceId
+            || _interfaceId == type(IJBTerminal).interfaceId
+            || _interfaceId == type(IJBRedeemTerminal).interfaceId
             || _interfaceId == type(IJBPayoutTerminal).interfaceId
-            || _interfaceId == type(IJBPermitPaymentTerminal).interfaceId
+            || _interfaceId == type(IJBPermitTerminal).interfaceId
             || _interfaceId == type(IJBMultiTerminal).interfaceId
             || _interfaceId == type(IJBFeeTerminal).interfaceId
             || _interfaceId == type(IERC165).interfaceId;
@@ -289,14 +289,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _projectId The ID of the project to which the funds received belong.
     /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
     /// @param _token The token being paid. This terminal ignores this property since it only manages one currency.
-    /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+    /// @param _shouldUnlockHeldFees A flag indicating if held fees should be refunded based on the amount being added.
     /// @param _memo A memo to pass along to the emitted event.
     /// @param _metadata Extra data to pass along to the emitted event.
     function addToBalanceOf(
         uint256 _projectId,
         address _token,
         uint256 _amount,
-        bool _shouldRefundHeldFees,
+        bool _shouldUnlockHeldFees,
         string calldata _memo,
         bytes calldata _metadata
     ) external payable virtual override {
@@ -304,7 +304,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         _amount = _acceptFundsFor(_projectId, _token, _amount, _metadata);
 
         // Add to balance.
-        _addToBalanceOf(_projectId, _token, _amount, _shouldRefundHeldFees, _memo, _metadata);
+        _addToBalanceOf(_projectId, _token, _amount, _shouldUnlockHeldFees, _memo, _metadata);
     }
 
     /// @notice Holders can redeem their tokens to claim the project's surplus tokens, or to trigger rules determined by the project's current ruleset's data hook.
@@ -347,14 +347,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's payout limit currency.
     /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
     /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
-    function distributePayoutsOf(
+    function sendPayoutsOf(
         uint256 _projectId,
         address _token,
         uint256 _amount,
         uint256 _currency,
         uint256 _minReturnedTokens
     ) external virtual override returns (uint256 netLeftoverDistributionAmount) {
-        return _distributePayoutsOf(_projectId, _token, _amount, _currency, _minReturnedTokens);
+        return _sendPayoutsOf(_projectId, _token, _amount, _currency, _minReturnedTokens);
     }
 
     /// @notice Allows a project to send funds from its surplus up to the preconfigured allowance.
@@ -394,7 +394,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _token The address of the token being migrated.
     /// @param _to The terminal contract that will gain the project's funds.
     /// @return balance The amount of funds that were migrated, as a fixed point number with the same amount of decimals as this terminal.
-    function migrateBalanceOf(uint256 _projectId, address _token, IJBPaymentTerminal _to)
+    function migrateBalanceOf(uint256 _projectId, address _token, IJBTerminal _to)
         external
         virtual
         override
@@ -421,13 +421,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _to.addToBalanceOf{value: _payValue}(_projectId, _token, balance, false, "", bytes(""));
         }
 
-        emit Migrate(_projectId, _token, _to, balance, msg.sender);
+        emit MigrateTerminal(_projectId, _token, _to, balance, msg.sender);
     }
 
     /// @notice Process any fees that are being held for the project.
     /// @dev Only a project owner, an operator, or the contract's owner can process held fees.
     /// @param _projectId The ID of the project whos held fees should be processed.
-    function processFees(uint256 _projectId, address _token)
+    function processHeldFees(uint256 _projectId, address _token)
         external
         virtual
         override
@@ -451,8 +451,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _numberOfHeldFees = _heldFees.length;
 
         // Keep a reference to the terminal that'll receive the fees.
-        IJBPaymentTerminal _feeTerminal =
-            DIRECTORY.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, _token);
+        IJBTerminal _feeTerminal = DIRECTORY.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, _token);
 
         // Process each fee.
         for (uint256 _i; _i < _numberOfHeldFees;) {
@@ -685,24 +684,24 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _projectId The ID of the project to which the funds received belong.
     /// @param _token The address of the token being added to the project's balance.
     /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
-    /// @param _shouldRefundHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+    /// @param _shouldUnlockHeldFees A flag indicating if held fees should be refunded based on the amount being added.
     /// @param _memo A memo to pass along to the emitted event.
     /// @param _metadata Extra data to pass along to the emitted event.
     function _addToBalanceOf(
         uint256 _projectId,
         address _token,
         uint256 _amount,
-        bool _shouldRefundHeldFees,
+        bool _shouldUnlockHeldFees,
         string memory _memo,
         bytes memory _metadata
     ) internal {
         // Refund any held fees to make sure the project doesn't pay double for funds going in and out of the protocol.
-        uint256 _refundedFees = _shouldRefundHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
+        uint256 _unlockedFees = _shouldUnlockHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
 
         // Record the added funds with any refunded fees.
-        STORE.recordAddedBalanceFor(_projectId, _token, _amount + _refundedFees);
+        STORE.recordAddedBalanceFor(_projectId, _token, _amount + _unlockedFees);
 
-        emit AddToBalance(_projectId, _amount, _refundedFees, _memo, _metadata, msg.sender);
+        emit AddToBalance(_projectId, _amount, _unlockedFees, _memo, _metadata, msg.sender);
     }
 
     /// @notice Holders can redeem their tokens to claim the project's surplus tokens, or to trigger rules determined by the project's current ruleset's data hook.
@@ -827,7 +826,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's payout limit currency.
     /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
     /// @return netLeftoverDistributionAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
-    function _distributePayoutsOf(
+    function _sendPayoutsOf(
         uint256 _projectId,
         address _token,
         uint256 _amount,
@@ -879,7 +878,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _transferFor(address(this), _projectOwner, _token, netLeftoverDistributionAmount);
         }
 
-        emit DistributePayouts(
+        emit SendPayouts(
             _ruleset.rulesetId,
             _ruleset.cycleNumber,
             _projectId,
@@ -1019,7 +1018,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 _leftoverPercentage -= _split.percent;
             }
 
-            emit DistributeToPayoutSplit(
+            emit SendPayoutToSplit(
                 _projectId,
                 _domain,
                 uint256(uint160(_token)),
@@ -1111,10 +1110,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
             // Get a reference to the Juicebox terminal being used.
-            IJBPaymentTerminal _terminal = DIRECTORY.primaryTerminalOf(_split.projectId, _token);
+            IJBTerminal _terminal = DIRECTORY.primaryTerminalOf(_split.projectId, _token);
 
             // The project must have a terminal to send funds to.
-            if (_terminal == IJBPaymentTerminal(address(0))) {
+            if (_terminal == IJBTerminal(address(0))) {
                 // Set the net payout amount to 0 to signal the reversion.
                 netPayoutAmount = 0;
 
@@ -1388,7 +1387,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             emit HoldFee(_projectId, _amount, _feePercent, _beneficiary, msg.sender);
         } else {
             // Get the terminal that'll receive the fee if one wasn't provided.
-            IJBPaymentTerminal _feeTerminal =
+            IJBTerminal _feeTerminal =
                 DIRECTORY.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, _token);
 
             // Process the fee.
@@ -1409,7 +1408,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         address _token,
         uint256 _amount,
         address _beneficiary,
-        IJBPaymentTerminal _feeTerminal
+        IJBTerminal _feeTerminal
     ) internal {
         if (address(_feeTerminal) == address(0)) {
             _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
@@ -1456,10 +1455,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @notice Refund fees based on the specified amount.
     /// @param _projectId The project for which fees are being refunded.
     /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
-    /// @return refundedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
+    /// @return unlockedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
     function _refundHeldFees(uint256 _projectId, uint256 _amount)
         internal
-        returns (uint256 refundedFees)
+        returns (uint256 unlockedFees)
     {
         // Get a reference to the project's held fees.
         JBFee[] memory _heldFees = _heldFeesOf[_projectId];
@@ -1488,7 +1487,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 if (leftoverAmount >= _heldFees[_i].amount - _feeAmount) {
                     unchecked {
                         leftoverAmount = leftoverAmount - (_heldFees[_i].amount - _feeAmount);
-                        refundedFees += _feeAmount;
+                        unlockedFees += _feeAmount;
                     }
                 } else {
                     // And here we overwrite with feeFrom the leftoverAmount
@@ -1504,7 +1503,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                                 _heldFees[_i].beneficiary
                             )
                         );
-                        refundedFees += _feeAmount;
+                        unlockedFees += _feeAmount;
                     }
                     leftoverAmount = 0;
                 }
@@ -1515,7 +1514,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             }
         }
 
-        emit RefundHeldFees(_projectId, _amount, refundedFees, leftoverAmount, msg.sender);
+        emit UnlockHeldFees(_projectId, _amount, unlockedFees, leftoverAmount, msg.sender);
     }
 
     /// @notice Reverts an expected payout.

@@ -9,7 +9,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetMetadata private _metadata;
-    IJBPaymentTerminal private _terminal;
+    IJBTerminal private _terminal;
     IJBRulesets private _rulesets;
 
     address private _projectOwner;

@@ -64,11 +64,11 @@ import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.so
 import {IJBRedeemHook} from "@juicebox/interfaces/IJBRedeemHook.sol";
 import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/terminal/IJBMultiTerminal.sol";
-import {IJBRedemptionTerminal} from "@juicebox/interfaces/terminal/IJBRedemptionTerminal.sol";
+import {IJBRedeemTerminal} from "@juicebox/interfaces/terminal/IJBRedeemTerminal.sol";
 import {IJBPayoutTerminal} from "@juicebox/interfaces/terminal/IJBPayoutTerminal.sol";
-import {IJBPermitPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPermitPaymentTerminal.sol";
+import {IJBPermitTerminal} from "@juicebox/interfaces/terminal/IJBPermitTerminal.sol";
 import {IJBFeeTerminal} from "@juicebox/interfaces/terminal/IJBFeeTerminal.sol";
-import {IJBPaymentTerminal} from "@juicebox/interfaces/terminal/IJBPaymentTerminal.sol";
+import {IJBTerminal} from "@juicebox/interfaces/terminal/IJBTerminal.sol";
 import {IJBPriceFeed} from "@juicebox/interfaces/IJBPriceFeed.sol";
 import {IJBPermissioned} from "@juicebox/interfaces/IJBPermissioned.sol";
 import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";

@@ -206,7 +206,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         );
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-        _terminal.distributePayoutsOf({
+        _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyPayoutLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
@@ -472,7 +472,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-        _terminal.distributePayoutsOf({
+        _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyPayoutLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
@@ -745,7 +745,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-        _terminal.distributePayoutsOf({
+        _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyPayoutLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
@@ -998,7 +998,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-        _terminal.distributePayoutsOf({
+        _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethCurrencyPayoutLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
@@ -1419,7 +1419,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-            _terminal.distributePayoutsOf({
+            _terminal.sendPayoutsOf({
                 projectId: _projectId,
                 amount: _ethCurrencyPayoutLimit,
                 currency: uint32(uint160(JBTokenList.ETH)),
@@ -1475,7 +1475,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-            _terminal.distributePayoutsOf({
+            _terminal.sendPayoutsOf({
                 projectId: _projectId,
                 amount: _usdCurrencyPayoutLimit,
                 currency: uint32(uint160(address(_usdcToken))),
@@ -2105,7 +2105,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-            _terminal.distributePayoutsOf({
+            _terminal.sendPayoutsOf({
                 projectId: _projectId,
                 amount: _ethCurrencyPayoutLimit,
                 currency: uint32(uint160(JBTokenList.ETH)),
@@ -2152,7 +2152,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             }
 
             // Distribute the full amount of ETH. Since splits[] is empty, everything goes to project owner.
-            _terminal2.distributePayoutsOf({
+            _terminal2.sendPayoutsOf({
                 projectId: _projectId,
                 amount: _usdCurrencyPayoutLimit,
                 currency: uint32(uint160(address(_usdcToken))),

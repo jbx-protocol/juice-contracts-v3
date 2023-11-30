@@ -10,7 +10,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
 
     IJBController private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBTerminal private _terminal;
     IJBPrices private _prices;
     IJBTokens private _tokens;
     IERC20 private _usdc;

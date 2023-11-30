@@ -12,7 +12,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
     bytes private constant _PAYER_METADATA = bytes("Some payer metadata");
 
     IJBController private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBTerminal private _terminal;
     address private _projectOwner;
     address private _beneficiary;
     address private _payer;

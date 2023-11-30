@@ -13,7 +13,7 @@ import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
-import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
@@ -339,14 +339,14 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
                 projects.ownerOf(_projectId),
                 _projectId,
                 JBPermissionIds.MINT_TOKENS,
-                directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
+                directory.isTerminalOf(_projectId, IJBTerminal(msg.sender))
                     || msg.sender == address(_ruleset.dataHook())
             );
 
             // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
                 !_ruleset.mintingAllowed()
-                    && !directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
+                    && !directory.isTerminalOf(_projectId, IJBTerminal(msg.sender))
                     && msg.sender != address(_ruleset.dataHook())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
 
@@ -401,7 +401,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             _holder,
             _projectId,
             JBPermissionIds.BURN_TOKENS,
-            directory.isTerminalOf(_projectId, IJBPaymentTerminal(msg.sender))
+            directory.isTerminalOf(_projectId, IJBTerminal(msg.sender))
         )
     {
         // There should be tokens to burn
@@ -673,7 +673,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         uint256 _numberOfTerminalConfigs = _terminalConfigs.length;
 
         // Set an array of terminals to populate.
-        IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](_numberOfTerminalConfigs);
+        IJBTerminal[] memory _terminals = new IJBTerminal[](_numberOfTerminalConfigs);
 
         // Keep a reference to the terminal configuration being iterated on.
         JBTerminalConfig memory _terminalConfig;

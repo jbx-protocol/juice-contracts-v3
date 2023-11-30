@@ -167,7 +167,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         });
 
         // First dist meets our ETH limit
-        _terminal.distributePayoutsOf({
+        _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethDistributionLimit,
             currency: uint32(uint160(JBTokenList.ETH)),
@@ -186,7 +186,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
 
         // First dist meets our ETH limit
-        _terminal.distributePayoutsOf({
+        _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _ethDistributionLimit,
             currency: uint32(uint160(JBTokenList.ETH)),

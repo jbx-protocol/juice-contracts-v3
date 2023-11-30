@@ -10,7 +10,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
     JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetMetadata _metadata;
-    IJBPaymentTerminal private _terminal;
+    IJBTerminal private _terminal;
     uint256 private _projectId;
     address private _projectOwner;
     address private _beneficiary;
