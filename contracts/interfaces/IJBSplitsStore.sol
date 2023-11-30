@@ -13,7 +13,7 @@ interface IJBSplitsStore is IJBControllerUtility {
         uint256 indexed domain,
         uint256 indexed group,
         JBSplit split,
-        address controller
+        address caller
     );
 
     function splitsOf(uint256 projectId, uint256 domain, uint256 group)
