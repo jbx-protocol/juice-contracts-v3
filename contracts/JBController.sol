@@ -282,7 +282,6 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         emit LaunchRulesets(rulesetId, _projectId, _memo, msg.sender);
     }
 
-    /// TODO: Double check this description (and other ruleset queueing functions).
     /// @notice Queues one or more rulesets that will take effect once the current ruleset expires. Rulesets only take effect if they are approved by the previous ruleset's approval hook.
     /// @dev Only a project's owner or a designated operator can queue rulesets for it.
     /// @param _projectId The ID of the project that rulesets are being queued for.

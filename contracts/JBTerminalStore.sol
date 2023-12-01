@@ -160,7 +160,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param _currency The currency that the resulting number will be in terms of.
     /// @param _tokenCount The number of tokens to make the calculation with, as a fixed point number with 18 decimals.
     /// @param _useTotalSurplus A flag indicating whether the surplus used in the calculation should be summed from all of the project's terminals. If false, surplus should be limited to the amount in the specified `_terminal`.
-    /// @return The amount of surplus tokens that can be reclaimed by redeeming `_tokenCount` tokens as a fixed point number with the same number of decimals as the provided `_terminal`.
+    /// @return The amount of surplus tokens that can be reclaimed by redeeming `_tokenCount` tokens as a fixed point number with the specified number of decimals.
     function currentReclaimableSurplusOf(
         address _terminal,
         uint256 _projectId,
@@ -815,7 +815,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param _projectId The ID of the project to get the total surplus for.
     /// @param _decimals The number of decimals that the fixed point surplus result should include.
     /// @param _currency The currency that the surplus result should be in terms of.
-    /// @return surplus The total surplus of a project's funds in terms of `_currency`, as a fixed point number with `_decimals` decimals.
+    /// @return surplus The total surplus of a project's funds in terms of `_currency`, as a fixed point number with the specified number of decimals.
     function _currentTotalSurplusOf(uint256 _projectId, uint256 _decimals, uint256 _currency)
         private
         view
