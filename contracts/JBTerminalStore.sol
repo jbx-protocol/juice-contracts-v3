@@ -827,7 +827,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Keep a reference to the number of termainls.
         uint256 _numberOfTerminals = _terminals.length;
 
-        // Add the current ETH surplus for each terminal.
+        // Add the current surplus for each terminal.
         for (uint256 _i; _i < _numberOfTerminals;) {
             surplus += _terminals[_i].currentSurplusOf(_projectId, _decimals, _currency);
             unchecked {

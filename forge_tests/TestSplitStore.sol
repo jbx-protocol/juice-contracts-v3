@@ -14,7 +14,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
     address private _projectOwner;
     address payable private _splitsGuy;
     uint256 private _projectId;
-    uint256 _ethDistributionLimit = 4 ether;
+    uint256 _nativeDistributionLimit = 4 ether;
 
     function setUp() public override {
         super.setUp();
@@ -41,7 +41,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
             }),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
@@ -79,7 +79,8 @@ contract TestSplitStore_Local is TestBaseWorkflow {
             splitHook: IJBSplitHook(address(0))
         });
 
-        _splitsGroup[0] = JBSplitGroup({groupId: uint32(uint160(JBTokenList.ETH)), splits: _splits});
+        _splitsGroup[0] =
+            JBSplitGroup({groupId: uint32(uint160(JBTokenList.Native)), splits: _splits});
 
         // A dummy used to check that splits groups of "0" don't bypass distribution limits.
         _splitsGroup[1] = JBSplitGroup({groupId: 0, splits: _splits});
@@ -104,14 +105,14 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
         _payoutLimits[0] = JBCurrencyAmount({
-            amount: _ethDistributionLimit,
-            currency: uint32(uint160(JBTokenList.ETH))
+            amount: _nativeDistributionLimit,
+            currency: uint32(uint160(JBTokenList.Native))
         });
         _surplusAllowances[0] =
-            JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBTokenList.ETH))});
+            JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBTokenList.Native))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -127,8 +128,10 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -151,55 +154,55 @@ contract TestSplitStore_Local is TestBaseWorkflow {
     }
 
     function testSplitPayoutAndReservedRateSplit() public {
-        uint256 _ethPayAmount = 10 ether;
+        uint256 _nativePayAmount = 10 ether;
         address _payee = makeAddr("payee");
-        vm.deal(_payee, _ethPayAmount);
+        vm.deal(_payee, _nativePayAmount);
         vm.prank(_payee);
 
-        _terminal.pay{value: _ethPayAmount}({
+        _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH,
+            amount: _nativePayAmount,
+            token: JBTokenList.Native,
             beneficiary: _payee,
             minReturnedTokens: 0,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
 
-        // First dist meets our ETH limit
+        // First dist meets our native token limit
         _terminal.sendPayoutsOf({
             projectId: _projectId,
-            amount: _ethDistributionLimit,
-            currency: uint32(uint160(JBTokenList.ETH)),
-            token: JBTokenList.ETH, // unused
+            amount: _nativeDistributionLimit,
+            currency: uint32(uint160(JBTokenList.Native)),
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
 
         // Calculate the amount returned after fees are processed
-        uint256 _beneficiaryEthBalance = PRBMath.mulDiv(
-            _ethDistributionLimit, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE()
+        uint256 _beneficiaryNativeBalance = PRBMath.mulDiv(
+            _nativeDistributionLimit, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE()
         );
 
-        assertEq(_splitsGuy.balance, _beneficiaryEthBalance);
+        assertEq(_splitsGuy.balance, _beneficiaryNativeBalance);
 
         // Check that split groups of "0" don't extend distribution limit (keeping this out of a number test, for brevity)
         vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
 
-        // First dist meets our ETH limit
+        // First dist meets our native token limit
         _terminal.sendPayoutsOf({
             projectId: _projectId,
-            amount: _ethDistributionLimit,
-            currency: uint32(uint160(JBTokenList.ETH)),
-            token: JBTokenList.ETH, // unused
+            amount: _nativeDistributionLimit,
+            currency: uint32(uint160(JBTokenList.Native)),
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
 
         vm.prank(_projectOwner);
         _controller.sendReservedTokensToSplitsOf(_projectId, "");
 
-        // 10 Ether paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens distributed
+        // 10 native tokens paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens distributed
         uint256 _reserveRateDistributionAmount = PRBMath.mulDiv(
-            _ethPayAmount, _data.weight, 10 ** 18
+            _nativePayAmount, _data.weight, 10 ** 18
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
 
         assertEq(_tokens.totalBalanceOf(_splitsGuy, _projectId), _reserveRateDistributionAmount);
@@ -240,11 +243,11 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _payoutLimits[0] = JBCurrencyAmount({amount: _ethDistributionLimit, currency: _currencyId});
+        _payoutLimits[0] = JBCurrencyAmount({amount: _nativeDistributionLimit, currency: _currencyId});
         _surplusAllowances[0] = JBCurrencyAmount({amount: 2 ether, currency: _currencyId});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -260,8 +263,10 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 

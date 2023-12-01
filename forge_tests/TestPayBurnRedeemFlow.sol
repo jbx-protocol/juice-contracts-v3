@@ -36,7 +36,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
@@ -63,8 +63,10 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -89,7 +91,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     function testFuzzPayBurnRedeemFlow(
         bool _payPreferClaimed,
         bool _burnPreferClaimed,
-        uint96 _ethPayAmount,
+        uint96 _nativePayAmount,
         uint256 _burnTokenAmount,
         uint256 _redeemTokenAmount
     ) external {
@@ -98,10 +100,10 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _tokens.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
 
         // Make a payment.
-        _terminal.pay{value: _ethPayAmount}({
+        _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH, //unused
+            amount: _nativePayAmount,
+            token: JBTokenList.Native, //unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -109,13 +111,13 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary should have a balance of JBTokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
-        // Make sure the ETH balance in terminal is up to date.
-        uint256 _terminalBalance = _ethPayAmount;
+        // Make sure the native token balance in terminal is up to date.
+        uint256 _terminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
             _terminalBalance
         );
 
@@ -150,7 +152,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         uint256 _reclaimAmt = _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            token: JBTokenList.ETH, // unused
+            token: JBTokenList.Native, // unused
             count: _redeemTokenAmount,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
@@ -160,9 +162,9 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // Make sure the beneficiary has a new balance of JBTokens.
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
-        // Make sure the ETH balance in terminal is up to date.
+        // Make sure the native token balance in terminal is up to date.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
             _terminalBalance - _reclaimAmt
         );
     }

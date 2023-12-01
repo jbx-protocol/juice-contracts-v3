@@ -7,16 +7,16 @@ import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
 import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 
 contract AccessJBLib {
-    function ETH() external pure returns (uint256) {
-        return JBCurrencyIds.ETH;
+    function NATIVE() external pure returns (uint256) {
+        return JBCurrencyIds.NATIVE;
     }
 
     function USD() external pure returns (uint256) {
         return JBCurrencyIds.USD;
     }
 
-    function ETHToken() external pure returns (address) {
-        return JBTokenList.ETH;
+    function NativeToken() external pure returns (address) {
+        return JBTokenList.Native;
     }
 
     function MAX_FEE() external pure returns (uint256) {

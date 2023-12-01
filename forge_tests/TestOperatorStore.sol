@@ -39,7 +39,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
@@ -63,8 +63,10 @@ contract TestPermissions_Local is TestBaseWorkflow {
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 

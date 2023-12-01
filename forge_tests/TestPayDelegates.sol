@@ -43,7 +43,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
@@ -66,8 +66,10 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -80,12 +82,12 @@ contract TestDelegates_Local is TestBaseWorkflow {
         });
     }
 
-    function testPayHooks(uint256 _numberOfAllocations, uint256 _ethPayAmount) public {
+    function testPayHooks(uint256 _numberOfAllocations, uint256 _nativePayAmount) public {
         // Bound the number of allocations to a reasonable amount.
         _numberOfAllocations = bound(_numberOfAllocations, 1, 20);
         // Make sure the amount of tokens generated fits in a register, and that each allocation can get some.
-        _ethPayAmount =
-            bound(_ethPayAmount, _numberOfAllocations, type(uint256).max / _DATA_SOURCE_WEIGHT);
+        _nativePayAmount =
+            bound(_nativePayAmount, _numberOfAllocations, type(uint256).max / _DATA_SOURCE_WEIGHT);
 
         // epa * weight / epad < max*epad/weight
 
@@ -96,7 +98,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         uint256[] memory _payDelegateAmounts = new uint256[](_numberOfAllocations);
 
         // Keep a reference to the amount that'll be paid and allocated.
-        uint256 _totalToAllocate = _ethPayAmount;
+        uint256 _totalToAllocate = _nativePayAmount;
 
         // Spread the paid amount through all allocations, in various chunks, omitted the last entry.
         for (uint256 i; i < _numberOfAllocations - 1; i++) {
@@ -129,20 +131,20 @@ contract TestDelegates_Local is TestBaseWorkflow {
                 projectId: _projectId,
                 currentRulesetId: _fundingCycle.rulesetId,
                 amount: JBTokenAmount(
-                    JBTokenList.ETH,
-                    _ethPayAmount,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).decimals,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).currency
+                    JBTokenList.Native,
+                    _nativePayAmount,
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).currency
                     ),
                 forwardedAmount: JBTokenAmount(
-                    JBTokenList.ETH,
+                    JBTokenList.Native,
                     _payDelegateAmounts[i],
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).decimals,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).currency
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).currency
                     ),
                 weight: _WEIGHT,
                 projectTokenCount: PRBMath.mulDiv(
-                    _ethPayAmount, _DATA_SOURCE_WEIGHT, 10 ** _NATIVE_TOKEN_DECIMALS
+                    _nativePayAmount, _DATA_SOURCE_WEIGHT, 10 ** _NATIVE_TOKEN_DECIMALS
                     ),
                 beneficiary: _beneficiary,
                 dataHookMetadata: _dataHookMetadata,
@@ -176,14 +178,14 @@ contract TestDelegates_Local is TestBaseWorkflow {
             abi.encode(_DATA_SOURCE_WEIGHT, _allocations)
         );
 
-        vm.deal(_payer, _ethPayAmount);
+        vm.deal(_payer, _nativePayAmount);
         vm.prank(_payer);
 
         // Pay the project such that the _beneficiary receives project tokens.
-        _terminal.pay{value: _ethPayAmount}({
+        _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH,
+            amount: _nativePayAmount,
+            token: JBTokenList.Native,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Forge Test",

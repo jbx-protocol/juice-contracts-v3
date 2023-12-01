@@ -38,7 +38,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             }),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
@@ -62,8 +62,10 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         // Package up terminal config.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -155,7 +157,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _terminal.pay{value: 1 ether}({
             projectId: _projectId,
             amount: 1 ether,
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",

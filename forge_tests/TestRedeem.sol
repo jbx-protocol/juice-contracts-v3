@@ -36,7 +36,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
@@ -59,8 +59,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContextConfigs =
             new JBAccountingContextConfig[](1);
-        _accountingContextConfigs[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContextConfigs[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] = JBTerminalConfig({
             terminal: _terminal,
             accountingContextConfigs: _accountingContextConfigs
@@ -87,17 +89,17 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
     function testRedeem(uint256 _tokenAmountToRedeem) external {
         bool _payPreferClaimed = true;
-        uint96 _ethPayAmount = 10 ether;
+        uint96 _nativePayAmount = 10 ether;
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
         IJBToken _token = _tokens.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
 
         // Pay the project.
-        _terminal.pay{value: _ethPayAmount}({
+        _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH,
+            amount: _nativePayAmount,
+            token: JBTokenList.Native,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -105,14 +107,14 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
-        // Make sure the ETH balance in terminal is up to date.
-        uint256 _ethTerminalBalance = _ethPayAmount;
+        // Make sure the native token balance in terminal is up to date.
+        uint256 _nativeTerminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
-            _ethTerminalBalance
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            _nativeTerminalBalance
         );
 
         // Fuzz 1 to full balance redemption.
@@ -120,10 +122,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Test: redeem
         vm.prank(_beneficiary);
-        uint256 _ethReclaimAmt = _terminal.redeemTokensOf({
+        uint256 _nativeReclaimAmt = _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             count: _tokenAmountToRedeem,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
@@ -132,7 +134,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Keep a reference to the expected amount redeemed.
         uint256 _grossRedeemed = PRBMath.mulDiv(
-            PRBMath.mulDiv(_ethTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
+            PRBMath.mulDiv(_nativeTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
             _metadata.redemptionRate
                 + PRBMath.mulDiv(
                     _tokenAmountToRedeem,
@@ -150,10 +152,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
         uint256 _netReceived = _grossRedeemed - _fee;
 
         // Make sure the correct amount was returned (2 wei precision)
-        assertApproxEqAbs(_ethReclaimAmt, _netReceived, 2, "incorrect amount returned");
+        assertApproxEqAbs(_nativeReclaimAmt, _netReceived, 2, "incorrect amount returned");
 
-        // Make sure the beneficiary received correct amount of ETH.
-        assertEq(payable(_beneficiary).balance, _ethReclaimAmt);
+        // Make sure the beneficiary received correct amount of native tokens.
+        assertEq(payable(_beneficiary).balance, _nativeReclaimAmt);
 
         // Make sure the beneficiary has correct amount of tokens.
         assertEq(
@@ -162,10 +164,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
             "incorrect beneficiary balance"
         );
 
-        // Make sure the ETH balance in terminal should be up to date (with 1 wei precision).
+        // Make sure the native token balance in terminal should be up to date (with 1 wei precision).
         assertApproxEqAbs(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
-            _ethTerminalBalance - _ethReclaimAmt - (_ethReclaimAmt * 25 / 1000),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            _nativeTerminalBalance - _nativeReclaimAmt - (_nativeReclaimAmt * 25 / 1000),
             1
         );
     }

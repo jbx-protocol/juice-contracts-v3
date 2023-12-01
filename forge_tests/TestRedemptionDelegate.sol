@@ -41,7 +41,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
@@ -64,8 +64,10 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -96,7 +98,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
     function testRedeemHook() public {
         // Reference and bound pay amount
-        uint256 _ethPayAmount = 10 ether;
+        uint256 _nativePayAmount = 10 ether;
         uint256 _halfPaid = 5 ether;
 
         // Delegate address
@@ -106,11 +108,11 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // Keep a reference to the current funding cycle.
         (JBRuleset memory _fundingCycle,) = _controller.currentRulesetOf(_projectId);
 
-        vm.deal(address(this), _ethPayAmount);
-        uint256 _ficiaryAllocation = _terminal.pay{value: _ethPayAmount}({
+        vm.deal(address(this), _nativePayAmount);
+        uint256 _ficiaryAllocation = _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH,
+            amount: _nativePayAmount,
+            token: JBTokenList.Native,
             beneficiary: address(this),
             minReturnedTokens: 0,
             memo: "Forge Test",
@@ -118,16 +120,16 @@ contract TestDelegates_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _WEIGHT);
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _WEIGHT);
         assertEq(_tokens.totalBalanceOf(address(this), _projectId), _beneficiaryTokenBalance);
         assertEq(_ficiaryAllocation, _beneficiaryTokenBalance);
         emit log_uint(_beneficiaryTokenBalance);
 
-        // Make sure the ETH balance in terminal is up to date.
-        uint256 _ethTerminalBalance = _ethPayAmount;
+        // Make sure the native token balance in terminal is up to date.
+        uint256 _nativeTerminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.ETH),
-            _ethTerminalBalance
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            _nativeTerminalBalance
         );
 
         // Reference allocations
@@ -146,16 +148,16 @@ contract TestDelegates_Local is TestBaseWorkflow {
             currentRulesetId: _fundingCycle.rulesetId,
             projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
-                JBTokenList.ETH,
+                JBTokenList.Native,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).currency
                 ),
             forwardedAmount: JBTokenAmount(
-                JBTokenList.ETH,
+                JBTokenList.Native,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.ETH).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).currency
                 ),
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             beneficiary: payable(address(this)),
@@ -187,7 +189,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             holder: address(this),
             projectId: _projectId,
             count: _beneficiaryTokenBalance / 2,
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             minReclaimed: 0,
             beneficiary: payable(address(this)),
             metadata: new bytes(0)

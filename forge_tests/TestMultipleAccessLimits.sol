@@ -5,7 +5,7 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
-    uint256 private _ethCurrency;
+    uint256 private _nativeCurrency;
     IJBController private _controller;
     IJBMultiTerminal private __terminal;
     IJBPrices private _prices;
@@ -20,7 +20,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     function setUp() public override {
         super.setUp();
 
-        _ethCurrency = uint32(uint160(JBTokenList.ETH));
+        _nativeCurrency = uint32(uint160(JBTokenList.Native));
         _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
@@ -42,7 +42,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             }),
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
@@ -60,28 +60,30 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         public
         returns (uint256, JBCurrencyAmount[] memory, JBAccountingContextConfig[] memory)
     {
-        uint256 _ethPayAmount = 1.5 ether;
-        uint256 _ethPayoutLimit = 1 ether;
-        uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+        uint256 _nativePayAmount = 1.5 ether;
+        uint256 _nativePayoutLimit = 1 ether;
+        uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // More than the treasury will have available.
-        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
         // Package up fund access limits
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _payoutLimits[0] =
-            JBCurrencyAmount({amount: _ethPayoutLimit, currency: uint32(uint160(JBTokenList.ETH))});
+        _payoutLimits[0] = JBCurrencyAmount({
+            amount: _nativePayoutLimit,
+            currency: uint32(uint160(JBTokenList.Native))
+        });
         _payoutLimits[1] = JBCurrencyAmount({
             amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
         });
         _surplusAllowances[0] =
-            JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBTokenList.ETH))});
+            JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBTokenList.Native))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -96,8 +98,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] = JBAccountingContextConfig({
             token: address(usdcToken()),
             standard: JBTokenStandards.ERC20
@@ -123,14 +127,14 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
-        vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
+        MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_nativePricePerUsd, 18);
+        vm.label(address(_priceFeedNativeUsd), "MockPrice Feed Native-USD");
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
-            pricingCurrency: uint32(uint160(JBTokenList.ETH)),
+            pricingCurrency: uint32(uint160(JBTokenList.Native)),
             unitCurrency: uint32(uint160(address(usdcToken()))),
-            priceFeed: _priceFeedEthUsd
+            priceFeed: _priceFeedNativeUsd
         });
 
         vm.stopPrank();
@@ -139,11 +143,11 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     }
 
     function testAccessConstraintsDelineation() external {
-        uint256 _ethPayAmount = 1.5 ether;
-        uint256 _ethPayoutLimit = 1 ether;
-        uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+        uint256 _nativePayAmount = 1.5 ether;
+        uint256 _nativePayoutLimit = 1 ether;
+        uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // More than the treasury will have available.
-        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
         (
             uint256 _projectId,
@@ -151,10 +155,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             JBAccountingContextConfig[] memory _accountingContexts
         ) = launchProjectsForTestBelow();
 
-        __terminal.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH,
+            amount: _nativePayAmount,
+            token: JBTokenList.Native,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -166,15 +170,15 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // Make sure the beneficiary has a balance of JBTokenList.
         assertEq(
             _tokens.totalBalanceOf(_beneficiary, _projectId),
-            PRBMathUD60x18.mul(_ethPayAmount, _data.weight)
+            PRBMathUD60x18.mul(_nativePayAmount, _data.weight)
         );
 
-        // First dist meets our ETH limit
+        // First dist meets our native token limit
         __terminal.sendPayoutsOf({
             projectId: _projectId,
-            amount: _ethPayoutLimit,
-            currency: uint32(uint160(JBTokenList.ETH)),
-            token: JBTokenList.ETH, // unused
+            amount: _nativePayoutLimit,
+            currency: uint32(uint160(JBTokenList.Native)),
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
 
@@ -189,11 +193,11 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Price for the amount (in USD) that is distributable based on the terminals current balance
         uint256 _usdDistributableAmount = PRBMath.mulDiv(
-            _ethPayAmount - _ethPayoutLimit, // ETH value
+            _nativePayAmount - _nativePayoutLimit, // native token value
             10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
                 projectId: _projectId,
-                pricingCurrency: _ethCurrency,
+                pricingCurrency: _nativeCurrency,
                 unitCurrency: uint32(uint160(address(usdcToken()))),
                 decimals: 18
             })
@@ -209,35 +213,35 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.ETH, // token
+            token: JBTokenList.Native, // token
             minReturnedTokens: 0
         });
 
         // Pay in another allotment.
-        vm.deal(_beneficiary, _ethPayAmount);
+        vm.deal(_beneficiary, _nativePayAmount);
         vm.prank(_beneficiary);
 
-        __terminal.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH, // unused
+            amount: _nativePayAmount,
+            token: JBTokenList.Native, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
 
-        /*  // Trying to distribute via our ETH distLimit will fail (currency is ETH or 1)
+        /*  // Trying to distribute via our native token distLimit will fail (currency is the native token or 1)
         vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
-        jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[0], 1, _ethCurrency); */
+        jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[0], 1, _nativeCurrency); */
 
         // But distribution via USD limit will succeed
         __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _usdDistributableAmount,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.ETH, //token (unused)
+            token: JBTokenList.Native, //token (unused)
             minReturnedTokens: 0
         });
     }
@@ -247,7 +251,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
 
-        _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _ethCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _nativeCurrency});
 
         _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY});
 
@@ -256,7 +260,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -273,8 +277,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] = JBAccountingContextConfig({
             token: address(usdcToken()),
             standard: JBTokenStandards.ERC20
@@ -311,7 +317,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -328,8 +334,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] = JBAccountingContextConfig({
             token: address(usdcToken()),
             standard: JBTokenStandards.ERC20
@@ -375,7 +383,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             JBCurrencyAmount({amount: _allowanceLimit, currency: ALLOWCURRENCY + 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -388,8 +396,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] = JBAccountingContextConfig({
             token: address(usdcToken()),
             standard: JBTokenStandards.ERC20
@@ -407,18 +417,18 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     }
 
     function testFailMultipleDistroLimitCurrenciesOverLimit() external {
-        uint256 _ethPayAmount = 1.5 ether;
-        uint256 _ethPayoutLimit = 1 ether;
-        uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+        uint256 _nativePayAmount = 1.5 ether;
+        uint256 _nativePayoutLimit = 1 ether;
+        uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // More than the treasury will have available.
-        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _ethPricePerUsd);
+        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
         // Package up fund access limits
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _payoutLimits[0] = JBCurrencyAmount({amount: _ethPayoutLimit, currency: _ethCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: _nativePayoutLimit, currency: _nativeCurrency});
         _payoutLimits[1] = JBCurrencyAmount({
             amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
@@ -426,7 +436,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -441,8 +451,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] = JBAccountingContextConfig({
             token: address(usdcToken()),
             standard: JBTokenStandards.ERC20
@@ -467,10 +479,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             memo: ""
         });
 
-        __terminal.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH, // unused
+            amount: _nativePayAmount,
+            token: JBTokenList.Native, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -478,7 +490,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
 
         // Make sure beneficiary has a balance of JBTokens
-        uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
+        uint256 _userTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
         uint256 initTerminalBalance = address(__terminal).balance;
 
@@ -487,7 +499,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1_800_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.ETH, // unused
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
 
@@ -497,7 +509,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             _prices.pricePerUnitOf({
                 projectId: 1,
                 pricingCurrency: uint32(uint160(address(usdcToken()))),
-                unitCurrency: _ethCurrency,
+                unitCurrency: _nativeCurrency,
                 decimals: 18
             })
         );
@@ -516,26 +528,26 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1_700_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.ETH, // unused
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
     }
 
     function testMultipleDistroLimitCurrencies() external {
-        uint256 _ethPayAmount = 3 ether;
-        vm.deal(_beneficiary, _ethPayAmount);
+        uint256 _nativePayAmount = 3 ether;
+        vm.deal(_beneficiary, _nativePayAmount);
         vm.prank(_beneficiary);
 
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
-        _payoutLimits[0] = JBCurrencyAmount({amount: 1 ether, currency: _ethCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: 1 ether, currency: _nativeCurrency});
         _payoutLimits[1] = JBCurrencyAmount({
             amount: 2000 * 10 ** 18,
             currency: uint32(uint160(address(usdcToken())))
         });
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.ETH,
+            token: JBTokenList.Native,
             payoutLimits: _payoutLimits,
             surplusAllowances: new JBCurrencyAmount[](0)
         });
@@ -550,8 +562,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] = JBAccountingContextConfig({
             token: address(usdcToken()),
             standard: JBTokenStandards.ERC20
@@ -567,10 +581,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             memo: ""
         });
 
-        __terminal.pay{value: _ethPayAmount}({
+        __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokenList.ETH, // unused
+            amount: _nativePayAmount,
+            token: JBTokenList.Native, // unused
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -579,18 +593,18 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _price = 0.0005 * 10 ** 18; // 1/2000
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_price, 18);
-        vm.label(address(_priceFeedEthUsd), "MockPrice Feed MyToken-ETH");
+        MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_price, 18);
+        vm.label(address(_priceFeedNativeUsd), "MockPrice Feed MyToken-Native");
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
-            pricingCurrency: _ethCurrency,
+            pricingCurrency: _nativeCurrency,
             unitCurrency: uint32(uint160(address(usdcToken()))),
-            priceFeed: _priceFeedEthUsd
+            priceFeed: _priceFeedNativeUsd
         });
 
         // Make sure the beneficiary has a balance of JBTokens
-        uint256 _userTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _data.weight);
+        uint256 _userTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
 
         uint256 initTerminalBalance = address(__terminal).balance;
@@ -600,7 +614,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 3_000_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.ETH, // unused
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
 
@@ -610,7 +624,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             _prices.pricePerUnitOf({
                 projectId: 1,
                 pricingCurrency: uint32(uint160(address(usdcToken()))),
-                unitCurrency: _ethCurrency,
+                unitCurrency: _nativeCurrency,
                 decimals: 18
             })
         );
@@ -632,27 +646,27 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 )
         );
 
-        uint256 _balanceBeforeEthDist = address(__terminal).balance;
-        uint256 _ownerBalanceBeforeEthDist = _projectOwner.balance;
+        uint256 _balanceBeforeNativeDist = address(__terminal).balance;
+        uint256 _ownerBalanceBeforeNativeDist = _projectOwner.balance;
 
         __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 1 ether,
-            currency: _ethCurrency,
-            token: JBTokenList.ETH, // unused
+            currency: _nativeCurrency,
+            token: JBTokenList.Native, // unused
             minReturnedTokens: 0
         });
 
         // Funds leaving the ecosystem -> fee taken
         assertEq(
             _projectOwner.balance,
-            _ownerBalanceBeforeEthDist
+            _ownerBalanceBeforeNativeDist
                 + PRBMath.mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
         );
 
         assertEq(
             address(__terminal).balance,
-            _balanceBeforeEthDist
+            _balanceBeforeNativeDist
                 - PRBMath.mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
         );
     }

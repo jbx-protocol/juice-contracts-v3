@@ -222,8 +222,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _token The address of the token to get this terminal's balance of.
     /// @return This terminal's balance.
     function _balance(address _token) internal view virtual returns (uint256) {
-        // If the `_token` is ETH, get the native token balance.
-        return _token == JBTokenList.ETH
+        // If the `_token` is native, get the native token balance.
+        return _token == JBTokenList.Native
             ? address(this).balance
             : IERC20(_token).balanceOf(address(this));
     }
@@ -261,8 +261,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
     /// @notice Pay a project with tokens.
     /// @param _projectId The ID of the project being paid.
-    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same number of decimals as this terminal. If this terminal's token is ETH, this is ignored and `msg.value` is used in its place.
-    /// @param _token The token being paid. This terminal ignores this property since it only manages one token.
+    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same number of decimals as this terminal. If this terminal's token is native, this is ignored and `msg.value` is used in its place.
+    /// @param _token The token being paid.
     /// @param _beneficiary The address to mint tokens to, and pass along to the ruleset's data hook and pay hook if applicable.
     /// @param _minReturnedTokens The minimum number of project tokens expected in return for this payment, as a fixed point number with the same number of decimals as this terminal. If the amount of tokens minted for the beneficiary would be less than this amount, the payment is reverted.
     /// @param _memo A memo to pass along to the emitted event.
@@ -296,8 +296,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @notice Adds funds to a project's balance without minting tokens.
     /// @dev Adding to balance can unlock held fees if `_shouldUnlockHeldFees` is true.
     /// @param _projectId The ID of the project to add funds to the balance of.
-    /// @param _amount The amount of tokens to add to the balance, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and `msg.value` is used instead.
-    /// @param _token The token being added to the balance. This terminal ignores this property since it only manages one currency.
+    /// @param _amount The amount of tokens to add to the balance, as a fixed point number with the same number of decimals as this terminal. If this is a native token terminal, this is ignored and `msg.value` is used instead.
+    /// @param _token The token being added to the balance.
     /// @param _shouldUnlockHeldFees A flag indicating if held fees should be refunded based on the amount being added.
     /// @param _memo A memo to pass along to the emitted event.
     /// @param _metadata Extra data to pass along to the emitted event.
@@ -321,7 +321,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _holder The account whose tokens are being redeemed.
     /// @param _projectId The ID of the project the project tokens belong to.
     /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
-    /// @param _token The token being reclaimed. This terminal ignores this property since it only manages one token.
+    /// @param _token The token being reclaimed.
     /// @param _minReturnedTokens The minimum number of terminal tokens expected in return, as a fixed point number with the same number of decimals as this terminal. If the amount of tokens minted for the beneficiary would be less than this amount, the redemption is reverted.
     /// @param _beneficiary The address to send the reclaimed terminal tokens to, and to pass along to the ruleset's data hook and redeem hook if applicable.
     /// @param _metadata Bytes to send along to the emitted event, as well as the data hook and redeem hook if applicable.
@@ -352,7 +352,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @dev Payouts sent to addresses which aren't feeless incur the protocol fee.
     /// @dev Payouts a projects don't incur fees if its terminal is feeless.
     /// @param _projectId The ID of the project having its payouts sent.
-    /// @param _token The token being sent. This terminal ignores this property since it only manages one token.
+    /// @param _token The token being sent.
     /// @param _amount The total number of terminal tokens to send, as a fixed point number with same number of decimals as this terminal.
     /// @param _currency The expected currency of the payouts being sent. Must match the currency of one of the project's current ruleset's payout limits.
     /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be worth (if expressed in terms of this terminal's currency), as a fixed point number with the same number of decimals as this terminal. If the amount of tokens paid out would be less than this amount, the send is reverted.
@@ -371,7 +371,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @dev Only a project's owner or an operator with the `JBPermissionIds.USE_ALLOWANCE` permission from that owner can use the surplus allowance.
     /// @dev Incurs the protocol fee unless the caller is a feeless address.
     /// @param _projectId The ID of the project to use the surplus allowance of.
-    /// @param _token The token being paid out from the surplus. This terminal ignores this property since it only manages one token.
+    /// @param _token The token being paid out from the surplus.
     /// @param _amount The amount of terminal tokens to use from the project's current surplus allowance, as a fixed point number with the same amount of decimals as this terminal.
     /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus allowances.
     /// @param _minTokensUsed The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
@@ -424,8 +424,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(address(_to), _token, balance);
 
-            // If this terminal's token is ETH, send it in `msg.value`.
-            uint256 _payValue = _token == JBTokenList.ETH ? balance : 0;
+            // If this terminal's token is the native token, send it in `msg.value`.
+            uint256 _payValue = _token == JBTokenList.Native ? balance : 0;
 
             // Withdraw the balance to transfer to the new terminal;
             _to.addToBalanceOf{value: _payValue}(_projectId, _token, balance, false, "", bytes(""));
@@ -575,10 +575,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             revert TOKEN_NOT_ACCEPTED();
         }
 
-        // If the terminal's token is ETH, override `_amount` with `msg.value`.
-        if (_token == JBTokenList.ETH) return msg.value;
+        // If the terminal's token is the native token, override `_amount` with `msg.value`.
+        if (_token == JBTokenList.Native) return msg.value;
 
-        // If the terminal's token is not ETH, revert if there is a non-zero `msg.value`.
+        // If the terminal's token is not native, revert if there is a non-zero `msg.value`.
         if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
 
         // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
@@ -615,7 +615,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
     /// @notice Pay a project with tokens.
     /// @param _token The address of the token which the project is being paid with.
-    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same number of decimals as this terminal. If this terminal's token is ETH, `_amount` is ignored and `msg.value` is used in its place.
+    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same number of decimals as this terminal. If this terminal's token is the native token, `_amount` is ignored and `msg.value` is used in its place.
     /// @param _payer The address making the payment.
     /// @param _projectId The ID of the project being paid.
     /// @param _beneficiary The address to mint tokens to, and pass along to the ruleset's data hook and pay hook if applicable.
@@ -699,7 +699,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @notice Adds funds to a project's balance without minting tokens.
     /// @param _projectId The ID of the project to add funds to the balance of.
     /// @param _token The address of the token being added to the project's balance.
-    /// @param _amount The amount of tokens to add as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and `msg.value` is used instead.
+    /// @param _amount The amount of tokens to add as a fixed point number with the same number of decimals as this terminal. If this is a native token terminal, this is ignored and `msg.value` is used instead.
     /// @param _shouldUnlockHeldFees A flag indicating if held fees should be unlocked based on the amount being added.
     /// @param _memo A memo to pass along to the emitted event.
     /// @param _metadata Extra data to pass along to the emitted event.
@@ -1101,9 +1101,9 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 )
             ) {
                 // Keep a reference to the value that'll be paid to the split hook as a `msg.value`.
-                uint256 _payValue = _token == JBTokenList.ETH ? netPayoutAmount : 0;
+                uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
-                // If this terminal's token is ETH, send it in `msg.value`.
+                // If this terminal's token is the native token, send it in `msg.value`.
                 try _split.splitHook.process{value: _payValue}(_data) {}
                 catch (bytes memory __reason) {
                     _reason = __reason.length == 0 ? abi.encode("Process fail") : __reason;
@@ -1156,7 +1156,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 _beforeTransferFor(address(_terminal), _token, netPayoutAmount);
 
                 // Keep a reference to the amount that'll be paid as a `msg.value`.
-                uint256 _payValue = _token == JBTokenList.ETH ? netPayoutAmount : 0;
+                uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
                 // Add to balance if prefered.
                 if (_split.preferAddToBalance) {
@@ -1280,7 +1280,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _beforeTransferFor(address(_payload.hook), _tokenAmount.token, _payload.amount);
 
             // Keep a reference to the amount that'll be paid as a `msg.value`.
-            uint256 _payValue = _tokenAmount.token == JBTokenList.ETH ? _payload.amount : 0;
+            uint256 _payValue = _tokenAmount.token == JBTokenList.Native ? _payload.amount : 0;
 
             // Fulfill the payload.
             _payload.hook.didPay{value: _payValue}(_data);
@@ -1367,7 +1367,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
             // Keep a reference to the amount that'll be paid as a `msg.value`.
             uint256 _payValue =
-                _beneficiaryTokenAmount.token == JBTokenList.ETH ? _payload.amount : 0;
+                _beneficiaryTokenAmount.token == JBTokenList.Native ? _payload.amount : 0;
 
             // Fulfill the payload.
             _payload.hook.didRedeem{value: _payValue}(_data);
@@ -1445,11 +1445,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
 
         // Keep a reference to the amount that'll be paid as a `msg.value`.
-        uint256 _payValue = _token == JBTokenList.ETH ? _amount : 0;
+        uint256 _payValue = _token == JBTokenList.Native ? _amount : 0;
 
         try _feeTerminal
             // Send the fee.
-            // If this terminal's token is ETH, send it in `msg.value`.
+            // If this terminal's token is the native token, send it in `msg.value`.
             .pay{value: _payValue}(
             _FEE_BENEFICIARY_PROJECT_ID,
             _token,
@@ -1550,7 +1550,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _depositAmount
     ) internal {
         // Cancel allowance if needed.
-        if (_allowanceAmount != 0 && _token != JBTokenList.ETH) {
+        if (_allowanceAmount != 0 && _token != JBTokenList.Native) {
             IERC20(_token).safeDecreaseAllowance(_expectedDestination, _allowanceAmount);
         }
 
@@ -1567,8 +1567,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         internal
         virtual
     {
-        // If the token is ETH, assume the native token standard.
-        if (_token == JBTokenList.ETH) return Address.sendValue(_to, _amount);
+        // If the token is the native token, assume the native token standard.
+        if (_token == JBTokenList.Native) return Address.sendValue(_to, _amount);
 
         if (_from == address(this)) return IERC20(_token).safeTransfer(_to, _amount);
 
@@ -1586,8 +1586,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _token The token being transferred.
     /// @param _amount The number of tokens being transferred, as a fixed point number with the same number of decimals as this terminal.
     function _beforeTransferFor(address _to, address _token, uint256 _amount) internal virtual {
-        // If the token is ETH, assume the native token standard.
-        if (_token == JBTokenList.ETH) return;
+        // If the token is the native token, assume the native token standard.
+        if (_token == JBTokenList.Native) return;
         IERC20(_token).safeIncreaseAllowance(_to, _amount);
     }
 

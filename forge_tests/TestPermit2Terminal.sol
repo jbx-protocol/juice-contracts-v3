@@ -25,7 +25,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     uint256 fromPrivateKey;
 
     // Price
-    uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+    uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
 
     function setUp() public override {
         super.setUp();
@@ -57,7 +57,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokenList.ETH)),
+            baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
@@ -80,8 +80,10 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokenList.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBTokenList.Native,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] =
             JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
         _terminalConfigurations[0] =
@@ -105,14 +107,14 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         });
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
-        vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
+        MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_nativePricePerUsd, 18);
+        vm.label(address(_priceFeedNativeUsd), "MockPrice Feed Native-USD");
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
-            pricingCurrency: uint32(uint160(JBTokenList.ETH)),
+            pricingCurrency: uint32(uint160(JBTokenList.Native)),
             unitCurrency: uint32(uint160(address(usdcToken()))),
-            priceFeed: _priceFeedEthUsd
+            priceFeed: _priceFeedNativeUsd
         });
 
         vm.stopPrank();

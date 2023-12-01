@@ -9,7 +9,7 @@ import {JBSplitHookPayload} from "../structs/JBSplitHookPayload.sol";
 /// @dev The split hook's address should be set as the `splitHook` in the relevant split.
 interface IJBSplitHook is IERC165 {
     /// @notice If a split has a split hook, payment terminals and controllers call this function while processing the split.
-    /// @dev Critical business logic should be protected by appropriate access control. The tokens and/or ETH are optimistically transferred to the split hook when this function is called.
+    /// @dev Critical business logic should be protected by appropriate access control. The tokens and/or native tokens are optimistically transferred to the split hook when this function is called.
     /// @param data The data passed by the terminal/controller to the split hook as a `JBSplitHookPayload` struct:
     function process(JBSplitHookPayload calldata data) external payable;
 }
