@@ -190,7 +190,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             _beneficiaryTokenBalance,
             0,  // minReturnedTokens
             payable(_signer),
-            "Take my money!",  // memo
+            "Gimme my money!",  // memo
             ""  // metadata, empty bytes
         );
 
