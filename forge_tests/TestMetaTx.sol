@@ -181,7 +181,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
         assertEq(_tokenStore.balanceOf(_signer, _projectId), _beneficiaryTokenBalance);
 
-        // Setup 2: meta tx data
+        // Setup 2: meta tx data for redeem
         bytes memory _data2 = abi.encodeWithSelector(
             IJBRedemptionTerminal.redeemTokensOf.selector,
             _signer,
@@ -194,7 +194,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             ""  // metadata, empty bytes
         );
 
-        // Setup 2: forwarder request data with incremented nonce
+        // Setup 2: forwarder request data with incremented nonce for redeem tx
         ERC2771Forwarder.ForwardRequestData memory requestData2 = _forgeRequestData({
             value: 0,
             nonce: 1,
@@ -206,7 +206,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         // Setup 2: Give relayer some gas gas gasssss
         vm.deal(_relayer, 1 ether);
 
-        // Send 2 : "Meta Tx" (signed by _signer) from relayer to our trusted forwarder
+        // Send 2 : "Meta Tx #2" (signed by _signer) from relayer to our trusted forwarder
         vm.prank(_relayer);
         _erc2771Forwarder.execute{value: 0}(requestData2);
 
