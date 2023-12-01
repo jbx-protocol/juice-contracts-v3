@@ -165,14 +165,14 @@ contract TestDelegates_Local is TestBaseWorkflow {
             redeemerMetadata: ""
         });
 
-        // Mock the delegate
+        // Mock the hook
         vm.mockCall(
             _redDelegate,
             abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector),
             abi.encode(_redeemData)
         );
 
-        // Assert that the delegate gets called with the expected value
+        // Assert that the hook gets called with the expected value
         vm.expectCall(
             _redDelegate,
             _halfPaid,

@@ -158,7 +158,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
         // Setup: Use jb metadata library to encode
-        bytes memory _packedData = _helper.createMetadata(_ids, _datas);
+        bytes memory _packedData = _helper.createHooksMetadata(_ids, _datas);
 
         // Setup: Give coins and approve permit2 contract
         deal(address(_usdc), from, _coins);
@@ -225,7 +225,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
         // Setup: Use jb metadata library to encode
-        bytes memory _packedData = _helper.createMetadata(_ids, _datas);
+        bytes memory _packedData = _helper.createHooksMetadata(_ids, _datas);
 
         // Setup: Give coins and approve permit2 contract
         deal(address(_usdc), from, _coins);

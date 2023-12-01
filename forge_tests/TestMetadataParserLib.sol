@@ -14,7 +14,7 @@ contract JBDelegateMetadataLib_Test is Test {
     /**
      * @notice Deploy the helper contract
      *
-     * @dev    Helper inherit the lib and add createMetadata
+     * @dev    Helper inherit the lib and add createHooksMetadata
      */
     function setUp() external {
         parser = new MetadataResolverHelper();
@@ -34,22 +34,22 @@ contract JBDelegateMetadataLib_Test is Test {
             // -- offset 0 --
             bytes32(uint256(type(uint256).max)), // First 32B reserved
             // -- offset 1 --
-            _id1, // First delegate id
-            uint8(2), // First delegate offset == 2
-            _id2, // Second delegate id == _id
-            uint8(3), // Second delegate offset == 3
+            _id1, // First hook id
+            uint8(2), // First hook offset == 2
+            _id2, // Second hook id == _id
+            uint8(3), // Second hook offset == 3
             bytes22(0), // Rest of the word is 0-padded
             // -- offset 2 --
-            _data1, // First delegate metadata
+            _data1, // First hook metadata
             // -- offset 3 --
-            _data2 // Second delegate metadata
+            _data2 // Second hook metadata
         );
 
-        (bool _found, bytes memory _metadataOut) = parser.getMetadata(_id2, _metadata);
+        (bool _found, bytes memory _metadataOut) = parser.getHookMetadata(_id2, _metadata);
         assertEq(_metadataOut, _data2);
         assertTrue(_found);
 
-        (_found, _metadataOut) = parser.getMetadata(_id1, _metadata);
+        (_found, _metadataOut) = parser.getHookMetadata(_id1, _metadata);
         assertEq(abi.decode(_metadataOut, (uint256)), _data1);
         assertTrue(_found);
     }
@@ -71,10 +71,10 @@ contract JBDelegateMetadataLib_Test is Test {
             );
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
         for (uint256 _i; _i < _ids.length; _i++) {
-            (bool _found, bytes memory _metadataOut) = parser.getMetadata(_ids[_i], _out);
+            (bool _found, bytes memory _metadataOut) = parser.getHookMetadata(_ids[_i], _out);
             (bytes1 _a, uint32 _deadBeef, bytes2 _c, bytes32 _d) =
                 abi.decode(_metadataOut, (bytes1, uint32, bytes2, bytes32));
 
@@ -91,7 +91,7 @@ contract JBDelegateMetadataLib_Test is Test {
      * @notice Test creating and parsing uint only metadata
      */
     function test_createAndParse_uint(uint256 _numberOfDelegates) external {
-        // Maximum 220 delegates with 1 word data (offset overflow if more)
+        // Maximum 220 hooks with 1 word data (offset overflow if more)
         _numberOfDelegates = bound(_numberOfDelegates, 1, 220);
 
         bytes4[] memory _ids = new bytes4[](_numberOfDelegates);
@@ -102,10 +102,10 @@ contract JBDelegateMetadataLib_Test is Test {
             _metadatas[_i] = abi.encode(type(uint256).max - _i);
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
         for (uint256 _i; _i < _ids.length; _i++) {
-            (bool _found, bytes memory _metadataOut) = parser.getMetadata(_ids[_i], _out);
+            (bool _found, bytes memory _metadataOut) = parser.getHookMetadata(_ids[_i], _out);
             uint256 _data = abi.decode(_metadataOut, (uint256));
 
             assertTrue(_found);
@@ -127,10 +127,10 @@ contract JBDelegateMetadataLib_Test is Test {
             _metadatas[_i] = abi.encode(69 << _i * 20);
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
         for (uint256 _i; _i < _ids.length; _i++) {
-            (bool _found, bytes memory _metadataOut) = parser.getMetadata(_ids[_i], _out);
+            (bool _found, bytes memory _metadataOut) = parser.getHookMetadata(_ids[_i], _out);
             uint256 _data = abi.decode(_metadataOut, (uint256));
 
             assertTrue(_found);
@@ -139,7 +139,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test if createMetadata reverts when the offset would overflow
+     * @notice Test if createHooksMetadata reverts when the offset would overflow
      */
     function test_createRevertIfOffsetTooBig(uint256 _numberOfDelegates) external {
         // Max 1000 for evm memory limit
@@ -154,7 +154,7 @@ contract JBDelegateMetadataLib_Test is Test {
         }
 
         vm.expectRevert(abi.encodeWithSignature("METADATA_TOO_LONG()"));
-        parser.createMetadata(_ids, _metadatas);
+        parser.createHooksMetadata(_ids, _metadatas);
     }
 
     /**
@@ -171,21 +171,21 @@ contract JBDelegateMetadataLib_Test is Test {
             _metadatas[_i] = abi.encode(type(uint256).max - _i);
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
         bytes memory _modified =
-            parser.addToMetadata(bytes4(uint32(type(uint32).max)), abi.encode(123_456), _out);
+            parser.addHookToMetadata(bytes4(uint32(type(uint32).max)), abi.encode(123_456), _out);
 
         // Check
         (bool _found, bytes memory _metadataOut) =
-            parser.getMetadata(bytes4(uint32(type(uint32).max)), _modified);
+            parser.getHookMetadata(bytes4(uint32(type(uint32).max)), _modified);
         uint256 _data = abi.decode(_metadataOut, (uint256));
 
         assertTrue(_found);
         assertEq(_data, 123_456);
 
         for (uint256 _i; _i < _ids.length; _i++) {
-            (_found, _metadataOut) = parser.getMetadata(_ids[_i], _modified);
+            (_found, _metadataOut) = parser.getHookMetadata(_ids[_i], _modified);
             _data = abi.decode(_metadataOut, (uint256));
 
             assertTrue(_found);
@@ -210,16 +210,16 @@ contract JBDelegateMetadataLib_Test is Test {
             );
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
-        bytes memory _modified = parser.addToMetadata(
+        bytes memory _modified = parser.addHookToMetadata(
             bytes4(uint32(type(uint32).max)),
             abi.encode(bytes32(uint256(type(uint256).max)), bytes32(hex"123456")),
             _out
         );
 
         (bool _found, bytes memory _metadataOut) =
-            parser.getMetadata(bytes4(uint32(type(uint32).max)), _modified);
+            parser.getHookMetadata(bytes4(uint32(type(uint32).max)), _modified);
         (bytes32 _a, bytes32 _b) = abi.decode(_metadataOut, (bytes32, bytes32));
 
         assertTrue(_found);
@@ -227,7 +227,7 @@ contract JBDelegateMetadataLib_Test is Test {
         assertEq(bytes32(hex"123456"), _b);
 
         for (uint256 _i; _i < _ids.length; _i++) {
-            (_found, _metadataOut) = parser.getMetadata(_ids[_i], _modified);
+            (_found, _metadataOut) = parser.getHookMetadata(_ids[_i], _modified);
 
             (bytes1 _c, uint32 _d, bytes2 _e, bytes32 _f) =
                 abi.decode(_metadataOut, (bytes1, uint32, bytes2, bytes32));
@@ -254,16 +254,16 @@ contract JBDelegateMetadataLib_Test is Test {
             _metadatas[_i] = abi.encode(_i * 4);
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
-        bytes memory _modified = parser.addToMetadata(
+        bytes memory _modified = parser.addHookToMetadata(
             bytes4(uint32(type(uint32).max)),
             abi.encode(uint32(69), bytes32(uint256(type(uint256).max))),
             _out
         );
 
         (bool _found, bytes memory _metadataOut) =
-            parser.getMetadata(bytes4(uint32(type(uint32).max)), _modified);
+            parser.getHookMetadata(bytes4(uint32(type(uint32).max)), _modified);
         (uint32 _a, bytes32 _b) = abi.decode(_metadataOut, (uint32, bytes32));
 
         assertTrue(_found);
@@ -271,7 +271,7 @@ contract JBDelegateMetadataLib_Test is Test {
         assertEq(_b, bytes32(uint256(type(uint256).max)));
 
         for (uint256 _i; _i < _ids.length; _i++) {
-            (_found, _metadataOut) = parser.getMetadata(_ids[_i], _modified);
+            (_found, _metadataOut) = parser.getHookMetadata(_ids[_i], _modified);
             uint256 _data = abi.decode(_metadataOut, (uint256));
 
             assertTrue(_found);
@@ -293,10 +293,10 @@ contract JBDelegateMetadataLib_Test is Test {
             _metadatas[_i] = abi.encode(_i * 4);
         }
 
-        bytes memory _out = parser.createMetadata(_ids, _metadatas);
+        bytes memory _out = parser.createHooksMetadata(_ids, _metadatas);
 
         (bool _found, bytes memory _metadataOut) =
-            parser.getMetadata(bytes4(uint32(type(uint32).max)), _out);
+            parser.getHookMetadata(bytes4(uint32(type(uint32).max)), _out);
 
         assertFalse(_found);
         assertEq(_metadataOut, "");
@@ -321,7 +321,7 @@ contract JBDelegateMetadataLib_Test is Test {
         }
 
         (bool _found, bytes memory _metadataOut) =
-            parser.getMetadata(bytes4(uint32(type(uint32).max)), _metadata);
+            parser.getHookMetadata(bytes4(uint32(type(uint32).max)), _metadata);
 
         assertFalse(_found);
         assertEq(_metadataOut, "");
@@ -349,6 +349,6 @@ contract JBDelegateMetadataLib_Test is Test {
 
         // Below should revert
         vm.expectRevert(abi.encodeWithSignature("LENGTH_MISMATCH()"));
-        parser.createMetadata(_ids, _metadatas);
+        parser.createHooksMetadata(_ids, _metadatas);
     }
 }

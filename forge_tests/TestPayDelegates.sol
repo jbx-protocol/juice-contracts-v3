@@ -114,18 +114,18 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         // Iterate through each allocation.
         for (uint256 i = 0; i < _numberOfAllocations; i++) {
-            // Make up an address for the delegate.
-            address _delegateAddress = address(bytes20(keccak256(abi.encodePacked("PayHook", i))));
+            // Make up an address for the hook.
+            address _hookAddress = address(bytes20(keccak256(abi.encodePacked("PayHook", i))));
 
-            // Send along some metadata to the pay delegate.
+            // Send along some metadata to the pay hook.
             bytes memory _dataHookMetadata = bytes("Some data source metadata");
 
-            // Package up the delegate allocation struct.
+            // Package up the hook allocation struct.
             _allocations[i] = JBPayHookPayload(
-                IJBPayHook(_delegateAddress), _payDelegateAmounts[i], _dataHookMetadata
+                IJBPayHook(_hookAddress), _payDelegateAmounts[i], _dataHookMetadata
             );
 
-            // Keep a reference to the data that'll be received by the delegate.
+            // Keep a reference to the data that'll be received by the hook.
             JBDidPayData memory _didPayData = JBDidPayData({
                 payer: _payer,
                 projectId: _projectId,
@@ -151,25 +151,23 @@ contract TestDelegates_Local is TestBaseWorkflow {
                 payerMetadata: _PAYER_METADATA
             });
 
-            // Mock the delegate
+            // Mock the hook
             vm.mockCall(
-                _delegateAddress,
+                _hookAddress,
                 abi.encodeWithSelector(IJBPayHook.didPay.selector),
                 abi.encode(_didPayData)
             );
 
-            // Assert that the delegate gets called with the expected value
+            // Assert that the hook gets called with the expected value
             vm.expectCall(
-                _delegateAddress,
+                _hookAddress,
                 _payDelegateAmounts[i],
                 abi.encodeWithSelector(IJBPayHook.didPay.selector, _didPayData)
             );
 
-            // Expect an event to be emitted for every delegate
+            // Expect an event to be emitted for every hook
             vm.expectEmit(true, true, true, true);
-            emit HookDidPay(
-                IJBPayHook(_delegateAddress), _didPayData, _payDelegateAmounts[i], _payer
-            );
+            emit HookDidPay(IJBPayHook(_hookAddress), _didPayData, _payDelegateAmounts[i], _payer);
         }
 
         vm.mockCall(
@@ -194,6 +192,6 @@ contract TestDelegates_Local is TestBaseWorkflow {
     }
 
     event HookDidPay(
-        IJBPayHook indexed delegate, JBDidPayData data, uint256 delegatedAmount, address caller
+        IJBPayHook indexed hook, JBDidPayData data, uint256 hookdAmount, address caller
     );
 }

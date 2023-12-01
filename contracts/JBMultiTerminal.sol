@@ -586,7 +586,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
         // Unpack the allowance to use, if any, given by the frontend.
         (bool _exists, bytes memory _parsedMetadata) =
-            JBMetadataResolver.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
+            JBMetadataResolver.getHookMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
 
         // Check if the metadata contains permit data.
         if (_exists) {
