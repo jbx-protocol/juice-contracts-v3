@@ -38,7 +38,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
-            allowMinting: false,
+            allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,

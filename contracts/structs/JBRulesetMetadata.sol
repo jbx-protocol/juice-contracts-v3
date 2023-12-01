@@ -8,7 +8,7 @@ import {JBGlobalRulesetMetadata} from "./JBGlobalRulesetMetadata.sol";
 /// @custom:member redemptionRate The redemption rate of the ruleset. This number is a percentage calculated out of `JBConstants.MAX_REDEMPTION_RATE`.
 /// @custom:member baseCurrency The currency on which to base the ruleset's weight.
 /// @custom:member pausePay A flag indicating if the pay functionality should be paused during the ruleset.
-/// @custom:member allowMinting A flag indicating if minting tokens should be allowed during this ruleset.
+/// @custom:member allowDiscretionaryMinting A flag indicating if the project owner or an operator with the `MINT_TOKENS` permission should be allowed to mint project tokens on demand during this ruleset.
 /// @custom:member allowTerminalMigration A flag indicating if migrating terminals should be allowed during this ruleset.
 /// @custom:member allowControllerMigration A flag indicating if migrating controllers should be allowed during this ruleset.
 /// @custom:member holdFees A flag indicating if fees should be held during this ruleset.
@@ -23,7 +23,7 @@ struct JBRulesetMetadata {
     uint256 redemptionRate;
     uint256 baseCurrency;
     bool pausePay;
-    bool allowMinting;
+    bool allowDiscretionaryMinting;
     bool allowTerminalMigration;
     bool allowControllerMigration;
     bool holdFees;

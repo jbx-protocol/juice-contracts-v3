@@ -34,7 +34,7 @@ library JBRulesetMetadataResolver {
         return ((_ruleset.metadata >> 80) & 1) == 1;
     }
 
-    function mintingAllowed(JBRuleset memory _ruleset) internal pure returns (bool) {
+    function discretionaryMintingAllowed(JBRuleset memory _ruleset) internal pure returns (bool) {
         return ((_ruleset.metadata >> 81) & 1) == 1;
     }
 
@@ -97,7 +97,7 @@ library JBRulesetMetadataResolver {
         // pause pay in bit 80.
         if (_metadata.pausePay) packed |= 1 << 80;
         // allow minting in bit 81.
-        if (_metadata.allowMinting) packed |= 1 << 81;
+        if (_metadata.allowDiscretionaryMinting) packed |= 1 << 81;
         // allow terminal migration in bit 82.
         if (_metadata.allowTerminalMigration) packed |= 1 << 82;
         // allow controller migration in bit 83.
@@ -130,7 +130,7 @@ library JBRulesetMetadataResolver {
             redemptionRate(_ruleset),
             baseCurrency(_ruleset),
             payPaused(_ruleset),
-            mintingAllowed(_ruleset),
+            discretionaryMintingAllowed(_ruleset),
             terminalMigrationAllowed(_ruleset),
             controllerMigrationAllowed(_ruleset),
             shouldHoldFees(_ruleset),

@@ -40,7 +40,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
-            allowMinting: true,
+            allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,

@@ -41,7 +41,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
-            allowMinting: false,
+            allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,

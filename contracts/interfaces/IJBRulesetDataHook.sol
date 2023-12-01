@@ -8,8 +8,8 @@ import {JBRedeemParamsData} from "./../structs/JBRedeemParamsData.sol";
 import {JBRedeemHookPayload} from "./../structs/JBRedeemHookPayload.sol";
 
 /// @notice An extra layer of logic which can be used to provide pay/redeem transactions with a custom weight, a custom memo and/or a pay/redeem hook(s).
-/// @dev If included in the current ruleset, the `IJBPayRedeemDataHook` is called by `JBPayoutRedemptionPaymentTerminal`s upon payments and redemptions.
-interface IJBPayRedeemDataHook is IERC165 {
+/// @dev If included in the current ruleset, the `IJBRulesetDataHook` is called by `JBPayoutRedemptionPaymentTerminal`s upon payments and redemptions.
+interface IJBRulesetDataHook is IERC165 {
     /// @notice The data provided to the terminal's `pay(...)` transaction.
     /// @param data The data passed to this data hook by the `pay(...)` function as a `JBPayParamsData` struct.
     /// @return weight The new `weight` to use, overriding the ruleset's `weight`.

@@ -45,7 +45,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
-            allowMinting: false,
+            allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,
@@ -172,7 +172,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         vm.mockCall(
             _DATA_SOURCE,
-            abi.encodeWithSelector(IJBPayRedeemDataHook.payParams.selector),
+            abi.encodeWithSelector(IJBRulesetDataHook.payParams.selector),
             abi.encode(_DATA_SOURCE_WEIGHT, _allocations)
         );
 

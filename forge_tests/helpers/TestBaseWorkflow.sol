@@ -60,9 +60,9 @@ import {IJBSplits} from "@juicebox/interfaces/IJBSplits.sol";
 import {IJBTokens} from "@juicebox/interfaces/IJBTokens.sol";
 import {IJBSplitHook} from "@juicebox/interfaces/IJBSplitHook.sol";
 import {IJBPayHook} from "@juicebox/interfaces/IJBPayHook.sol";
-import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.sol";
+import {IJBRulesetDataHook} from "@juicebox/interfaces/IJBRulesetDataHook.sol";
 import {IJBRedeemHook} from "@juicebox/interfaces/IJBRedeemHook.sol";
-import {IJBPayRedeemDataHook} from "@juicebox/interfaces/IJBPayRedeemDataHook.sol";
+import {IJBRulesetDataHook} from "@juicebox/interfaces/IJBRulesetDataHook.sol";
 import {IJBMultiTerminal} from "@juicebox/interfaces/terminal/IJBMultiTerminal.sol";
 import {IJBRedeemTerminal} from "@juicebox/interfaces/terminal/IJBRedeemTerminal.sol";
 import {IJBPayoutTerminal} from "@juicebox/interfaces/terminal/IJBPayoutTerminal.sol";
@@ -75,7 +75,7 @@ import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHoo
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
 
 import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
-import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
+import {JBCurrencyIds} from "@juicebox/libraries/JBCurrencyIds.sol";
 import {JBTokenStandards} from "@juicebox/libraries/JBTokenStandards.sol";
 import {JBRulesetMetadataResolver} from "@juicebox/libraries/JBRulesetMetadataResolver.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";

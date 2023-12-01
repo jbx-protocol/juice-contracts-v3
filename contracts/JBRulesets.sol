@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
-import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
+import {JBControlled} from "./abstract/JBControlled.sol";
 import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
@@ -16,7 +16,7 @@ import {JBRulesetWeightCache} from "./structs/JBRulesetWeightCache.sol";
 /// @dev Rulesets dictate how a project behaves for a period of time. To learn more about their functionality, see the `JBRuleset` data structure.
 /// @dev Throughout this contract, `rulesetId` is an identifier for each ruleset. The `rulesetId` is the unix timestamp when the ruleset was initialized.
 /// @dev `approvable` means a ruleset which may or may not be approved.
-contract JBRulesets is JBControllerUtility, IJBRulesets {
+contract JBRulesets is JBControlled, IJBRulesets {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -272,7 +272,7 @@ contract JBRulesets is JBControllerUtility, IJBRulesets {
 
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     // solhint-disable-next-line no-empty-blocks
-    constructor(IJBDirectory _directory) JBControllerUtility(_directory) {}
+    constructor(IJBDirectory _directory) JBControlled(_directory) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //

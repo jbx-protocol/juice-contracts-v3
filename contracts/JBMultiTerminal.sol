@@ -466,8 +466,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         // Process each fee.
         for (uint256 _i; _i < _numberOfHeldFees;) {
             // Get the fee amount.
-            _amount =
-                (_heldFees[_i].fee == 0 ? 0 : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee));
+            _amount = (
+                _heldFees[_i].fee == 0
+                    ? 0
+                    : JBFees.feeAmountIn(_heldFees[_i].amount, _heldFees[_i].fee)
+            );
 
             // Process the fee.
             _processFee(_projectId, _token, _amount, _heldFees[_i].beneficiary, _feeTerminal);
@@ -799,7 +802,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 if (_feePercent != 0) {
                     _amountEligibleForFees += reclaimAmount;
                     // Subtract the fee for the reclaimed amount.
-                    reclaimAmount -= _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
+                    reclaimAmount -=
+                        _feePercent == 0 ? 0 : JBFees.feeAmountIn(reclaimAmount, _feePercent);
                 }
 
                 // Subtract the fee from the reclaim amount.
@@ -884,7 +888,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         if (_leftoverPayoutAmount != 0) {
             // Subtract the fee from the net leftover amount.
             netLeftoverPayoutAmount = _leftoverPayoutAmount
-                - (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverPayoutAmount, _feePercent));
+                - (_feePercent == 0 ? 0 : JBFees.feeAmountIn(_leftoverPayoutAmount, _feePercent));
 
             // Transfer the amount to the project owner.
             _transferFor(address(this), _projectOwner, _token, netLeftoverPayoutAmount);
@@ -1071,7 +1075,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // This payouts is eligible for a fee since the funds are leaving this contract and the split hook isn't listed as feeless.
             if (_feePercent != 0 && !isFeelessAddress[address(_split.splitHook)]) {
                 unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
+                    netPayoutAmount -= JBFees.feeAmountIn(_amount, _feePercent);
                 }
             }
 
@@ -1144,7 +1148,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)])
                 {
                     unchecked {
-                        netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
+                        netPayoutAmount -= JBFees.feeAmountIn(_amount, _feePercent);
                     }
                 }
 
@@ -1203,7 +1207,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // This payout is eligible for a fee since the funds are leaving this contract and the beneficiary isn't a feeless address.
             if (_feePercent != 0) {
                 unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
+                    netPayoutAmount -= JBFees.feeAmountIn(_amount, _feePercent);
                 }
             }
 
@@ -1342,7 +1346,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
             // Get the fee for the payload amount.
             uint256 _payloadAmountFee =
-                _feePercent == 0 ? 0 : JBFees.feeIn(_payload.amount, _feePercent);
+                _feePercent == 0 ? 0 : JBFees.feeAmountIn(_payload.amount, _feePercent);
 
             // Add the payload's amount to the amount eligible for having a fee taken.
             if (_payloadAmountFee != 0) {
@@ -1393,7 +1397,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         bool _shouldHoldFees
     ) internal returns (uint256 feeAmount) {
         // Get a reference to the fee amount.
-        feeAmount = JBFees.feeIn(_amount, _feePercent);
+        feeAmount = JBFees.feeAmountIn(_amount, _feePercent);
 
         if (_shouldHoldFees) {
             // Store the held fee.
@@ -1492,11 +1496,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             if (leftoverAmount == 0) {
                 _heldFeesOf[_projectId].push(_heldFees[_i]);
             } else {
-                // Notice here we take `feeIn` on the stored `.amount`.
+                // Notice here we take `feeAmountIn` on the stored `.amount`.
                 uint256 _feeAmount = (
                     _heldFees[_i].fee == 0
                         ? 0
-                        : JBFees.feeIn(_heldFees[_i].amount, _heldFees[_i].fee)
+                        : JBFees.feeAmountIn(_heldFees[_i].amount, _heldFees[_i].fee)
                 );
 
                 if (leftoverAmount >= _heldFees[_i].amount - _feeAmount) {
@@ -1505,10 +1509,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                         unlockedFees += _feeAmount;
                     }
                 } else {
-                    // And here we overwrite with `feeFrom` the `leftoverAmount`
+                    // And here we overwrite with `feeAmountFrom` the `leftoverAmount`
                     _feeAmount = _heldFees[_i].fee == 0
                         ? 0
-                        : JBFees.feeFrom(leftoverAmount, _heldFees[_i].fee);
+                        : JBFees.feeAmountFrom(leftoverAmount, _heldFees[_i].fee);
 
                     unchecked {
                         _heldFeesOf[_projectId].push(

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import {JBCurrencies} from "@juicebox/libraries/JBCurrencies.sol";
+import {JBCurrencyIds} from "@juicebox/libraries/JBCurrencyIds.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
 import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 
 contract AccessJBLib {
     function ETH() external pure returns (uint256) {
-        return JBCurrencies.ETH;
+        return JBCurrencyIds.ETH;
     }
 
     function USD() external pure returns (uint256) {
-        return JBCurrencies.USD;
+        return JBCurrencyIds.USD;
     }
 
     function ETHToken() external pure returns (address) {

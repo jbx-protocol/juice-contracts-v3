@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
+import {JBControlled} from "./abstract/JBControlled.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
@@ -19,7 +19,7 @@ import {JBERC20Token} from "./JBERC20Token.sol";
 /// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBToken if they prefer.
-contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
+contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
     // A library that parses the packed ruleset metadata into a friendlier format.
     using JBRulesetMetadataResolver for JBRuleset;
 
@@ -129,7 +129,7 @@ contract JBTokens is JBControllerUtility, JBPermissioned, IJBTokens {
         IJBProjects _projects,
         IJBDirectory _directory,
         IJBRulesets _rulesets
-    ) JBPermissioned(_permissions) JBControllerUtility(_directory) {
+    ) JBPermissioned(_permissions) JBControlled(_directory) {
         projects = _projects;
         rulesets = _rulesets;
     }

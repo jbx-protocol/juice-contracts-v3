@@ -59,7 +59,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
-            allowMinting: true,
+            allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,

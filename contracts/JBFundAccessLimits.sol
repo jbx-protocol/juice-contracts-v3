@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import {JBControllerUtility} from "./abstract/JBControllerUtility.sol";
+import {JBControlled} from "./abstract/JBControlled.sol";
 import {IJBFundAccessLimits} from "./interfaces/IJBFundAccessLimits.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {JBFundAccessLimitGroup} from "./structs/JBFundAccessLimitGroup.sol";
@@ -10,7 +10,7 @@ import {JBCurrencyAmount} from "./structs/JBCurrencyAmount.sol";
 
 /// @notice Stores and manages terminal fund access limits for each project.
 /// @dev See the `JBFundAccessLimitGroup` struct to learn about payout limits and surplus allowances.
-contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits {
+contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -226,7 +226,7 @@ contract JBFundAccessLimits is JBControllerUtility, ERC165, IJBFundAccessLimits 
 
     /// @param _directory A contract storing directories of terminals and controllers for each project.
     // solhint-disable-next-line no-empty-blocks
-    constructor(IJBDirectory _directory) JBControllerUtility(_directory) {}
+    constructor(IJBDirectory _directory) JBControlled(_directory) {}
 
     //*********************************************************************//
     // --------------------- external transactions ----------------------- //

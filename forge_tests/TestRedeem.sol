@@ -38,7 +38,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2,
             baseCurrency: uint32(uint160(JBTokenList.ETH)),
             pausePay: false,
-            allowMinting: false,
+            allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
             allowControllerMigration: false,
             holdFees: false,

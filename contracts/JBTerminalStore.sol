@@ -5,7 +5,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBPayRedeemDataHook} from "./interfaces/IJBPayRedeemDataHook.sol";
+import {IJBRulesetDataHook} from "./interfaces/IJBRulesetDataHook.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
@@ -287,7 +287,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 ruleset.reservedRate(),
                 _metadata
             );
-            (_weight, hookPayloads) = IJBPayRedeemDataHook(ruleset.dataHook()).payParams(_data);
+            (_weight, hookPayloads) = IJBRulesetDataHook(ruleset.dataHook()).payParams(_data);
         }
         // Otherwise use the ruleset's weight
         else {
@@ -436,7 +436,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                     _metadata
                 );
                 (reclaimAmount, hookPayloads) =
-                    IJBPayRedeemDataHook(ruleset.dataHook()).redeemParams(_data);
+                    IJBRulesetDataHook(ruleset.dataHook()).redeemParams(_data);
             }
         }
 
