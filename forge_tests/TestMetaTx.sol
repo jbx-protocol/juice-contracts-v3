@@ -142,7 +142,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
     function testForwardedPay() public {
         // Setup: pay amounts, set balances
         uint256 _payAmount = 1 ether;
-        vm.deal(_signer, 1 ether);
+        vm.deal(_relayer, 1 ether);
 
         // Setup: meta tx data
         bytes memory _data = abi.encodeWithSelector(
@@ -165,12 +165,12 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             target: address(_terminal)
         });
 
-        // Send: "Meta Tx" (kinda like sponsoring a tx from ourselves here) to trusted forwarder
-        vm.prank(_signer);
+        // Send: "Meta Tx" (signed by _signer) from relayer to our trusted forwarder
+        vm.prank(_relayer);
         _erc2771Forwarder.execute{value: _payAmount}(requestData);
 
-        // Check: Ensure balance left the original tx signer
-        assertEq(_signer.balance, 0);
+        // Check: Ensure balance left the relayer (sponsor)
+        assertEq(_relayer.balance, 0);
 
         // Check: Ensure terminal has ETH from meta tx
         assertEq(address(_terminal).balance, 1 ether);
