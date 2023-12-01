@@ -9,7 +9,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
 
     IJBController3_1 private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBMultiTerminal private _terminal;
     JBTokenStore private _tokenStore;
     ERC2771ForwarderMock internal _erc2771Forwarder = ERC2771ForwarderMock(address(123_456));
     address private _projectOwner;
@@ -60,7 +60,6 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         super.setUp();
 
         _controller = jbController();
-        _projectOwner = multisig();
         _tokenStore = jbTokenStore();
         _terminal = jbPayoutRedemptionTerminal();
 
@@ -72,6 +71,9 @@ contract TestMetaTx_Local is TestBaseWorkflow {
 
         _signer = vm.addr(_signerPrivateKey);
         _relayer = vm.addr(_relayerPrivateKey);
+
+        // In case we need to test access control
+        _projectOwner = _signer;
 
         JBFundingCycleData memory _data = JBFundingCycleData({
             duration: 0,
@@ -139,7 +141,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         assertEq(_erc2771Forwarder.deployed(), true);
     }
 
-    function testForwardedPay() public {
+    function testMetaPayAndMetaRedeem() public {
         // Setup: pay amounts, set balances
         uint256 _payAmount = 1 ether;
         vm.deal(_relayer, 1 ether);
@@ -178,5 +180,37 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         // Check: Ensure the beneficiary (signer) has a balance of tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
         assertEq(_tokenStore.balanceOf(_signer, _projectId), _beneficiaryTokenBalance);
+
+        // Setup 2: meta tx data
+        bytes memory _data2 = abi.encodeWithSelector(
+            IJBRedemptionTerminal.redeemTokensOf.selector,
+            _signer,
+            _projectId,
+            JBTokens.ETH,
+            _beneficiaryTokenBalance,
+            0,  // minReturnedTokens
+            payable(_signer),
+            "Take my money!",  // memo
+            ""  // metadata, empty bytes
+        );
+
+        // Setup 2: forwarder request data with incremented nonce
+        ERC2771Forwarder.ForwardRequestData memory requestData2 = _forgeRequestData({
+            value: 0,
+            nonce: 1,
+            deadline: uint48(block.timestamp + 1),
+            data: _data2,
+            target: address(_terminal)
+        });
+
+        // Setup 2: Give relayer some gas gas gasssss
+        vm.deal(_relayer, 1 ether);
+
+        // Send 2 : "Meta Tx" (signed by _signer) from relayer to our trusted forwarder
+        vm.prank(_relayer);
+        _erc2771Forwarder.execute{value: 0}(requestData2);
+
+        // Check 2: original signer has ETH back
+        assertEq(_signer.balance, 1 ether);
     }
 }
