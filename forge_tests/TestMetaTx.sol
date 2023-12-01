@@ -10,6 +10,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
 
     IJBController3_1 private _controller;
     IJBPaymentTerminal private _terminal;
+    JBTokenStore private _tokenStore;
     ERC2771ForwarderMock internal _erc2771Forwarder = ERC2771ForwarderMock(address(123_456));
     address private _projectOwner;
 
@@ -21,11 +22,46 @@ contract TestMetaTx_Local is TestBaseWorkflow {
     address internal _signer;
     address internal _relayer;
 
+    // utility function - setUp() is below
+    function _forgeRequestData(
+        uint256 value,
+        uint256 nonce,
+        uint48 deadline,
+        bytes memory data,
+        address target
+    ) private view returns (ERC2771Forwarder.ForwardRequestData memory) {
+        ForwardRequest memory request = ForwardRequest({
+            from: _signer,
+            to: address(target),
+            value: value,
+            gas: 300000,
+            nonce: nonce,
+            deadline: deadline,
+            data: data
+        });
+
+        bytes32 digest = _erc2771Forwarder.structHash(request);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_signerPrivateKey, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        return
+            ERC2771Forwarder.ForwardRequestData({
+                from: request.from,
+                to: request.to,
+                value: request.value,
+                gas: request.gas,
+                deadline: request.deadline,
+                data: request.data,
+                signature: signature
+            });
+    }
+
     function setUp() public override {
         super.setUp();
 
         _controller = jbController();
         _projectOwner = multisig();
+        _tokenStore = jbTokenStore();
         _terminal = jbPayoutRedemptionTerminal();
 
         // Deploy forwarder
@@ -98,55 +134,49 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         vm.stopPrank();
     }
 
-    function _forgeRequestData(
-        uint256 value,
-        uint256 nonce,
-        uint48 deadline,
-        bytes memory data,
-        address target
-    ) private view returns (ERC2771Forwarder.ForwardRequestData memory) {
-        ForwardRequest memory request = ForwardRequest({
-            from: _signer,
-            to: address(target),
-            value: value,
-            gas: 30000,
-            nonce: nonce,
-            deadline: deadline,
-            data: data
-        });
-
-        bytes32 digest = _erc2771Forwarder.structHash(request);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_signerPrivateKey, digest);
-        bytes memory signature = abi.encodePacked(r, s, v);
-
-        return
-            ERC2771Forwarder.ForwardRequestData({
-                from: request.from,
-                to: request.to,
-                value: request.value,
-                gas: request.gas,
-                deadline: request.deadline,
-                data: request.data,
-                signature: signature
-            });
-    }
-
     function testForwarderDeployed() public {
-        // Check: Tx should fail with invalid data
+        // Check: forwarder deployed to address
         assertEq(_erc2771Forwarder.deployed(), true);
     }
 
-    function testForwardedTxMsgSender() public {
-        /* // Setup: meta tx data
+    function testForwardedPay() public {
+        // Setup: pay amounts, set balances
+        uint256 _payAmount = 1 ether;
+        vm.deal(_signer, 1 ether);
+
+        // Setup: meta tx data
+        bytes memory _data = abi.encodeWithSelector(
+            IJBPaymentTerminal.pay.selector,
+            _projectId,
+            JBTokens.ETH,
+            _payAmount,
+            _signer,
+            0,  // minReturnedTokens
+            "Take my money!",  // memo
+            ""  // metadata, empty bytes
+        );
+
+        // Setup: forwarder request data
         ERC2771Forwarder.ForwardRequestData memory requestData = _forgeRequestData({
-            value: 1,
+            value: _payAmount,
             nonce: 0,
             deadline: uint48(block.timestamp + 1),
-            data: "",
+            data: _data,
             target: address(_terminal)
         });
 
-        // Send: Meta Tx to trusted forwarder
-        _erc2771Forwarder.execute{value: 1}(requestData); */
+        // Send: "Meta Tx" (kinda like sponsoring a tx from ourselves here) to trusted forwarder
+        vm.prank(_signer);
+        _erc2771Forwarder.execute{value: _payAmount}(requestData);
+
+        // Check: Ensure balance left the original tx signer
+        assertEq(_signer.balance, 0);
+
+        // Check: Ensure terminal has ETH from meta tx
+        assertEq(address(_terminal).balance, 1 ether);
+
+        // Check: Ensure the beneficiary (signer) has a balance of tokens.
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
+        assertEq(_tokenStore.balanceOf(_signer, _projectId), _beneficiaryTokenBalance);
     }
 }
