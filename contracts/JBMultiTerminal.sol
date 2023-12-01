@@ -66,9 +66,9 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     error INADEQUATE_RECLAIM_AMOUNT();
     error UNDER_MIN_RETURNED_TOKENS();
     error NO_MSG_VALUE_ALLOWED();
-    error PAY_TO_ZERO_ADDRESS();
+    error CANNOT_PAY_FOR_ZERO_ADDRESS();
     error PERMIT_ALLOWANCE_NOT_ENOUGH(uint256 transactionAmount, uint256 permitAllowance);
-    error REDEEM_TO_ZERO_ADDRESS();
+    error CANNOT_REDEEM_FOR_ZERO_ADDRESS();
     error TERMINAL_TOKENS_INCOMPATIBLE();
     error TOKEN_NOT_ACCEPTED();
 
@@ -350,7 +350,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @dev If the percentages of the splits in the project's payout split group do not add up to 100%, the remainder is sent to the project's owner.
     /// @dev Anyone can send payouts on a project's behalf. Projects can include a wildcard split to send funds to the `msg.sender` which calls this function. This can be used to incentivize calling this function.
     /// @dev Payouts sent to addresses which aren't feeless incur the protocol fee.
-    /// @dev Payouts to projects don't incur fees.
+    /// @dev Payouts a projects don't incur fees if its terminal is feeless.
     /// @param _projectId The ID of the project having its payouts sent.
     /// @param _token The token being sent. This terminal ignores this property since it only manages one token.
     /// @param _amount The total number of terminal tokens to send, as a fixed point number with same number of decimals as this terminal.
@@ -556,26 +556,26 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     //*********************************************************************//
 
     /// @notice Accepts an incoming token.
-    /// @param _projectId The ID of the project for which the transfer is being accepted.
+    /// @param _projectId The ID of the project that the transfer is being accepted for.
     /// @param _token The token being accepted.
-    /// @param _amount The amount of tokens being accepted.
+    /// @param _amount The number of tokens being accepted.
     /// @param _metadata The metadata in which permit2 context is provided.
-    /// @return amount The amount of tokens that have been accepted.
+    /// @return amount The number of tokens which have been accepted.
     function _acceptFundsFor(
         uint256 _projectId,
         address _token,
         uint256 _amount,
         bytes calldata _metadata
     ) internal returns (uint256) {
-        // Make sure the project has set an accounting context for the token being paid.
+        // Make sure the project has an accounting context for the token being paid.
         if (_accountingContextForTokenOf[_projectId][_token].token == address(0)) {
             revert TOKEN_NOT_ACCEPTED();
         }
 
-        // If the terminal's token is ETH, override `_amount` with msg.value.
+        // If the terminal's token is ETH, override `_amount` with `msg.value`.
         if (_token == JBTokenList.ETH) return msg.value;
 
-        // Amount must be greater than 0.
+        // If the terminal's token is not ETH, revert if there is a non-zero `msg.value`.
         if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
 
         // If the terminal is rerouting the tokens within its own functions, there's nothing to transfer.
@@ -585,7 +585,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         (bool _exists, bytes memory _parsedMetadata) =
             JBMetadataResolver.getMetadata(bytes4(uint32(uint160(address(this)))), _metadata);
 
-        // Check if the metadata contained permit data.
+        // Check if the metadata contains permit data.
         if (_exists) {
             // Keep a reference to the allowance context parsed from the metadata.
             (JBSingleAllowanceData memory _allowance) =
@@ -610,16 +610,16 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         return _balance(_token) - _balanceBefore;
     }
 
-    /// @notice Contribute tokens to a project.
-    /// @param _token The address of the token being paid.
-    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
+    /// @notice Pay a project with tokens.
+    /// @param _token The address of the token which the project is being paid with.
+    /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same number of decimals as this terminal. If this terminal's token is ETH, `_amount` is ignored and `msg.value` is used in its place.
     /// @param _payer The address making the payment.
     /// @param _projectId The ID of the project being paid.
-    /// @param _beneficiary The address to mint tokens for and pass along to the ruleset's data hook and pay hook.
-    /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
+    /// @param _beneficiary The address to mint tokens to, and pass along to the ruleset's data hook and pay hook if applicable.
+    /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal. If the amount of tokens minted for the beneficiary would be less than this amount, the payment is reverted.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @param _metadata Bytes to send along to the data hook, pay hook, and emitted event, if provided.
-    /// @return beneficiaryTokenCount The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
+    /// @param _metadata Bytes to send along to the emitted event, as well as the data hook and pay hook if applicable.
+    /// @return beneficiaryTokenCount The number of tokens minted and sent to the beneficiary, as a fixed point number with 18 decimals.
     function _pay(
         address _token,
         uint256 _amount,
@@ -631,10 +631,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         bytes memory _metadata
     ) internal returns (uint256 beneficiaryTokenCount) {
         // Cant send tokens to the zero address.
-        if (_beneficiary == address(0)) revert PAY_TO_ZERO_ADDRESS();
+        if (_beneficiary == address(0)) revert CANNOT_PAY_FOR_ZERO_ADDRESS();
 
         // Define variables that will be needed outside the scoped section below.
-        // Keep a reference to the ruleset during which the payment is being made.
+        // Keep a reference to the ruleset the payment is being made during.
         JBRuleset memory _ruleset;
 
         // Scoped section prevents stack too deep. `_hookPayloads` and `_tokenCount` only used within scope.
@@ -654,14 +654,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             (_ruleset, _tokenCount, _hookPayloads) =
                 STORE.recordPaymentFrom(_payer, _tokenAmount, _projectId, _beneficiary, _metadata);
 
-            // Mint the tokens if needed.
+            // Mint tokens if needed.
             if (_tokenCount != 0) {
-                // Set token count to be the number of tokens minted for the beneficiary instead of the total amount.
+                // Set the token count to be the number of tokens minted for the beneficiary instead of the total amount.
                 beneficiaryTokenCount = IJBController(DIRECTORY.controllerOf(_projectId))
                     .mintTokensOf(_projectId, _tokenCount, _beneficiary, "", true);
             }
 
-            // The token count for the beneficiary must be greater than or equal to the minimum expected.
+            // The token count for the beneficiary must be greater than or equal to the specified minimum.
             if (beneficiaryTokenCount < _minReturnedTokens) revert UNDER_MIN_RETURNED_TOKENS();
 
             // If hook payloads were specified by the data hook, fulfill them.
@@ -693,11 +693,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Receives funds belonging to the specified project.
-    /// @param _projectId The ID of the project to which the funds received belong.
+    /// @notice Adds funds to a project's balance without minting tokens.
+    /// @param _projectId The ID of the project to add funds to the balance of.
     /// @param _token The address of the token being added to the project's balance.
-    /// @param _amount The amount of tokens to add, as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
-    /// @param _shouldUnlockHeldFees A flag indicating if held fees should be refunded based on the amount being added.
+    /// @param _amount The amount of tokens to add as a fixed point number with the same number of decimals as this terminal. If this is an ETH terminal, this is ignored and msg.value is used instead.
+    /// @param _shouldUnlockHeldFees A flag indicating if held fees should be unlocked based on the amount being added.
     /// @param _memo A memo to pass along to the emitted event.
     /// @param _metadata Extra data to pass along to the emitted event.
     function _addToBalanceOf(
@@ -708,8 +708,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         string memory _memo,
         bytes memory _metadata
     ) internal {
-        // Refund any held fees to make sure the project doesn't pay double for funds going in and out of the protocol.
-        uint256 _unlockedFees = _shouldUnlockHeldFees ? _refundHeldFees(_projectId, _amount) : 0;
+        // Unlock held fees if desired. This mechanism means projects don't pay fees multiple times when funds go out of and back into the protocol.
+        uint256 _unlockedFees = _shouldUnlockHeldFees ? _unlockHeldFees(_projectId, _amount) : 0;
 
         // Record the added funds with any refunded fees.
         STORE.recordAddedBalanceFor(_projectId, _token, _amount + _unlockedFees);
@@ -717,16 +717,16 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         emit AddToBalance(_projectId, _amount, _unlockedFees, _memo, _metadata, msg.sender);
     }
 
-    /// @notice Holders can redeem their tokens to claim the project's surplus tokens, or to trigger rules determined by the project's current ruleset's data hook.
-    /// @dev Only a token holder or a designated operator can redeem its tokens.
-    /// @param _holder The account to redeem tokens for.
-    /// @param _projectId The ID of the project to which the tokens being redeemed belong.
-    /// @param _token The address of the token being reclaimed from the redemption.
+    /// @notice Holders can redeem their tokens to claim some of a project's surplus, or to trigger rules determined by the project's current ruleset's data hook.
+    /// @dev Only a token holder or a an operator with the `JBPermissionIds.REDEEM_TOKENS` permission from that holder can redeem those tokens.
+    /// @param _holder The account redeeming tokens.
+    /// @param _projectId The ID of the project whose tokens are being redeemed.
+    /// @param _token The address of the token which is being reclaimed.
     /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
-    /// @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal.
-    /// @param _beneficiary The address to send the terminal tokens to.
-    /// @param _metadata Bytes to send along to the data hook, redeem hook, and emitted event, if provided.
-    /// @return reclaimAmount The amount of terminal tokens that the project tokens were redeemed for, as a fixed point number with 18 decimals.
+    /// @param _minReturnedTokens The minimum amount of terminal tokens expected in return, as a fixed point number with the same amount of decimals as the terminal. If the amount of tokens minted for the beneficiary would be less than this amount, the redemption is reverted.
+    /// @param _beneficiary The address to send the reclaimed terminal tokens to.
+    /// @param _metadata Bytes to send along to the emitted event, as well as the data hook and redeem hook if applicable.
+    /// @return reclaimAmount The number of terminal tokens reclaimed for the `_beneficiary`, as a fixed point number with 18 decimals.
     function _redeemTokensOf(
         address _holder,
         uint256 _projectId,
@@ -737,10 +737,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         bytes memory _metadata
     ) internal returns (uint256 reclaimAmount) {
         // Can't send reclaimed funds to the zero address.
-        if (_beneficiary == address(0)) revert REDEEM_TO_ZERO_ADDRESS();
+        if (_beneficiary == address(0)) revert CANNOT_REDEEM_FOR_ZERO_ADDRESS();
 
         // Define variables that will be needed outside the scoped section below.
-        // Keep a reference to the ruleset during which the redemption is being made.
+        // Keep a reference to the ruleset the redemption is being made during.
         JBRuleset memory _ruleset;
 
         // Scoped section prevents stack too deep.
@@ -757,7 +757,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 _metadata
             );
 
-            // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
+            // Set the fee. Fees are not exercised if the redemption rate is at its max (100%), if the beneficiary is feeless, or if the fee beneficiary doesn't accept the given token.
             uint256 _feePercent = isFeelessAddress[_beneficiary]
                 || _ruleset.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ? 0 : FEE;
 
@@ -771,8 +771,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 );
             }
 
-            // Keep a reference to the amount being reclaimed that should have fees withheld from.
-            uint256 _feeEligibleDistributionAmount;
+            // Keep a reference to the amount being reclaimed which fees should be exercised on.
+            uint256 _amountEligibleForFees;
 
             // If hook payloads were specified by the data hook, fulfill them.
             if (_hookPayloads.length != 0) {
@@ -781,7 +781,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                     _accountingContextForTokenOf[_projectId][_token];
 
                 // Fulfill the redeem hooks.
-                _feeEligibleDistributionAmount += _fulfillRedemptionHookPayloadsFor(
+                _amountEligibleForFees += _fulfillRedemptionHookPayloadsFor(
                     _projectId,
                     JBTokenAmount(_token, reclaimAmount, _context.decimals, _context.currency),
                     _holder,
@@ -797,7 +797,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // Send the reclaimed funds to the beneficiary.
             if (reclaimAmount != 0) {
                 if (_feePercent != 0) {
-                    _feeEligibleDistributionAmount += reclaimAmount;
+                    _amountEligibleForFees += reclaimAmount;
                     // Subtract the fee for the reclaimed amount.
                     reclaimAmount -= _feePercent == 0 ? 0 : JBFees.feeIn(reclaimAmount, _feePercent);
                 }
@@ -808,10 +808,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 }
             }
 
-            // Take the fee from all outbound reclaimations.
-            _feeEligibleDistributionAmount != 0
+            // Take the fee from all outbound reclaimings.
+            _amountEligibleForFees != 0
                 ? _takeFeeFrom(
-                    _projectId, _token, _feeEligibleDistributionAmount, _feePercent, _beneficiary, false
+                    _projectId, _token, _amountEligibleForFees, _feePercent, _beneficiary, false
                 )
                 : 0;
         }
@@ -829,16 +829,16 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Distributes payouts for a project with the payout limit of its current ruleset.
-    /// @dev Payouts are sent to the preprogrammed splits. Any leftover is sent to the project's owner.
-    /// @dev Anyone can distribute payouts on a project's behalf. The project can preconfigure a wildcard split that is used to send funds to msg.sender. This can be used to incentivize calling this function.
-    /// @dev All funds distributed outside of this contract or any feeless terminals incure the protocol fee.
-    /// @param _projectId The ID of the project having its payouts distributed.
-    /// @param _token The token being distributed.
-    /// @param _amount The amount of terminal tokens to distribute, as a fixed point number with same number of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's payout limit currency.
-    /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with the same number of decimals as this terminal.
-    /// @return netLeftoverPayoutAmount The amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
+    /// @notice Sends payouts to a project's current payout split group, according to its ruleset, up to its current payout limit.
+    /// @dev If the percentages of the splits in the project's payout split group do not add up to 100%, the remainder is sent to the project's owner.
+    /// @dev Anyone can send payouts on a project's behalf. Projects can include a wildcard split to send funds to the `msg.sender` which calls this function. This can be used to incentivize calling this function.
+    /// @dev Payouts sent to addresses which aren't feeless incur the protocol fee.
+    /// @param _projectId The ID of the project to send the payouts of.
+    /// @param _token The token being paid out.
+    /// @param _amount The number of terminal tokens to pay out, as a fixed point number with same number of decimals as this terminal.
+    /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's payout limits.
+    /// @param _minReturnedTokens The minimum number of terminal tokens that the `_amount` should be worth (if expressed in terms of this terminal's currency), as a fixed point number with the same number of decimals as this terminal. If the amount of tokens paid out would be less than this amount, the send is reverted.
+    /// @return netLeftoverPayoutAmount The leftover amount that was sent to the project owner, as a fixed point number with the same amount of decimals as this terminal.
     function _sendPayoutsOf(
         uint256 _projectId,
         address _token,
@@ -846,26 +846,25 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         uint256 _currency,
         uint256 _minReturnedTokens
     ) internal returns (uint256 netLeftoverPayoutAmount) {
-        // Record the distribution.
+        // Record the payout.
         (JBRuleset memory _ruleset, uint256 _amountPaidOut) = STORE.recordPayoutFor(
             _projectId, _accountingContextForTokenOf[_projectId][_token], _amount, _currency
         );
 
-        // The amount being distributed must be at least as much as was expected.
+        // The amount being paid out must be at least as much as was expected.
         if (_amountPaidOut < _minReturnedTokens) revert INADEQUATE_PAYOUT_AMOUNT();
 
-        // Get a reference to the project owner, which will receive tokens from paying the platform fee
-        // and receive any extra distributable funds not allocated to payout splits.
+        // Get a reference to the project's owner.
+        // The owner will receive tokens minted by paying the platform fee and receive any leftover funds not sent to payout splits.
         address payable _projectOwner = payable(PROJECTS.ownerOf(_projectId));
 
         // Keep a reference to the fee.
         // The fee is 0 if the fee beneficiary doesn't accept the given token.
         uint256 _feePercent = FEE;
 
-        // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
-        // Also get a reference to the amount that was distributed to splits from which fees should be taken.
-        (uint256 _leftoverDistributionAmount, uint256 _feeEligibleDistributionAmount) =
-        _distributeToPayoutSplitsOf(
+        // Send payouts to the splits and get a reference to the amount left over after the splits have been paid.
+        // Also get a reference to the amount which was paid out to splits that is eligible for fees.
+        (uint256 _leftoverPayoutAmount, uint256 _amountEligibleForFees) = _sendPayoutsToSplitGroupOf(
             _projectId, _token, _ruleset.rulesetId, _amountPaidOut, _feePercent
         );
 
@@ -874,18 +873,18 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             ? _takeFeeFrom(
                 _projectId,
                 _token,
-                _feeEligibleDistributionAmount + _leftoverDistributionAmount,
+                _amountEligibleForFees + _leftoverPayoutAmount,
                 _feePercent,
                 _projectOwner,
                 _ruleset.shouldHoldFees()
             )
             : 0;
 
-        // Transfer any remaining balance to the project owner and update returned leftover accordingly.
-        if (_leftoverDistributionAmount != 0) {
+        // Send any leftover funds to the project owner and update the net leftover (which is returned) accordingly.
+        if (_leftoverPayoutAmount != 0) {
             // Subtract the fee from the net leftover amount.
-            netLeftoverPayoutAmount = _leftoverDistributionAmount
-                - (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, _feePercent));
+            netLeftoverPayoutAmount = _leftoverPayoutAmount
+                - (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverPayoutAmount, _feePercent));
 
             // Transfer the amount to the project owner.
             _transferFor(address(this), _projectOwner, _token, netLeftoverPayoutAmount);
@@ -904,17 +903,17 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Allows a project to send funds from its surplus up to the preconfigured allowance.
-    /// @dev Only a project's owner or a designated operator can use its allowance.
-    /// @dev Incurs the protocol fee.
-    /// @param _projectId The ID of the project to use the allowance of.
-    /// @param _token The address of the token who's allowance is being used.
-    /// @param _amount The amount of terminal tokens to use from this project's current allowance, as a fixed point number with the same amount of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being distributed. Must match the project's current ruleset's surplus allowance currency.
-    /// @param _minTokensUsed The minimum number of tokens that the `_amount` should be valued at in terms of this terminal's currency, as a fixed point number with 18 decimals.
+    /// @notice Allows a project to send out funds from its surplus up to the current surplus allowance.
+    /// @dev Only a project's owner or an operator with the `JBPermissionIds.USE_ALLOWANCE` permission from that owner can use the surplus allowance.
+    /// @dev Incurs the protocol fee unless the caller is a feeless address.
+    /// @param _projectId The ID of the project to use the surplus allowance of.
+    /// @param _token The token being paid out from the surplus.
+    /// @param _amount The amount of terminal tokens to use from the project's current surplus allowance, as a fixed point number with the same amount of decimals as this terminal.
+    /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus allowances.
+    /// @param _minTokensUsed The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return netAmountPaidOut The amount of tokens that was distributed to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
+    /// @return netAmountPaidOut The number of tokens that were sent to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
     function _useAllowanceOf(
         uint256 _projectId,
         address _token,
@@ -932,16 +931,17 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         // The amount being withdrawn must be at least as much as was expected.
         if (_amountPaidOut < _minTokensUsed) revert INADEQUATE_PAYOUT_AMOUNT();
 
-        // Get a reference to the project owner, which will receive tokens from paying the platform fee.
+        // Get a reference to the project owner.
+        // The project owner will receive tokens minted by paying the platform fee.
         address _projectOwner = PROJECTS.ownerOf(_projectId);
 
         // Keep a reference to the fee.
-        // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
+        // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the `_token`.
         uint256 _feePercent = isFeelessAddress[msg.sender] ? 0 : FEE;
 
         unchecked {
             // Take a fee from the `_amountPaidOut`, if needed.
-            // The net amount is the withdrawn amount without the fee.
+            // The net amount is the final amount withdrawn after the fee has been taken.
             netAmountPaidOut = _amountPaidOut
                 - (
                     _feePercent == 0
@@ -975,21 +975,21 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
     }
 
-    /// @notice Pays out splits for a project's ruleset configuration.
-    /// @param _projectId The ID of the project for which payout splits are being distributed.
-    /// @param _token The address of the token being distributed.
-    /// @param _domain The domain of the splits to distribute the payout between.
-    /// @param _amount The total amount being distributed, as a fixed point number with the same number of decimals as this terminal.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
-    /// @return If the leftover amount if the splits don't add up to 100%.
-    /// @return feeEligibleDistributionAmount The total amount of distributions that are eligible to have fees taken from.
-    function _distributeToPayoutSplitsOf(
+    /// @notice Sends payouts to the payout splits group specified in a project's ruleset.
+    /// @param _projectId The ID of the project to send the payouts of.
+    /// @param _token The address of the token being paid out.
+    /// @param _domain The domain of the split group being paid.
+    /// @param _amount The total amount being paid out, as a fixed point number with the same number of decimals as this terminal.
+    /// @param _feePercent The ratio of fees to take, as a percentage out of MAX_FEE.
+    /// @return _amount The leftover amount (zero if the splits add up to 100%).
+    /// @return amountEligibleForFees The total amount of funds which were paid out and are eligible for fees.
+    function _sendPayoutsToSplitGroupOf(
         uint256 _projectId,
         address _token,
         uint256 _domain,
         uint256 _amount,
         uint256 _feePercent
-    ) internal returns (uint256, uint256 feeEligibleDistributionAmount) {
+    ) internal returns (uint256, uint256 amountEligibleForFees) {
         // The total percentage available to split
         uint256 _leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
 
@@ -1007,16 +1007,16 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             // Get a reference to the split being iterated on.
             _split = _splits[_i];
 
-            // The amount to send towards the split.
+            // The amount to send to the split.
             uint256 _payoutAmount = PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
 
-            // The payout amount substracting any applicable incurred fees.
+            // The final payout amount after taking out any fees.
             uint256 _netPayoutAmount =
-                _distributeToPayoutSplit(_split, _projectId, _token, _payoutAmount, _feePercent);
+                _sendPayoutToSplit(_split, _projectId, _token, _payoutAmount, _feePercent);
 
-            // If the split hook is set as feeless, this distribution is not eligible for a fee.
+            // If the split hook is a feeless address, this payout doesn't incur a fee.
             if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount) {
-                feeEligibleDistributionAmount += _payoutAmount;
+                amountEligibleForFees += _payoutAmount;
             }
 
             if (_payoutAmount != 0) {
@@ -1046,17 +1046,17 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             }
         }
 
-        return (_amount, feeEligibleDistributionAmount);
+        return (_amount, amountEligibleForFees);
     }
 
-    /// @notice Pays out a split for a project's ruleset configuration.
-    /// @param _split The split to distribute payouts to.
-    /// @param _projectId The ID of the project to which the split is originating.
+    /// @notice Sends a payout to a split.
+    /// @param _split The split to pay.
+    /// @param _projectId The ID of the project the split was specified by.
     /// @param _token The address of the token being paid out.
-    /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
+    /// @param _amount The total amount that the split is being paid, as a fixed point number with the same number of decimals as this terminal.
+    /// @param _feePercent The ratio of fees to take, as a percent of `MAX_FEE`.
     /// @return netPayoutAmount The amount sent to the split after subtracting fees.
-    function _distributeToPayoutSplit(
+    function _sendPayoutToSplit(
         JBSplit memory _split,
         uint256 _projectId,
         address _token,
@@ -1068,7 +1068,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
         // If there's a split hook set, transfer to its `process` function.
         if (_split.splitHook != IJBSplitHook(address(0))) {
-            // This distribution is eligible for a fee since the funds are leaving this contract and the split hook isn't listed as feeless.
+            // This payouts is eligible for a fee since the funds are leaving this contract and the split hook isn't listed as feeless.
             if (_feePercent != 0 && !isFeelessAddress[address(_split.splitHook)]) {
                 unchecked {
                     netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
@@ -1099,7 +1099,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 // Keep a reference to the value that'll be paid to the split hook.
                 uint256 _payValue = _token == JBTokenList.ETH ? netPayoutAmount : 0;
 
-                // If this terminal's token is ETH, send it in msg.value.
+                // If this terminal's token is ETH, send it in `msg.value`.
                 try _split.splitHook.process{value: _payValue}(_data) {}
                 catch (bytes memory __reason) {
                     _reason = __reason.length == 0 ? abi.encode("Process fail") : __reason;
@@ -1108,9 +1108,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 _reason = abi.encode("IERC165 fail");
             }
 
+            // If the split hook's `process` failed, or if its `IERC165` check failed:
             if (_reason.length != 0) {
                 // Revert the payout.
-                _revertTransferFrom(
+                _revertPayoutFrom(
                     _projectId, _token, address(_split.splitHook), netPayoutAmount, _amount
                 );
 
@@ -1122,23 +1123,24 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
 
             // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
-            // Get a reference to the Juicebox terminal being used.
+            // Get a reference to the `IJBTerminal` being used.
             IJBTerminal _terminal = DIRECTORY.primaryTerminalOf(_split.projectId, _token);
 
             // The project must have a terminal to send funds to.
             if (_terminal == IJBTerminal(address(0))) {
+                // If it doesn't have a terminal for the token:
                 // Set the net payout amount to 0 to signal the reversion.
                 netPayoutAmount = 0;
 
                 // Revert the payout.
-                _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
+                _revertPayoutFrom(_projectId, _token, address(0), 0, _amount);
 
                 // Specify the reason for reverting.
                 bytes memory _reason = "Terminal not found";
 
                 emit PayoutReverted(_projectId, _split, _amount, _reason, msg.sender);
             } else {
-                // This distribution is eligible for a fee since the funds are leaving this contract and the terminal isn't listed as feeless.
+                // This payout is eligible for a fee since the funds are leaving this terminal and the receiving terminal isn't a feeless address.
                 if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)])
                 {
                     unchecked {
@@ -1161,11 +1163,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                         netPayoutAmount,
                         false,
                         "",
-                        // Send the projectId in the metadata as a referral.
+                        // Send `_projectId` in the metadata as a referral.
                         _metadata
                     ) {} catch (bytes memory _reason) {
-                        // Revert the payout.
-                        _revertTransferFrom(
+                        // If an error occurred, revert the payout.
+                        _revertPayoutFrom(
                             _projectId, _token, address(_terminal), netPayoutAmount, _amount
                         );
 
@@ -1182,11 +1184,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                         _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
                         0,
                         "",
-                        // Send the projectId in the metadata as a referral.
+                        // Send `_projectId` in the metadata as a referral.
                         bytes(abi.encodePacked(_projectId))
                     ) {} catch (bytes memory _reason) {
-                        // Revert the payout.
-                        _revertTransferFrom(
+                        // If an error occurred, revert the payout.
+                        _revertPayoutFrom(
                             _projectId, _token, address(_terminal), netPayoutAmount, _amount
                         );
 
@@ -1198,15 +1200,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 }
             }
         } else {
-            // This distribution is eligible for a fee since the funds are leaving this contract and the beneficiary isn't listed as feeless.
-            // Don't enforce feeless address for the beneficiary since the funds are leaving the ecosystem.
+            // This payout is eligible for a fee since the funds are leaving this contract and the beneficiary isn't a feeless address.
             if (_feePercent != 0) {
                 unchecked {
                     netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
                 }
             }
 
-            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
+            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send them to the `msg.sender`.
             _transferFor(
                 address(this),
                 _split.beneficiary != address(0) ? _split.beneficiary : payable(msg.sender),
@@ -1216,15 +1217,15 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
     }
 
-    /// @notice Fulfills payment payloads for a list of pay hooks.
-    /// @param _projectId The ID of the project being paid that is forwarding payloads to pay hooks.
+    /// @notice Fulfills a list of pay hook payloads.
+    /// @param _projectId The ID of the project being paid and forwarding payloads to pay hooks.
     /// @param _payloads The payloads being fulfilled.
-    /// @param _tokenAmount The amount of tokens that were paid in to the project.
+    /// @param _tokenAmount The amount of tokens that the project was paid.
     /// @param _payer The address that sent the payment.
-    /// @param _ruleset The ruleset during which the payment is being accepted during.
-    /// @param _beneficiary The address receiving tokens that result from the payment.
-    /// @param _beneficiaryTokenCount The amount of tokens that are being minted for the beneificary.
-    /// @param _metadata Bytes to send along to the data hook, pay hook, and emitted event, if provided.
+    /// @param _ruleset The ruleset the payment is being accepted during.
+    /// @param _beneficiary The address which receives tokens that the payment yields.
+    /// @param _beneficiaryTokenCount The amount of tokens that are being minted and sent to the beneificary.
+    /// @param _metadata Bytes to send along to the emitted event, as well as the data hook and pay hook if applicable.
     function _fulfillPayHookPayloadsFor(
         uint256 _projectId,
         JBPayHookPayload[] memory _payloads,
@@ -1252,15 +1253,15 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         // Keep a reference to the payload being iterated on.
         JBPayHookPayload memory _payload;
 
-        // Keep a reference to the number of payloads there are.
-        uint256 _numberOfpayloads = _payloads.length;
+        // Keep a reference to the number of payloads to iterate through.
+        uint256 _numberOfPayloads = _payloads.length;
 
         // Fulfill each payload.
-        for (uint256 _i; _i < _numberOfpayloads;) {
+        for (uint256 _i; _i < _numberOfPayloads;) {
             // Set the payload being iterated on.
             _payload = _payloads[_i];
 
-            // Pass the correct token forwardedAmount to the hook
+            // Pass the correct token `forwardedAmount` to the hook.
             _data.forwardedAmount = JBTokenAmount({
                 value: _payload.amount,
                 token: _tokenAmount.token,
@@ -1287,17 +1288,17 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
     }
 
-    /// @notice Fulfills redemption payloads to a list of redeem hooks.
-    /// @param _projectId The ID of the project being redeemed from that is forwarding payloads to redeem hooks.
-    /// @param _beneficiaryTokenAmount The amount of tokens that are being reclaimed from the project.
-    /// @param _holder The address that is redeeming.
-    /// @param _tokenCount The amount of tokens that are being redeemed by the holder.
-    /// @param _metadata Bytes to send along to the data hook, redeem hook, and emitted event, if provided.
-    /// @param _ruleset The ruleset during which the redemption is being made during.
-    /// @param _beneficiary The address receiving reclaimed treasury tokens that result from the redemption.
+    /// @notice Fulfills a list of redeem hook payloads.
+    /// @param _projectId The ID of the project being redeemed from and forwarding payloads to redeem hooks.
+    /// @param _beneficiaryTokenAmount The number of tokens that are being reclaimed from the project.
+    /// @param _holder The address that holds the tokens being redeemed.
+    /// @param _tokenCount The number of tokens being redeemed.
+    /// @param _metadata Bytes to send along to the emitted event, as well as the data hook and redeem hook if applicable.
+    /// @param _ruleset The ruleset the redemption is being made during as a `JBRuleset` struct.
+    /// @param _beneficiary The address receiving any terminal tokens that are reclaimed by this redemption.
     /// @param _payloads The payloads being fulfilled.
-    /// @param _feePercent The percent fee that will apply to funds allocated to redeem hooks.
-    /// @return feeEligibleDistributionAmount The amount of allocated funds to redeem hooks that are eligible for fees.
+    /// @param _feePercent The fee ratio that will apply to funds allocated to redeem hooks, as a percentage out of `JBConstants.MAX_FEE`.
+    /// @return amountEligibleForFees The amount of funds which were allocated to redeem hooks and are eligible for fees.
     function _fulfillRedemptionHookPayloadsFor(
         uint256 _projectId,
         JBTokenAmount memory _beneficiaryTokenAmount,
@@ -1308,7 +1309,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         address payable _beneficiary,
         JBRedeemHookPayload[] memory _payloads,
         uint256 _feePercent
-    ) internal returns (uint256 feeEligibleDistributionAmount) {
+    ) internal returns (uint256 amountEligibleForFees) {
         // Keep a reference to the data that'll get send to redeem hooks.
         JBDidRedeemData memory _data = JBDidRedeemData(
             _holder,
@@ -1326,10 +1327,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         // Keep a reference to the payload being iterated on.
         JBRedeemHookPayload memory _payload;
 
-        // Keep a reference to the number of payloads there are.
-        uint256 _numberOfpayloads = _payloads.length;
+        // Keep a reference to the number of payloads being iterated through.
+        uint256 _numberOfPayloads = _payloads.length;
 
-        for (uint256 _i; _i < _numberOfpayloads;) {
+        for (uint256 _i; _i < _numberOfPayloads;) {
             // Set the payload being iterated on.
             _payload = _payloads[_i];
 
@@ -1342,13 +1343,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             uint256 _payloadAmountFee =
                 _feePercent == 0 ? 0 : JBFees.feeIn(_payload.amount, _feePercent);
 
-            // Add the payload amount to the amount eligible for having a fee taken.
+            // Add the payload's amount to the amount eligible for having a fee taken.
             if (_payloadAmountFee != 0) {
-                feeEligibleDistributionAmount += _payload.amount;
+                amountEligibleForFees += _payload.amount;
                 _payload.amount -= _payloadAmountFee;
             }
 
-            // Set the value of the forwarded amount.
+            // Pass the correct token `forwardedAmount` to the hook.
             _data.forwardedAmount = JBTokenAmount({
                 value: _payload.amount,
                 token: _beneficiaryTokenAmount.token,
@@ -1374,13 +1375,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
     }
 
-    /// @notice Takes a fee into the platform's project, which has an id of _FEE_BENEFICIARY_PROJECT_ID.
-    /// @param _projectId The ID of the project having fees taken from.
-    /// @param _token The address of the token that the fee is being taken in.
-    /// @param _amount The amount of the fee to take, as a floating point number with 18 decimals.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
-    /// @param _beneficiary The address to mint the platforms tokens for.
-    /// @param _shouldHoldFees If fees should be tracked and held back.
+    /// @notice Takes a fee into the platform's project (with the `_FEE_BENEFICIARY_PROJECT_ID`).
+    /// @param _projectId The ID of the project paying the fee.
+    /// @param _token The address of the token that the fee is being paid in.
+    /// @param _amount The fee's token amount, as a floating point number with 18 decimals.
+    /// @param _feePercent The percentage of fees to take (a ratio of `JBConstants.MAX_FEE`).
+    /// @param _beneficiary The address to mint the platform's project's tokens for.
+    /// @param _shouldHoldFees If fees should be tracked and held instead of being exercised immediately.
     /// @return feeAmount The amount of the fee taken.
     function _takeFeeFrom(
         uint256 _projectId,
@@ -1411,11 +1412,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     }
 
     /// @notice Process a fee of the specified amount from a project.
-    /// @param _projectId The project ID the fee is being paid from.
+    /// @param _projectId The ID of the project paying the fee.
     /// @param _token The token the fee is being paid in.
     /// @param _amount The fee amount, as a floating point number with 18 decimals.
-    /// @param _beneficiary The address to mint the platform's tokens for.
-    /// @param _feeTerminal The terminal that'll receive the fees. This'll be filled if one isn't provided.
+    /// @param _beneficiary The address which will receive any platform tokens minted.
+    /// @param _feeTerminal The terminal that'll receive the fee.
     function _processFee(
         uint256 _projectId,
         address _token,
@@ -1424,7 +1425,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         IJBTerminal _feeTerminal
     ) internal {
         if (address(_feeTerminal) == address(0)) {
-            _revertTransferFrom(_projectId, _token, address(0), 0, _amount);
+            _revertPayoutFrom(_projectId, _token, address(0), 0, _amount);
 
             // Specify the reason for reverting.
             bytes memory _reason = "Fee not accepted";
@@ -1438,12 +1439,12 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _beforeTransferFor(address(_feeTerminal), _token, _amount);
         }
 
-        // Keep a reference to the amount that'll be paid in.
+        // Keep a reference to the amount that'll be paid as a `msg.value`.
         uint256 _payValue = _token == JBTokenList.ETH ? _amount : 0;
 
         try _feeTerminal
             // Send the fee.
-            // If this terminal's token is ETH, send it in msg.value.
+            // If this terminal's token is ETH, send it in `msg.value`.
             .pay{value: _payValue}(
             _FEE_BENEFICIARY_PROJECT_ID,
             _token,
@@ -1451,10 +1452,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             _beneficiary,
             0,
             "",
-            // Send the projectId in the metadata.
+            // Send the `projectId` in the metadata.
             bytes(abi.encodePacked(_projectId))
         ) {} catch (bytes memory _reason) {
-            _revertTransferFrom(
+            _revertPayoutFrom(
                 _projectId,
                 _token,
                 address(_feeTerminal) != address(this) ? address(_feeTerminal) : address(0),
@@ -1465,11 +1466,11 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         }
     }
 
-    /// @notice Refund fees based on the specified amount.
-    /// @param _projectId The project for which fees are being refunded.
-    /// @param _amount The amount to base the refund on, as a fixed point number with the same amount of decimals as this terminal.
-    /// @return unlockedFees How much fees were refunded, as a fixed point number with the same number of decimals as this terminal
-    function _refundHeldFees(uint256 _projectId, uint256 _amount)
+    /// @notice Unlock held fees based on the specified amount.
+    /// @param _projectId The project held fees are being unlocked for.
+    /// @param _amount The amount to base the calculation on, as a fixed point number with the same number of decimals as this terminal.
+    /// @return unlockedFees The amount of held fees that were unlocked, as a fixed point number with the same number of decimals as this terminal
+    function _unlockHeldFees(uint256 _projectId, uint256 _amount)
         internal
         returns (uint256 unlockedFees)
     {
@@ -1490,7 +1491,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             if (leftoverAmount == 0) {
                 _heldFeesOf[_projectId].push(_heldFees[_i]);
             } else {
-                // Notice here we take feeIn the stored .amount
+                // Notice here we take `feeIn` on the stored `.amount`.
                 uint256 _feeAmount = (
                     _heldFees[_i].fee == 0
                         ? 0
@@ -1503,7 +1504,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                         unlockedFees += _feeAmount;
                     }
                 } else {
-                    // And here we overwrite with feeFrom the leftoverAmount
+                    // And here we overwrite with `feeFrom` the `leftoverAmount`
                     _feeAmount = _heldFees[_i].fee == 0
                         ? 0
                         : JBFees.feeFrom(leftoverAmount, _heldFees[_i].fee);
@@ -1530,13 +1531,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         emit UnlockHeldFees(_projectId, _amount, unlockedFees, leftoverAmount, msg.sender);
     }
 
-    /// @notice Reverts an expected payout.
-    /// @param _projectId The ID of the project having paying out.
-    /// @param _token The address of the token having its transfer reverted.
+    /// @notice Reverts an expected payout from a project.
+    /// @param _projectId The ID of the project having its payout reverted.
+    /// @param _token The address of the token the payout was expected to be made in.
     /// @param _expectedDestination The address the payout was expected to go to.
-    /// @param _allowanceAmount The amount that the destination has been allowed to use.
+    /// @param _allowanceAmount The amount that the `_expectedDestination` has been allowed to use.
     /// @param _depositAmount The amount of the payout as debited from the project's balance.
-    function _revertTransferFrom(
+    function _revertPayoutFrom(
         uint256 _projectId,
         address _token,
         address _expectedDestination,
@@ -1548,15 +1549,15 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
             IERC20(_token).safeDecreaseAllowance(_expectedDestination, _allowanceAmount);
         }
 
-        // Add undistributed amount back to project's balance.
+        // Add the reverted amount back to project's balance.
         STORE.recordAddedBalanceFor(_projectId, _token, _depositAmount);
     }
 
     /// @notice Transfers tokens.
-    /// @param _from The address from which the transfer should originate.
-    /// @param _to The address to which the transfer should go.
+    /// @param _from The address the transfer should originate from.
+    /// @param _to The address the transfer should go to.
     /// @param _token The token being transfered.
-    /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
+    /// @param _amount The number of tokens being transferred, as a fixed point number with the same number of decimals as this terminal.
     function _transferFor(address _from, address payable _to, address _token, uint256 _amount)
         internal
         virtual
@@ -1576,9 +1577,9 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     }
 
     /// @notice Logic to be triggered before transferring tokens from this terminal.
-    /// @param _to The address to which the transfer is going.
-    /// @param _token The token being transfered.
-    /// @param _amount The amount of the transfer, as a fixed point number with the same number of decimals as this terminal.
+    /// @param _to The address the transfer is going to.
+    /// @param _token The token being transferred.
+    /// @param _amount The number of tokens being transferred, as a fixed point number with the same number of decimals as this terminal.
     function _beforeTransferFor(address _to, address _token, uint256 _amount) internal virtual {
         // If the token is ETH, assume the native token standard.
         if (_token == JBTokenList.ETH) return;
@@ -1586,7 +1587,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     }
 
     /// @notice Sets the permit2 allowance for a token.
-    /// @param _allowance the allowance to get using permit2
+    /// @param _allowance The allowance to set using permit2.
     /// @param _token The token being allowed.
     function _permitAllowance(JBSingleAllowanceData memory _allowance, address _token) internal {
         PERMIT2.permit(
