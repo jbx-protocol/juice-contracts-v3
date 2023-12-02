@@ -6,7 +6,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 // Projects can be launched.
 contract TestLaunchProject_Local is TestBaseWorkflow {
     IJBController3_1 private _controller;
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleMetadata private _metadata;
     IJBPaymentTerminal private _terminal;
@@ -22,7 +21,6 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _controller = jbController();
         _fcStore = jbFundingCycleStore();
 
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBFundingCycleData({
             duration: 0,
             weight: 0,
@@ -31,18 +29,16 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
@@ -107,7 +103,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
         uint256 projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -163,7 +159,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -222,7 +218,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfig,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -230,7 +226,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         } else {
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: _projectMetadata,
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfig,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""

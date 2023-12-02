@@ -50,18 +50,16 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         });
 
         JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: true,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
@@ -90,7 +88,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         // First project for fee collection
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 0}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -98,7 +96,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

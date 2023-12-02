@@ -12,11 +12,13 @@ import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
 import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
+import {IJBDirectoryAccessControl} from "./interfaces/IJBDirectoryAccessControl.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
+import {IJBProjectMetadataRegistry} from "./interfaces/IJBProjectMetadataRegistry.sol";
 import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
 import {IJBTokenStore} from "./interfaces/IJBTokenStore.sol";
@@ -29,7 +31,6 @@ import {JBSplitsGroups} from "./libraries/JBSplitsGroups.sol";
 import {JBFundingCycle} from "./structs/JBFundingCycle.sol";
 import {JBFundingCycleConfig} from "./structs/JBFundingCycleConfig.sol";
 import {JBFundingCycleMetadata} from "./structs/JBFundingCycleMetadata.sol";
-import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
@@ -59,6 +60,7 @@ contract JBController3_1 is
     error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
     error NO_BURNABLE_TOKENS();
     error NOT_CURRENT_CONTROLLER();
+    error TRANSFERS_PAUSED();
     error ZERO_TOKENS_TO_MINT();
 
     //*********************************************************************//
@@ -90,9 +92,26 @@ contract JBController3_1 is
     /// @notice The current undistributed reserved token balance of.
     mapping(uint256 => uint256) public override reservedTokenBalanceOf;
 
+    /// @notice The metadata for each project, which can be used across several domains.
+    /// @custom:param _projectId The ID of the project to which the metadata belongs.
+    mapping(uint256 => string) public override metadataOf;
+
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
+
+    /// @notice Gets the current total amount of outstanding tokens for a project.
+    /// @param _projectId The ID of the project to get total outstanding tokens of.
+    /// @return The current total amount of outstanding tokens for the project.
+    function totalOutstandingTokensOf(uint256 _projectId)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        // Add the reserved tokens to the total supply.
+        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
+    }
 
     /// @notice A project's funding cycle for the specified configuration along with its metadata.
     /// @param _projectId The ID of the project to which the funding cycle belongs.
@@ -155,17 +174,23 @@ contract JBController3_1 is
         metadata = fundingCycle.expandMetadata();
     }
 
+    /// @notice A flag indicating if the project currently allows terminals to be set.
+    /// @param _projectId The ID of the project the flag is for.
+    /// @return The flag
+    function setTerminalsAllowed(uint256 _projectId) external view returns (bool) {
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetTerminals;
+    }
+
+    /// @notice A flag indicating if the project currently allows its controller to be set.
+    /// @param _projectId The ID of the project the flag is for.
+    /// @return The flag
+    function setControllerAllowed(uint256 _projectId) external view returns (bool) {
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetController;
+    }
+
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
-
-    /// @notice Gets the current total amount of outstanding tokens for a project.
-    /// @param _projectId The ID of the project to get total outstanding tokens of.
-    /// @return The current total amount of outstanding tokens for the project.
-    function totalOutstandingTokensOf(uint256 _projectId) public view override returns (uint256) {
-        // Add the reserved tokens to the total supply.
-        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
-    }
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
@@ -179,6 +204,8 @@ contract JBController3_1 is
         returns (bool)
     {
         return _interfaceId == type(IJBController3_1).interfaceId
+            || _interfaceId == type(IJBProjectMetadataRegistry).interfaceId
+            || _interfaceId == type(IJBDirectoryAccessControl).interfaceId
             || _interfaceId == type(IJBMigratable).interfaceId
             || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
     }
@@ -220,14 +247,14 @@ contract JBController3_1 is
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
-    /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
+    /// @param _projectMetadata Metadata to associate with the project. This can be updated any time by the owner of the project.
     /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return projectId The ID of the project.
     function launchProjectFor(
         address _owner,
-        JBProjectMetadata calldata _projectMetadata,
+        string calldata _projectMetadata,
         JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
@@ -236,10 +263,15 @@ contract JBController3_1 is
         IJBDirectory _directory = directory;
 
         // Mint the project into the wallet of the owner.
-        projectId = projects.createFor(_owner, _projectMetadata);
+        projectId = projects.createFor(_owner);
+
+        // Set project metadata if one was provided.
+        if (bytes(_projectMetadata).length > 0) {
+            metadataOf[projectId] = _projectMetadata;
+        }
 
         // Set this contract as the project's controller in the directory.
-        _directory.setControllerOf(projectId, address(this));
+        _directory.setControllerOf(projectId, IERC165(this));
 
         // Configure the first funding cycle.
         uint256 _configuration = _configureFundingCycles(projectId, _fundingCycleConfigurations);
@@ -247,7 +279,7 @@ contract JBController3_1 is
         // Configure the terminals.
         _configureTerminals(projectId, _terminalConfigurations);
 
-        emit LaunchProject(_configuration, projectId, _memo, _msgSender());
+        emit LaunchProject(_configuration, projectId, _projectMetadata, _memo, _msgSender());
     }
 
     /// @notice Creates a funding cycle for an already existing project ERC-721.
@@ -280,7 +312,7 @@ contract JBController3_1 is
         }
 
         // Set this contract as the project's controller in the directory.
-        directory.setControllerOf(_projectId, address(this));
+        directory.setControllerOf(_projectId, IERC165(this));
 
         // Configure the first funding cycle.
         configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
@@ -439,11 +471,20 @@ contract JBController3_1 is
 
     /// @notice Allows other controllers to signal to this one that a migration is expected for the specified project.
     /// @dev This controller should not yet be the project's controller.
-    /// @param _projectId The ID of the project that will be migrated to this controller.
     /// @param _from The controller being migrated from.
-    function prepForMigrationOf(uint256 _projectId, address _from) external virtual override {
+    /// @param _projectId The ID of the project that will be migrated to this controller.
+    function receiveMigrationFrom(IERC165 _from, uint256 _projectId) external virtual override {
         _projectId; // Prevents unused var compiler and natspec complaints.
         _from; // Prevents unused var compiler and natspec complaints.
+
+        // Copy the main metadata if relevant.
+        if (
+            _from.supportsInterface(type(IJBProjectMetadataRegistry).interfaceId)
+                && directory.controllerOf(_projectId) == _from
+        ) {
+            metadataOf[_projectId] =
+                IJBProjectMetadataRegistry(address(_from)).metadataOf(_projectId);
+        }
     }
 
     /// @notice Allows a project to migrate from this controller to another.
@@ -459,9 +500,6 @@ contract JBController3_1 is
         // Keep a reference to the directory.
         IJBDirectory _directory = directory;
 
-        // This controller must be the project's current controller.
-        if (_directory.controllerOf(_projectId) != address(this)) revert NOT_CURRENT_CONTROLLER();
-
         // Get a reference to the project's current funding cycle.
         JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
 
@@ -472,12 +510,25 @@ contract JBController3_1 is
         if (reservedTokenBalanceOf[_projectId] != 0) _distributeReservedTokensOf(_projectId, "");
 
         // Make sure the new controller is prepped for the migration.
-        _to.prepForMigrationOf(_projectId, address(this));
-
-        // Set the new controller.
-        _directory.setControllerOf(_projectId, address(_to));
+        _to.receiveMigrationFrom(IERC165(this), _projectId);
 
         emit Migrate(_projectId, _to, _msgSender());
+    }
+
+    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
+    /// @dev Only a project's controller can set its metadata.
+    /// @dev Applications can use the domain namespace as they wish.
+    /// @param _projectId The ID of the project who's metadata is being changed.
+    /// @param _metadata A struct containing metadata content.
+    function setMetadataOf(uint256 _projectId, string calldata _metadata)
+        external
+        override
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+    {
+        // Set the project's new metadata content within the specified domain.
+        metadataOf[_projectId] = _metadata;
+
+        emit SetMetadata(_projectId, _metadata, _msgSender());
     }
 
     /// @notice Sets a project's splits.
@@ -493,23 +544,11 @@ contract JBController3_1 is
     )
         external
         virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
     {
         // Set splits for the group.
         splitsStore.set(_projectId, _domain, _groupedSplits);
-    }
-
-    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
-    /// @dev Only a project's owner or operator can set its metadata.
-    /// @dev Applications can use the domain namespace as they wish.
-    /// @param _projectId The ID of the project who's metadata is being changed.
-    /// @param _metadata A struct containing metadata content, and domain within which the metadata applies.
-    function setMetadataOf(uint256 _projectId, JBProjectMetadata calldata _metadata)
-        external
-        virtual
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
-    {
-        projects.setMetadataOf(_projectId, _metadata);
     }
 
     /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
@@ -521,6 +560,8 @@ contract JBController3_1 is
     /// @return token The token that was issued.
     function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
+        virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
         returns (IJBToken token)
     {
@@ -533,9 +574,47 @@ contract JBController3_1 is
     /// @param _token The new token.
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
+        virtual
+        override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
     {
         tokenStore.setFor(_projectId, _token);
+    }
+
+    /// @notice Claims internally accounted for tokens into a holder's wallet.
+    /// @dev Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
+    /// @param _holder The owner of the tokens being claimed.
+    /// @param _projectId The ID of the project whose tokens are being claimed.
+    /// @param _amount The amount of tokens to claim.
+    /// @param _beneficiary The account into which the claimed tokens will go.
+    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+        external
+        virtual
+        override
+        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
+    {
+        tokenStore.claimFor(_holder, _projectId, _amount, _beneficiary);
+    }
+
+    /// @notice Allows a holder to transfer unclaimed tokens to another account.
+    /// @dev Only a token holder or an operator can transfer its unclaimed tokens.
+    /// @param _holder The address to transfer tokens from.
+    /// @param _projectId The ID of the project whose tokens are being transferred.
+    /// @param _recipient The recipient of the tokens.
+    /// @param _amount The amount of tokens to transfer.
+    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+        external
+        virtual
+        override
+        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
+    {
+        // Get a reference to the current funding cycle for the project.
+        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+
+        // Must not be paused.
+        if (_fundingCycle.tokenCreditTransfersPaused()) revert TRANSFERS_PAUSED();
+
+        tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
     }
 
     //*********************************************************************//

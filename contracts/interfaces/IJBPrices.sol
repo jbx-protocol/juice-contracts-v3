@@ -14,8 +14,6 @@ interface IJBPrices {
 
     function PROJECTS() external view returns (IJBProjects);
 
-    function DIRECTORY() external view returns (IJBDirectory);
-
     function feedFor(uint256 projectId, uint256 currency, uint256 base)
         external
         view

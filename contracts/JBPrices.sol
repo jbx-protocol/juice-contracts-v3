@@ -34,9 +34,6 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     /// @notice Mints ERC-721's that represent project ownership and transfers.
     IJBProjects public immutable override PROJECTS;
 
-    /// @notice The directory of terminals and controllers for projects.
-    IJBDirectory public immutable override DIRECTORY;
-
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
@@ -102,13 +99,10 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     /// @param _operatorStore A contract storing operator assignments.
     /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _owner The address that will own the contract.
-    constructor(
-        IJBOperatorStore _operatorStore,
-        IJBProjects _projects,
-        IJBDirectory _directory,
-        address _owner
-    ) JBOperatable(_operatorStore) Ownable(_owner) {
-        DIRECTORY = _directory;
+    constructor(IJBOperatorStore _operatorStore, IJBProjects _projects, address _owner)
+        JBOperatable(_operatorStore)
+        Ownable(_owner)
+    {
         PROJECTS = _projects;
     }
 
@@ -128,11 +122,8 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
         // If the message sender is the owner and the projectId being set is the default, no permissions necessary.
         // Otherwise, only the project owner or an operator can add a feed for the project.
         if (_projectId != DEFAULT_PROJECT_ID || msg.sender != owner()) {
-            _requirePermissionAllowingOverride(
-                PROJECTS.ownerOf(_projectId),
-                _projectId,
-                JBOperations.ADD_PRICE_FEED,
-                address(DIRECTORY.controllerOf(_projectId)) == _msgSender()
+            _requirePermission(
+                PROJECTS.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
             );
         }
 

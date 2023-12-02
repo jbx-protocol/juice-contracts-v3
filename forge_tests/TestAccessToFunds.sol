@@ -48,18 +48,16 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2, //50%
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2, //50%
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: true,
             useDataSourceForPay: false,
@@ -122,7 +120,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
-                projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+                projectMetadata: "whatever",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
@@ -131,7 +129,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -363,7 +361,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
-                projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+                projectMetadata: "whatever",
                 fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
@@ -372,7 +370,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -630,7 +628,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
-                projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+                projectMetadata: "whatever",
                 fundingCycleConfigurations: new JBFundingCycleConfig[](0), // No cycle config will force revert when paid.
                 // Set the fee collecting terminal's ETH accounting context if the test calls for doing so.
                 terminalConfigurations: _feeProjectAcceptsToken
@@ -650,7 +648,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -900,7 +898,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -1179,7 +1177,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
-                projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+                projectMetadata: "whatever",
                 fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
                 terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
                 memo: ""
@@ -1188,7 +1186,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations,
                 memo: ""
@@ -1860,7 +1858,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // First project for fee collection
             _controller.launchProjectFor({
                 owner: address(420), // random
-                projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+                projectMetadata: "whatever",
                 fundingCycleConfigurations: _cycleConfigurations, // use the same cycle configs
                 terminalConfigurations: _terminalConfigurations1, // set terminals where fees will be received
                 memo: ""
@@ -1869,7 +1867,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
                 owner: _projectOwner,
-                projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+                projectMetadata: "myIPFSHash",
                 fundingCycleConfigurations: _cycleConfigurations,
                 terminalConfigurations: _terminalConfigurations2,
                 memo: ""

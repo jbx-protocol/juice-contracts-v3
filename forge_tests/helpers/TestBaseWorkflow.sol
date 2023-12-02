@@ -35,12 +35,9 @@ import {JBFundingCycleConfig} from "@juicebox/structs/JBFundingCycleConfig.sol";
 import {JBGroupedSplits} from "@juicebox/structs/JBGroupedSplits.sol";
 import {JBOperatorData} from "@juicebox/structs/JBOperatorData.sol";
 import {JBPayParamsData} from "@juicebox/structs/JBPayParamsData.sol";
-import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
 import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
-import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
-import {JBGlobalFundingCycleMetadata} from "@juicebox/structs/JBGlobalFundingCycleMetadata.sol";
 import {JBPayDelegateAllocation3_1_1} from "@juicebox/structs/JBPayDelegateAllocation3_1_1.sol";
 import {JBRedemptionDelegateAllocation3_1_1} from
     "@juicebox/structs/JBRedemptionDelegateAllocation3_1_1.sol";
@@ -191,24 +188,21 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     // Deploys and initializes contracts for testing.
     function setUp() public virtual {
-        _jbDirectory = JBDirectory(addressFrom(address(this), 6));
-
         _jbOperatorStore = new JBOperatorStore();
 
         _usdcToken = new MockERC20('USDC', 'USDC');
 
-        _jbProjects = new JBProjects(_jbOperatorStore, IJBDirectory(_jbDirectory), _multisig);
+        _jbProjects = new JBProjects(_multisig);
 
-        _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _jbDirectory, _multisig);
+        _jbPrices = new JBPrices(_jbOperatorStore, _jbProjects, _multisig);
 
-        _jbFundingCycleStore = new JBFundingCycleStore(IJBDirectory(_jbDirectory));
+        _jbDirectory = new JBDirectory(_jbOperatorStore, _jbProjects, _multisig);
 
-        address _realJbDirectory =
-            address(new JBDirectory(_jbOperatorStore, _jbProjects, _jbFundingCycleStore, _multisig));
-
-        assertEq(
-            address(_jbDirectory), _realJbDirectory, "Incorrect nonce was used for JBDirectory"
+        _jbTokenStore = new JBTokenStore(
+            _jbDirectory
         );
+
+        _jbFundingCycleStore = new JBFundingCycleStore(_jbDirectory);
 
         vm.label(_multisig, "projectOwner");
         vm.label(_beneficiary, "beneficiary");
@@ -218,12 +212,9 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         vm.label(address(_jbDirectory), "JBDirectory");
         vm.label(address(_usdcToken), "ERC20");
         vm.label(address(_jbOperatorStore), "JBOperatorStore");
-
-        _jbTokenStore =
-            new JBTokenStore(_jbOperatorStore, _jbProjects, _jbDirectory, _jbFundingCycleStore);
         vm.label(address(_jbTokenStore), "JBTokenStore");
-        _jbSplitsStore =
-            new JBSplitsStore(_jbOperatorStore, _jbProjects, IJBDirectory(_jbDirectory));
+
+        _jbSplitsStore = new JBSplitsStore(IJBDirectory(_jbDirectory));
         vm.label(address(_jbSplitsStore), "JBSplitsStore");
         _jbFundAccessConstraintsStore = new JBFundAccessConstraintsStore(_jbDirectory);
         vm.label(address(_jbFundAccessConstraintsStore), "JBFundAccessConstraintsStore");

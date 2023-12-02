@@ -40,20 +40,13 @@ contract Deploy is Script {
     }
 
     function _deployContracts(address _manager) internal {
-        address _directoryAddress = addressFrom(address(this), 5);
-
-        // 1
         _operatorStore = new JBOperatorStore();
-        // 2
-        _projects = new JBProjects(_operatorStore, IJBDirectory(_directoryAddress), _manager);
-        // 3
-        _prices = new JBPrices(_operatorStore, _projects, IJBDirectory(_directoryAddress), _manager);
-        //4
-        _fundingCycleStore = new JBFundingCycleStore(IJBDirectory(_directoryAddress));
-        // 5
-        _directory = new JBDirectory(_operatorStore, _projects, _fundingCycleStore, address(this));
-        _tokenStore = new JBTokenStore(_operatorStore, _projects, _directory, _fundingCycleStore);
-        _splitsStore = new JBSplitsStore(_operatorStore, _projects, _directory);
+        _projects = new JBProjects(_manager);
+        _prices = new JBPrices(_operatorStore, _projects, _manager);
+        _directory = new JBDirectory(_operatorStore, _projects, address(this));
+        _tokenStore = new JBTokenStore(_directory);
+        _fundingCycleStore = new JBFundingCycleStore(_directory);
+        _splitsStore = new JBSplitsStore(_directory);
         _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(_directory);
         _controller = new JBController3_1(
             _operatorStore,
