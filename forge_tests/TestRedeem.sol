@@ -70,7 +70,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Create a first project to collect fees.
         _controller.launchProjectFor({
-            owner: address(420), // random
+            owner: address(420), // Random.
             projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations, // Set terminals to receive fees.
@@ -106,7 +106,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
             metadata: new bytes(0)
         });
 
-        // Make sure the beneficiary has a balance of tokens.
+        // Make sure the beneficiary has a balance of project tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
@@ -120,7 +120,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Fuzz 1 to full balance redemption.
         _tokenAmountToRedeem = bound(_tokenAmountToRedeem, 1, _beneficiaryTokenBalance);
 
-        // Test: redeem
+        // Test: redeem.
         vm.prank(_beneficiary);
         uint256 _nativeReclaimAmt = _terminal.redeemTokensOf({
             holder: _beneficiary,
@@ -148,10 +148,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
         uint256 _fee = _grossRedeemed
             - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
 
-        // Compute the net amount received, still in $project
+        // Compute the net amount received, still in project.
         uint256 _netReceived = _grossRedeemed - _fee;
 
-        // Make sure the correct amount was returned (2 wei precision)
+        // Make sure the correct amount was returned (2 wei precision).
         assertApproxEqAbs(_nativeReclaimAmt, _netReceived, 2, "incorrect amount returned");
 
         // Make sure the beneficiary received correct amount of native tokens.

@@ -57,7 +57,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         view
         returns (bool)
     {
-        // Just compare the output of hashing all fields packed
+        // Just compare the output of hashing all fields packed.
         return (
             keccak256(
                 abi.encodePacked(
@@ -89,7 +89,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
     }
 
     function testLaunchProject() public {
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -97,7 +97,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
-        // Package up terminal config.
+        // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
@@ -115,10 +115,10 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             memo: ""
         });
 
-        // Get a reference to the first funding cycle.
+        // Get a reference to the first ruleset.
         JBRuleset memory fundingCycle = _rulesets.currentOf(projectId);
 
-        // Reference configured attributes for sake of comparison
+        // Reference configured attributes for sake of comparison.
         JBRuleset memory configured = JBRuleset({
             cycleNumber: 1,
             rulesetId: block.timestamp,
@@ -147,7 +147,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -155,7 +155,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
-        // Package up terminal config.
+        // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
@@ -175,7 +175,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
         JBRuleset memory fundingCycle = _rulesets.currentOf(_projectId);
 
-        // Reference configured attributes for sake of comparison
+        // Reference configured attributes for sake of comparison.
         JBRuleset memory configured = JBRuleset({
             cycleNumber: 1,
             rulesetId: block.timestamp,
@@ -204,7 +204,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -212,7 +212,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
-        // Package up terminal config.
+        // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
@@ -223,7 +223,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
         if (_weight > type(uint88).max) {
-            // expectRevert on the next call if weight overflowing
+            // `expectRevert` on the next call if weight overflowing.
             vm.expectRevert(abi.encodeWithSignature("INVALID_WEIGHT()"));
 
             _projectId = _controller.launchProjectFor({
@@ -242,10 +242,10 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                 memo: ""
             });
 
-            // Reference for sake of comparison
+            // Reference for sake of comparison.
             JBRuleset memory fundingCycle = _rulesets.currentOf(_projectId);
 
-            // Reference configured attributes for sake of comparison
+            // Reference configured attributes for sake of comparison.
             JBRuleset memory configured = JBRuleset({
                 cycleNumber: 1,
                 rulesetId: block.timestamp,

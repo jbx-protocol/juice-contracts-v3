@@ -3,9 +3,9 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestDelegates_Local is TestBaseWorkflow {
+contract TestRedeemHooks_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
-    address private constant _DATA_SOURCE = address(bytes20(keccak256("datahook")));
+    address private constant _DATA_HOOK = address(bytes20(keccak256("datahook")));
 
     IJBController private _controller;
     IJBMultiTerminal private _terminal;
@@ -18,7 +18,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
     function setUp() public override {
         super.setUp();
 
-        vm.label(_DATA_SOURCE, "Data Source");
+        vm.label(_DATA_HOOK, "Data Hook");
 
         _controller = jbController();
         _projectOwner = multisig();
@@ -50,11 +50,11 @@ contract TestDelegates_Local is TestBaseWorkflow {
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: false,
             useDataHookForRedeem: true,
-            dataHook: _DATA_SOURCE,
+            dataHook: _DATA_HOOK,
             metadata: 0
         });
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -92,24 +92,24 @@ contract TestDelegates_Local is TestBaseWorkflow {
         vm.prank(_projectOwner);
         IJBToken _token = _tokens.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
 
-        // Make sure the project's new JBToken is set.
+        // Make sure the project's new project token is set.
         assertEq(address(_tokens.tokenOf(_projectId)), address(_token));
     }
 
     function testRedeemHook() public {
-        // Reference and bound pay amount
+        // Reference and bound pay amount.
         uint256 _nativePayAmount = 10 ether;
         uint256 _halfPaid = 5 ether;
 
-        // Delegate address
-        address _redDelegate = makeAddr("SOFA");
-        vm.label(_redDelegate, "Redemption Delegate");
+        // Redeem hook address.
+        address _redeemHook = makeAddr("SOFA");
+        vm.label(_redeemHook, "Redemption Delegate");
 
-        // Keep a reference to the current funding cycle.
-        (JBRuleset memory _fundingCycle,) = _controller.currentRulesetOf(_projectId);
+        // Keep a reference to the current ruleset.
+        (JBRuleset memory _ruleset,) = _controller.currentRulesetOf(_projectId);
 
         vm.deal(address(this), _nativePayAmount);
-        uint256 _ficiaryAllocation = _terminal.pay{value: _nativePayAmount}({
+        uint256 _beneficiaryTokensReceived = _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
             token: JBTokenList.Native,
@@ -119,10 +119,10 @@ contract TestDelegates_Local is TestBaseWorkflow {
             metadata: ""
         });
 
-        // Make sure the beneficiary has a balance of tokens.
+        // Make sure the beneficiary has a balance of project tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _WEIGHT);
         assertEq(_tokens.totalBalanceOf(address(this), _projectId), _beneficiaryTokenBalance);
-        assertEq(_ficiaryAllocation, _beneficiaryTokenBalance);
+        assertEq(_beneficiaryTokensReceived, _beneficiaryTokenBalance);
         emit log_uint(_beneficiaryTokenBalance);
 
         // Make sure the native token balance in terminal is up to date.
@@ -132,20 +132,17 @@ contract TestDelegates_Local is TestBaseWorkflow {
             _nativeTerminalBalance
         );
 
-        // Reference allocations
-        JBRedeemHookPayload[] memory _allocations = new JBRedeemHookPayload[](1);
+        // Reference payloads.
+        JBRedeemHookPayload[] memory _payloads = new JBRedeemHookPayload[](1);
 
-        _allocations[0] = JBRedeemHookPayload({
-            hook: IJBRedeemHook(_redDelegate),
-            amount: _halfPaid,
-            metadata: ""
-        });
+        _payloads[0] =
+            JBRedeemHookPayload({hook: IJBRedeemHook(_redeemHook), amount: _halfPaid, metadata: ""});
 
-        // Redemption Data
+        // Redeem Data.
         JBDidRedeemData memory _redeemData = JBDidRedeemData({
             holder: address(this),
             projectId: _projectId,
-            currentRulesetId: _fundingCycle.rulesetId,
+            currentRulesetId: _ruleset.rulesetId,
             projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
                 JBTokenList.Native,
@@ -165,24 +162,24 @@ contract TestDelegates_Local is TestBaseWorkflow {
             redeemerMetadata: ""
         });
 
-        // Mock the hook
+        // Mock the hook.
         vm.mockCall(
-            _redDelegate,
+            _redeemHook,
             abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector),
             abi.encode(_redeemData)
         );
 
-        // Assert that the hook gets called with the expected value
+        // Assert that the hook gets called with the expected value.
         vm.expectCall(
-            _redDelegate,
+            _redeemHook,
             _halfPaid,
             abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector, _redeemData)
         );
 
         vm.mockCall(
-            _DATA_SOURCE,
+            _DATA_HOOK,
             abi.encodeWithSelector(IJBRulesetDataHook.redeemParams.selector),
-            abi.encode(_halfPaid, _allocations)
+            abi.encode(_halfPaid, _payloads)
         );
 
         _terminal.redeemTokensOf({

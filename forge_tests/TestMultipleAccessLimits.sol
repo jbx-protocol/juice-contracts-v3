@@ -63,10 +63,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _nativePayAmount = 1.5 ether;
         uint256 _nativePayoutLimit = 1 ether;
         uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
-        // More than the treasury will have available.
+        // Will exceed the project's balance in the terminal.
         uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
-        // Package up fund access limits
+        // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
@@ -109,9 +109,9 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
 
-        // dummy
+        // Dummy.
         _controller.launchProjectFor({
-            owner: address(420), //random
+            owner: address(420), // Random.
             projectMetadata: _projectMetadata,
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
@@ -128,7 +128,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         vm.startPrank(_projectOwner);
         MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_nativePricePerUsd, 18);
-        vm.label(address(_priceFeedNativeUsd), "MockPrice Feed Native-USD");
+        vm.label(address(_priceFeedNativeUsd), "Mock Price Feed Native-USD");
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
@@ -146,7 +146,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _nativePayAmount = 1.5 ether;
         uint256 _nativePayoutLimit = 1 ether;
         uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
-        // More than the treasury will have available.
+        // Will exceed the project's balance in the terminal.
         uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
         (
@@ -167,18 +167,18 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 initTerminalBalance = address(__terminal).balance;
 
-        // Make sure the beneficiary has a balance of JBTokenList.
+        // Make sure the beneficiary has a balance of project tokens.
         assertEq(
             _tokens.totalBalanceOf(_beneficiary, _projectId),
             PRBMathUD60x18.mul(_nativePayAmount, _data.weight)
         );
 
-        // First dist meets our native token limit
+        // First payout meets our native token limit.
         __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativePayoutLimit,
             currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             minReturnedTokens: 0
         });
 
@@ -191,10 +191,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 )
         );
 
-        // Price for the amount (in USD) that is distributable based on the terminals current balance
-        uint256 _usdDistributableAmount = PRBMath.mulDiv(
+        // Price for the amount (in USD) that can be paid out based on the terminal's current balance.
+        uint256 _usdAmountAvailableToPayout = PRBMath.mulDiv(
             _nativePayAmount - _nativePayoutLimit, // native token value
-            10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+            10 ** 18, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
                 projectId: _projectId,
                 pricingCurrency: _nativeCurrency,
@@ -206,12 +206,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         /* vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         // Add 10000 to make up for the fidelity difference in prices. (0.0005/1)
-        jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[1], _usdDistributableAmount + 10000, uint32(uint160(address(usdcToken())))); */
+        jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[1], _usdAmountAvailableToPayout + 10000, uint32(uint160(address(usdcToken())))); */
 
-        // Should succeed with _distributableAmount
+        // Should succeed with `_usdAmountAvailableToPayout`
         __terminal.sendPayoutsOf({
             projectId: _projectId,
-            amount: _usdDistributableAmount,
+            amount: _usdAmountAvailableToPayout,
             currency: uint32(uint160(address(usdcToken()))),
             token: JBTokenList.Native, // token
             minReturnedTokens: 0
@@ -224,22 +224,22 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
 
-        /*  // Trying to distribute via our native token distLimit will fail (currency is the native token or 1)
+        /*  // Trying to pay out via the native token's payout limit will fail (currency is the native token or 1)
         vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
         jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[0], 1, _nativeCurrency); */
 
-        // But distribution via USD limit will succeed
+        // But a payout via the USD limit will succeed
         __terminal.sendPayoutsOf({
             projectId: _projectId,
-            amount: _usdDistributableAmount,
+            amount: _usdAmountAvailableToPayout,
             currency: uint32(uint160(address(usdcToken()))),
             token: JBTokenList.Native, //token (unused)
             minReturnedTokens: 0
@@ -301,17 +301,15 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
     }
 
-    function testFuzzedInvalidDistCurrencyOrdering(uint24 _distributionCurrency) external {
+    function testFuzzedInvalidDistCurrencyOrdering(uint24 _payoutCurrency) external {
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _distributionCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _payoutCurrency});
 
-        _payoutLimits[1] = JBCurrencyAmount({
-            amount: 1,
-            currency: _distributionCurrency == 0 ? 0 : _distributionCurrency - 1
-        });
+        _payoutLimits[1] =
+            JBCurrencyAmount({amount: 1, currency: _payoutCurrency == 0 ? 0 : _payoutCurrency - 1});
 
         _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
 
@@ -360,27 +358,27 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
     function testFuzzedConfigureAccess(
         uint256 _payoutLimit,
-        uint256 _allowanceLimit,
-        uint256 _distributionCurrency,
+        uint256 _surplusAllowance,
+        uint256 _payoutCurrency,
         uint256 ALLOWCURRENCY
     ) external {
-        _distributionCurrency =
-            bound(uint256(_distributionCurrency), uint256(0), type(uint24).max - 1);
+        _payoutCurrency = bound(uint256(_payoutCurrency), uint256(0), type(uint24).max - 1);
         _payoutLimit = bound(uint256(_payoutLimit), uint232(1), uint232(type(uint24).max - 1));
-        _allowanceLimit = bound(uint256(_allowanceLimit), uint232(1), uint232(type(uint24).max - 1));
+        _surplusAllowance =
+            bound(uint256(_surplusAllowance), uint232(1), uint232(type(uint24).max - 1));
         ALLOWCURRENCY = bound(uint256(ALLOWCURRENCY), uint256(0), type(uint24).max - 1);
 
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
 
-        _payoutLimits[0] = JBCurrencyAmount({amount: _payoutLimit, currency: _distributionCurrency});
+        _payoutLimits[0] = JBCurrencyAmount({amount: _payoutLimit, currency: _payoutCurrency});
 
-        _payoutLimits[1] =
-            JBCurrencyAmount({amount: _payoutLimit, currency: _distributionCurrency + 1});
-        _surplusAllowances[0] = JBCurrencyAmount({amount: _allowanceLimit, currency: ALLOWCURRENCY});
+        _payoutLimits[1] = JBCurrencyAmount({amount: _payoutLimit, currency: _payoutCurrency + 1});
+        _surplusAllowances[0] =
+            JBCurrencyAmount({amount: _surplusAllowance, currency: ALLOWCURRENCY});
         _surplusAllowances[1] =
-            JBCurrencyAmount({amount: _allowanceLimit, currency: ALLOWCURRENCY + 1});
+            JBCurrencyAmount({amount: _surplusAllowance, currency: ALLOWCURRENCY + 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
             token: JBTokenList.Native,
@@ -420,10 +418,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _nativePayAmount = 1.5 ether;
         uint256 _nativePayoutLimit = 1 ether;
         uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
-        // More than the treasury will have available.
+        // Will exceed the project's balance in the terminal.
         uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
-        // Package up fund access limits
+        // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
@@ -462,7 +460,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: __terminal, accountingContextConfigs: _accountingContexts});
 
-        // dummy
+        // Dummy.
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
@@ -482,30 +480,30 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
 
-        // Make sure beneficiary has a balance of JBTokens
+        // Make sure beneficiary has a balance of project tokens.
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
         uint256 initTerminalBalance = address(__terminal).balance;
 
-        // First dist should be fine based on price
+        // First payout should be fine based on price.
         __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 1_800_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             minReturnedTokens: 0
         });
 
         uint256 _amountPaidOut = PRBMath.mulDiv(
             1_800_000_000,
-            10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+            10 ** 18, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
                 projectId: 1,
                 pricingCurrency: uint32(uint160(address(usdcToken()))),
@@ -523,12 +521,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 )
         );
 
-        // Next dist should be fine based on price
+        // Next payout should be fine based on price.
         __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: 1_700_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             minReturnedTokens: 0
         });
     }
@@ -584,7 +582,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -594,7 +592,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _price = 0.0005 * 10 ** 18; // 1/2000
         vm.startPrank(_projectOwner);
         MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_price, 18);
-        vm.label(address(_priceFeedNativeUsd), "MockPrice Feed MyToken-Native");
+        vm.label(address(_priceFeedNativeUsd), "Mock Price Feed MyToken-Native");
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
@@ -603,7 +601,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             priceFeed: _priceFeedNativeUsd
         });
 
-        // Make sure the beneficiary has a balance of JBTokens
+        // Make sure the beneficiary has a balance of project tokens.
         uint256 _userTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
 
@@ -614,13 +612,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 3_000_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             minReturnedTokens: 0
         });
 
         uint256 _amountPaidOut = PRBMath.mulDiv(
             3_000_000_000,
-            10 ** 18, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount.value`'s fidelity as possible when converting.
+            10 ** 18, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
                 projectId: 1,
                 pricingCurrency: uint32(uint160(address(usdcToken()))),
@@ -637,7 +635,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
                 )
         );
 
-        // Funds leaving the ecosystem -> fee taken
+        // Funds leaving the ecosystem -> fee taken.
         assertEq(
             address(__terminal).balance,
             initTerminalBalance
@@ -653,11 +651,11 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1 ether,
             currency: _nativeCurrency,
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             minReturnedTokens: 0
         });
 
-        // Funds leaving the ecosystem -> fee taken
+        // Funds leaving the ecosystem -> fee taken.
         assertEq(
             _projectOwner.balance,
             _ownerBalanceBeforeNativeDist

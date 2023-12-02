@@ -4,7 +4,7 @@ pragma solidity >=0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
-// A ruleset's weight can be cached to make larger intervals tractible under the gas limit.
+// A ruleset's weight can be cached to make larger intervals calculable while staying within the gas limit.
 contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
     uint256 private constant _GAS_LIMIT = 30_000_000;
     uint8 private constant _WEIGHT_DECIMALS = 18; // FIXED
@@ -108,7 +108,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amout of gas spent on the call.
         // uint256 _gasDiffCache = _gasBeforeCache - gasleft();
 
-        // // Make sure the diff is within the limit
+        // // Make sure the difference is within the gas limit.
         // assertLe(_gasDiffCache, _GAS_LIMIT);
 
         // // Go many rolled over rulesets into the future.
@@ -134,7 +134,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amout of gas spent on the call.
         // uint256 _gasDiff1 = _gasBefore1 - gasleft();
 
-        // // Make sure the diff is within the limit
+        // // Make sure the difference is within the gas limit.
         // assertLe(_gasDiff1, _GAS_LIMIT);
 
         // // Keep a reference to the amount of gas before the call.
@@ -150,7 +150,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // // Keep a reference to the amout of gas spent on the call.
         // uint256 _gasDiff2 = _gasBefore2 - gasleft();
 
-        // // Make sure the diff is within the limit
+        // // Make sure the difference is within the gas limit.
         // assertLe(_gasDiff2, _GAS_LIMIT);
 
         // // Renew the reference to the current ruleset.

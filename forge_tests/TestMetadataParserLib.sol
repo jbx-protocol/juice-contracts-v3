@@ -4,24 +4,24 @@ pragma solidity ^0.8.16;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 /**
- * @notice Test the JBDelegateMetadata library and helper contract
+ * @notice Test the `JBDelegateMetadata` library and helper contract.
  *
- * @dev    This are a mixed of unit and integration tests.
+ * @dev    These are a mixed collection of unit and integration tests.
  */
 contract JBDelegateMetadataLib_Test is Test {
     MetadataResolverHelper parser;
 
     /**
-     * @notice Deploy the helper contract
+     * @notice Deploy the helper contract.
      *
-     * @dev    Helper inherit the lib and add createHooksMetadata
+     * @dev    Helper inherits the lib and add `createHooksMetadata`.
      */
     function setUp() external {
         parser = new MetadataResolverHelper();
     }
 
     /**
-     * @notice Test the parsing of arbitrary metadata
+     * @notice Test the parsing of arbitrary metadata.
      */
     function test_parse() external {
         bytes4 _id1 = bytes4(0x11111111);
@@ -55,7 +55,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test creating and parsing bytes only metadata
+     * @notice Test creating and parsing bytes only metadata.
      */
     function test_createAndParse_bytes() external {
         bytes4[] memory _ids = new bytes4[](10);
@@ -88,10 +88,10 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test creating and parsing uint only metadata
+     * @notice Test creating and parsing `uint`-only metadata.
      */
     function test_createAndParse_uint(uint256 _numberOfDelegates) external {
-        // Maximum 220 hooks with 1 word data (offset overflow if more)
+        // Maximum 220 hooks with 1 word data (offset overflow if more).
         _numberOfDelegates = bound(_numberOfDelegates, 1, 220);
 
         bytes4[] memory _ids = new bytes4[](_numberOfDelegates);
@@ -114,7 +114,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test creating and parsing metadata of various length
+     * @notice Test creating and parsing metadata of varying length.
      */
     function test_createAndParse_mixed(uint256 _numberOfDelegates) external {
         _numberOfDelegates = bound(_numberOfDelegates, 1, 15);
@@ -139,7 +139,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test if createHooksMetadata reverts when the offset would overflow
+     * @notice Test if `createHooksMetadata` reverts when the offset would overflow.
      */
     function test_createRevertIfOffsetTooBig(uint256 _numberOfDelegates) external {
         // Max 1000 for evm memory limit
@@ -158,7 +158,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test adding uint to an uint metadata
+     * @notice Test adding `uint` to an `uint` metadata.
      */
     function test_addToMetadata_uint(uint256 _numberOfDelegates) external {
         _numberOfDelegates = bound(_numberOfDelegates, 1, 219);
@@ -194,7 +194,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test adding bytes to a bytes metadata
+     * @notice Test adding `bytes` to a `bytes` metadata.
      */
     function test_addToMetadata_bytes() public {
         bytes4[] memory _ids = new bytes4[](2);
@@ -241,7 +241,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test adding bytes to an uint metadata
+     * @notice Test adding `bytes` to an `uint` metadata.
      */
     function test_addToMetadata_mixed(uint256 _numberOfDelegates) external {
         _numberOfDelegates = bound(_numberOfDelegates, 1, 100);
@@ -280,7 +280,7 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test behaviour if id not found in the table
+     * @notice Test behaviour if the ID is not found in the lookup table.
      */
     function test_idNotFound(uint256 _numberOfDelegates) public {
         _numberOfDelegates = bound(_numberOfDelegates, 1, 100);
@@ -303,19 +303,19 @@ contract JBDelegateMetadataLib_Test is Test {
     }
 
     /**
-     * @notice Test behaviour if metadata is empty or less than one id long
+     * @notice Test behaviour if the metadata is empty or less than one ID long.
      */
     function test_emptyMetadata(uint256 _length) public {
         _length = bound(_length, 0, 37);
 
         bytes memory _metadata;
 
-        // Fill with F
+        // Fill with hex `F`.
         _metadata = abi.encodePacked(
             bytes32(uint256(type(uint256).max)), bytes32(uint256(type(uint256).max))
         );
 
-        // Downsize to the length
+        // Downsize to the length.
         assembly {
             mstore(_metadata, _length)
         }
@@ -347,7 +347,7 @@ contract JBDelegateMetadataLib_Test is Test {
             _metadatas[_i] = abi.encode(_i * 4);
         }
 
-        // Below should revert
+        // Below should revert.
         vm.expectRevert(abi.encodeWithSignature("LENGTH_MISMATCH()"));
         parser.createHooksMetadata(_ids, _metadatas);
     }

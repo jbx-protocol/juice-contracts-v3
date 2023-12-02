@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// Project can issue token, receive payments in exchange for tokens, burn some of the claimed tokens, allow holders to redeem rest of tokens.
+// Project can issue token, receive payments in exchange for tokens, burn some of the claimed tokens, and allow holders to redeem rest of tokens.
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBMultiTerminal private _terminal;
@@ -52,7 +52,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         IJBTerminal[] memory _terminals = new IJBTerminal[](1);
         _terminals[0] = (_terminal);
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -60,7 +60,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
-        // Package up terminal config.
+        // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
@@ -70,7 +70,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // Dummy project that will receive fees
+        // Dummy project that will receive fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
@@ -103,14 +103,14 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, //unused
+            token: JBTokenList.Native, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
             metadata: new bytes(0)
         });
 
-        // Make sure the beneficiary should have a balance of JBTokens.
+        // Make sure the beneficiary has a balance of project tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
@@ -138,7 +138,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             memo: "I hate tokens!"
         });
 
-        // verify: beneficiary should have a new balance of JBTokens
+        // Make sure the beneficiary should has a new balance of project tokens.
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Redeem tokens.
@@ -152,14 +152,14 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         uint256 _reclaimAmt = _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            token: JBTokenList.Native, // unused
+            token: JBTokenList.Native, // Unused.
             count: _redeemTokenAmount,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
         });
 
-        // Make sure the beneficiary has a new balance of JBTokens.
+        // Make sure the beneficiary has a new balance of project tokens.
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the native token balance in terminal is up to date.

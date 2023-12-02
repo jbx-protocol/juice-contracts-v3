@@ -123,7 +123,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Create a first project to collect fees.
             _controller.launchProjectFor({
-                owner: address(420), // random
+                owner: address(420), // Random.
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
                 rulesetConfigurations: _rulesetConfigurations,
                 terminalConfigurations: _terminalConfigurations, // Set terminals to receive fees.
@@ -371,7 +371,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Create a project to collect fees.
             _controller.launchProjectFor({
-                owner: address(420), // random
+                owner: address(420), // Random.
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
                 rulesetConfigurations: _rulesetConfigurations, // Use the same ruleset configurations.
                 terminalConfigurations: _terminalConfigurations, // set the terminals where fees will be received
@@ -644,7 +644,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Create a first project to collect fees.
             _controller.launchProjectFor({
-                owner: address(420), // random
+                owner: address(420), // Random.
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
                 rulesetConfigurations: new JBRulesetConfig[](0), // No ruleset config will force revert when paid.
                 // Set the fee collecting terminal's native token accounting context if the test calls for doing so.
@@ -1206,7 +1206,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Create a first project to collect fees.
             _controller.launchProjectFor({
-                owner: address(420), // random
+                owner: address(420), // Random.
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
                 rulesetConfigurations: _rulesetConfigurations, // Use the same ruleset configurations.
                 terminalConfigurations: _terminalConfigurations, // Set terminals to receive fees.
@@ -1228,7 +1228,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             vm.startPrank(_projectOwner);
             MockPriceFeed _priceFeedNativeUsd =
                 new MockPriceFeed(_USD_PRICE_PER_NATIVE, _PRICE_FEED_DECIMALS);
-            vm.label(address(_priceFeedNativeUsd), "MockPrice Feed Native-USDC");
+            vm.label(address(_priceFeedNativeUsd), "Mock Price Feed Native-USDC");
 
             _prices.addPriceFeedFor({
                 projectId: 0,
@@ -1890,7 +1890,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Create a first project to collect fees.
             _controller.launchProjectFor({
-                owner: address(420), // random
+                owner: address(420), // Random.
                 projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
                 rulesetConfigurations: _rulesetConfigurations, // Use the same ruleset configurations.
                 terminalConfigurations: _terminalConfigurations1, // Set terminals to receive fees.
@@ -1912,7 +1912,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             vm.startPrank(_projectOwner);
             MockPriceFeed _priceFeedNativeUsd =
                 new MockPriceFeed(_USD_PRICE_PER_NATIVE, _PRICE_FEED_DECIMALS);
-            vm.label(address(_priceFeedNativeUsd), "MockPrice Feed Native-USDC");
+            vm.label(address(_priceFeedNativeUsd), "Mock Price Feed Native-USDC");
 
             _prices.addPriceFeedFor({
                 projectId: 0,

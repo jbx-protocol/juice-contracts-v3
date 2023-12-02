@@ -52,7 +52,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -60,7 +60,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
-        // Package up terminal config.
+        // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
@@ -88,7 +88,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
     }
 
     function testFailMostBasicAccess() public {
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -103,16 +103,16 @@ contract TestPermissions_Local is TestBaseWorkflow {
     }
 
     function testFailSetOperators() public {
-        // Pack up our permission data
-        JBPermissionsData[] memory opData = new JBPermissionsData[](1);
+        // Pack up our permission data.
+        JBPermissionsData[] memory permData = new JBPermissionsData[](1);
 
         uint256[] memory permIds = new uint256[](257);
 
-        // Push an index higher than 255
+        // Push an index higher than 255.
         for (uint256 i; i < 257; i++) {
             permIds[i] = i;
 
-            opData[0] = JBPermissionsData({
+            permData[0] = JBPermissionsData({
                 operator: address(0),
                 projectId: _projectOne,
                 permissionIds: permIds
@@ -120,21 +120,21 @@ contract TestPermissions_Local is TestBaseWorkflow {
 
             // Set em.
             vm.prank(_projectOwner);
-            _permissions.setPermissionsForOperator(_projectOwner, opData[0]);
+            _permissions.setPermissionsForOperator(_projectOwner, permData[0]);
         }
     }
 
     function testSetOperators() public {
-        // Pack up our permission data
-        JBPermissionsData[] memory opData = new JBPermissionsData[](1);
+        // Pack up our permission data.
+        JBPermissionsData[] memory permData = new JBPermissionsData[](1);
 
         uint256[] memory permIds = new uint256[](256);
 
-        // Push an index higher than 255
+        // Push an index higher than 255.
         for (uint256 i; i < 256; i++) {
             permIds[i] = i;
 
-            opData[0] = JBPermissionsData({
+            permData[0] = JBPermissionsData({
                 operator: address(0),
                 projectId: _projectOne,
                 permissionIds: permIds
@@ -142,9 +142,9 @@ contract TestPermissions_Local is TestBaseWorkflow {
 
             // Set em.
             vm.prank(_projectOwner);
-            _permissions.setPermissionsForOperator(_projectOwner, opData[0]);
+            _permissions.setPermissionsForOperator(_projectOwner, permData[0]);
 
-            // verify
+            // Verify.
             bool _check =
                 _permissions.hasPermission(address(0), _projectOwner, _projectOne, permIds[i]);
             assertEq(_check, true);

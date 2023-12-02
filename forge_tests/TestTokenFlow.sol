@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// Launch project, issue token or sets the token, mint token, burn token
+// Launch project, issue token or set the token, mint token, burn token.
 contract TestTokenFlow_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBTokens private _tokens;
@@ -51,7 +51,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             metadata: 0
         });
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -59,7 +59,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
-        // Package up terminal config.
+        // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
@@ -88,14 +88,14 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         vm.startPrank(_projectOwner);
 
         if (_issueToken) {
-            // Issue an ERC-20 token for project
+            // Issue an ERC-20 token for project.
             _tokens.deployERC20TokenFor({
                 projectId: _projectId,
                 name: "TestName",
                 symbol: "TestSymbol"
             });
         } else {
-            // Create a new IJBToken and change it's owner to the tokens
+            // Create a new `IJBToken` and change it's owner to the `JBTokens` contract.
             IJBToken _newToken = new JBERC20Token({
                 _name: "NewTestName",
                 _symbol: "NewTestSymbol",
@@ -104,10 +104,10 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
             Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
-            // Set the projects token to `_newToken`
+            // Set the projects token to `_newToken`.
             _tokens.setTokenFor(_projectId, _newToken);
 
-            // Make sure the project's new JBToken is set.
+            // Make sure the project's new `JBToken` is set.
             assertEq(address(_tokens.tokenOf(_projectId)), address(_newToken));
         }
 
@@ -151,8 +151,8 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _expectedTokenBalance);
     }
 
-    function testMintUnclaimedAtLimit() public {
-        // Pay the project such that the `_beneficiary` receives 1000 "unclaimed" project tokens.
+    function testMintCreditsAtLimit() public {
+        // Pay the project such that the `_beneficiary` receives 1000 project token credits.
         vm.deal(_beneficiary, 1 ether);
         _terminal.pay{value: 1 ether}({
             projectId: _projectId,
@@ -164,13 +164,13 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             metadata: new bytes(0)
         });
 
-        // Calls will originate from project
+        // Calls will originate from project.
         vm.startPrank(_projectOwner);
 
-        // Issue an ERC-20 token for project,
+        // Issue an ERC-20 token for project.
         _tokens.deployERC20TokenFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
 
-        // Mint claimed tokens to beneficiary: since this is 1000 over uint(208) it will revert.
+        // Mint claimed tokens to beneficiary: since this is 1,000 over `uint(208)` it will revert.
         vm.expectRevert(abi.encodeWithSignature("OVERFLOW_ALERT()"));
 
         _controller.mintTokensOf({

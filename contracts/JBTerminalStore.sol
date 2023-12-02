@@ -511,7 +511,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             ? _amount
             : PRBMath.mulDiv(
                 _amount,
-                10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
+                10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
                     _projectId, _currency, _accountingContext.currency, _MAX_FIXED_POINT_FIDELITY
                 )
@@ -570,7 +570,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             ? _amount
             : PRBMath.mulDiv(
                 _amount,
-                10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_amount`'s fidelity as possible when converting.
+                10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
                     _projectId, _currency, _accountingContext.currency, _MAX_FIXED_POINT_FIDELITY
                 )
@@ -751,7 +751,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             ? surplus
             : PRBMath.mulDiv(
                 surplus,
-                10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_payoutLimitRemaining`'s fidelity as possible when converting.
+                10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_payoutLimitRemaining`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
                     _projectId, _accountingContext.currency, _targetCurrency, _MAX_FIXED_POINT_FIDELITY
                 )
@@ -791,7 +791,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 ? _payoutLimit.amount
                 : PRBMath.mulDiv(
                     _payoutLimit.amount,
-                    10 ** _MAX_FIXED_POINT_FIDELITY, // Use _MAX_FIXED_POINT_FIDELITY to keep as much of the `_payoutLimitRemaining`'s fidelity as possible when converting.
+                    10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_payoutLimitRemaining`'s fidelity as possible when converting.
                     PRICES.pricePerUnitOf(
                         _projectId, _payoutLimit.currency, _targetCurrency, _MAX_FIXED_POINT_FIDELITY
                     )

@@ -19,12 +19,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
     uint256 _projectId;
 
-    // Permit2 params
+    // Permit2 params.
     bytes32 DOMAIN_SEPARATOR;
     address from;
     uint256 fromPrivateKey;
 
-    // Price
+    // Price.
     uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
 
     function setUp() public override {
@@ -70,7 +70,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             metadata: 0
         });
 
-        // Package up cycle config.
+        // Package up ruleset configuration.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -108,7 +108,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         vm.startPrank(_projectOwner);
         MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_nativePricePerUsd, 18);
-        vm.label(address(_priceFeedNativeUsd), "MockPrice Feed Native-USD");
+        vm.label(address(_priceFeedNativeUsd), "Mock Price Feed Native-USD");
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
@@ -121,12 +121,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     }
 
     function testFuzzPayPermit2(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
-        // Setup: set fuzz boundaries
+        // Setup: set fuzz boundaries.
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
         _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
-        // Setup: prepare permit details for signing
+        // Setup: prepare permit details for signing.
         IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
             token: address(_usdc),
             amount: uint160(_coins),
@@ -140,7 +140,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             sigDeadline: _deadline
         });
 
-        // Setup: Sign permit details
+        // Setup: sign permit details.
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
         JBSingleAllowanceData memory permitData = JBSingleAllowanceData({
@@ -151,16 +151,16 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             signature: sig
         });
 
-        // Setup: prepare data for metadata helper
+        // Setup: prepare data for metadata helper.
         bytes4[] memory _ids = new bytes4[](1);
         bytes[] memory _datas = new bytes[](1);
         _datas[0] = abi.encode(permitData);
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
-        // Setup: Use jb metadata library to encode
+        // Setup: use the metadata library to encode.
         bytes memory _packedData = _helper.createHooksMetadata(_ids, _datas);
 
-        // Setup: Give coins and approve permit2 contract
+        // Setup: give coins and approve permit2 contract.
         deal(address(_usdc), from, _coins);
         vm.prank(from);
         IERC20(address(_usdc)).approve(address(permit2()), _coins);
@@ -178,22 +178,22 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         emit log_uint(_minted);
 
-        // Check: that tokens were transfered
+        // Check: that tokens were transfered.
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);
 
-        // Check: that payer receives project token/balance
+        // Check: that payer receives project token/balance.
         assertEq(_tokens.totalBalanceOf(from, _projectId), _minted);
     }
 
     function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline)
         public
     {
-        // Setup: set fuzz boundaries
+        // Setup: set fuzz boundaries.
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
         _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
-        // Setup: prepare permit details for signing
+        // Setup: prepare permit details for signing.
         IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
             token: address(_usdc),
             amount: uint160(_coins),
@@ -207,7 +207,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             sigDeadline: _deadline
         });
 
-        // Setup: Sign permit details
+        // Setup: sign permit details.
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
         JBSingleAllowanceData memory permitData = JBSingleAllowanceData({
@@ -218,27 +218,27 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             signature: sig
         });
 
-        // Setup: prepare data for metadata helper
+        // Setup: prepare data for metadata helper.
         bytes4[] memory _ids = new bytes4[](1);
         bytes[] memory _datas = new bytes[](1);
         _datas[0] = abi.encode(permitData);
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
-        // Setup: Use jb metadata library to encode
+        // Setup: use the metadata library to encode.
         bytes memory _packedData = _helper.createHooksMetadata(_ids, _datas);
 
-        // Setup: Give coins and approve permit2 contract
+        // Setup: give coins and approve permit2 contract.
         deal(address(_usdc), from, _coins);
         vm.prank(from);
         IERC20(address(_usdc)).approve(address(permit2()), _coins);
 
-        // Test: Add to balance using permit2 data, which should transfer tokens
+        // Test: add to balance using permit2 data, which should transfer tokens.
         vm.prank(from);
         _terminal.addToBalanceOf(
             _projectId, address(_usdc), _coins, false, "testing permit2", _packedData
         );
 
-        // Check: that tokens were transfered
+        // Check: that tokens were transferred.
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);
     }
 }
