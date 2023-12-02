@@ -1206,21 +1206,18 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 }
             }
         } else {
-            // This distribution is eligible for a fee since the funds are leaving this contract and the beneficiary isn't listed as feeless.
-            // Don't enforce feeless address for the beneficiary since the funds are leaving the ecosystem.
-            if (_feePercent != 0) {
+            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the  _msgSender().
+            address payable _recipient =
+                _split.beneficiary != address(0) ? _split.beneficiary : payable(_msgSender());
+
+            // This distribution is eligible for a fee since the funds are leaving this contract and the recipient isn't listed as feeless.
+            if (_feePercent != 0 && !isFeelessAddress[_recipient]) {
                 unchecked {
                     netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
                 }
             }
 
-            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the  _msgSender().
-            _transferFor(
-                address(this),
-                _split.beneficiary != address(0) ? _split.beneficiary : payable(_msgSender()),
-                _token,
-                netPayoutAmount
-            );
+            _transferFor(address(this), _recipient, _token, netPayoutAmount);
         }
     }
 
