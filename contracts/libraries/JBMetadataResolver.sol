@@ -51,7 +51,7 @@ library JBMetadataResolver {
      * @return _found          Whether the {id:data} was found
      * @return _targetData The data for the ID (can be empty)
      */
-    function getHookMetadata(bytes4 _id, bytes calldata _metadata)
+    function getData(bytes4 _id, bytes calldata _metadata)
         internal
         pure
         returns (bool _found, bytes memory _targetData)
@@ -89,8 +89,8 @@ library JBMetadataResolver {
     /**
      * @notice Add an {id: data} entry to an existing metadata. This is an append-only mechanism.
      *
-     * @param _idToAdd         The id to add
-     * @param _dataToAdd       The data to add
+     * @param _idToAdd          The id to add
+     * @param _dataToAdd        The data to add
      * @param _originalMetadata The original metadata
      *
      * @return _newMetadata    The new metadata with the entry added
