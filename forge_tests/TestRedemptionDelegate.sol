@@ -23,7 +23,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _tokens = jbTokens();
 
         JBRulesetData memory _data = JBRulesetData({
@@ -71,7 +71,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // First project for fee collection
+        // Create a first project to collect fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 0}),

@@ -32,7 +32,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         _controller = jbController();
         _projectOwner = multisig();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _prices = jbPrices();
         _tokens = jbTokens();
         _helper = metadataHelper();
@@ -89,7 +89,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // First project for fee collection
+        // Create a first project to collect fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 0}),

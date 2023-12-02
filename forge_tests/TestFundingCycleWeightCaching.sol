@@ -63,7 +63,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         // uint256 _projectId1;
         // uint256 _projectId2;
 
-        // // Package up the configuration info.
+        // // Package up the ruleset configuration.
         // JBRulesetConfig[] memory _rulesetConfigurations = new JBRulesetConfig[](1);
 
         // {

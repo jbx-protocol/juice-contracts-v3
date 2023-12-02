@@ -20,7 +20,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _controller = jbController();
         _tokens = jbTokens();
         _splitsGuy = payable(makeAddr("guy"));
@@ -135,7 +135,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // dummy project to receive fees
+        // Dummy project to receive fees
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,
@@ -243,7 +243,8 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _payoutLimits[0] = JBCurrencyAmount({amount: _nativeDistributionLimit, currency: _currencyId});
+        _payoutLimits[0] =
+            JBCurrencyAmount({amount: _nativeDistributionLimit, currency: _currencyId});
         _surplusAllowances[0] = JBCurrencyAmount({amount: 2 ether, currency: _currencyId});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
@@ -270,7 +271,7 @@ contract TestSplitStore_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // dummy project to receive fees
+        // Dummy project to receive fees
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: _projectMetadata,

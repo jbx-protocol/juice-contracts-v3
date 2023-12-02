@@ -21,7 +21,7 @@ contract TestEIP165_Local is TestBaseWorkflow {
     }
 
     function testJBMultiTerminal() public {
-        JBMultiTerminal _terminal = jbPayoutRedemptionTerminal();
+        JBMultiTerminal _terminal = jbMultiTerminal();
 
         // Should support these interfaces
         assertTrue(_terminal.supportsInterface(type(IJBMultiTerminal).interfaceId));
@@ -51,13 +51,13 @@ contract TestEIP165_Local is TestBaseWorkflow {
     }
 
     function testJBDeadline() public {
-        JBDeadline _ballot = new JBDeadline(3000);
+        JBDeadline _approvalHook = new JBDeadline(3000);
 
         // Should support these interfaces
-        assertTrue(_ballot.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(_ballot.supportsInterface(type(IJBRulesetApprovalHook).interfaceId));
+        assertTrue(_approvalHook.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_approvalHook.supportsInterface(type(IJBRulesetApprovalHook).interfaceId));
 
         // Make sure it doesn't always return true
-        assertTrue(!_ballot.supportsInterface(_notSupportedInterface));
+        assertTrue(!_approvalHook.supportsInterface(_notSupportedInterface));
     }
 }

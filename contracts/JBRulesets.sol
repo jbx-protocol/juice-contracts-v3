@@ -148,7 +148,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
             ruleset = _getStructFor(_projectId, latestRulesetIdOf[_projectId]);
 
             // If the latest ruleset starts in the future, it must start in the distant future
-            // since its not the upcoming approvable ruleset. In this case, base the upcoming ruleset on the base ruleset.
+            // Since its not the upcoming approvable ruleset. In this case, base the upcoming ruleset on the base ruleset.
             while (ruleset.start > block.timestamp) {
                 ruleset = _getStructFor(_projectId, ruleset.basedOnId);
             }
@@ -294,7 +294,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Duration must fit in a uint32.
         if (_data.duration > type(uint32).max) revert INVALID_RULESET_DURATION();
 
-        // decay rate must be less than or equal to 100%.
+        // Decay rate must be less than or equal to 100%.
         if (_data.decayRate > JBConstants.MAX_DECAY_RATE) {
             revert INVALID_DECAY_RATE();
         }
@@ -312,7 +312,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
             revert INVALID_RULESET_END_TIME();
         }
 
-        // approval hook should be a valid contract, supporting the correct interface
+        // Approval hook should be a valid contract, supporting the correct interface
         if (_data.approvalHook != IJBRulesetApprovalHook(address(0))) {
             address _approvalHook = address(_data.approvalHook);
 

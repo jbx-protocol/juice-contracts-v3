@@ -3,14 +3,14 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// A project's funding cycle's can be scheduled, and rescheduled so long as the provided reconfiguration ballot is approved.
+// A project's rulesets can be scheduled, and rescheduled so long as the provided approval hook approves.
 contract TestReconfigureProject_Local is TestBaseWorkflow {
     IJBController private _controller;
     JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetData private _dataReconfiguration;
     JBRulesetMetadata private _metadata;
-    JBDeadline private _ballot;
+    JBDeadline private _deadline;
     JBSplitGroup[] private _splitGroup;
     JBFundAccessLimitGroup[] private _fundAccessLimitGroup;
     IJBTerminal private _terminal;
@@ -21,16 +21,16 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
     function setUp() public override {
         super.setUp();
 
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _controller = jbController();
 
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
-        _ballot = new JBDeadline(_BALLOT_DURATION);
+        _deadline = new JBDeadline(_BALLOT_DURATION);
         _data = JBRulesetData({
             duration: _CYCLE_DURATION * 1 days,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: _ballot
+            approvalHook: _deadline
         });
         _dataReconfiguration = JBRulesetData({
             duration: _CYCLE_DURATION * 1 days,
@@ -167,8 +167,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightFirstReconfiguration,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].splitGroups = _splitGroup;
         _firstReconfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
@@ -184,8 +184,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightSecondReconfiguration,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].splitGroups = _splitGroup;
         _secondReconfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
@@ -203,7 +203,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_fundingCycle.rulesetId, _currentConfiguration);
         assertEq(_fundingCycle.weight, _data.weight);
 
-        // Jump to after the ballot passed, but before the next FC
+        // Jump to after the deadline passed, but before the next FC
         vm.warp(_fundingCycle.start + _fundingCycle.duration - 1);
 
         // Make sure the queued fuding cycle is the second reconfiguration
@@ -222,16 +222,16 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_newFundingCycle.weight, _weightSecondReconfiguration);
     }
 
-    function testMultipleReconfigure(uint8 _ballotDuration) public {
-        // Create a ballot with the provided approval duration threshold.
-        _ballot = new JBDeadline(_ballotDuration);
+    function testMultipleReconfigure(uint8 _deadlineDuration) public {
+        // Create a deadline with the provided approval duration threshold.
+        _deadline = new JBDeadline(_deadlineDuration);
 
         // Package the funding cycle configuration data.
         _data = JBRulesetData({
             duration: _CYCLE_DURATION * 1 days,
             weight: 10_000 ether,
             decayRate: 0,
-            approvalHook: _ballot
+            approvalHook: _deadline
         });
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
@@ -249,8 +249,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         JBRuleset memory queuedFundingCycle = jbRulesets().upcomingRulesetOf(projectId);
 
         for (uint256 i = 0; i < _CYCLE_DURATION + 1; i++) {
-            // If the ballot is less than the cycle's duration, make sure the current cycle's weight is linearly decremented.
-            if (_ballotDuration + i * 1 days < currentFundingCycle.duration) {
+            // If the deadline is less than the cycle's duration, make sure the current cycle's weight is linearly decremented.
+            if (_deadlineDuration + i * 1 days < currentFundingCycle.duration) {
                 assertEq(currentFundingCycle.weight, initialFundingCycle.weight - i);
             }
 
@@ -259,7 +259,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
                 duration: _CYCLE_DURATION * 1 days,
                 weight: initialFundingCycle.weight - (i + 1), // i+1 -> next funding cycle
                 decayRate: 0,
-                approvalHook: _ballot
+                approvalHook: _deadline
             });
             JBRulesetConfig[] memory _reconfig = new JBRulesetConfig[](1);
             _reconfig[0].mustStartAtOrAfter = 0;
@@ -276,19 +276,19 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             currentFundingCycle = jbRulesets().currentOf(projectId);
             queuedFundingCycle = jbRulesets().upcomingRulesetOf(projectId);
 
-            // Make sure the queued cycle is the funding cycle currently under ballot.
+            // Make sure the queued cycle is the funding cycle currently under the deadline duration.
             assertEq(queuedFundingCycle.weight, _data.weight);
 
-            // If the full ballot duration included in the funding cycle.
+            // If the full deadline duration included in the funding cycle.
             if (
-                _ballotDuration == 0
-                    || currentFundingCycle.duration % (_ballotDuration + i * 1 days)
+                _deadlineDuration == 0
+                    || currentFundingCycle.duration % (_deadlineDuration + i * 1 days)
                         < currentFundingCycle.duration
             ) {
                 // Make sure the current cycle's weight is still linearly decremented.
                 assertEq(currentFundingCycle.weight, initialFundingCycle.weight - i);
 
-                // Shift forward the start of the ballot into the fc, one day at a time, from fc to fc
+                // Shift forward the start of the deadline into the fc, one day at a time, from fc to fc
                 vm.warp(currentFundingCycle.start + currentFundingCycle.duration + i * 1 days);
 
                 // Make sure what was the queued cycle is now current.
@@ -299,14 +299,16 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
                 queuedFundingCycle = jbRulesets().upcomingRulesetOf(projectId);
                 assertEq(queuedFundingCycle.weight, _data.weight);
             }
-            // If the ballot is accross many funding cycles.
+            // If the deadline duration is accross many funding cycles.
             else {
                 // Make sure the current funding cycle has rolled over.
                 vm.warp(currentFundingCycle.start + currentFundingCycle.duration);
                 assertEq(currentFundingCycle.weight, initialFundingCycle.weight - i);
 
-                // Make sure the new funding cycle has started once the ballot duration has passed.
-                vm.warp(currentFundingCycle.start + currentFundingCycle.duration + _ballotDuration);
+                // Make sure the new funding cycle has started once the deadline duration has passed.
+                vm.warp(
+                    currentFundingCycle.start + currentFundingCycle.duration + _deadlineDuration
+                );
                 currentFundingCycle = jbRulesets().currentOf(projectId);
                 assertEq(currentFundingCycle.weight, _data.weight);
             }
@@ -325,12 +327,12 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Launch the project.
         uint256 projectId = launchProjectForTest();
 
-        // Package another with a bad ballot.
+        // Package another with a bad approval hook.
         JBRulesetData memory _dataNew = JBRulesetData({
             duration: _CYCLE_DURATION * 1 days,
             weight: 12_345 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(6969)) // Wrong ballot address
+            approvalHook: IJBRulesetApprovalHook(address(6969)) // Wrong approval hook address
         });
 
         vm.prank(multisig());
@@ -354,7 +356,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _shortDuration,
             weight: 10_000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: _ballot
+            approvalHook: _deadline
         });
         _dataReconfiguration = JBRulesetData({
             duration: _CYCLE_DURATION * 1 days,
@@ -408,7 +410,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_newFundingCycle.cycleNumber, 2);
         assertEq(_newFundingCycle.weight, _data.weight);
 
-        // Go to the end of the ballot.
+        // Go to the end of the deadline duration.
         vm.warp(_fundingCycle.start + _fundingCycle.duration + _BALLOT_DURATION);
 
         // Make sure the reconfiguration is in effect.
@@ -491,8 +493,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightInitial,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
         _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
@@ -515,13 +517,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightFirstReconfiguration,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].splitGroups = _splitGroup;
         _firstReconfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
-        // Submit a reconfiguration to-be overridden (will be in ApprovalExpected status due to ballot)
+        // Submit a reconfiguration to-be overridden (will be in ApprovalExpected status due to approval hook)
         vm.prank(multisig());
         _controller.queueRulesetsOf(projectId, _firstReconfig, "");
 
@@ -538,14 +540,14 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightSecondReconfiguration,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].splitGroups = _splitGroup;
         _secondReconfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
 
         // Submit the reconfiguration.
-        // Will follow the rolledover (FC #1) cycle, after overriding the above config, bc first reconfig is in ApprovalExpected status (3 days ballot has not passed)
+        // Will follow the rolledover (FC #1) cycle, after overriding the above config, bc first reconfig is in ApprovalExpected status (3 days deadline has not passed)
         // FC #1 rolls over bc our mustStartAtOrAfter occurs later than when FC #1 ends.
         vm.prank(multisig());
         _controller.queueRulesetsOf(projectId, _secondReconfig, "");
@@ -605,8 +607,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightFirstReconfiguration,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _firstReconfig[0].metadata = _metadata;
         _firstReconfig[0].splitGroups = _splitGroup;
         _firstReconfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
@@ -630,8 +632,8 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _CYCLE_DURATION * 1 days,
             weight: _weightSecondReconfiguration,
             decayRate: 0,
-            approvalHook: _ballot
-        }); // 3days ballot;
+            approvalHook: _deadline
+        }); // 3 day deadline duration.
         _secondReconfig[0].metadata = _metadata;
         _secondReconfig[0].splitGroups = _splitGroup;
         _secondReconfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
@@ -652,23 +654,23 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _configuration = bound(_configuration, block.timestamp, block.timestamp + 1000 days);
         _duration = bound(_duration, 1, block.timestamp);
 
-        JBDeadline ballot = new JBDeadline(_duration);
+        JBDeadline deadline = new JBDeadline(_duration);
 
-        JBApprovalStatus _currentStatus = ballot.approvalStatusOf(1, _configuration, _start); // 1 is the projectId, unused
+        JBApprovalStatus _currentStatus = deadline.approvalStatusOf(1, _configuration, _start); // 1 is the projectId, unused
 
-        // Configuration is after ballot starting -> ballot failed
+        // Configuration is after deadline -> approval hook failed
         if (_configuration > _start) {
             assertEq(uint256(_currentStatus), uint256(JBApprovalStatus.Failed));
         }
-        // ballot starts less than in less than a duration away from the configuration -> failed (ie would start mid-cycle)
+        // deadline starts less than in less than a duration away from the configuration -> failed (ie would start mid-cycle)
         else if (_start - _duration < _configuration) {
             assertEq(uint256(_currentStatus), uint256(JBApprovalStatus.Failed));
         }
-        // ballot starts in more than a _duration away (ie will be approved when enough time has passed) -> approval expected
+        // deadline starts in more than a _duration away (ie will be approved when enough time has passed) -> approval expected
         else if (block.timestamp + _duration < _start) {
             assertEq(uint256(_currentStatus), uint256(JBApprovalStatus.ApprovalExpected));
         }
-        // if enough time has passed since ballot start, approved
+        // If enough time has passed since deadline start, approved.
         else if (block.timestamp + _duration > _start) {
             assertEq(uint256(_currentStatus), uint256(JBApprovalStatus.Approved));
         }

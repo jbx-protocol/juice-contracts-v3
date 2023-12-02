@@ -25,7 +25,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _prices = jbPrices();
-        __terminal = jbPayoutRedemptionTerminal();
+        __terminal = jbMultiTerminal();
         _tokens = jbTokens();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBRulesetData({
@@ -205,7 +205,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         /* vm.prank(address(__terminal));
         vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
-        // add 10000 to make up for the fidelity difference in prices. (0.0005/1)
+        // Add 10000 to make up for the fidelity difference in prices. (0.0005/1)
         jbTerminalStore().recordPayoutFor(_projectId, _accountingContexts[1], _usdDistributableAmount + 10000, uint32(uint160(address(usdcToken())))); */
 
         // Should succeed with _distributableAmount

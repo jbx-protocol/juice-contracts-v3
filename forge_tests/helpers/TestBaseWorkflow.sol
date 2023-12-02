@@ -171,11 +171,11 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         return _jbTerminalStore;
     }
 
-    function jbPayoutRedemptionTerminal() internal view returns (JBMultiTerminal) {
+    function jbMultiTerminal() internal view returns (JBMultiTerminal) {
         return _jbMultiTerminal;
     }
 
-    function jbPayoutRedemptionTerminal2() internal view returns (JBMultiTerminal) {
+    function jbMultiTerminal2() internal view returns (JBMultiTerminal) {
         return _jbMultiTerminal2;
     }
 
@@ -227,7 +227,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
         _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbRulesets, _jbPrices);
-        vm.label(address(_jbTerminalStore), "JBSingleTokenPaymentTerminalStore");
+        vm.label(address(_jbTerminalStore), "JBTerminalStore");
 
         vm.prank(_multisig);
         _permit2 = deployPermit2();

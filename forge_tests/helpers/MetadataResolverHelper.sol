@@ -71,10 +71,10 @@ contract MetadataResolverHelper {
     {
         if (_ids.length != _metadatas.length) revert LENGTH_MISMATCH();
 
-        // add a first empty 32B for the protocol reserved word
+        // Add a first empty 32B for the protocol reserved word
         _metadata = abi.encodePacked(bytes32(0));
 
-        // first offset for the data is after the first reserved word...
+        // First offset for the data is after the first reserved word...
         uint256 _offset = 1;
 
         // ... and after the id/offset lookup table, rounding up to 32 bytes words if not a multiple

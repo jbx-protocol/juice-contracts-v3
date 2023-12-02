@@ -26,7 +26,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _payer = address(1_234_567);
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
 
         JBRulesetData memory _data = JBRulesetData({
             duration: 0,
@@ -179,7 +179,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         vm.deal(_payer, _nativePayAmount);
         vm.prank(_payer);
 
-        // Pay the project such that the _beneficiary receives project tokens.
+        // Pay the project such that the `_beneficiary` receives project tokens.
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,

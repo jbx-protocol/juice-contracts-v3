@@ -304,7 +304,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
                 // Set the payout limit being iterated on.
                 _surplusAllowance = _limits.surplusAllowances[_j];
 
-                // If surplus allowance value is larger than 224 bits, revert.
+                // If surplus allowance is larger than 224 bits, revert.
                 if (_surplusAllowance.amount > type(uint224).max) {
                     revert INVALID_SURPLUS_ALLOWANCE();
                 }

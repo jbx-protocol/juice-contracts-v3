@@ -20,7 +20,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _controller = jbController();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _tokens = jbTokens();
         _data = JBRulesetData({
             duration: 0,
@@ -70,7 +70,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // dummy project that will receive fees
+        // Dummy project that will receive fees
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),

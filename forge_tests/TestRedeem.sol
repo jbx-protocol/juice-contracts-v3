@@ -20,7 +20,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _projectOwner = multisig();
         _beneficiary = beneficiary();
         _controller = jbController();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _tokens = jbTokens();
         _data = JBRulesetData({
             duration: 0,
@@ -68,12 +68,12 @@ contract TestRedeem_Local is TestBaseWorkflow {
             accountingContextConfigs: _accountingContextConfigs
         });
 
-        // First project for fee collection
+        // Create a first project to collect fees.
         _controller.launchProjectFor({
             owner: address(420), // random
             projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
             rulesetConfigurations: _rulesetConfig,
-            terminalConfigurations: _terminalConfigurations, // set terminals where fees will be received
+            terminalConfigurations: _terminalConfigurations, // Set terminals to receive fees.
             memo: ""
         });
 

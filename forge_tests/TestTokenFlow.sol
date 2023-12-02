@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// launch project, issue token or sets the token, mint token, burn token
+// Launch project, issue token or sets the token, mint token, burn token
 contract TestTokenFlow_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBTokens private _tokens;
@@ -22,7 +22,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _beneficiary = beneficiary();
         _controller = jbController();
         _tokens = jbTokens();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBRulesetData({
             duration: 0,
@@ -104,7 +104,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
             Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
-            // Set the projects token to _newToken
+            // Set the projects token to `_newToken`
             _tokens.setTokenFor(_projectId, _newToken);
 
             // Make sure the project's new JBToken is set.
@@ -152,7 +152,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
     }
 
     function testMintUnclaimedAtLimit() public {
-        // Pay the project such that the _beneficiary receives 1000 "unclaimed" project tokens.
+        // Pay the project such that the `_beneficiary` receives 1000 "unclaimed" project tokens.
         vm.deal(_beneficiary, 1 ether);
         _terminal.pay{value: 1 ether}({
             projectId: _projectId,

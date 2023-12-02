@@ -18,7 +18,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         super.setUp();
 
         _projectOwner = multisig();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _controller = jbController();
         _rulesets = jbRulesets();
 
