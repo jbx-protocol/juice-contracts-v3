@@ -34,7 +34,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             from: _signer,
             to: address(target),
             value: value,
-            gas: 300000,
+            gas: 300_000,
             nonce: nonce,
             deadline: deadline,
             data: data
@@ -44,16 +44,15 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(_signerPrivateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        return
-            ERC2771Forwarder.ForwardRequestData({
-                from: request.from,
-                to: request.to,
-                value: request.value,
-                gas: request.gas,
-                deadline: request.deadline,
-                data: request.data,
-                signature: signature
-            });
+        return ERC2771Forwarder.ForwardRequestData({
+            from: request.from,
+            to: request.to,
+            value: request.value,
+            gas: request.gas,
+            deadline: request.deadline,
+            data: request.data,
+            signature: signature
+        });
     }
 
     function setUp() public override {
@@ -132,8 +131,6 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
-
-        vm.stopPrank();
     }
 
     function testForwarderDeployed() public {
@@ -153,9 +150,9 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             JBTokens.ETH,
             _payAmount,
             _signer,
-            0,  // minReturnedTokens
-            "Take my money!",  // memo
-            ""  // metadata, empty bytes
+            0, // minReturnedTokens
+            "Take my money!", // memo
+            "" // metadata, empty bytes
         );
 
         // Setup: forwarder request data
@@ -188,10 +185,10 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             _projectId,
             JBTokens.ETH,
             _beneficiaryTokenBalance,
-            0,  // minReturnedTokens
+            0, // minReturnedTokens
             payable(_signer),
-            "Gimme my money!",  // memo
-            ""  // metadata, empty bytes
+            "Gimme my money!", // memo
+            "" // metadata, empty bytes
         );
 
         // Setup 2: forwarder request data with incremented nonce for redeem tx
