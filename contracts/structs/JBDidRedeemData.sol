@@ -8,7 +8,7 @@ import {JBTokenAmount} from "./JBTokenAmount.sol";
 /// @custom:member currentRulesetId The ID of the ruleset the redemption is being made during.
 /// @custom:member projectTokenCount The number of project tokens being redeemed.
 /// @custom:member redemptionRate The current ruleset's redemption rate.
-/// @custom:member reclaimedAmount The amount reclaimed from the treasury. Includes the token being reclaimed, the value, the number of decimals included, and the currency of the amount.
+/// @custom:member reclaimedAmount The amount reclaimed from the project's terminal balance. Includes the token being reclaimed, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member forwardedAmount The amount of the payment that is being sent to the redeem hook. Includes the token being paid, the value, the number of decimals included, and the currency of the amount.
 /// @custom:member beneficiary The address the reclaimed amount will be sent to.
 /// @custom:member dataHookMetadata Extra data to send to the redeem hook (sent by the data hook).

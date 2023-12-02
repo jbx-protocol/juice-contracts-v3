@@ -200,7 +200,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         vm.prank(_projectOwner);
         _controller.sendReservedTokensToSplitsOf(_projectId, "");
 
-        // 10 native tokens paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens distributed.
+        // 10 native tokens paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens sent.
         uint256 _reserveRateDistributionAmount = PRBMath.mulDiv(
             _nativePayAmount, _data.weight, 10 ** 18
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;

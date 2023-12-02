@@ -5,7 +5,7 @@ import {IJBTerminal} from "./IJBTerminal.sol";
 import {JBSplit} from "../../structs/JBSplit.sol";
 import {IJBSplits} from "../IJBSplits.sol";
 
-/// @notice A terminal that can distribute payouts.
+/// @notice A terminal that can send payouts.
 interface IJBPayoutTerminal is IJBTerminal {
     event SendPayouts(
         uint256 indexed rulesetId,

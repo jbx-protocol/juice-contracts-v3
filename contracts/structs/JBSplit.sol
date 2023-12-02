@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IJBSplitHook} from "./../interfaces/IJBSplitHook.sol";
 
-/// @notice Splits are used to send a percentage of a total token amount to a specific contract, project, or address. Splits are used for payouts and reserved token distributions.
+/// @notice Splits are used to send a percentage of a total token amount to a specific contract, project, or address. Splits are used to send payouts and reserved tokens.
 /// @dev 1. If a non-zero split hook contract is specified, this split's tokens are sent there along with this split's properties.
 /// @dev 2. Otherwise, if a non-zero project ID is specified, this split's tokens are used to `pay` it through its terminal if possible, or sent to the project's owner if not. If this payment yields tokens, those go to the split's `beneficiary`.
 /// @dev 3. Otherwise, this split's tokens are sent directly to the `beneficiary`.
