@@ -14,26 +14,24 @@ struct ForwardRequest {
 }
 
 contract ERC2771ForwarderMock is ERC2771Forwarder {
-
     bool public deployed = true;
 
     constructor(string memory name) ERC2771Forwarder(name) {}
 
     function structHash(ForwardRequest calldata request) external view returns (bytes32) {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        _FORWARD_REQUEST_TYPEHASH,
-                        request.from,
-                        request.to,
-                        request.value,
-                        request.gas,
-                        request.nonce,
-                        request.deadline,
-                        keccak256(request.data)
-                    )
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    _FORWARD_REQUEST_TYPEHASH,
+                    request.from,
+                    request.to,
+                    request.value,
+                    request.gas,
+                    request.nonce,
+                    request.deadline,
+                    keccak256(request.data)
                 )
-            );
+            )
+        );
     }
 }
