@@ -570,7 +570,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         require(msg.sender == address(this));
 
         if (address(_feeTerminal) == address(0)) {
-            revert("404:FEE_TERM");
+            revert("404:FEE_TERMINAL");
         }
 
         // Trigger any inherited pre-transfer logic if funds will be transferred.
@@ -593,7 +593,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             );
         } else {
             // Keep a reference to the amount that'll be paid in.
-            // If this terminal's token is ETH, send it in msg.value.
             uint256 _payValue = _token == JBTokens.ETH ? _amount : 0;
             // Send the fee.
             // If this terminal's token is ETH, send it in msg.value.
@@ -653,7 +652,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                     address(_split.allocator), type(IJBSplitAllocator).interfaceId
                 )
             ) {
-                revert("400:BAD_HOOK");
+                revert("400:SPLIT_HOOK");
             }
 
             // Trigger any inherited pre-transfer logic.
@@ -670,7 +669,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             IJBPaymentTerminal _terminal = DIRECTORY.primaryTerminalOf(_split.projectId, _token);
 
             // The project must have a terminal to send funds to.
-            if (_terminal == IJBPaymentTerminal(address(0))) revert("404:PAYOUTTERM");
+            if (_terminal == IJBPaymentTerminal(address(0))) revert("404:PAYOUT_TERMINAL");
 
             // This distribution is eligible for a fee if the funds are leaving this contract and the terminal isn't listed as feeless.
             if (_terminal != this && !isFeelessAddress[address(_terminal)]) {
@@ -691,11 +690,18 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 } else {
                     // Keep a reference to the amount being paid.
                     uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+
+                    // Add to balance.
+                    // If this terminal's token is ETH, send it in msg.value.
                     _terminal.addToBalanceOf{value: _payValue}(
                         _split.projectId, _token, netPayoutAmount, false, "", _metadata
                     );
                 }
             } else {
+                // Keep a reference to the beneficiary of the payment.
+                address _beneficiary =
+                    _split.beneficiary != address(0) ? _split.beneficiary : _originalMessageSender;
+
                 // Call the internal method of the same terminal is being used.
                 if (_terminal == IJBPaymentTerminal(address(this))) {
                     _pay(
@@ -703,9 +709,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                         netPayoutAmount,
                         address(this),
                         _split.projectId,
-                        _split.beneficiary != address(0)
-                            ? _split.beneficiary
-                            : _originalMessageSender,
+                        _beneficiary,
                         0,
                         "",
                         _metadata
@@ -713,16 +717,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 } else {
                     // Keep a reference to the amount being paid.
                     uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+
+                    // Make the payment.
+                    // If this terminal's token is ETH, send it in msg.value.
                     _terminal.pay{value: _payValue}(
-                        _split.projectId,
-                        _token,
-                        netPayoutAmount,
-                        _split.beneficiary != address(0)
-                            ? _split.beneficiary
-                            : _originalMessageSender,
-                        0,
-                        "",
-                        _metadata
+                        _split.projectId, _token, netPayoutAmount, _beneficiary, 0, "", _metadata
                     );
                 }
             }
