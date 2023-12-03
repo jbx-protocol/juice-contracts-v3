@@ -70,9 +70,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     error INADEQUATE_RECLAIM_AMOUNT();
     error INADEQUATE_TOKEN_COUNT();
     error NO_MSG_VALUE_ALLOWED();
-    error PAY_TO_ZERO_ADDRESS();
     error PERMIT_ALLOWANCE_NOT_ENOUGH(uint256 transactionAmount, uint256 permitAllowance);
-    error REDEEM_TO_ZERO_ADDRESS();
     error TERMINAL_TOKENS_INCOMPATIBLE();
     error TOKEN_NOT_ACCEPTED();
 
@@ -796,9 +794,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         string memory _memo,
         bytes memory _metadata
     ) internal returns (uint256 beneficiaryTokenCount) {
-        // Cant send tokens to the zero address.
-        if (_beneficiary == address(0)) revert PAY_TO_ZERO_ADDRESS();
-
         // Define variables that will be needed outside the scoped section below.
         // Keep a reference to the funding cycle during which the payment is being made.
         JBFundingCycle memory _fundingCycle;
@@ -906,9 +901,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         address payable _beneficiary,
         bytes memory _metadata
     ) internal returns (uint256 reclaimAmount) {
-        // Can't send reclaimed funds to the zero address.
-        if (_beneficiary == address(0)) revert REDEEM_TO_ZERO_ADDRESS();
-
         // Define variables that will be needed outside the scoped section below.
         // Keep a reference to the funding cycle during which the redemption is being made.
         JBFundingCycle memory _fundingCycle;
