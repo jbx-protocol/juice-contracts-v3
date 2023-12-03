@@ -782,11 +782,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @return beneficiaryTokenCount The number of tokens minted for the beneficiary, as a fixed point number with 18 decimals.
     function _pay(
         address _token,
-        uint256 _amount,
+        uint224 _amount,
         address _payer,
-        uint256 _projectId,
+        uint52 _projectId,
         address _beneficiary,
-        uint256 _minReturnedTokens,
+        uint160 _minReturnedTokens,
         string memory _memo,
         bytes memory _metadata
     ) internal returns (uint256 beneficiaryTokenCount) {
@@ -849,7 +849,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             beneficiaryTokenCount,
             _memo,
             _metadata,
-            _msgSender()
+            _payer
         );
     }
 
