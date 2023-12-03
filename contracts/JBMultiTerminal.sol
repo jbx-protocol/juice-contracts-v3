@@ -692,9 +692,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             // This distribution is eligible for a fee since the funds are leaving this contract and the recipient isn't listed as feeless.
             if (_feePercent != 0 && !isFeelessAddress[_recipient]) {
-                unchecked {
-                    netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
-                }
+                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
             }
 
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
