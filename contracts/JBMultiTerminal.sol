@@ -750,7 +750,20 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             }
 
             // Set the allowance to `spend` tokens for the user.
-            _permitAllowance(_allowance, _token);
+            PERMIT2.permit(
+                _msgSender(),
+                IAllowanceTransfer.PermitSingle({
+                    details: IAllowanceTransfer.PermitDetails({
+                        token: _token,
+                        amount: _allowance.amount,
+                        expiration: _allowance.expiration,
+                        nonce: _allowance.nonce
+                    }),
+                    spender: address(this),
+                    sigDeadline: _allowance.sigDeadline
+                }),
+                _allowance.signature
+            );
         }
 
         // Get a reference to the balance before receiving tokens.
@@ -1563,26 +1576,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // If the token is ETH, assume the native token standard.
         if (_token == JBTokens.ETH) return;
         IERC20(_token).safeIncreaseAllowance(_to, _amount);
-    }
-
-    /// @notice Sets the permit2 allowance for a token.
-    /// @param _allowance the allowance to get using permit2
-    /// @param _token The token being allowed.
-    function _permitAllowance(JBSingleAllowanceData memory _allowance, address _token) internal {
-        PERMIT2.permit(
-            _msgSender(),
-            IAllowanceTransfer.PermitSingle({
-                details: IAllowanceTransfer.PermitDetails({
-                    token: _token,
-                    amount: _allowance.amount,
-                    expiration: _allowance.expiration,
-                    nonce: _allowance.nonce
-                }),
-                spender: address(this),
-                sigDeadline: _allowance.sigDeadline
-            }),
-            _allowance.signature
-        );
     }
 
     /// @notice Returns the sender, prefered to use over `msg.sender`
