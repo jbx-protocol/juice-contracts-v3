@@ -849,7 +849,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             beneficiaryTokenCount,
             _memo,
             _metadata,
-            _msgSender()
+            _payer
         );
     }
 
