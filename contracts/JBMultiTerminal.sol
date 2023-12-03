@@ -282,6 +282,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         return _pay(
             _token,
             _amount,
+            _msgSender(),
             _projectId,
             _beneficiary,
             _minReturnedTokens,
@@ -816,6 +817,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @notice Contribute tokens to a project.
     /// @param _token The address of the token being paid.
     /// @param _amount The amount of terminal tokens being received, as a fixed point number with the same amount of decimals as this terminal. If this terminal's token is ETH, this is ignored and msg.value is used in its place.
+    /// @param _payer The address making the payment.
     /// @param _projectId The ID of the project being paid.
     /// @param _beneficiary The address to mint tokens for and pass along to the funding cycle's data source and delegate.
     /// @param _minReturnedTokens The minimum number of project tokens expected in return, as a fixed point number with the same amount of decimals as this terminal.
@@ -825,6 +827,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     function _pay(
         address _token,
         uint256 _amount,
+        address _payer,
         uint256 _projectId,
         address _beneficiary,
         uint256 _minReturnedTokens,
@@ -850,7 +853,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             // Record the payment.
             (_fundingCycle, _tokenCount, _delegateAllocations) =
-                STORE.recordPaymentFrom(_msgSender(), _tokenAmount, _projectId, _beneficiary, _metadata);
+                STORE.recordPaymentFrom(_payer, _tokenAmount, _projectId, _beneficiary, _metadata);
 
             // Mint the tokens if needed.
             if (_tokenCount != 0) {
@@ -871,7 +874,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                     _projectId,
                     _delegateAllocations,
                     _tokenAmount,
-                    _msgSender(),
+                    _payer,
                     _fundingCycle,
                     _beneficiary,
                     beneficiaryTokenCount,
@@ -884,7 +887,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _fundingCycle.configuration,
             _fundingCycle.number,
             _projectId,
-            _msgSender(),
+            _payer,
             _beneficiary,
             _amount,
             beneficiaryTokenCount,
