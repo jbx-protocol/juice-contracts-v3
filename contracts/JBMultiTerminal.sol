@@ -1027,21 +1027,19 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         );
 
         // Take the fee.
-        uint256 _feeTaken = FEE != 0
-            ? _takeFeeFrom(
-                _projectId,
-                _token,
-                _feeEligibleDistributionAmount + _leftoverDistributionAmount,
-                _projectOwner,
-                _fundingCycle.shouldHoldFees()
-            )
-            : 0;
+        uint256 _feeTaken = _takeFeeFrom(
+            _projectId,
+            _token,
+            _feeEligibleDistributionAmount + _leftoverDistributionAmount,
+            _projectOwner,
+            _fundingCycle.shouldHoldFees()
+        );
 
         // Transfer any remaining balance to the project owner and update returned leftover accordingly.
         if (_leftoverDistributionAmount != 0) {
             // Subtract the fee from the net leftover amount.
-            netLeftoverDistributionAmount = _leftoverDistributionAmount
-                - (FEE == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, FEE));
+            netLeftoverDistributionAmount =
+                _leftoverDistributionAmount - JBFees.feeIn(_leftoverDistributionAmount, FEE);
 
             // Transfer the amount to the project owner.
             _transferFor(address(this), _projectOwner, _token, netLeftoverDistributionAmount);
