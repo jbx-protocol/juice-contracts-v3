@@ -355,8 +355,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
     /// @notice Sends payouts to a project's current payout split group, according to its ruleset, up to its current payout limit.
     /// @dev If the percentages of the splits in the project's payout split group do not add up to 100%, the remainder is sent to the project's owner.
-    /// @dev Anyone can send payouts on a project's behalf. Projects can include a wildcard split (a split with no `hook`, `projectId`, or `beneficiary`) to send funds to the `msg.sender` which calls this function. This can be used to incentivize calling this function.
-    /// @dev Payouts sent to addresses which aren't feeless incur the protocol fee.
+    /// @dev Anyone can send payouts on a project's behalf. Projects can include a wildcard split (a split with no `hook`, `projectId`, or `beneficiary`) to send funds to the `_msgSender()` which calls this function. This can be used to incentivize calling this function.
+    /// @dev payouts sent to addresses which aren't feeless incur the protocol fee.
     /// @dev Payouts a projects don't incur fees if its terminal is feeless.
     /// @param _projectId The ID of the project having its payouts sent.
     /// @param _token The token being sent.
@@ -563,13 +563,13 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         }
     }
 
-    /// @notice Process a fee of the specified amount from a project.
+    /// @notice Process a specified amount of fees for a project.
     /// @dev Only accepts calls from this terminal itself.
-    /// @param _projectId The project ID the fee is being paid from.
+    /// @param _projectId The ID of the project paying the fee.
     /// @param _token The token the fee is being paid in.
-    /// @param _amount The fee amount, as a floating point number with 18 decimals.
-    /// @param _beneficiary The address to mint the platform's tokens for.
-    /// @param _feeTerminal The terminal that'll receive the fees. This'll be filled if one isn't provided.
+    /// @param _amount The fee amount, as a fixed point number with 18 decimals.
+    /// @param _beneficiary The address to mint tokens to (from the project which receives fees), and pass along to the ruleset's data hook and pay hook if applicable.
+    /// @param _feeTerminal The terminal that'll receive the fees.
     function executeProcessFee(
         uint256 _projectId,
         address _token,
@@ -620,14 +620,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         }
     }
 
-    /// @notice Pays out a split for a project's funding cycle configuration.
+    /// @notice Executes a payout to a split.
     /// @dev Only accepts calls from this terminal itself.
-    /// @param _split The split to distribute payouts to.
-    /// @param _projectId The ID of the project to which the split is originating.
-    /// @param _token The address of the token being paid out.
-    /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
+    /// @param _split The split to pay.
+    /// @param _projectId The ID of the project the split belongs to.
+    /// @param _token The address of the token being paid to the split.
+    /// @param _amount The total amount being paid to the split, as a fixed point number with the same number of decimals as this terminal.
     /// @return netPayoutAmount The amount sent to the split after subtracting fees.
-    function executeDistribute(
+    function executePayout(
         JBSplit calldata _split,
         uint256 _projectId,
         address _token,
@@ -640,15 +640,15 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         // By default, the net payout amount is the full amount. This will be adjusted if fees are taken.
         netPayoutAmount = _amount;
 
-        // If there's an allocator set, transfer to its `allocate` function.
+        // If there's a split hook set, transfer to its `process` function.
         if (_split.splitHook != IJBSplitHook(address(0))) {
-            // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
+            // This payout is eligible for a fee since the funds are leaving this contract and the split hook isn't a feeless address.
             if (!isFeelessAddress[address(_split.splitHook)]) {
                 netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
 
-            // Create the data to send to the allocator.
-            JBSplitHookPayload memory _data = JBSplitHookPayload({
+            // Create the payload to send to the split hook.
+            JBSplitHookPayload memory _payload = JBSplitHookPayload({
                 token: _token,
                 amount: netPayoutAmount,
                 decimals: _accountingContextForTokenOf[_projectId][_token].decimals,
@@ -657,7 +657,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                 split: _split
             });
 
-            // Make sure that the address supports the allocator interface.
+            // Make sure that the address supports the split hook interface.
             if (
                 ERC165Checker.supportsInterface(
                     address(_split.splitHook), type(IJBSplitHook).interfaceId
@@ -669,20 +669,21 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(address(_split.splitHook), _token, netPayoutAmount);
 
+            // Get a reference to the amount being paid in `msg.value`.
             uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
-            // If this terminal's token is ETH, send it in msg.value.
-            _split.splitHook.process{value: _payValue}(_data);
+            // If this terminal's token is the native token, send it in `msg.value`.
+            _split.splitHook.process{value: _payValue}(_payload);
 
             // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
-            // Get a reference to the Juicebox terminal being used.
+            // Get a reference to the terminal being used.
             IJBTerminal _terminal = DIRECTORY.primaryTerminalOf(_split.projectId, _token);
 
             // The project must have a terminal to send funds to.
             if (_terminal == IJBTerminal(address(0))) revert("404:PAYOUT_TERMINAL");
 
-            // This distribution is eligible for a fee if the funds are leaving this contract and the terminal isn't listed as feeless.
+            // This payout is eligible for a fee if the funds are leaving this contract and the receiving terminal isn't a feelss address.
             if (_terminal != this && !isFeelessAddress[address(_terminal)]) {
                 netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
@@ -690,20 +691,20 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(address(_terminal), _token, netPayoutAmount);
 
-            // Send the projectId in the metadata as a referral.
+            // Send the `projectId` in the metadata as a referral.
             bytes memory _metadata = bytes(abi.encodePacked(_projectId));
 
-            // Add to balance if prefered.
+            // Add to balance if preferred.
             if (_split.preferAddToBalance) {
-                // Call the internal method of the same terminal is being used.
+                // Call the internal method if this terminal is being used.
                 if (_terminal == IJBTerminal(address(this))) {
                     _addToBalanceOf(_split.projectId, _token, netPayoutAmount, false, "", _metadata);
                 } else {
-                    // Keep a reference to the amount being paid.
+                    // Get a reference to the amount being added to balance through `msg.value`.
                     uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
                     // Add to balance.
-                    // If this terminal's token is ETH, send it in msg.value.
+                    // If this terminal's token is the native token, send it in `msg.value`.
                     _terminal.addToBalanceOf{value: _payValue}(
                         _split.projectId, _token, netPayoutAmount, false, "", _metadata
                     );
@@ -713,7 +714,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                 address _beneficiary =
                     _split.beneficiary != address(0) ? _split.beneficiary : _originalMessageSender;
 
-                // Call the internal method of the same terminal is being used.
+                // Call the internal pay method if this terminal is being used.
                 if (_terminal == IJBTerminal(address(this))) {
                     _pay(
                         _token,
@@ -726,28 +727,29 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                         _metadata
                     );
                 } else {
-                    // Keep a reference to the amount being paid.
+                    // Keep a reference to the amount being paid through `msg.value`.
                     uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
                     // Make the payment.
-                    // If this terminal's token is ETH, send it in msg.value.
+                    // If this terminal's token is the native token, send it in `msg.value`.
                     _terminal.pay{value: _payValue}(
                         _split.projectId, _token, netPayoutAmount, _beneficiary, 0, "", _metadata
                     );
                 }
             }
         } else {
-            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the  _msgSender().
+            // If there's a beneficiary, send the funds directly to the beneficiary.
+            // If there isn't a beneficiary, send the funds to the  `_msgSender()`.
             address payable _recipient = _split.beneficiary != address(0)
                 ? _split.beneficiary
                 : payable(_originalMessageSender);
 
-            // This distribution is eligible for a fee since the funds are leaving this contract and the recipient isn't listed as feeless.
+            // This payout is eligible for a fee since the funds are leaving this contract and the recipient isn't a feeless address.
             if (!isFeelessAddress[_recipient]) {
                 netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
 
-            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
+            // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the `_msgSender()`.
             _transferFor(address(this), _recipient, _token, netPayoutAmount);
         }
     }
@@ -1037,7 +1039,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
     /// @notice Sends payouts to a project's current payout split group, according to its ruleset, up to its current payout limit.
     /// @dev If the percentages of the splits in the project's payout split group do not add up to 100%, the remainder is sent to the project's owner.
-    /// @dev Anyone can send payouts on a project's behalf. Projects can include a wildcard split (a split with no `hook`, `projectId`, or `beneficiary`) to send funds to the `msg.sender` which calls this function. This can be used to incentivize calling this function.
+    /// @dev Anyone can send payouts on a project's behalf. Projects can include a wildcard split (a split with no `hook`, `projectId`, or `beneficiary`) to send funds to the `_msgSender()` which calls this function. This can be used to incentivize calling this function.
     /// @dev Payouts sent to addresses which aren't feeless incur the protocol fee.
     /// @param _projectId The ID of the project to send the payouts of.
     /// @param _token The token being paid out.
@@ -1244,7 +1246,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         uint256 _amount
     ) internal returns (uint256 netPayoutAmount) {
         // Attempt to distribute this split.
-        try this.executeDistribute(_split, _projectId, _token, _amount, _msgSender()) returns (
+        try this.executePayout(_split, _projectId, _token, _amount, _msgSender()) returns (
             uint256 _netPayoutAmount
         ) {
             netPayoutAmount = _netPayoutAmount;
