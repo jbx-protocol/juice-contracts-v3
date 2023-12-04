@@ -18,6 +18,9 @@ import "../contracts/JBMultiTerminal.sol";
 
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+    // NOTICE: Make sure this is the correct forwarder address for the chain your deploying to.
+    address internal constant _TRUSTED_FORWARDER =
+        address(0xB2b5841DBeF766d4b521221732F9B618fCf34A87);
 
     JBPermissions _permissions;
     JBProjects _projects;
@@ -57,7 +60,7 @@ contract Deploy is Script {
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
-        _terminalStore = new JBTerminalStore(_directory, _rulesetStore, _prices);
+        _terminalStore = new JBTerminalStore(_directory, _rulesets, _prices);
         _multiTerminal = new JBMultiTerminal(
             _permissions,
             _projects,

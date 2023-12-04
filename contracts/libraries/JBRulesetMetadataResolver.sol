@@ -96,10 +96,10 @@ library JBRulesetMetadataResolver {
         packed |= _metadata.baseCurrency << 36;
         // pause pay in bit 68.
         if (_metadata.pausePay) packed |= 1 << 68;
-        // pause transfers in bit 69.
+        // pause credit transfers in bit 69.
         if (_metadata.pauseCreditTransfers) packed |= 1 << 69;
-        // allow minting in bit 70.
-        if (_metadata.allowMinting) packed |= 1 << 70;
+        // allow discretionary minting in bit 70.
+        if (_metadata.allowDiscretionaryMinting) packed |= 1 << 70;
         // allow terminal migration in bit 71.
         if (_metadata.allowTerminalMigration) packed |= 1 << 71;
         // allow set terminals in bit 72.

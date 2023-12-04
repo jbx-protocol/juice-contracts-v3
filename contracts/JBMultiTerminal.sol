@@ -641,14 +641,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         netPayoutAmount = _amount;
 
         // If there's an allocator set, transfer to its `allocate` function.
-        if (_split.allocator != IJBSplitAllocator(address(0))) {
+        if (_split.splitHook != IJBSplitHook(address(0))) {
             // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
-            if (!isFeelessAddress[address(_split.allocator)]) {
-                netPayoutAmount -= JBFees.feeIn(_amount, FEE);
+            if (!isFeelessAddress[address(_split.splitHook)]) {
+                netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
 
             // Create the data to send to the allocator.
-            JBSplitAllocationData memory _data = JBSplitAllocationData({
+            JBSplitHookPayload memory _data = JBSplitHookPayload({
                 token: _token,
                 amount: netPayoutAmount,
                 decimals: _accountingContextForTokenOf[_projectId][_token].decimals,
@@ -660,19 +660,19 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             // Make sure that the address supports the allocator interface.
             if (
                 ERC165Checker.supportsInterface(
-                    address(_split.allocator), type(IJBSplitAllocator).interfaceId
+                    address(_split.splitHook), type(IJBSplitHook).interfaceId
                 )
             ) {
                 revert("400:SPLIT_HOOK");
             }
 
             // Trigger any inherited pre-transfer logic.
-            _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
+            _beforeTransferFor(address(_split.splitHook), _token, netPayoutAmount);
 
             uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
             // If this terminal's token is ETH, send it in msg.value.
-            _split.allocator.allocate{value: _payValue}(_data);
+            _split.splitHook.process{value: _payValue}(_data);
 
             // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
@@ -684,7 +684,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
             // This distribution is eligible for a fee if the funds are leaving this contract and the terminal isn't listed as feeless.
             if (_terminal != this && !isFeelessAddress[address(_terminal)]) {
-                netPayoutAmount -= JBFees.feeIn(_amount, FEE);
+                netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
 
             // Trigger any inherited pre-transfer logic.
@@ -744,7 +744,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
             // This distribution is eligible for a fee since the funds are leaving this contract and the recipient isn't listed as feeless.
             if (!isFeelessAddress[_recipient]) {
-                netPayoutAmount -= JBFees.feeIn(_amount, FEE);
+                netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
 
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
@@ -1540,7 +1540,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             }
         }
 
-        emit RefundHeldFees(_projectId, _token, _amount, refundedFees, leftoverAmount, _msgSender());
+        emit UnlockHeldFees(_projectId, _token, _amount, unlockedFees, leftoverAmount, _msgSender());
     }
 
     /// @notice Transfers tokens.

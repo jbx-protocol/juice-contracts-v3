@@ -87,7 +87,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
             pauseCreditTransfers: false,
-            allowMinting: true,
+            allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowControllerMigration: false,
@@ -105,8 +105,8 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
-        _rulesetConfig[0].splitGroup = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
@@ -178,7 +178,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
 
         // Check: Ensure the beneficiary (signer) has a balance of tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
-        assertEq(_tokens.balanceOf(_signer, _projectId), _beneficiaryTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_signer, _projectId), _beneficiaryTokenBalance);
 
         // Setup 2: meta tx data for redeem
         bytes memory _data2 = abi.encodeWithSelector(
