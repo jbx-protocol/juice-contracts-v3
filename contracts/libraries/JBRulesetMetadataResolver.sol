@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
-import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
+import {JBRulesetMetadata} from "./../structs/JBRulesetMetadata.sol";
 import {JBConstants} from "./JBConstants.sol";
 
 library JBFundingCycleMetadataResolver {
@@ -72,7 +72,7 @@ library JBFundingCycleMetadataResolver {
         return ((_fundingCycle.metadata >> 75) & 1) == 1;
     }
 
-    function useTotalOverflowForRedemptions(JBFundingCycle memory _fundingCycle)
+    function useTotalSurplusForRedemptions(JBFundingCycle memory _fundingCycle)
         internal
         pure
         returns (bool)
@@ -80,15 +80,11 @@ library JBFundingCycleMetadataResolver {
         return ((_fundingCycle.metadata >> 76) & 1) == 1;
     }
 
-    function useDataSourceForPay(JBFundingCycle memory _fundingCycle)
-        internal
-        pure
-        returns (bool)
-    {
+    function useDataHookForPay(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
         return (_fundingCycle.metadata >> 77) & 1 == 1;
     }
 
-    function useDataSourceForRedeem(JBFundingCycle memory _fundingCycle)
+    function useDataHookForRedeem(JBFundingCycle memory _fundingCycle)
         internal
         pure
         returns (bool)
@@ -96,7 +92,7 @@ library JBFundingCycleMetadataResolver {
         return (_fundingCycle.metadata >> 78) & 1 == 1;
     }
 
-    function dataSource(JBFundingCycle memory _fundingCycle) internal pure returns (address) {
+    function dataHook(JBFundingCycle memory _fundingCycle) internal pure returns (address) {
         return address(uint160(_fundingCycle.metadata >> 79));
     }
 
@@ -107,7 +103,7 @@ library JBFundingCycleMetadataResolver {
     /// @notice Pack the funding cycle metadata.
     /// @param _metadata The metadata to validate and pack.
     /// @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.
-    function packFundingCycleMetadata(JBFundingCycleMetadata memory _metadata)
+    function packFundingCycleMetadata(JBRulesetMetadata memory _metadata)
         internal
         pure
         returns (uint256 packed)
@@ -125,7 +121,7 @@ library JBFundingCycleMetadataResolver {
         // pause pay in bit 68.
         if (_metadata.pausePay) packed |= 1 << 68;
         // pause transfers in bit 69.
-        if (_metadata.pauseTokenCreditTransfers) packed |= 1 << 69;
+        if (_metadata.pauseCreditTransfers) packed |= 1 << 69;
         // allow minting in bit 70.
         if (_metadata.allowMinting) packed |= 1 << 70;
         // allow terminal migration in bit 71.
@@ -138,14 +134,14 @@ library JBFundingCycleMetadataResolver {
         if (_metadata.allowSetController) packed |= 1 << 74;
         // hold fees in bit 75.
         if (_metadata.holdFees) packed |= 1 << 75;
-        // useTotalOverflowForRedemptions in bit 76.
-        if (_metadata.useTotalOverflowForRedemptions) packed |= 1 << 76;
+        // useTotalSurplusForRedemptions in bit 76.
+        if (_metadata.useTotalSurplusForRedemptions) packed |= 1 << 76;
         // use pay data source in bit 77.
-        if (_metadata.useDataSourceForPay) packed |= 1 << 77;
+        if (_metadata.useDataHookForPay) packed |= 1 << 77;
         // use redeem data source in bit 78.
-        if (_metadata.useDataSourceForRedeem) packed |= 1 << 78;
+        if (_metadata.useDataHookForRedeem) packed |= 1 << 78;
         // data source address in bits 79-238.
-        packed |= uint256(uint160(address(_metadata.dataSource))) << 79;
+        packed |= uint256(uint160(address(_metadata.dataHook))) << 79;
         // metadata in bits 239-254 (16 bits).
         packed |= _metadata.metadata << 239;
     }
@@ -156,9 +152,9 @@ library JBFundingCycleMetadataResolver {
     function expandMetadata(JBFundingCycle memory _fundingCycle)
         internal
         pure
-        returns (JBFundingCycleMetadata memory)
+        returns (JBRulesetMetadata memory)
     {
-        return JBFundingCycleMetadata(
+        return JBRulesetMetadata(
             reservedRate(_fundingCycle),
             redemptionRate(_fundingCycle),
             baseCurrency(_fundingCycle),
@@ -170,10 +166,10 @@ library JBFundingCycleMetadataResolver {
             controllerMigrationAllowed(_fundingCycle),
             setControllerAllowed(_fundingCycle),
             shouldHoldFees(_fundingCycle),
-            useTotalOverflowForRedemptions(_fundingCycle),
-            useDataSourceForPay(_fundingCycle),
-            useDataSourceForRedeem(_fundingCycle),
-            dataSource(_fundingCycle),
+            useTotalSurplusForRedemptions(_fundingCycle),
+            useDataHookForPay(_fundingCycle),
+            useDataHookForRedeem(_fundingCycle),
+            dataHook(_fundingCycle),
             metadata(_fundingCycle)
         );
     }

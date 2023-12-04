@@ -37,7 +37,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
-            pauseTokenCreditTransfers: false,
+            pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
             allowSetTerminals: false,

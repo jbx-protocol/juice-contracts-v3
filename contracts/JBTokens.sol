@@ -15,7 +15,7 @@ import {JBERC20Token} from "./JBERC20Token.sol";
 /// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBToken if they prefer.
-contract JBTokenStore is JBControlled, IJBTokens {
+contract JBTokens is JBControlled, IJBTokens {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//

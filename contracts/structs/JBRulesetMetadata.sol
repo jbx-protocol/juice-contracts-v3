@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBGlobalRulesetMetadata} from "./JBGlobalRulesetMetadata.sol";
-
 /// @custom:member reservedRate The reserved rate of the ruleset. This number is a percentage calculated out of `JBConstants.MAX_RESERVED_RATE`.
 /// @custom:member redemptionRate The redemption rate of the ruleset. This number is a percentage calculated out of `JBConstants.MAX_REDEMPTION_RATE`.
 /// @custom:member baseCurrency The currency on which to base the ruleset's weight.
@@ -24,7 +22,7 @@ struct JBRulesetMetadata {
     uint256 redemptionRate;
     uint256 baseCurrency;
     bool pausePay;
-    bool pauseTokenCreditTransfers;
+    bool pauseCreditTransfers;
     bool allowDiscretionaryMinting;
     bool allowTerminalMigration;
     bool allowSetTerminals;

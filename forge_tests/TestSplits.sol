@@ -5,7 +5,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 contract TestSplits_Local is TestBaseWorkflow {
     IJBController private _controller;
-    JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetMetadata private _metadata;
     IJBMultiTerminal private _terminal;
@@ -25,7 +24,6 @@ contract TestSplits_Local is TestBaseWorkflow {
         _tokens = jbTokens();
         _splitsGuy = payable(makeAddr("guy"));
 
-        _projectMetadata = "myIPFSHash";
         _data = JBRulesetData({
             duration: 3 days,
             weight: 1000 * 10 ** 18,
@@ -34,18 +32,16 @@ contract TestSplits_Local is TestBaseWorkflow {
         });
 
         _metadata = JBRulesetMetadata({
-            global: JBGlobalRulesetMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
+            pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: false,
@@ -138,7 +134,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         // Dummy project to receive fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -146,7 +142,7 @@ contract TestSplits_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -273,7 +269,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         // Dummy project to receive fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

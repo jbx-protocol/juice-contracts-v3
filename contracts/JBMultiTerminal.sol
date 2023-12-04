@@ -604,7 +604,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             );
         } else {
             // Keep a reference to the amount that'll be paid in.
-            uint256 _payValue = _token == JBTokens.ETH ? _amount : 0;
+            uint256 _payValue = _token == JBTokenList.Native ? _amount : 0;
             // Send the fee.
             // If this terminal's token is ETH, send it in msg.value.
             _feeTerminal.pay{value: _payValue}(
@@ -669,7 +669,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
 
-            uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+            uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
             // If this terminal's token is ETH, send it in msg.value.
             _split.allocator.allocate{value: _payValue}(_data);
@@ -700,7 +700,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                     _addToBalanceOf(_split.projectId, _token, netPayoutAmount, false, "", _metadata);
                 } else {
                     // Keep a reference to the amount being paid.
-                    uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+                    uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
                     // Add to balance.
                     // If this terminal's token is ETH, send it in msg.value.
@@ -727,7 +727,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                     );
                 } else {
                     // Keep a reference to the amount being paid.
-                    uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+                    uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
                     // Make the payment.
                     // If this terminal's token is ETH, send it in msg.value.

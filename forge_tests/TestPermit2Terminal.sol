@@ -49,12 +49,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
-        JBFundingCycleMetadata memory _metadata = JBRulesetMetadata({
+        JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
-            pauseTokenCreditTransfers: false,
+            pauseCreditTransfers: false,
             allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
             allowSetTerminals: false,

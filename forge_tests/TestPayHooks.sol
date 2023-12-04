@@ -36,18 +36,16 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         });
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
-            global: JBGlobalRulesetMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
+            pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: true,

@@ -6,7 +6,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 // A project's rulesets can be queued, and re-queued as long as the current ruleset approval hook approves.
 contract TestReconfigureProject_Local is TestBaseWorkflow {
     IJBController private _controller;
-    JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetData private _dataQueue;
     JBRulesetMetadata private _metadata;
@@ -24,7 +23,6 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _terminal = jbMultiTerminal();
         _controller = jbController();
 
-        _projectMetadata = "myIPFSHash";
         _deadline = new JBDeadline(_DEADLINE_DURATION);
         _data = JBRulesetData({
             duration: _RULESET_DURATION * 1 days,
@@ -38,21 +36,18 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             decayRate: 0,
             approvalHook: JBDeadline(address(0))
         });
-        _projectMetadata = "myIPFSHash";
 
         _metadata = JBRulesetMetadata({
-            global: JBGlobalRulesetMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
+            pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: false,
@@ -83,7 +78,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         uint256 projectId = _controller.launchProjectFor({
             owner: address(multisig()),
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

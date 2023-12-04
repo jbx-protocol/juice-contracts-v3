@@ -6,7 +6,6 @@ import {JBApprovalStatus} from "./../enums/JBApprovalStatus.sol";
 import {JBRuleset} from "./../structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./../structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "./../structs/JBRulesetMetadata.sol";
-import {JBProjectMetadata} from "./../structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./../structs/JBTerminalConfig.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
