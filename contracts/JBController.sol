@@ -29,7 +29,6 @@ import {JBSplitGroupIds} from "./libraries/JBSplitGroupIds.sol";
 import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "./structs/JBRulesetMetadata.sol";
-import {JBProjectMetadata} from "./structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitHookPayload} from "./structs/JBSplitHookPayload.sol";
@@ -97,7 +96,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     /// @param _projectId The ID of the project to get the total token supply of.
     /// @return The current total token supply of the project, including pending reserved tokens that have not been sent to splits yet.
     function totalTokenSupplyWithReservedTokensOf(uint256 _projectId)
-        external 
+        external
         view
         override
         returns (uint256)
@@ -376,7 +375,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
                 !_ruleset.discretionaryMintingAllowed()
-                    && !directory.isTerminalOf(_projectId, IJBTerminal(_msgSender())
+                    && !directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
                     && _msgSender() != address(_ruleset.dataHook())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
 

@@ -10,6 +10,13 @@ import {JBRuleset} from "./structs/JBRuleset.sol";
 /// @notice Ruleset approval hook which rejects rulesets if they are not queued at least `duration` seconds before the current ruleset ends. In other words, rulesets must be queued before the deadline to take effect.
 contract JBDeadline is ERC165, IJBRulesetApprovalHook {
     //*********************************************************************//
+    // --------------------------- custom errors ------------------------- //
+    //*********************************************************************//
+
+    /// @notice Throw if the duration used to initialize this contract is too long.
+    error DURATION_TOO_LONG();
+
+    //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
@@ -68,6 +75,9 @@ contract JBDeadline is ERC165, IJBRulesetApprovalHook {
 
     /// @param _duration The minimum number of seconds between the time a ruleset is queued and that ruleset's `start` for it to be `Approved`.
     constructor(uint256 _duration) {
+        // Ensure we don't underflow in `approvalStatusOf(...)`.
+        if (_duration > block.timestamp) revert DURATION_TOO_LONG();
+
         duration = _duration;
     }
 }

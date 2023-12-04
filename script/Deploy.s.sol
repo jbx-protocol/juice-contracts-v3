@@ -59,7 +59,14 @@ contract Deploy is Script {
         _directory.transferOwnership(_manager);
         _terminalStore = new JBTerminalStore(_directory, _rulesetStore, _prices);
         _multiTerminal = new JBMultiTerminal(
-            _permissions, _projects, _directory, _splits, _terminalStore, _PERMIT2, _TRUSTED_FORWARDER, _manager
+            _permissions,
+            _projects,
+            _directory,
+            _splits,
+            _terminalStore,
+            _PERMIT2,
+            _TRUSTED_FORWARDER,
+            _manager
         );
     }
 

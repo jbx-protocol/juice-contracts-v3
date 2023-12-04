@@ -173,8 +173,9 @@ contract JBDelegateMetadataLib_Test is Test {
 
         bytes memory _metadata = parser.createMetadata(_ids, _datas);
 
-        bytes memory _modifiedMetadata =
-            parser.addDataToMetadata(bytes4(uint32(type(uint32).max)), abi.encode(123_456), _metadata);
+        bytes memory _modifiedMetadata = parser.addDataToMetadata(
+            bytes4(uint32(type(uint32).max)), abi.encode(123_456), _metadata
+        );
 
         // Check
         (bool _found, bytes memory _dataParsed) =
