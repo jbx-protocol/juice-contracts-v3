@@ -520,7 +520,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             PROJECTS.ownerOf(_projectId),
             _projectId,
             JBPermissionIds.SET_ACCOUNTING_CONTEXT,
-            _msgSender() == DIRECTORY.controllerOf(_projectId)
+            _msgSender() == address(DIRECTORY.controllerOf(_projectId))
         )
     {
         // Keep a reference to the number of accounting context configurations.
@@ -851,15 +851,14 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         // Scoped section prevents stack too deep. `_hookPayloads` and `_tokenCount` only used within scope.
         {
             JBPayHookPayload[] memory _hookPayloads;
-            JBTokenAmount memory _tokenAmount;
-
             uint256 _tokenCount;
 
             // Get a reference to the token's accounting context.
             JBAccountingContext memory _context = _accountingContextForTokenOf[_projectId][_token];
 
             // Bundle the amount info into a JBTokenAmount struct.
-            _tokenAmount = JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
+            JBTokenAmount memory _tokenAmount =
+                JBTokenAmount(_token, _amount, _context.decimals, _context.currency);
 
             // Record the payment.
             (_ruleset, _tokenCount, _hookPayloads) =
