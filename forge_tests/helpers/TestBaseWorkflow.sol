@@ -193,7 +193,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbDirectory = new JBDirectory(_jbPermissions, _jbProjects, _multisig);
         _jbTokens = new JBTokens(_jbDirectory);
         _jbRulesets = new JBRulesets(_jbDirectory);
-        _jbSplitsStore = new JBSplitsStore(_jbDirectory);
+        _jbSplits = new JBSplits(_jbDirectory);
         _jbFundAccessLimits = new JBFundAccessLimits(_jbDirectory);
 
         _usdcToken = new MockERC20("USDC", "USDC");

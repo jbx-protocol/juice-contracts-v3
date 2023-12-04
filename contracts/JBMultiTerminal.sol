@@ -254,7 +254,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         IPermit2 _permit2,
         address _trustedForwarder,
         address _owner
-    ) JBPermissioned(_operatorStore) Ownable(_owner) ERC2771Context(_trustedForwarder) {
+    ) JBPermissioned(_permissions) Ownable(_owner) ERC2771Context(_trustedForwarder) {
         PROJECTS = _projects;
         DIRECTORY = _directory;
         SPLITS = _splits;
@@ -1075,7 +1075,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _token,
             _amountEligibleForFees + _leftoverPayoutAmount,
             _projectOwner,
-            _ruleset.shouldHoldFees()
+            _ruleset.holdFees()
         );
 
         // Send any leftover funds to the project owner and update the net leftover (which is returned) accordingly.
@@ -1139,9 +1139,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             - (
                 isFeelessAddress[_msgSender()]
                     ? 0
-                    : _takeFeeFrom(
-                        _projectId, _token, _amountPaidOut, _projectOwner, _ruleset.shouldHoldFees()
-                    )
+                    : _takeFeeFrom(_projectId, _token, _amountPaidOut, _projectOwner, _ruleset.holdFees())
             );
 
         // Transfer any remaining balance to the beneficiary.

@@ -268,7 +268,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         if (ruleset.cycleNumber == 0) revert INVALID_RULESET();
 
         // The ruleset must not have payments paused.
-        if (ruleset.payPaused()) revert RULESET_PAYMENT_PAUSED();
+        if (ruleset.pausePay()) revert RULESET_PAYMENT_PAUSED();
 
         // The weight according to which new tokens are to be minted, as a fixed point number with 18 decimals.
         uint256 _weight;
@@ -629,7 +629,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         JBRuleset memory _ruleset = RULESETS.currentOf(_projectId);
 
         // Terminal migration must be allowed.
-        if (!_ruleset.terminalMigrationAllowed()) {
+        if (!_ruleset.allowTerminalMigration()) {
             revert TERMINAL_MIGRATION_NOT_ALLOWED();
         }
 

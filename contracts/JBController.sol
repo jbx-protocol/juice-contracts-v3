@@ -51,7 +51,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
     error NO_BURNABLE_TOKENS();
     error NOT_CURRENT_CONTROLLER();
-    error TRANSFERS_PAUSED();
+    error CREDIT_TRANSFERS_PAUSED();
     error ZERO_TOKENS_TO_MINT();
 
     //*********************************************************************//
@@ -170,14 +170,14 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     /// @param _projectId The ID of the project the flag is for.
     /// @return The flag
     function setTerminalsAllowed(uint256 _projectId) external view returns (bool) {
-        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetTerminals;
+        return rulesets.currentOf(_projectId).expandMetadata().allowSetTerminals;
     }
 
     /// @notice A flag indicating if the project currently allows its controller to be set.
     /// @param _projectId The ID of the project the flag is for.
     /// @return The flag
     function setControllerAllowed(uint256 _projectId) external view returns (bool) {
-        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetController;
+        return rulesets.currentOf(_projectId).expandMetadata().allowSetController;
     }
 
     //*********************************************************************//
@@ -374,7 +374,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
             // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
-                !_ruleset.discretionaryMintingAllowed()
+                !_ruleset.allowDiscretionaryMinting()
                     && !directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
                     && _msgSender() != address(_ruleset.dataHook())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
@@ -491,7 +491,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Migration must be allowed.
-        if (!_ruleset.controllerMigrationAllowed()) {
+        if (!_ruleset.allowControllerMigration()) {
             revert CONTROLLER_MIGRATION_NOT_ALLOWED();
         }
 
@@ -527,19 +527,15 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     /// @dev The new splits must include any currently set splits that are locked.
     /// @param _projectId The ID of the project for which splits are being added.
     /// @param _domain An identifier within which the splits should be considered active.
-    /// @param _groupedSplits An array of splits to set for any number of groups.
-    function setSplitsOf(
-        uint256 _projectId,
-        uint256 _domain,
-        JBGroupedSplits[] calldata _groupedSplits
-    )
+    /// @param _splitGroup An array of splits to set for any number of groups.
+    function setSplitsOf(uint256 _projectId, uint256 _domain, JBSplitGroup[] calldata _splitGroup)
         external
         virtual
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
     {
         // Set splits for the group.
-        splitsStore.set(_projectId, _domain, _groupedSplits);
+        splitsStore.set(_projectId, _domain, _splitGroup);
     }
 
     /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
@@ -600,10 +596,10 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
     {
         // Get a reference to the current funding cycle for the project.
-        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Must not be paused.
-        if (_fundingCycle.tokenCreditTransfersPaused()) revert TRANSFERS_PAUSED();
+        if (_ruleset.pauseCreditTransfers()) revert CREDIT_TRANSFERS_PAUSED();
 
         tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
     }

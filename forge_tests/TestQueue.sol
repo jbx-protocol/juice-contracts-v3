@@ -415,7 +415,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_newRuleset.weight, _dataQueue.weight);
     }
 
-    function testQueueWithoutBallot() public {
+    function testQueueWithoutApprovalHook() public {
         // Package ruleset data and config.
         _data = JBRulesetData({
             duration: 5 minutes,

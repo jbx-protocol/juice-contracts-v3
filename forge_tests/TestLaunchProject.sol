@@ -112,7 +112,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
 
         // Get a reference to the first ruleset.
-        JBRuleset memory fundingCycle = _rulesets.currentOf(projectId);
+        JBRuleset memory ruleset = _rulesets.currentOf(projectId);
 
         // Reference configured attributes for sake of comparison.
         JBRuleset memory configured = JBRuleset({
@@ -124,10 +124,10 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             weight: _data.weight,
             decayRate: _data.decayRate,
             approvalHook: _data.approvalHook,
-            metadata: fundingCycle.metadata
+            metadata: ruleset.metadata
         });
 
-        bool same = equals(configured, fundingCycle);
+        bool same = equals(configured, ruleset);
 
         assertEq(same, true);
     }
@@ -169,7 +169,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             memo: ""
         });
 
-        JBRuleset memory fundingCycle = _rulesets.currentOf(_projectId);
+        JBRuleset memory ruleset = _rulesets.currentOf(_projectId);
 
         // Reference configured attributes for sake of comparison.
         JBRuleset memory configured = JBRuleset({
@@ -181,10 +181,10 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             weight: _weight,
             decayRate: _data.decayRate,
             approvalHook: _data.approvalHook,
-            metadata: fundingCycle.metadata
+            metadata: ruleset.metadata
         });
 
-        bool same = equals(configured, fundingCycle);
+        bool same = equals(configured, ruleset);
 
         assertEq(same, true);
     }
@@ -239,7 +239,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             });
 
             // Reference for sake of comparison.
-            JBRuleset memory fundingCycle = _rulesets.currentOf(_projectId);
+            JBRuleset memory ruleset = _rulesets.currentOf(_projectId);
 
             // Reference configured attributes for sake of comparison.
             JBRuleset memory configured = JBRuleset({
@@ -251,10 +251,10 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                 weight: _weight,
                 decayRate: _data.decayRate,
                 approvalHook: _data.approvalHook,
-                metadata: fundingCycle.metadata
+                metadata: ruleset.metadata
             });
 
-            bool same = equals(configured, fundingCycle);
+            bool same = equals(configured, ruleset);
 
             assertEq(same, true);
         }

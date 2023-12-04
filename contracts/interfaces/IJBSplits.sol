@@ -7,7 +7,7 @@ import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBControlled} from "./IJBControlled.sol";
 
-interface IJBSplitsStore is IJBControlled {
+interface IJBSplits is IJBControlled {
     event SetSplit(
         uint256 indexed projectId,
         uint256 indexed domainId,

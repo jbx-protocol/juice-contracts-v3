@@ -71,8 +71,8 @@ abstract contract JBPermissioned is Context, IJBPermissioned {
         address _sender = _msgSender();
         if (
             _sender != _account
-                && !operatorStore.hasPermission(_sender, _account, _domain, _permissionId)
-                && !operatorStore.hasPermission(_sender, _account, 0, _permissionId)
+                && !permissions.hasPermission(_sender, _account, _projectId, _permissionId)
+                && !permissions.hasPermission(_sender, _account, 0, _permissionId)
         ) revert UNAUTHORIZED();
     }
 
@@ -88,6 +88,6 @@ abstract contract JBPermissioned is Context, IJBPermissioned {
         bool _override
     ) internal view {
         if (_override) return;
-        _requirePermission(_account, _domain, _permissionId);
+        _requirePermission(_account, _projectId, _permissionId);
     }
 }

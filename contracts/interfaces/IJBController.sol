@@ -8,6 +8,7 @@ import {JBRulesetConfig} from "./../structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "./../structs/JBRulesetMetadata.sol";
 import {JBTerminalConfig} from "./../structs/JBTerminalConfig.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
+import {JBSplitGroup} from "./../structs/JBSplitGroup.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
 import {IJBDirectoryAccessControl} from "./IJBDirectoryAccessControl.sol";
 import {IJBFundAccessLimits} from "./IJBFundAccessLimits.sol";
@@ -16,6 +17,7 @@ import {IJBMigratable} from "./IJBMigratable.sol";
 import {IJBProjectMetadataRegistry} from "./IJBProjectMetadataRegistry.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBSplits} from "./IJBSplits.sol";
+import {IJBToken} from "./IJBToken.sol";
 import {IJBTokens} from "./IJBTokens.sol";
 
 interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAccessControl {
@@ -152,11 +154,8 @@ interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAcce
 
     function migrateController(uint256 projectId, IJBMigratable to) external;
 
-    function setSplitsOf(
-        uint256 projectId,
-        uint256 domain,
-        JBGroupedSplits[] calldata groupedSplits
-    ) external;
+    function setSplitsOf(uint256 projectId, uint256 domain, JBSplitGroup[] calldata splitGroup)
+        external;
 
     function issueTokenFor(uint256 projectId, string calldata name, string calldata symbol)
         external

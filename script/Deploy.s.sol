@@ -39,8 +39,8 @@ contract Deploy is Script {
     function _deployContracts(address _manager) internal {
         _permissions = new JBPermissions();
         _projects = new JBProjects(_manager);
-        _prices = new JBPrices(_operatorStore, _projects, _manager);
-        _directory = new JBDirectory(_operatorStore, _projects, address(this));
+        _prices = new JBPrices(_permissions, _projects, _manager);
+        _directory = new JBDirectory(_permissions, _projects, address(this));
         _tokens = new JBTokens(_directory);
         _rulesets = new JBRulesets(_directory);
         _splits = new JBSplits(_directory);

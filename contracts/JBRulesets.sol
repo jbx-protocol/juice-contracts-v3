@@ -466,9 +466,9 @@ contract JBRulesets is JBControlled, IJBRulesets {
             revert BLOCK_ALREADY_CONTAINS_RULESET();
         }
 
-        // The time after the approval hook of the provided ruleset has expired.
+        // The time when the duration of the base ruleset's approval hook has finished.
         // If the provided ruleset has no approval hook, return the current timestamp.
-        uint256 _timestampAfterBallot = _baseRuleset.approvalHook
+        uint256 _timestampAfterApprovalHook = _baseRuleset.approvalHook
             == IJBRulesetApprovalHook(address(0))
             ? 0
             : _rulesetId + _baseRuleset.approvalHook.duration();
@@ -478,8 +478,8 @@ contract JBRulesets is JBControlled, IJBRulesets {
             _baseRuleset,
             _rulesetId,
             // Can only start after the approval hook.
-            _timestampAfterBallot > _mustStartAtOrAfter
-                ? _timestampAfterBallot
+            _timestampAfterApprovalHook > _mustStartAtOrAfter
+                ? _timestampAfterApprovalHook
                 : _mustStartAtOrAfter,
             _weight
         );

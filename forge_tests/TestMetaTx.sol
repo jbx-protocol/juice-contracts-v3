@@ -78,7 +78,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             duration: 0,
             weight: _WEIGHT,
             decayRate: 0,
-            approvalHook: IJBFundingCycleBallot(address(0))
+            approvalHook: IJBRulesetApprovalHook(address(0))
         });
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
@@ -105,7 +105,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
-        _rulesetConfig[0].groupedSplits = new JBGroupedSplits[](0);
+        _rulesetConfig[0].splitGroup = new JBSplitGroup[](0);
         _rulesetConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
