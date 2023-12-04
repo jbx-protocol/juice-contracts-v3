@@ -166,12 +166,12 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Update the controller, which manages how terminals interact with the ecosystem, for a project.
+    /// @notice Set a project's controller. Controllers manage how terminals interact with tokens and rulesets.
     /// @dev A controller can be set if:
-    /// @dev - the project's ruleset allows setting the controller, and the message sender is the project owner or an operator with permission to `SET_CONTROLLER`.
-    /// @dev - or the message sender is the project's current controller.
-    /// @dev - or an allowedlisted address is setting a controller for a project that doesn't already have a controller.
-    /// @param _projectId The ID of the project to set a new controller for.
+    /// @dev - The project's ruleset allows setting the controller, and the message sender is the project owner or an operator with permission to `SET_CONTROLLER` from them.
+    /// @dev - OR the message sender is the project's current controller.
+    /// @dev - OR an allowedlisted address is setting a controller for a project that doesn't already have a controller.
+    /// @param _projectId The ID of the project to set the controller of.
     /// @param _controller The address of the new controller to set for the project.
     function setControllerOf(uint256 _projectId, IERC165 _controller)
         external
@@ -198,7 +198,10 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
             ? true
             : IJBDirectoryAccessControl(address(_currentController)).setControllerAllowed(_projectId);
 
-        // Setting controller is allowed if called from the current controller, or if the project doesn't have a current controller, or if the project's funding cycle allows setting the controller. Revert otherwise.
+        // Setting controller is allowed if called from the current controller,
+        // OR if the project doesn't have a current controller,
+        // OR if the project's ruleset allows setting the controller.
+        // Otherwise, revert.
         if (!_allowSetController) {
             revert SET_CONTROLLER_NOT_ALLOWED();
         }
@@ -210,9 +213,9 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     }
 
     /// @notice Set a project's terminals.
-    /// @dev Only a project's owner, an operator with the `SET_TERMINALS` permission, or the project's controller can set its terminals.
+    /// @dev Only a project's owner, an operator with the `SET_TERMINALS` permission from the owner, or the project's controller can set its terminals.
     /// @dev Unless the caller is the project's controller, the project's ruleset must allow setting terminals.
-    /// @param _projectId The ID of the project having its terminals set.
+    /// @param _projectId The ID of the project to set terminals for.
     /// @param _terminals An array of terminal addresses to set for the project.
     function setTerminalsOf(uint256 _projectId, IJBTerminal[] calldata _terminals)
         external
