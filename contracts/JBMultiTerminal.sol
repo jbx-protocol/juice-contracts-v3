@@ -16,7 +16,6 @@ import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
 import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
-import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
@@ -470,7 +469,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _heldFee = _heldFees[_i];
 
             // Get the fee amount.
-            _amount = (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
+            _amount = (JBFees.feeIn(_heldFee.amount, FEE));
 
             // Process the fee.
             _processFee(
@@ -571,7 +570,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         require(msg.sender == address(this));
 
         if (address(_feeTerminal) == address(0)) {
-            revert("Fee not accepted");
+            revert("404:FEE_TERMINAL");
         }
 
         // Trigger any inherited pre-transfer logic if funds will be transferred.
@@ -579,21 +578,35 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             _beforeTransferFor(address(_feeTerminal), _token, _amount);
         }
 
-        // Keep a reference to the amount that'll be paid in.
-        uint256 _payValue = _token == JBTokens.ETH ? _amount : 0;
-
-        // Send the fee.
-        // If this terminal's token is ETH, send it in msg.value.
-        _feeTerminal.pay{value: _payValue}(
-            _FEE_BENEFICIARY_PROJECT_ID,
-            _token,
-            _amount,
-            _beneficiary,
-            0,
-            "",
-            // Send the projectId in the metadata.
-            bytes(abi.encodePacked(_projectId))
-        );
+        // Call the internal method of the same terminal is being used.
+        if (_feeTerminal == IJBPaymentTerminal(address(this))) {
+            _pay(
+                _token,
+                _amount,
+                address(this),
+                _FEE_BENEFICIARY_PROJECT_ID,
+                _beneficiary,
+                0,
+                "",
+                // Send the projectId in the metadata.
+                bytes(abi.encodePacked(_projectId))
+            );
+        } else {
+            // Keep a reference to the amount that'll be paid in.
+            uint256 _payValue = _token == JBTokens.ETH ? _amount : 0;
+            // Send the fee.
+            // If this terminal's token is ETH, send it in msg.value.
+            _feeTerminal.pay{value: _payValue}(
+                _FEE_BENEFICIARY_PROJECT_ID,
+                _token,
+                _amount,
+                _beneficiary,
+                0,
+                "",
+                // Send the projectId in the metadata.
+                bytes(abi.encodePacked(_projectId))
+            );
+        }
     }
 
     /// @notice Pays out a split for a project's funding cycle configuration.
@@ -602,14 +615,12 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _projectId The ID of the project to which the split is originating.
     /// @param _token The address of the token being paid out.
     /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
     /// @return netPayoutAmount The amount sent to the split after subtracting fees.
     function executeDistribute(
         JBSplit calldata _split,
         uint256 _projectId,
         address _token,
         uint256 _amount,
-        uint256 _feePercent,
         address _originalMessageSender
     ) external returns (uint256 netPayoutAmount) {
         // NOTICE: May only be called by this terminal itself.
@@ -621,8 +632,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // If there's an allocator set, transfer to its `allocate` function.
         if (_split.allocator != IJBSplitAllocator(address(0))) {
             // This distribution is eligible for a fee since the funds are leaving this contract and the allocator isn't listed as feeless.
-            if (_feePercent != 0 && !isFeelessAddress[address(_split.allocator)]) {
-                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
+            if (!isFeelessAddress[address(_split.allocator)]) {
+                netPayoutAmount -= JBFees.feeIn(_amount, FEE);
             }
 
             // Create the data to send to the allocator.
@@ -641,14 +652,16 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                     address(_split.allocator), type(IJBSplitAllocator).interfaceId
                 )
             ) {
-                revert("165");
+                revert("400:SPLIT_HOOK");
             }
 
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(address(_split.allocator), _token, netPayoutAmount);
 
+            uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+
             // If this terminal's token is ETH, send it in msg.value.
-            _split.allocator.allocate{value: _token == JBTokens.ETH ? netPayoutAmount : 0}(_data);
+            _split.allocator.allocate{value: _payValue}(_data);
 
             // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {
@@ -656,11 +669,11 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             IJBPaymentTerminal _terminal = DIRECTORY.primaryTerminalOf(_split.projectId, _token);
 
             // The project must have a terminal to send funds to.
-            if (_terminal == IJBPaymentTerminal(address(0))) revert("404");
+            if (_terminal == IJBPaymentTerminal(address(0))) revert("404:PAYOUT_TERMINAL");
 
             // This distribution is eligible for a fee if the funds are leaving this contract and the terminal isn't listed as feeless.
-            if (_terminal != this && _feePercent != 0 && !isFeelessAddress[address(_terminal)]) {
-                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
+            if (_terminal != this && !isFeelessAddress[address(_terminal)]) {
+                netPayoutAmount -= JBFees.feeIn(_amount, FEE);
             }
 
             // Trigger any inherited pre-transfer logic.
@@ -671,28 +684,56 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             // Add to balance if prefered.
             if (_split.preferAddToBalance) {
-                _terminal.addToBalanceOf{value: _token == JBTokens.ETH ? netPayoutAmount : 0}(
-                    _split.projectId, _token, netPayoutAmount, false, "", _metadata
-                );
+                // Call the internal method of the same terminal is being used.
+                if (_terminal == IJBPaymentTerminal(address(this))) {
+                    _addToBalanceOf(_split.projectId, _token, netPayoutAmount, false, "", _metadata);
+                } else {
+                    // Keep a reference to the amount being paid.
+                    uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+
+                    // Add to balance.
+                    // If this terminal's token is ETH, send it in msg.value.
+                    _terminal.addToBalanceOf{value: _payValue}(
+                        _split.projectId, _token, netPayoutAmount, false, "", _metadata
+                    );
+                }
             } else {
-                _terminal.pay{value: _token == JBTokens.ETH ? netPayoutAmount : 0}(
-                    _split.projectId,
-                    _token,
-                    netPayoutAmount,
-                    _split.beneficiary != address(0) ? _split.beneficiary : _originalMessageSender,
-                    0,
-                    "",
-                    _metadata
-                );
+                // Keep a reference to the beneficiary of the payment.
+                address _beneficiary =
+                    _split.beneficiary != address(0) ? _split.beneficiary : _originalMessageSender;
+
+                // Call the internal method of the same terminal is being used.
+                if (_terminal == IJBPaymentTerminal(address(this))) {
+                    _pay(
+                        _token,
+                        netPayoutAmount,
+                        address(this),
+                        _split.projectId,
+                        _beneficiary,
+                        0,
+                        "",
+                        _metadata
+                    );
+                } else {
+                    // Keep a reference to the amount being paid.
+                    uint256 _payValue = _token == JBTokens.ETH ? netPayoutAmount : 0;
+
+                    // Make the payment.
+                    // If this terminal's token is ETH, send it in msg.value.
+                    _terminal.pay{value: _payValue}(
+                        _split.projectId, _token, netPayoutAmount, _beneficiary, 0, "", _metadata
+                    );
+                }
             }
         } else {
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the  _msgSender().
-            address payable _recipient =
-                _split.beneficiary != address(0) ? _split.beneficiary : payable(_msgSender());
+            address payable _recipient = _split.beneficiary != address(0)
+                ? _split.beneficiary
+                : payable(_originalMessageSender);
 
             // This distribution is eligible for a fee since the funds are leaving this contract and the recipient isn't listed as feeless.
-            if (_feePercent != 0 && !isFeelessAddress[_recipient]) {
-                netPayoutAmount -= JBFees.feeIn(_amount, _feePercent);
+            if (!isFeelessAddress[_recipient]) {
+                netPayoutAmount -= JBFees.feeIn(_amount, FEE);
             }
 
             // If there's a beneficiary, send the funds directly to the beneficiary. Otherwise send to the msg.sender.
@@ -918,8 +959,8 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             );
 
             // Set the fee. No fee if the beneficiary is feeless, if the redemption rate is at its max, or if the fee beneficiary doesn't accept the given token.
-            uint256 _feePercent = isFeelessAddress[_beneficiary]
-                || _fundingCycle.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE ? 0 : FEE;
+            bool _takesFee = !isFeelessAddress[_beneficiary]
+                && _fundingCycle.redemptionRate() != JBConstants.MAX_REDEMPTION_RATE;
 
             // The amount being reclaimed must be at least as much as was expected.
             if (reclaimAmount < _minReturnedTokens) {
@@ -952,16 +993,16 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                     _fundingCycle,
                     _beneficiary,
                     _delegateAllocations,
-                    _feePercent
+                    _takesFee
                 );
             }
 
             // Send the reclaimed funds to the beneficiary.
             if (reclaimAmount != 0) {
-                if (_feePercent != 0) {
+                if (_takesFee) {
                     _feeEligibleDistributionAmount += reclaimAmount;
                     // Subtract the fee for the reclaimed amount.
-                    reclaimAmount -= JBFees.feeIn(reclaimAmount, _feePercent);
+                    reclaimAmount -= JBFees.feeIn(reclaimAmount, FEE);
                 }
 
                 // Subtract the fee from the reclaim amount.
@@ -972,9 +1013,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             // Take the fee from all outbound reclaimations.
             _feeEligibleDistributionAmount != 0
-                ? _takeFeeFrom(
-                    _projectId, _token, _feeEligibleDistributionAmount, _feePercent, _beneficiary, false
-                )
+                ? _takeFeeFrom(_projectId, _token, _feeEligibleDistributionAmount, _beneficiary, false)
                 : 0;
         }
 
@@ -1023,34 +1062,27 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // and receive any extra distributable funds not allocated to payout splits.
         address payable _projectOwner = payable(PROJECTS.ownerOf(_projectId));
 
-        // Keep a reference to the fee.
-        // The fee is 0 if the fee beneficiary doesn't accept the given token.
-        uint256 _feePercent = FEE;
-
         // Payout to splits and get a reference to the leftover transfer amount after all splits have been paid.
         // Also get a reference to the amount that was distributed to splits from which fees should be taken.
         (uint256 _leftoverDistributionAmount, uint256 _feeEligibleDistributionAmount) =
         _distributeToPayoutSplitsOf(
-            _projectId, _token, _fundingCycle.configuration, _distributedAmount, _feePercent
+            _projectId, _token, _fundingCycle.configuration, _distributedAmount
         );
 
         // Take the fee.
-        uint256 _feeTaken = _feePercent != 0
-            ? _takeFeeFrom(
-                _projectId,
-                _token,
-                _feeEligibleDistributionAmount + _leftoverDistributionAmount,
-                _feePercent,
-                _projectOwner,
-                _fundingCycle.shouldHoldFees()
-            )
-            : 0;
+        uint256 _feeTaken = _takeFeeFrom(
+            _projectId,
+            _token,
+            _feeEligibleDistributionAmount + _leftoverDistributionAmount,
+            _projectOwner,
+            _fundingCycle.shouldHoldFees()
+        );
 
         // Transfer any remaining balance to the project owner and update returned leftover accordingly.
         if (_leftoverDistributionAmount != 0) {
             // Subtract the fee from the net leftover amount.
-            netLeftoverDistributionAmount = _leftoverDistributionAmount
-                - (_feePercent == 0 ? 0 : JBFees.feeIn(_leftoverDistributionAmount, _feePercent));
+            netLeftoverDistributionAmount =
+                _leftoverDistributionAmount - JBFees.feeIn(_leftoverDistributionAmount, FEE);
 
             // Transfer the amount to the project owner.
             _transferFor(address(this), _projectOwner, _token, netLeftoverDistributionAmount);
@@ -1103,21 +1135,16 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         // Get a reference to the project owner, which will receive tokens from paying the platform fee.
         address _projectOwner = PROJECTS.ownerOf(_projectId);
 
-        // Keep a reference to the fee.
-        // The fee is 0 if the sender is marked as feeless or if the fee beneficiary project doesn't accept the given token.
-        uint256 _feePercent = isFeelessAddress[_msgSender()] ? 0 : FEE;
-
         // Take a fee from the `_distributedAmount`, if needed.
         // The net amount is the withdrawn amount without the fee.
         netDistributedAmount = _distributedAmount
             - (
-                _feePercent == 0
+                isFeelessAddress[_msgSender()]
                     ? 0
                     : _takeFeeFrom(
                         _projectId,
                         _token,
                         _distributedAmount,
-                        _feePercent,
                         _projectOwner,
                         _fundingCycle.shouldHoldFees()
                     )
@@ -1146,15 +1173,13 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _token The address of the token being distributed.
     /// @param _domain The domain of the splits to distribute the payout between.
     /// @param _amount The total amount being distributed, as a fixed point number with the same number of decimals as this terminal.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
     /// @return If the leftover amount if the splits don't add up to 100%.
     /// @return feeEligibleDistributionAmount The total amount of distributions that are eligible to have fees taken from.
     function _distributeToPayoutSplitsOf(
         uint256 _projectId,
         address _token,
         uint256 _domain,
-        uint256 _amount,
-        uint256 _feePercent
+        uint256 _amount
     ) internal returns (uint256, uint256 feeEligibleDistributionAmount) {
         // The total percentage available to split
         uint256 _leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
@@ -1178,7 +1203,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
 
             // The payout amount substracting any applicable incurred fees.
             uint256 _netPayoutAmount =
-                _distributeToPayoutSplit(_split, _projectId, _token, _payoutAmount, _feePercent);
+                _distributeToPayoutSplit(_split, _projectId, _token, _payoutAmount);
 
             // If the split allocator is set as feeless, this distribution is not eligible for a fee.
             if (_netPayoutAmount != 0 && _netPayoutAmount != _payoutAmount) {
@@ -1220,18 +1245,17 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _projectId The ID of the project to which the split is originating.
     /// @param _token The address of the token being paid out.
     /// @param _amount The total amount being distributed to the split, as a fixed point number with the same number of decimals as this terminal.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
     /// @return netPayoutAmount The amount sent to the split after subtracting fees.
     function _distributeToPayoutSplit(
         JBSplit memory _split,
         uint256 _projectId,
         address _token,
-        uint256 _amount,
-        uint256 _feePercent
+        uint256 _amount
     ) internal returns (uint256 netPayoutAmount) {
         // Attempt to distribute this split.
-        try this.executeDistribute(_split, _projectId, _token, _amount, _feePercent, _msgSender())
-        returns (uint256 _netPayoutAmount) {
+        try this.executeDistribute(_split, _projectId, _token, _amount, _msgSender()) returns (
+            uint256 _netPayoutAmount
+        ) {
             netPayoutAmount = _netPayoutAmount;
         } catch (bytes memory _failureReason) {
             // Add balance back to the project.
@@ -1327,7 +1351,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _fundingCycle The funding cycle during which the redemption is being made during.
     /// @param _beneficiary The address receiving reclaimed treasury tokens that result from the redemption.
     /// @param _allocations The allocations being fulfilled.
-    /// @param _feePercent The percent fee that will apply to funds allocated to delegates.
+    /// @param _takesFee If a fee should be applied to funds allocated to delegates.
     /// @return feeEligibleDistributionAmount The amount of allocated funds to delegates that are eligible for fees.
     function _fulfillRedemptionDelegateAllocationsFor(
         uint256 _projectId,
@@ -1338,7 +1362,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         JBFundingCycle memory _fundingCycle,
         address payable _beneficiary,
         JBRedemptionDelegateAllocation3_1_1[] memory _allocations,
-        uint256 _feePercent
+        bool _takesFee
     ) internal returns (uint256 feeEligibleDistributionAmount) {
         // Keep a reference to the data that'll get send to delegates.
         JBDidRedeemData3_1_1 memory _data = JBDidRedeemData3_1_1(
@@ -1370,8 +1394,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
             );
 
             // Get the fee for the delegated amount.
-            uint256 _delegatedAmountFee =
-                _feePercent == 0 ? 0 : JBFees.feeIn(_allocation.amount, _feePercent);
+            uint256 _delegatedAmountFee = _takesFee ? JBFees.feeIn(_allocation.amount, FEE) : 0;
 
             // Add the delegated amount to the amount eligible for having a fee taken.
             if (_delegatedAmountFee != 0) {
@@ -1411,7 +1434,6 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
     /// @param _projectId The ID of the project having fees taken from.
     /// @param _token The address of the token that the fee is being taken in.
     /// @param _amount The amount of the fee to take, as a floating point number with 18 decimals.
-    /// @param _feePercent The percent of fees to take, out of MAX_FEE.
     /// @param _beneficiary The address to mint the platforms tokens for.
     /// @param _shouldHoldFees If fees should be tracked and held back.
     /// @return feeAmount The amount of the fee taken.
@@ -1419,18 +1441,17 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
         uint256 _projectId,
         address _token,
         uint256 _amount,
-        uint256 _feePercent,
         address _beneficiary,
         bool _shouldHoldFees
     ) internal returns (uint256 feeAmount) {
         // Get a reference to the fee amount.
-        feeAmount = JBFees.feeIn(_amount, _feePercent);
+        feeAmount = JBFees.feeIn(_amount, FEE);
 
         if (_shouldHoldFees) {
             // Store the held fee.
-            _heldFeesOf[_projectId][_token].push(JBFee(_amount, uint32(_feePercent), _beneficiary));
+            _heldFeesOf[_projectId][_token].push(JBFee(_amount, _beneficiary));
 
-            emit HoldFee(_projectId, _token, _amount, _feePercent, _beneficiary, _msgSender());
+            emit HoldFee(_projectId, _token, _amount, FEE, _beneficiary, _msgSender());
         } else {
             // Get the terminal that'll receive the fee if one wasn't provided.
             IJBPaymentTerminal _feeTerminal =
@@ -1498,8 +1519,7 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                 _heldFeesOf[_projectId][_token].push(_heldFee);
             } else {
                 // Notice here we take feeIn the stored .amount
-                uint256 _feeAmount =
-                    (_heldFee.fee == 0 ? 0 : JBFees.feeIn(_heldFee.amount, _heldFee.fee));
+                uint256 _feeAmount = JBFees.feeIn(_heldFee.amount, FEE);
 
                 if (leftoverAmount >= _heldFee.amount - _feeAmount) {
                     unchecked {
@@ -1508,14 +1528,12 @@ contract JBMultiTerminal is JBOperatable, Ownable, ERC2771Context, IJBMultiTermi
                     }
                 } else {
                     // And here we overwrite with feeFrom the leftoverAmount
-                    _feeAmount =
-                        _heldFee.fee == 0 ? 0 : JBFees.feeFrom(leftoverAmount, _heldFee.fee);
+                    _feeAmount = JBFees.feeFrom(leftoverAmount, FEE);
 
                     unchecked {
                         _heldFeesOf[_projectId][_token].push(
                             JBFee(
                                 _heldFee.amount - (leftoverAmount + _feeAmount),
-                                _heldFee.fee,
                                 _heldFee.beneficiary
                             )
                         );
