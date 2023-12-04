@@ -39,7 +39,7 @@ contract Deploy is Script {
         _deployContracts(_manager);
     }
 
-    function _deployContracts(address _manager) internal {
+    function _deployContracts(address _manager, address _trustedForwarder) internal {
         _permissions = new JBPermissions();
         _projects = new JBProjects(_manager);
         _prices = new JBPrices(_permissions, _projects, _manager);
@@ -56,7 +56,7 @@ contract Deploy is Script {
             _tokens,
             _splits,
             _fundAccessLimits,
-            _TRUSTED_FORWARDER
+            _trustedForwarder
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
@@ -68,7 +68,7 @@ contract Deploy is Script {
             _splits,
             _terminalStore,
             _PERMIT2,
-            _TRUSTED_FORWARDER,
+            _trustedForwarder,
             _manager
         );
     }
@@ -126,7 +126,7 @@ contract DeployEthereumGoerli is Deploy {
     function setUp() public {}
 
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
@@ -138,7 +138,7 @@ contract DeployEthereumSepolia is Deploy {
     function setUp() public {}
 
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
@@ -152,7 +152,7 @@ contract DeployOptimismMainnet is Deploy {
     function setUp() public {}
 
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
@@ -164,7 +164,7 @@ contract DeployOptimismTestnet is Deploy {
     function setUp() public {}
 
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
@@ -178,7 +178,7 @@ contract DeployPolygonMainnet is Deploy {
     function setUp() public {}
 
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
@@ -190,6 +190,6 @@ contract DeployPolygonMumbai is Deploy {
     function setUp() public {}
 
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
