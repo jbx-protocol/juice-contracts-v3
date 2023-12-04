@@ -85,12 +85,12 @@ contract JBSplits is JBControlled, IJBSplits {
     //*********************************************************************//
 
     /// @notice Sets a project's split groups.
-    /// @dev Only the current controller contract of the project can set its splits.
+    /// @dev Only a project's controller can set its splits.
     /// @dev The new split groups must include any currently set splits that are locked.
-    /// @param _projectId The ID of the project split groups are being set for.
+    /// @param _projectId The ID of the project to set the split groups of.
     /// @param _domainId The ID of the domain the split groups should be active in.
     /// @param _splitGroups An array of split groups to set.
-    function setSplitGroupsFor(
+    function setSplitGroupsOf(
         uint256 _projectId,
         uint256 _domainId,
         JBSplitGroup[] calldata _splitGroups
@@ -104,7 +104,7 @@ contract JBSplits is JBControlled, IJBSplits {
             JBSplitGroup memory _splitGroup = _splitGroups[_i];
 
             // Set the splits for the group.
-            _setSplitsFor(_projectId, _domainId, _splitGroup.groupId, _splitGroup.splits);
+            _setSplitsOf(_projectId, _domainId, _splitGroup.groupId, _splitGroup.splits);
 
             unchecked {
                 ++_i;
@@ -116,14 +116,14 @@ contract JBSplits is JBControlled, IJBSplits {
     // --------------------- private helper functions -------------------- //
     //*********************************************************************//
 
-    /// @notice Sets splits for a group given a project, domain, and group ID.
+    /// @notice Sets the splits for a group given a project, domain, and group ID.
     /// @dev The new splits must include any currently set splits that are locked.
     /// @dev The sum of the split `percent`s within one group must be less than 100%.
     /// @param _projectId The ID of the project splits are being set for.
     /// @param _domainId The ID of the domain the splits should be considered active within.
     /// @param _groupId The ID of the group to set the splits within.
     /// @param _splits An array of splits to set.
-    function _setSplitsFor(
+    function _setSplitsOf(
         uint256 _projectId,
         uint256 _domainId,
         uint256 _groupId,

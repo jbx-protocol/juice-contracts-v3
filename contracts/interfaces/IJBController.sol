@@ -154,18 +154,22 @@ interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAcce
 
     function migrateController(uint256 projectId, IJBMigratable to) external;
 
-    function setSplitsOf(uint256 projectId, uint256 domain, JBSplitGroup[] calldata splitGroup)
+    function setSplitGroupsOf(uint256 projectId, uint256 domain, JBSplitGroup[] calldata splitGroup)
         external;
 
-    function issueTokenFor(uint256 projectId, string calldata name, string calldata symbol)
+    function deployERC20TokenFor(uint256 projectId, string calldata name, string calldata symbol)
         external
         returns (IJBToken token);
 
     function setTokenFor(uint256 _projectId, IJBToken _token) external;
 
-    function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
+    function claimTokensFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
         external;
 
-    function transferFrom(address holder, uint256 projectId, address recipient, uint256 amount)
-        external;
+    function transferCreditsFrom(
+        address holder,
+        uint256 projectId,
+        address recipient,
+        uint256 amount
+    ) external;
 }

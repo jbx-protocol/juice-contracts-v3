@@ -84,7 +84,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         if (_issueToken) {
             // Issue an ERC-20 token for project.
-            _controller.issueTokenFor({
+            _controller.deployERC20TokenFor({
                 projectId: _projectId,
                 name: "TestName",
                 symbol: "TestSymbol"
@@ -163,7 +163,11 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         vm.startPrank(_projectOwner);
 
         // Issue an ERC-20 token for project.
-        _controller.issueTokenFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
+        _controller.deployERC20TokenFor({
+            projectId: _projectId,
+            name: "TestName",
+            symbol: "TestSymbol"
+        });
 
         // Mint claimed tokens to beneficiary: since this is 1,000 over `uint(208)` it will revert.
         vm.expectRevert(abi.encodeWithSignature("OVERFLOW_ALERT()"));

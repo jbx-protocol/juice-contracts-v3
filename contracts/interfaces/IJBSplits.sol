@@ -21,7 +21,7 @@ interface IJBSplits is IJBControlled {
         view
         returns (JBSplit[] memory);
 
-    function setSplitGroupsFor(
+    function setSplitGroupsOf(
         uint256 projectId,
         uint256 domainId,
         JBSplitGroup[] memory splitGroups

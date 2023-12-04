@@ -112,11 +112,11 @@ contract JBTokens is JBControlled, IJBTokens {
 
     /// @notice Deploys an ERC-20 token for a project. It will be used when claiming tokens.
     /// @dev Deploys a project's ERC-20 token contract.
-    /// @dev Only a project's owner or operator can issue its token.
+    /// @dev Only a project's controller can deploy its token.
     /// @param _projectId The ID of the project to deploy an ERC-20 token for.
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
-    /// @return token The address of the token that was issued.
+    /// @return token The address of the token that was deployed.
     function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
@@ -145,7 +145,7 @@ contract JBTokens is JBControlled, IJBTokens {
     }
 
     /// @notice Set a project's token if not already set.
-    /// @dev Only a project's owner or operator can set its token.
+    /// @dev Only a project's controller can set its token.
     /// @param _projectId The ID of the project to set the token of.
     /// @param _token The new token's address.
     function setTokenFor(uint256 _projectId, IJBToken _token)
@@ -259,7 +259,7 @@ contract JBTokens is JBControlled, IJBTokens {
     }
 
     /// @notice Redeem credits to claim tokens into a holder's wallet.
-    /// @dev Only a credit holder or an operator specified by that holder can redeem credits to claim tokens.
+    /// @dev Only a project's controller can claim that project's tokens.
     /// @param _holder The owner of the credits being redeemed.
     /// @param _projectId The ID of the project whose tokens are being claimed.
     /// @param _amount The amount of tokens to claim.
@@ -297,7 +297,7 @@ contract JBTokens is JBControlled, IJBTokens {
     }
 
     /// @notice Allows a holder to transfer credits to another account.
-    /// @dev Only a project's controller can transfer their credits.
+    /// @dev Only a project's controller can transfer credits for that project.
     /// @param _holder The address to transfer credits from.
     /// @param _projectId The ID of the project whose credits are being transferred.
     /// @param _recipient The recipient of the credits.

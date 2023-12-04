@@ -21,6 +21,7 @@ import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBProjectMetadataRegistry} from "./interfaces/IJBProjectMetadataRegistry.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
+import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
@@ -31,6 +32,7 @@ import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "./structs/JBRulesetMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
+import {JBSplitGroup} from "./structs/JBSplitGroup.sol";
 import {JBSplitHookPayload} from "./structs/JBSplitHookPayload.sol";
 
 /// @notice Stitches together rulesets and project tokens, making sure all activity is accounted for and correct.
@@ -506,15 +508,19 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         emit MigrateController(_projectId, _to, _msgSender());
     }
 
-    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
-    /// @dev Only a project's controller can set its metadata.
-    /// @dev Applications can use the domain namespace as they wish.
-    /// @param _projectId The ID of the project who's metadata is being changed.
-    /// @param _metadata A struct containing metadata content.
+    /// @notice Set a project's metadata content.
+    /// @dev Only a project's owner can set its metadata through the project's controller.
+    /// @dev Frontends typically use an IPFS hash for the metadata content.
+    /// @param _projectId The ID of the project to set the metadata of.
+    /// @param _metadata The metadata content to set.
     function setMetadataOf(uint256 _projectId, string calldata _metadata)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+        requirePermission(
+            projects.ownerOf(_projectId),
+            _projectId,
+            JBPermissionIds.SET_PROJECT_METADATA
+        )
     {
         // Set the project's new metadata content within the specified domain.
         metadataOf[_projectId] = _metadata;
@@ -522,86 +528,100 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         emit SetMetadata(_projectId, _metadata, _msgSender());
     }
 
-    /// @notice Sets a project's splits.
-    /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
-    /// @dev The new splits must include any currently set splits that are locked.
-    /// @param _projectId The ID of the project for which splits are being added.
-    /// @param _domain An identifier within which the splits should be considered active.
-    /// @param _splitGroup An array of splits to set for any number of groups.
-    function setSplitsOf(uint256 _projectId, uint256 _domain, JBSplitGroup[] calldata _splitGroup)
+    /// @notice Sets a project's split groups.
+    /// @dev Only a project's owner or an operator with `JBPermissionIds.SET_SPLITS` permission from the owner can set its splits through the project's controller.
+    /// @dev The new split groups must include any currently set splits that are locked.
+    /// @param _projectId The ID of the project split groups are being set for.
+    /// @param _domainId The ID of the domain the split groups should be active in (this is often a `rulesetId`).
+    /// @param _splitGroups An array of split groups to set.
+    function setSplitGroupsOf(
+        uint256 _projectId,
+        uint256 _domainId,
+        JBSplitGroup[] calldata _splitGroups
+    )
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.SET_SPLITS)
     {
         // Set splits for the group.
-        splitsStore.set(_projectId, _domain, _splitGroup);
+        splits.setSplitGroupsOf(_projectId, _domainId, _splitGroups);
     }
 
-    /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
+    /// @notice Deploys an ERC-20 token for a project. It will be used when claiming tokens (with credits).
     /// @dev Deploys a project's ERC-20 token contract.
-    /// @dev Only a project's owner or operator can issue its token.
-    /// @param _projectId The ID of the project being issued tokens.
+    /// @dev Only a project's owner or an operator with `JBPermissionIds.ISSUE_TOKENS` permission from the owner can deploy its token.
+    /// @param _projectId The ID of the project to deploy an ERC-20 token for.
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
-    /// @return token The token that was issued.
-    function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+    /// @return token The address of the token that was deployed.
+    function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.ISSUE_TOKEN)
         returns (IJBToken token)
     {
-        return tokenStore.issueFor(_projectId, _name, _symbol);
+        return tokens.deployERC20TokenFor(_projectId, _name, _symbol);
     }
 
     /// @notice Set a project's token if not already set.
-    /// @dev Only a project's owner or operator can set its token.
-    /// @param _projectId The ID of the project to which the set token belongs.
-    /// @param _token The new token.
+    /// @dev Only a project's owner or an operator with `JBPermissionIds.SET_TOKEN` permission from the owner can set its token.
+    /// @param _projectId The ID of the project to set the token of.
+    /// @param _token The new token's address.
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.SET_TOKEN)
     {
-        tokenStore.setFor(_projectId, _token);
+        tokens.setTokenFor(_projectId, _token);
     }
 
-    /// @notice Claims internally accounted for tokens into a holder's wallet.
-    /// @dev Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
-    /// @param _holder The owner of the tokens being claimed.
+    /// @notice Redeem credits to claim tokens into a holder's wallet.
+    /// @dev Only a credit holder or an operator with the `JBPermissionIds.CLAIM_TOKENS` permission from that holder can redeem those credits to claim tokens.
+    /// @param _holder The owner of the credits being redeemed.
     /// @param _projectId The ID of the project whose tokens are being claimed.
     /// @param _amount The amount of tokens to claim.
     /// @param _beneficiary The account into which the claimed tokens will go.
-    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+    function claimTokensFor(
+        address _holder,
+        uint256 _projectId,
+        uint256 _amount,
+        address _beneficiary
+    )
         external
         virtual
         override
-        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
+        requirePermission(_holder, _projectId, JBPermissionIds.CLAIM_TOKENS)
     {
-        tokenStore.claimFor(_holder, _projectId, _amount, _beneficiary);
+        tokens.claimTokensFor(_holder, _projectId, _amount, _beneficiary);
     }
 
-    /// @notice Allows a holder to transfer unclaimed tokens to another account.
-    /// @dev Only a token holder or an operator can transfer its unclaimed tokens.
-    /// @param _holder The address to transfer tokens from.
-    /// @param _projectId The ID of the project whose tokens are being transferred.
-    /// @param _recipient The recipient of the tokens.
-    /// @param _amount The amount of tokens to transfer.
-    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+    /// @notice Allows a holder to transfer credits to another account.
+    /// @dev Only a credit holder or an operator with the `JBPermissionIds.TRANSFER_TOKENS` permission from that holder can transfer those credits.
+    /// @param _holder The address to transfer credits from.
+    /// @param _projectId The ID of the project whose credits are being transferred.
+    /// @param _recipient The recipient of the credits.
+    /// @param _amount The amount of credits to transfer.
+    function transferCreditsFrom(
+        address _holder,
+        uint256 _projectId,
+        address _recipient,
+        uint256 _amount
+    )
         external
         virtual
         override
-        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
+        requirePermission(_holder, _projectId, JBPermissionIds.TRANSFER_TOKENS)
     {
-        // Get a reference to the current funding cycle for the project.
+        // Get a reference to the current ruleset for the project.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
-        // Must not be paused.
+        // Credit transfers must not be paused.
         if (_ruleset.pauseCreditTransfers()) revert CREDIT_TRANSFERS_PAUSED();
 
-        tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
+        tokens.transferCreditsFrom(_holder, _projectId, _recipient, _amount);
     }
 
     //*********************************************************************//
@@ -731,7 +751,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         }
     }
 
-    /// @notice Queues a ruleset and stores information pertinent to the configuration.
+    /// @notice Queues one or more ruleset configurations and stores information pertinent to the configuration.
     /// @param _projectId The ID of the project the rulesets are being queued for.
     /// @param _rulesetConfigurations Configurations for the rulesets being queued.
     /// @return rulesetId The ID of the last ruleset that was successfully queued.
@@ -773,7 +793,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             );
 
             // Set the configuration's split groups.
-            splits.setSplitGroupsFor(_projectId, _ruleset.rulesetId, _rulesetConfig.splitGroups);
+            splits.setSplitGroupsOf(_projectId, _ruleset.rulesetId, _rulesetConfig.splitGroups);
 
             // Set the configuration's fund access limits.
             fundAccessLimits.setFundAccessLimitsFor(
