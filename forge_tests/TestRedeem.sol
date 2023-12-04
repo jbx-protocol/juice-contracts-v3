@@ -29,18 +29,16 @@ contract TestRedeem_Local is TestBaseWorkflow {
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
         _metadata = JBRulesetMetadata({
-            global: JBGlobalRulesetMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: false,
@@ -71,7 +69,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Create a first project to collect fees.
         _controller.launchProjectFor({
             owner: address(420), // Random.
-            projectMetadata: JBProjectMetadata({content: "whatever", domain: 0}),
+            projectMetadata: "whatever",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations, // Set terminals to receive fees.
             memo: ""
@@ -80,7 +78,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Create the project to test.
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -93,7 +91,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _tokens.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _controller.issueTokenFor(_projectId, "TestName", "TestSymbol");
 
         // Pay the project.
         _terminal.pay{value: _nativePayAmount}({

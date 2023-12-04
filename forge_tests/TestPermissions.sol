@@ -23,7 +23,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _controller = jbController();
         _permissions = jbPermissions();
 
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
+        _projectMetadata = "myIPFSHash";
         _data = JBRulesetData({
             duration: 0,
             weight: 0,

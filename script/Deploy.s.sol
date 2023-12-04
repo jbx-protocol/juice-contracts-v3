@@ -18,11 +18,12 @@ import "../contracts/JBMultiTerminal.sol";
 
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+
     JBPermissions _permissions;
     JBProjects _projects;
     JBPrices _prices;
     JBDirectory _directory;
-    JBRulesets _rulesetStore;
+    JBRulesets _rulesets;
     JBTokens _tokens;
     JBSplits _splits;
     JBFundAccessLimits _fundAccessLimits;
@@ -36,28 +37,29 @@ contract Deploy is Script {
     }
 
     function _deployContracts(address _manager) internal {
-        // 1
         _permissions = new JBPermissions();
-        // 2
-        _projects = new JBProjects(_permissions, _manager);
-        // 3
-        _prices = new JBPrices(_permissions, _projects, _manager);
-        address _directoryAddress = addressFrom(address(this), 5);
-        //4
-        _rulesetStore = new JBRulesets(IJBDirectory(_directoryAddress));
-        // 5
-        _directory = new JBDirectory(_permissions, _projects, _rulesetStore, address(this));
-        _tokens = new JBTokens(_permissions, _projects, _directory, _rulesetStore);
-        _splits = new JBSplits(_permissions, _projects, _directory);
+        _projects = new JBProjects(_manager);
+        _prices = new JBPrices(_operatorStore, _projects, _manager);
+        _directory = new JBDirectory(_operatorStore, _projects, address(this));
+        _tokens = new JBTokens(_directory);
+        _rulesets = new JBRulesets(_directory);
+        _splits = new JBSplits(_directory);
         _fundAccessLimits = new JBFundAccessLimits(_directory);
         _controller = new JBController(
-            _permissions, _projects, _directory, _rulesetStore, _tokens, _splits, _fundAccessLimits
+            _permissions,
+            _projects,
+            _directory,
+            _rulesets,
+            _tokens,
+            _splits,
+            _fundAccessLimits,
+            _TRUSTED_FORWARDER
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
         _terminalStore = new JBTerminalStore(_directory, _rulesetStore, _prices);
         _multiTerminal = new JBMultiTerminal(
-            _permissions, _projects, _directory, _splits, _terminalStore, _PERMIT2, _manager
+            _permissions, _projects, _directory, _splits, _terminalStore, _PERMIT2, _TRUSTED_FORWARDER, _manager
         );
     }
 
@@ -95,19 +97,23 @@ contract Deploy is Script {
 
 // Ethereum
 contract DeployEthereumMainnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 contract DeployEthereumGoerli is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function setUp() public {}
 
     function run() public {
         _run(_manager);
@@ -115,9 +121,11 @@ contract DeployEthereumGoerli is Deploy {
 }
 
 contract DeployEthereumSepolia is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function setUp() public {}
 
     function run() public {
         _run(_manager);
@@ -127,9 +135,11 @@ contract DeployEthereumSepolia is Deploy {
 // Optimism
 
 contract DeployOptimismMainnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function setUp() public {}
 
     function run() public {
         _run(_manager);
@@ -137,9 +147,11 @@ contract DeployOptimismMainnet is Deploy {
 }
 
 contract DeployOptimismTestnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function setUp() public {}
 
     function run() public {
         _run(_manager);
@@ -149,9 +161,11 @@ contract DeployOptimismTestnet is Deploy {
 // Polygon
 
 contract DeployPolygonMainnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function setUp() public {}
 
     function run() public {
         _run(_manager);
@@ -159,9 +173,11 @@ contract DeployPolygonMainnet is Deploy {
 }
 
 contract DeployPolygonMumbai is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+
+    function setUp() public {}
 
     function run() public {
         _run(_manager);

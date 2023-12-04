@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IJBPermissioned} from "./../interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./../interfaces/IJBPermissions.sol";
 
 /// @notice Modifiers to allow access to functions based on which permissions the message's sender has.
-abstract contract JBPermissioned is IJBPermissioned {
+abstract contract JBPermissioned is Context, IJBPermissioned {
     //*********************************************************************//
     // --------------------------- custom errors -------------------------- //
     //*********************************************************************//
@@ -67,10 +68,11 @@ abstract contract JBPermissioned is IJBPermissioned {
         internal
         view
     {
+        address _sender = _msgSender();
         if (
-            msg.sender != _account
-                && !permissions.hasPermission(msg.sender, _account, _projectId, _permissionId)
-                && !permissions.hasPermission(msg.sender, _account, 0, _permissionId)
+            _sender != _account
+                && !operatorStore.hasPermission(_sender, _account, _domain, _permissionId)
+                && !operatorStore.hasPermission(_sender, _account, 0, _permissionId)
         ) revert UNAUTHORIZED();
     }
 
@@ -85,10 +87,7 @@ abstract contract JBPermissioned is IJBPermissioned {
         uint256 _permissionId,
         bool _override
     ) internal view {
-        if (
-            !_override && msg.sender != _account
-                && !permissions.hasPermission(msg.sender, _account, _projectId, _permissionId)
-                && !permissions.hasPermission(msg.sender, _account, 0, _permissionId)
-        ) revert UNAUTHORIZED();
+        if (_override) return;
+        _requirePermission(_account, _domain, _permissionId);
     }
 }

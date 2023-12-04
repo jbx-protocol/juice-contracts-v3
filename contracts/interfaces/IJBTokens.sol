@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBToken} from "./IJBToken.sol";
+import {IJBControlled} from "./IJBControlled.sol";
 
-interface IJBTokens {
+interface IJBTokens is IJBControlled {
     event DeployERC20Token(
         uint256 indexed projectId,
         IJBToken indexed token,
@@ -53,10 +54,6 @@ interface IJBTokens {
     function tokenOf(uint256 projectId) external view returns (IJBToken);
 
     function projectIdOf(IJBToken token) external view returns (uint256);
-
-    function projects() external view returns (IJBProjects);
-
-    function rulesets() external view returns (IJBRulesets);
 
     function creditBalanceOf(address holder, uint256 projectId) external view returns (uint256);
 

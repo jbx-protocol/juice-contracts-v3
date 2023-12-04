@@ -10,7 +10,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     IJBMultiTerminal private __terminal;
     IJBPrices private _prices;
     JBTokens private _tokens;
-    JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetMetadata _metadata;
     JBSplitGroup[] private _splitGroups;
@@ -27,7 +26,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _prices = jbPrices();
         __terminal = jbMultiTerminal();
         _tokens = jbTokens();
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBRulesetData({
             duration: 0,
             weight: 1000 * 10 ** 18,
@@ -35,18 +33,16 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
         _metadata = JBRulesetMetadata({
-            global: JBGlobalRulesetMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowDiscretionaryMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: false,
@@ -111,8 +107,8 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         // Dummy.
         _controller.launchProjectFor({
-            owner: address(420), // Random.
-            projectMetadata: _projectMetadata,
+            owner: address(420), //random
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -120,7 +116,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -294,7 +290,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -349,7 +345,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -407,7 +403,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -463,7 +459,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // Dummy.
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -471,7 +467,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -573,7 +569,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         uint256 _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

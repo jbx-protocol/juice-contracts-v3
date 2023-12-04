@@ -36,12 +36,9 @@ import {JBRulesetConfig} from "@juicebox/structs/JBRulesetConfig.sol";
 import {JBSplitGroup} from "@juicebox/structs/JBSplitGroup.sol";
 import {JBPermissionsData} from "@juicebox/structs/JBPermissionsData.sol";
 import {JBPayParamsData} from "@juicebox/structs/JBPayParamsData.sol";
-import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
 import {JBRedeemParamsData} from "@juicebox/structs/JBRedeemParamsData.sol";
 import {JBSplit} from "@juicebox/structs/JBSplit.sol";
 import {JBTerminalConfig} from "@juicebox/structs/JBTerminalConfig.sol";
-import {JBProjectMetadata} from "@juicebox/structs/JBProjectMetadata.sol";
-import {JBGlobalRulesetMetadata} from "@juicebox/structs/JBGlobalRulesetMetadata.sol";
 import {JBPayHookPayload} from "@juicebox/structs/JBPayHookPayload.sol";
 import {JBRedeemHookPayload} from "@juicebox/structs/JBRedeemHookPayload.sol";
 import {JBTokenAmount} from "@juicebox/structs/JBTokenAmount.sol";
@@ -99,6 +96,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     // Multisig address used for testing.
     address private _multisig = address(123);
     address private _beneficiary = address(69_420);
+    address private _trustedForwarder = address(123_456);
     MockERC20 private _usdcToken;
     address private _permit2;
     JBPermissions private _jbPermissions;
@@ -189,27 +187,17 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
     // Deploys and initializes contracts for testing.
     function setUp() public virtual {
-        vm.label(_multisig, "projectOwner");
-        vm.label(_beneficiary, "beneficiary");
         _jbPermissions = new JBPermissions();
-        vm.label(address(_jbPermissions), "JBPermissions");
-        _usdcToken = new MockERC20("USDC", "USDC");
-        vm.label(address(_usdcToken), "ERC20");
-        _jbProjects = new JBProjects(_jbPermissions, _multisig);
-        vm.label(address(_jbProjects), "JBProjects");
+        _jbProjects = new JBProjects(_multisig);
         _jbPrices = new JBPrices(_jbPermissions, _jbProjects, _multisig);
-        vm.label(address(_jbPrices), "JBPrices");
-        address contractAtNoncePlusOne = addressFrom(address(this), 6);
-        _jbRulesets = new JBRulesets(IJBDirectory(contractAtNoncePlusOne));
-        vm.label(address(_jbRulesets), "JBRulesets");
-        _jbDirectory = new JBDirectory(_jbPermissions, _jbProjects, _jbRulesets, _multisig);
-        vm.label(address(_jbDirectory), "JBDirectory");
-        _jbTokens = new JBTokens(_jbPermissions, _jbProjects, _jbDirectory, _jbRulesets);
-        vm.label(address(_jbTokens), "JBTokens");
-        _jbSplits = new JBSplits(_jbPermissions, _jbProjects, _jbDirectory);
-        vm.label(address(_jbSplits), "JBSplits");
+        _jbDirectory = new JBDirectory(_jbPermissions, _jbProjects, _multisig);
+        _jbTokens = new JBTokens(_jbDirectory);
+        _jbRulesets = new JBRulesets(_jbDirectory);
+        _jbSplitsStore = new JBSplitsStore(_jbDirectory);
         _jbFundAccessLimits = new JBFundAccessLimits(_jbDirectory);
-        vm.label(address(_jbFundAccessLimits), "JBFundAccessLimits");
+
+        _usdcToken = new MockERC20("USDC", "USDC");
+
         _jbController = new JBController(
             _jbPermissions,
             _jbProjects,
@@ -217,9 +205,9 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbRulesets,
             _jbTokens,
             _jbSplits,
-            _jbFundAccessLimits
+            _jbFundAccessLimits,
+            _trustedForwarder
         );
-        vm.label(address(_jbController), "JBController");
 
         _metadataHelper = new MetadataResolverHelper();
 
@@ -227,7 +215,6 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
         _jbDirectory.setIsAllowedToSetFirstController(address(_jbController), true);
 
         _jbTerminalStore = new JBTerminalStore(_jbDirectory, _jbRulesets, _jbPrices);
-        vm.label(address(_jbTerminalStore), "JBTerminalStore");
 
         vm.prank(_multisig);
         _permit2 = deployPermit2();
@@ -239,9 +226,9 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbSplits,
             _jbTerminalStore,
             IPermit2(_permit2),
+            _trustedForwarder,
             _multisig
         );
-        vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
         _jbMultiTerminal2 = new JBMultiTerminal(
             _jbPermissions,
             _jbProjects,
@@ -249,9 +236,25 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbSplits,
             _jbTerminalStore,
             IPermit2(_permit2),
+            _trustedForwarder,
             _multisig
         );
+
+        vm.label(_multisig, "projectOwner");
+        vm.label(_beneficiary, "beneficiary");
+        vm.label(address(_jbPrices), "JBPrices");
+        vm.label(address(_jbProjects), "JBProjects");
+        vm.label(address(_jbRulesets), "JBRulesets");
+        vm.label(address(_jbDirectory), "JBDirectory");
+        vm.label(address(_usdcToken), "ERC20");
+        vm.label(address(_jbPermissions), "JBPermissions");
+        vm.label(address(_jbTokens), "JBTokens");
+        vm.label(address(_jbFundAccessLimits), "JBFundAccessLimits");
+        vm.label(address(_jbSplits), "JBSplits");
+        vm.label(address(_jbController), "JBController");
+        vm.label(address(_jbTerminalStore), "JBTerminalStore");
         vm.label(address(_jbMultiTerminal2), "JBMultiTerminal2");
+        vm.label(address(_jbMultiTerminal), "JBMultiTerminal");
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so

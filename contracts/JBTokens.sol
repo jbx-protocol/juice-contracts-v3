@@ -3,29 +3,23 @@ pragma solidity ^0.8.16;
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {JBControlled} from "./abstract/JBControlled.sol";
-import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
-import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
-import {JBRuleset} from "./structs/JBRuleset.sol";
 import {JBERC20Token} from "./JBERC20Token.sol";
 
 /// @notice Manages minting, burning, and balances of projects' tokens and token credits.
 /// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
 /// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBToken if they prefer.
-contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
-    // A library that parses the packed ruleset metadata into a friendlier format.
-    using JBRulesetMetadataResolver for JBRuleset;
-
+contract JBTokenStore is JBControlled, IJBTokens {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
+
     error TOKEN_ALREADY_SET();
     error EMPTY_NAME();
     error EMPTY_SYMBOL();
@@ -36,18 +30,7 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
     error RECIPIENT_ZERO_ADDRESS();
     error TOKEN_NOT_FOUND();
     error TOKENS_MUST_HAVE_18_DECIMALS();
-    error CREDIT_TRANSFERS_PAUSED();
     error OVERFLOW_ALERT();
-
-    //*********************************************************************//
-    // ---------------- public immutable stored properties --------------- //
-    //*********************************************************************//
-
-    /// @notice Mints ERC-721s that represent project ownership and transfers.
-    IJBProjects public immutable override projects;
-
-    /// @notice The contract storing all rulesets.
-    IJBRulesets public immutable override rulesets;
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -120,19 +103,8 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing protocol permission assignments.
-    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _rulesets A contract storing project rulesets.
-    constructor(
-        IJBPermissions _permissions,
-        IJBProjects _projects,
-        IJBDirectory _directory,
-        IJBRulesets _rulesets
-    ) JBPermissioned(_permissions) JBControlled(_directory) {
-        projects = _projects;
-        rulesets = _rulesets;
-    }
+    constructor(IJBDirectory _directory) JBControlled(_directory) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
@@ -148,7 +120,7 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
     function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.ISSUE_TOKEN)
+        onlyController(_projectId)
         returns (IJBToken token)
     {
         // There must be a name.
@@ -179,7 +151,7 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.SET_TOKEN)
+        onlyController(_projectId)
     {
         // Can't set to the zero address.
         if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
@@ -297,7 +269,7 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
         uint256 _projectId,
         uint256 _amount,
         address _beneficiary
-    ) external override requirePermission(_holder, _projectId, JBPermissionIds.CLAIM_TOKENS) {
+    ) external override onlyController(_projectId) {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
 
@@ -325,7 +297,7 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
     }
 
     /// @notice Allows a holder to transfer credits to another account.
-    /// @dev Only a credit holder or an operator specified by that holder can transfer their credits.
+    /// @dev Only a project's controller can transfer their credits.
     /// @param _holder The address to transfer credits from.
     /// @param _projectId The ID of the project whose credits are being transferred.
     /// @param _recipient The recipient of the credits.
@@ -335,13 +307,7 @@ contract JBTokens is JBControlled, JBPermissioned, IJBTokens {
         uint256 _projectId,
         address _recipient,
         uint256 _amount
-    ) external override requirePermission(_holder, _projectId, JBPermissionIds.TRANSFER_TOKENS) {
-        // Get a reference to the project's current ruleset.
-        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
-
-        // Credit transfers must not be paused.
-        if (_ruleset.global().pauseTransfers) revert CREDIT_TRANSFERS_PAUSED();
-
+    ) external override onlyController(_projectId) {
         // Can't transfer to the zero address.
         if (_recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();
 

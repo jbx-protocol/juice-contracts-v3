@@ -44,7 +44,6 @@ contract TestEIP165_Local is TestBaseWorkflow {
         assertTrue(_projects.supportsInterface(type(IERC721).interfaceId));
         assertTrue(_projects.supportsInterface(type(IERC721Metadata).interfaceId));
         assertTrue(_projects.supportsInterface(type(IJBProjects).interfaceId));
-        assertTrue(_projects.supportsInterface(type(IJBPermissioned).interfaceId));
 
         // Make sure it doesn't always return true.
         assertTrue(!_projects.supportsInterface(_notSupportedInterface));

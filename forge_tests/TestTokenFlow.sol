@@ -7,11 +7,9 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 contract TestTokenFlow_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBTokens private _tokens;
-    JBProjectMetadata private _projectMetadata;
     JBRulesetData private _data;
     JBRulesetMetadata _metadata;
     IJBTerminal private _terminal;
-    uint256 private _projectId;
     address private _projectOwner;
     address private _beneficiary;
 
@@ -23,7 +21,6 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _controller = jbController();
         _tokens = jbTokens();
         _terminal = jbMultiTerminal();
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _data = JBRulesetData({
             duration: 0,
             weight: 1000 * 10 ** 18,
@@ -31,18 +28,16 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             approvalHook: IJBRulesetApprovalHook(address(0))
         });
         _metadata = JBRulesetMetadata({
-            global: JBGlobalRulesetMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokenList.Native)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowDiscretionaryMinting: true,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalSurplusForRedemptions: false,
             useDataHookForPay: false,
@@ -71,7 +66,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: address(_projectOwner),
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -89,7 +84,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         if (_issueToken) {
             // Issue an ERC-20 token for project.
-            _tokens.deployERC20TokenFor({
+            _controller.issueTokenFor({
                 projectId: _projectId,
                 name: "TestName",
                 symbol: "TestSymbol"
@@ -105,7 +100,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
             // Set the projects token to `_newToken`.
-            _tokens.setTokenFor(_projectId, _newToken);
+            _controller.setTokenFor(_projectId, _newToken);
 
             // Make sure the project's new `JBToken` is set.
             assertEq(address(_tokens.tokenOf(_projectId)), address(_newToken));
@@ -168,7 +163,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         vm.startPrank(_projectOwner);
 
         // Issue an ERC-20 token for project.
-        _tokens.deployERC20TokenFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
+        _controller.issueTokenFor({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
 
         // Mint claimed tokens to beneficiary: since this is 1,000 over `uint(208)` it will revert.
         vm.expectRevert(abi.encodeWithSignature("OVERFLOW_ALERT()"));

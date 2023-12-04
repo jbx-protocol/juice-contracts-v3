@@ -3,7 +3,6 @@ pragma solidity ^0.8.16;
 
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
@@ -11,10 +10,11 @@ import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBSplitGroup} from "./structs/JBSplitGroup.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
+import {JBControlled} from "contracts/abstract/JBControlled.sol";
 
 /// @notice Stores and manages splits for each project.
 /// @dev The domain ID is the ruleset ID that a split *should* be considered active within. This is not always the case.
-contract JBSplits is JBPermissioned, IJBSplits {
+contract JBSplits is JBControlled, IJBSplits {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -56,16 +56,6 @@ contract JBSplits is JBPermissioned, IJBSplits {
         _packedSplitParts2Of;
 
     //*********************************************************************//
-    // ---------------- public immutable stored properties --------------- //
-    //*********************************************************************//
-
-    /// @notice Mints ERC-721s that represent project ownership and transfers.
-    IJBProjects public immutable override projects;
-
-    /// @notice The directory of terminals and controllers for projects.
-    IJBDirectory public immutable override directory;
-
-    //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
@@ -87,22 +77,15 @@ contract JBSplits is JBPermissioned, IJBSplits {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _permissions A contract storing protocol-wide permissions.
-    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    constructor(IJBPermissions _permissions, IJBProjects _projects, IJBDirectory _directory)
-        JBPermissioned(_permissions)
-    {
-        projects = _projects;
-        directory = _directory;
-    }
+    constructor(IJBDirectory _directory) JBControlled(_directory) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
     /// @notice Sets a project's split groups.
-    /// @dev Only a project's owner, operator, or current controller can set its split groups.
+    /// @dev Only the current controller contract of the project can set its splits.
     /// @dev The new split groups must include any currently set splits that are locked.
     /// @param _projectId The ID of the project split groups are being set for.
     /// @param _domainId The ID of the domain the split groups should be active in.
@@ -111,16 +94,7 @@ contract JBSplits is JBPermissioned, IJBSplits {
         uint256 _projectId,
         uint256 _domainId,
         JBSplitGroup[] calldata _splitGroups
-    )
-        external
-        override
-        requirePermissionAllowingOverride(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBPermissionIds.SET_SPLITS,
-            address(directory.controllerOf(_projectId)) == msg.sender
-        )
-    {
+    ) external override onlyController(_projectId) {
         // Keep a reference to the number of split groups.
         uint256 _numberOfSplitGroups = _splitGroups.length;
 

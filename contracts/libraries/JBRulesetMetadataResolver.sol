@@ -1,144 +1,180 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {JBRuleset} from "./../structs/JBRuleset.sol";
-import {JBRulesetMetadata} from "./../structs/JBRulesetMetadata.sol";
-import {JBGlobalRulesetMetadata} from "./../structs/JBGlobalRulesetMetadata.sol";
+import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
+import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
 import {JBConstants} from "./JBConstants.sol";
-import {JBGlobalRulesetMetadataResolver} from "./JBGlobalRulesetMetadataResolver.sol";
 
-library JBRulesetMetadataResolver {
-    function global(JBRuleset memory _ruleset)
-        internal
-        pure
-        returns (JBGlobalRulesetMetadata memory)
-    {
-        return JBGlobalRulesetMetadataResolver.expandMetadata(uint8(_ruleset.metadata >> 8));
+library JBFundingCycleMetadataResolver {
+    function reservedRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
+        return uint256(uint16(_fundingCycle.metadata >> 4));
     }
 
-    function reservedRate(JBRuleset memory _ruleset) internal pure returns (uint256) {
-        return uint256(uint16(_ruleset.metadata >> 16));
-    }
-
-    function redemptionRate(JBRuleset memory _ruleset) internal pure returns (uint256) {
+    function redemptionRate(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
         // Redemption rate is a number 0-10000.
-        return uint256(uint16(_ruleset.metadata >> 32));
+        return uint256(uint16(_fundingCycle.metadata >> 20));
     }
 
-    function baseCurrency(JBRuleset memory _ruleset) internal pure returns (uint256) {
+    function baseCurrency(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
         // Currency is a number 0-4294967296.
-        return uint256(uint32(_ruleset.metadata >> 48));
+        return uint256(uint32(_fundingCycle.metadata >> 36));
     }
 
-    function payPaused(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return ((_ruleset.metadata >> 80) & 1) == 1;
+    function payPaused(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
+        return ((_fundingCycle.metadata >> 68) & 1) == 1;
     }
 
-    function discretionaryMintingAllowed(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return ((_ruleset.metadata >> 81) & 1) == 1;
-    }
-
-    function terminalMigrationAllowed(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return ((_ruleset.metadata >> 82) & 1) == 1;
-    }
-
-    function controllerMigrationAllowed(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return ((_ruleset.metadata >> 83) & 1) == 1;
-    }
-
-    function shouldHoldFees(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return ((_ruleset.metadata >> 84) & 1) == 1;
-    }
-
-    function useTotalSurplusForRedemptions(JBRuleset memory _ruleset)
+    function tokenCreditTransfersPaused(JBFundingCycle memory _fundingCycle)
         internal
         pure
         returns (bool)
     {
-        return ((_ruleset.metadata >> 85) & 1) == 1;
+        return ((_fundingCycle.metadata >> 69) & 1) == 1;
     }
 
-    function useDataHookForPay(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return (_ruleset.metadata >> 86) & 1 == 1;
+    function mintingAllowed(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
+        return ((_fundingCycle.metadata >> 70) & 1) == 1;
     }
 
-    function useDataHookForRedeem(JBRuleset memory _ruleset) internal pure returns (bool) {
-        return (_ruleset.metadata >> 87) & 1 == 1;
+    function terminalMigrationAllowed(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 71) & 1) == 1;
     }
 
-    function dataHook(JBRuleset memory _ruleset) internal pure returns (address) {
-        return address(uint160(_ruleset.metadata >> 88));
+    function setTerminalsAllowed(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 72) & 1) == 1;
     }
 
-    function metadata(JBRuleset memory _ruleset) internal pure returns (uint256) {
-        return uint256(uint8(_ruleset.metadata >> 248));
+    function controllerMigrationAllowed(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 73) & 1) == 1;
     }
 
-    /// @notice Pack the ruleset metadata.
+    function setControllerAllowed(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 74) & 1) == 1;
+    }
+
+    function shouldHoldFees(JBFundingCycle memory _fundingCycle) internal pure returns (bool) {
+        return ((_fundingCycle.metadata >> 75) & 1) == 1;
+    }
+
+    function useTotalOverflowForRedemptions(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return ((_fundingCycle.metadata >> 76) & 1) == 1;
+    }
+
+    function useDataSourceForPay(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return (_fundingCycle.metadata >> 77) & 1 == 1;
+    }
+
+    function useDataSourceForRedeem(JBFundingCycle memory _fundingCycle)
+        internal
+        pure
+        returns (bool)
+    {
+        return (_fundingCycle.metadata >> 78) & 1 == 1;
+    }
+
+    function dataSource(JBFundingCycle memory _fundingCycle) internal pure returns (address) {
+        return address(uint160(_fundingCycle.metadata >> 79));
+    }
+
+    function metadata(JBFundingCycle memory _fundingCycle) internal pure returns (uint256) {
+        return uint256(uint16(_fundingCycle.metadata >> 239));
+    }
+
+    /// @notice Pack the funding cycle metadata.
     /// @param _metadata The metadata to validate and pack.
     /// @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.
-    function packRulesetMetadata(JBRulesetMetadata memory _metadata)
+    function packFundingCycleMetadata(JBFundingCycleMetadata memory _metadata)
         internal
         pure
         returns (uint256 packed)
     {
-        // version 1 in the bits 0-7 (8 bits).
+        // version 1 in the bits 0-3 (4 bits).
         packed = 1;
-        // global metadata in bits 8-15 (8 bits).
-        packed |= JBGlobalRulesetMetadataResolver.packRulesetGlobalMetadata(_metadata.global) << 8;
-        // reserved rate in bits 16-31 (16 bits).
-        packed |= _metadata.reservedRate << 16;
-        // redemption rate in bits 32-47 (16 bits).
+        // reserved rate in bits 4-19 (16 bits).
+        packed |= _metadata.reservedRate << 4;
+        // redemption rate in bits 20-35 (16 bits).
         // redemption rate is a number 0-10000.
-        packed |= _metadata.redemptionRate << 32;
-        // base currency in bits 48-79 (32 bits).
+        packed |= _metadata.redemptionRate << 20;
+        // base currency in bits 36-67 (32 bits).
         // base currency is a number 0-16777215.
-        packed |= _metadata.baseCurrency << 48;
-        // pause pay in bit 80.
-        if (_metadata.pausePay) packed |= 1 << 80;
-        // allow minting in bit 81.
-        if (_metadata.allowDiscretionaryMinting) packed |= 1 << 81;
-        // allow terminal migration in bit 82.
-        if (_metadata.allowTerminalMigration) packed |= 1 << 82;
-        // allow controller migration in bit 83.
-        if (_metadata.allowControllerMigration) packed |= 1 << 83;
-        // hold fees in bit 84.
-        if (_metadata.holdFees) packed |= 1 << 84;
-        // useTotalSurplusForRedemptions in bit 85.
-        if (_metadata.useTotalSurplusForRedemptions) packed |= 1 << 85;
-        // use pay data hook in bit 86.
-        if (_metadata.useDataHookForPay) packed |= 1 << 86;
-        // use redeem data hook in bit 87.
-        if (_metadata.useDataHookForRedeem) packed |= 1 << 87;
-        // data hook address in bits 88-247.
-        packed |= uint256(uint160(address(_metadata.dataHook))) << 88;
-        // metadata in bits 248-255 (8 bits).
-        packed |= _metadata.metadata << 248;
+        packed |= _metadata.baseCurrency << 36;
+        // pause pay in bit 68.
+        if (_metadata.pausePay) packed |= 1 << 68;
+        // pause transfers in bit 69.
+        if (_metadata.pauseTokenCreditTransfers) packed |= 1 << 69;
+        // allow minting in bit 70.
+        if (_metadata.allowMinting) packed |= 1 << 70;
+        // allow terminal migration in bit 71.
+        if (_metadata.allowTerminalMigration) packed |= 1 << 71;
+        // allow set terminals in bit 72.
+        if (_metadata.allowSetTerminals) packed |= 1 << 72;
+        // allow controller migration in bit 73.
+        if (_metadata.allowControllerMigration) packed |= 1 << 73;
+        // allow set controller in bit 74.
+        if (_metadata.allowSetController) packed |= 1 << 74;
+        // hold fees in bit 75.
+        if (_metadata.holdFees) packed |= 1 << 75;
+        // useTotalOverflowForRedemptions in bit 76.
+        if (_metadata.useTotalOverflowForRedemptions) packed |= 1 << 76;
+        // use pay data source in bit 77.
+        if (_metadata.useDataSourceForPay) packed |= 1 << 77;
+        // use redeem data source in bit 78.
+        if (_metadata.useDataSourceForRedeem) packed |= 1 << 78;
+        // data source address in bits 79-238.
+        packed |= uint256(uint160(address(_metadata.dataSource))) << 79;
+        // metadata in bits 239-254 (16 bits).
+        packed |= _metadata.metadata << 239;
     }
 
-    /// @notice Expand the ruleset metadata.
-    /// @param _ruleset The ruleset having its metadata expanded.
+    /// @notice Expand the funding cycle metadata.
+    /// @param _fundingCycle The funding cycle having its metadata expanded.
     /// @return metadata The metadata object.
-    function expandMetadata(JBRuleset memory _ruleset)
+    function expandMetadata(JBFundingCycle memory _fundingCycle)
         internal
         pure
-        returns (JBRulesetMetadata memory)
+        returns (JBFundingCycleMetadata memory)
     {
-        return JBRulesetMetadata(
-            global(_ruleset),
-            reservedRate(_ruleset),
-            redemptionRate(_ruleset),
-            baseCurrency(_ruleset),
-            payPaused(_ruleset),
-            discretionaryMintingAllowed(_ruleset),
-            terminalMigrationAllowed(_ruleset),
-            controllerMigrationAllowed(_ruleset),
-            shouldHoldFees(_ruleset),
-            useTotalSurplusForRedemptions(_ruleset),
-            useDataHookForPay(_ruleset),
-            useDataHookForRedeem(_ruleset),
-            dataHook(_ruleset),
-            metadata(_ruleset)
+        return JBFundingCycleMetadata(
+            reservedRate(_fundingCycle),
+            redemptionRate(_fundingCycle),
+            baseCurrency(_fundingCycle),
+            payPaused(_fundingCycle),
+            tokenCreditTransfersPaused(_fundingCycle),
+            mintingAllowed(_fundingCycle),
+            terminalMigrationAllowed(_fundingCycle),
+            setTerminalsAllowed(_fundingCycle),
+            controllerMigrationAllowed(_fundingCycle),
+            setControllerAllowed(_fundingCycle),
+            shouldHoldFees(_fundingCycle),
+            useTotalOverflowForRedemptions(_fundingCycle),
+            useDataSourceForPay(_fundingCycle),
+            useDataSourceForRedeem(_fundingCycle),
+            dataSource(_fundingCycle),
+            metadata(_fundingCycle)
         );
     }
 }

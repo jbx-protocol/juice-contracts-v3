@@ -183,7 +183,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         if (_currentSurplus == 0) return 0;
 
         // Get the number of outstanding tokens the project has.
-        uint256 _totalSupply = IJBController(DIRECTORY.controllerOf(_projectId))
+        uint256 _totalSupply = IJBController(address(DIRECTORY.controllerOf(_projectId)))
             .totalTokenSupplyWithReservedTokensOf(_projectId);
 
         // Can't redeem more tokens that is in the supply.
@@ -397,7 +397,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
 
         // Get the total number of outstanding project tokens.
-        uint256 _totalSupply = IJBController(DIRECTORY.controllerOf(_projectId))
+        uint256 _totalSupply = IJBController(address(DIRECTORY.controllerOf(_projectId)))
             .totalTokenSupplyWithReservedTokensOf(_projectId);
 
         // Can't redeem more tokens that are in the supply.
@@ -496,8 +496,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             .token][ruleset.cycleNumber][_currency] + _amount;
 
         // Amount must be within what is still available to pay out.
-        uint256 _payoutLimit = IJBController(DIRECTORY.controllerOf(_projectId)).fundAccessLimits()
-            .payoutLimitOf(
+        uint256 _payoutLimit = IJBController(address(DIRECTORY.controllerOf(_projectId)))
+            .fundAccessLimits().payoutLimitOf(
             _projectId, ruleset.rulesetId, msg.sender, _accountingContext.token, _currency
         );
 
@@ -555,7 +555,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             .token][ruleset.rulesetId][_currency] + _amount;
 
         // There must be sufficient surplus allowance available.
-        uint256 _surplusAllowance = IJBController(DIRECTORY.controllerOf(_projectId))
+        uint256 _surplusAllowance = IJBController(address(DIRECTORY.controllerOf(_projectId)))
             .fundAccessLimits().surplusAllowanceOf(
             _projectId, ruleset.rulesetId, msg.sender, _accountingContext.token, _currency
         );
@@ -758,9 +758,10 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
 
         // Get a reference to the payout limit during the ruleset for the token.
-        JBCurrencyAmount[] memory _payoutLimits = IJBController(DIRECTORY.controllerOf(_projectId))
-            .fundAccessLimits().payoutLimitsOf(
-            _projectId, _ruleset.rulesetId, _terminal, _accountingContext.token
+        JBCurrencyAmount[] memory _payoutLimits = IJBController(
+            address(DIRECTORY.controllerOf(_projectId))
+        ).fundAccessLimits().payoutLimitsOf(
+            _projectId, _ruleset.rulesetId, address(_terminal), _accountingContext.token
         );
 
         // Keep a reference to the payout limit being iterated on.

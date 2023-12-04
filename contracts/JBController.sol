@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
@@ -10,11 +12,13 @@ import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBFundAccessLimits} from "./interfaces/IJBFundAccessLimits.sol";
 import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
+import {IJBDirectoryAccessControl} from "./interfaces/IJBDirectoryAccessControl.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
 import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
+import {IJBProjectMetadataRegistry} from "./interfaces/IJBProjectMetadataRegistry.sol";
 import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
@@ -31,7 +35,7 @@ import {JBSplit} from "./structs/JBSplit.sol";
 import {JBSplitHookPayload} from "./structs/JBSplitHookPayload.sol";
 
 /// @notice Stitches together rulesets and project tokens, making sure all activity is accounted for and correct.
-contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
+contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, IJBMigratable {
     // A library that parses packed ruleset metadata into a friendlier format.
     using JBRulesetMetadataResolver for JBRuleset;
 
@@ -48,6 +52,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
     error NO_BURNABLE_TOKENS();
     error NOT_CURRENT_CONTROLLER();
+    error TRANSFERS_PAUSED();
     error ZERO_TOKENS_TO_MINT();
 
     //*********************************************************************//
@@ -80,9 +85,26 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @custom:param projectId The ID of the project to get the pending reserved token balance of.
     mapping(uint256 => uint256) public override pendingReservedTokenBalanceOf;
 
+    /// @notice The metadata for each project, which can be used across several domains.
+    /// @custom:param _projectId The ID of the project to which the metadata belongs.
+    mapping(uint256 => string) public override metadataOf;
+
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
+
+    /// @notice Gets the current token supply of a project, including pending reserved tokens.
+    /// @param _projectId The ID of the project to get the total token supply of.
+    /// @return The current total token supply of the project, including pending reserved tokens that have not been sent to splits yet.
+    function totalTokenSupplyWithReservedTokensOf(uint256 _projectId)
+        external 
+        view
+        override
+        returns (uint256)
+    {
+        // Add the reserved tokens to the total supply.
+        return tokens.totalSupplyOf(_projectId) + pendingReservedTokenBalanceOf[_projectId];
+    }
 
     /// @notice A get `JBRuleset` and `JBRulesetMetadata` structs for the specified `rulesetId`.
     /// @param _projectId The ID of the project the ruleset belongs to.
@@ -145,22 +167,23 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         metadata = ruleset.expandMetadata();
     }
 
+    /// @notice A flag indicating if the project currently allows terminals to be set.
+    /// @param _projectId The ID of the project the flag is for.
+    /// @return The flag
+    function setTerminalsAllowed(uint256 _projectId) external view returns (bool) {
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetTerminals;
+    }
+
+    /// @notice A flag indicating if the project currently allows its controller to be set.
+    /// @param _projectId The ID of the project the flag is for.
+    /// @return The flag
+    function setControllerAllowed(uint256 _projectId) external view returns (bool) {
+        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetController;
+    }
+
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
-
-    /// @notice Gets the current token supply of a project, including pending reserved tokens.
-    /// @param _projectId The ID of the project to get the total token supply of.
-    /// @return The current total token supply of the project, including pending reserved tokens that have not been sent to splits yet.
-    function totalTokenSupplyWithReservedTokensOf(uint256 _projectId)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        // Add the reserved tokens to the total supply.
-        return tokens.totalSupplyOf(_projectId) + pendingReservedTokenBalanceOf[_projectId];
-    }
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
@@ -174,6 +197,8 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         returns (bool)
     {
         return _interfaceId == type(IJBController).interfaceId
+            || _interfaceId == type(IJBProjectMetadataRegistry).interfaceId
+            || _interfaceId == type(IJBDirectoryAccessControl).interfaceId
             || _interfaceId == type(IJBMigratable).interfaceId
             || _interfaceId == type(IJBPermissioned).interfaceId
             || super.supportsInterface(_interfaceId);
@@ -197,8 +222,9 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         IJBRulesets _rulesets,
         IJBTokens _tokens,
         IJBSplits _splits,
-        IJBFundAccessLimits _fundAccessLimits
-    ) JBPermissioned(_permissions) {
+        IJBFundAccessLimits _fundAccessLimits,
+        address _trustedForwarder
+    ) JBPermissioned(_permissions) ERC2771Context(_trustedForwarder) {
         projects = _projects;
         directory = _directory;
         rulesets = _rulesets;
@@ -215,14 +241,14 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
-    /// @param _projectMetadata Metadata to associate with the project within a particular domain. This can be updated any time by the owner of the project.
-    /// @param _rulesetConfigurations The ruleset configurations to schedule.
+    /// @param _projectMetadata Metadata to associate with the project. This can be updated any time by the owner of the project.
+    /// @param _rulesetConfigurations The ruleset configurations to queue.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return projectId The ID of the project.
     function launchProjectFor(
         address _owner,
-        JBProjectMetadata calldata _projectMetadata,
+        string calldata _projectMetadata,
         JBRulesetConfig[] calldata _rulesetConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
@@ -231,10 +257,15 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         IJBDirectory _directory = directory;
 
         // Mint the project into the wallet of the owner.
-        projectId = projects.createFor(_owner, _projectMetadata);
+        projectId = projects.createFor(_owner);
+
+        // Set project metadata if one was provided.
+        if (bytes(_projectMetadata).length > 0) {
+            metadataOf[projectId] = _projectMetadata;
+        }
 
         // Set this contract as the project's controller in the directory.
-        _directory.setControllerOf(projectId, address(this));
+        _directory.setControllerOf(projectId, IERC165(this));
 
         // Queue the first ruleset.
         uint256 _rulesetId = _queueRulesets(projectId, _rulesetConfigurations);
@@ -242,7 +273,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         // Configure the terminals.
         _configureTerminals(projectId, _terminalConfigurations);
 
-        emit LaunchProject(_rulesetId, projectId, _memo, msg.sender);
+        emit LaunchProject(_rulesetId, projectId, _projectMetadata, _memo, _msgSender());
     }
 
     /// @notice Creates an initial sequence of one or more rulesets for an existing project.
@@ -271,7 +302,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         }
 
         // Set this contract as the project's controller in the directory.
-        directory.setControllerOf(_projectId, address(this));
+        directory.setControllerOf(_projectId, IERC165(this));
 
         // Queue the first ruleset.
         rulesetId = _queueRulesets(_projectId, _rulesetConfigurations);
@@ -279,7 +310,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         // Configure the terminals.
         _configureTerminals(_projectId, _terminalConfigurations);
 
-        emit LaunchRulesets(rulesetId, _projectId, _memo, msg.sender);
+        emit LaunchRulesets(rulesetId, _projectId, _memo, _msgSender());
     }
 
     /// @notice Queues one or more rulesets that will take effect once the current ruleset expires. Rulesets only take effect if they are approved by the previous ruleset's approval hook.
@@ -302,7 +333,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         // Queue the next ruleset.
         rulesetId = _queueRulesets(_projectId, _rulesetConfigurations);
 
-        emit QueueRulesets(rulesetId, _projectId, _memo, msg.sender);
+        emit QueueRulesets(rulesetId, _projectId, _memo, _msgSender());
     }
 
     /// @notice Mint new project tokens into an account, optionally reserving a portion according to the current ruleset's reserved rate.
@@ -338,15 +369,15 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
                 projects.ownerOf(_projectId),
                 _projectId,
                 JBPermissionIds.MINT_TOKENS,
-                directory.isTerminalOf(_projectId, IJBTerminal(msg.sender))
-                    || msg.sender == address(_ruleset.dataHook())
+                directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
+                    || _msgSender() == address(_ruleset.dataHook())
             );
 
             // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
                 !_ruleset.discretionaryMintingAllowed()
-                    && !directory.isTerminalOf(_projectId, IJBTerminal(msg.sender))
-                    && msg.sender != address(_ruleset.dataHook())
+                    && !directory.isTerminalOf(_projectId, IJBTerminal(_msgSender())
+                    && _msgSender() != address(_ruleset.dataHook())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
 
             // Determine the reserved rate to use.
@@ -377,7 +408,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             beneficiaryTokenCount,
             _memo,
             _reservedRate,
-            msg.sender
+            _msgSender()
         );
     }
 
@@ -400,7 +431,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             _holder,
             _projectId,
             JBPermissionIds.BURN_TOKENS,
-            directory.isTerminalOf(_projectId, IJBTerminal(msg.sender))
+            directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
         )
     {
         // There should be tokens to burn
@@ -409,7 +440,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         // Burn the tokens.
         tokens.burnFrom(_holder, _projectId, _tokenCount);
 
-        emit BurnTokens(_holder, _projectId, _tokenCount, _memo, msg.sender);
+        emit BurnTokens(_holder, _projectId, _tokenCount, _memo, _msgSender());
     }
 
     /// @notice Sends a project's pending reserved tokens to its reserved token splits.
@@ -428,11 +459,20 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
 
     /// @notice Allows other controllers to signal to this one that a migration is expected for the specified project.
     /// @dev This controller should not yet be the project's controller.
-    /// @param _projectId The ID of the project that will be migrated to this controller.
     /// @param _from The controller being migrated from.
-    function prepForMigrationOf(uint256 _projectId, address _from) external virtual override {
+    /// @param _projectId The ID of the project that will be migrated to this controller.
+    function receiveMigrationFrom(IERC165 _from, uint256 _projectId) external virtual override {
         _projectId; // Prevents unused var compiler and natspec complaints.
         _from; // Prevents unused var compiler and natspec complaints.
+
+        // Copy the main metadata if relevant.
+        if (
+            _from.supportsInterface(type(IJBProjectMetadataRegistry).interfaceId)
+                && directory.controllerOf(_projectId) == _from
+        ) {
+            metadataOf[_projectId] =
+                IJBProjectMetadataRegistry(address(_from)).metadataOf(_projectId);
+        }
     }
 
     /// @notice Allows a project to migrate from this controller to another one.
@@ -448,11 +488,6 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         // Keep a reference to the directory.
         IJBDirectory _directory = directory;
 
-        // This controller must be the project's current controller.
-        if (_directory.controllerOf(_projectId) != address(this)) {
-            revert NOT_CURRENT_CONTROLLER();
-        }
-
         // Get a reference to the project's current ruleset.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
@@ -467,12 +502,111 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         }
 
         // Make sure the new controller is prepped for the migration.
-        _to.prepForMigrationOf(_projectId, address(this));
+        _to.receiveMigrationFrom(IERC165(this), _projectId);
 
-        // Set the new controller.
-        _directory.setControllerOf(_projectId, address(_to));
+        emit MigrateController(_projectId, _to, _msgSender());
+    }
 
-        emit MigrateController(_projectId, _to, msg.sender);
+    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
+    /// @dev Only a project's controller can set its metadata.
+    /// @dev Applications can use the domain namespace as they wish.
+    /// @param _projectId The ID of the project who's metadata is being changed.
+    /// @param _metadata A struct containing metadata content.
+    function setMetadataOf(uint256 _projectId, string calldata _metadata)
+        external
+        override
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+    {
+        // Set the project's new metadata content within the specified domain.
+        metadataOf[_projectId] = _metadata;
+
+        emit SetMetadata(_projectId, _metadata, _msgSender());
+    }
+
+    /// @notice Sets a project's splits.
+    /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
+    /// @dev The new splits must include any currently set splits that are locked.
+    /// @param _projectId The ID of the project for which splits are being added.
+    /// @param _domain An identifier within which the splits should be considered active.
+    /// @param _groupedSplits An array of splits to set for any number of groups.
+    function setSplitsOf(
+        uint256 _projectId,
+        uint256 _domain,
+        JBGroupedSplits[] calldata _groupedSplits
+    )
+        external
+        virtual
+        override
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
+    {
+        // Set splits for the group.
+        splitsStore.set(_projectId, _domain, _groupedSplits);
+    }
+
+    /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
+    /// @dev Deploys a project's ERC-20 token contract.
+    /// @dev Only a project's owner or operator can issue its token.
+    /// @param _projectId The ID of the project being issued tokens.
+    /// @param _name The ERC-20's name.
+    /// @param _symbol The ERC-20's symbol.
+    /// @return token The token that was issued.
+    function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+        external
+        virtual
+        override
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
+        returns (IJBToken token)
+    {
+        return tokenStore.issueFor(_projectId, _name, _symbol);
+    }
+
+    /// @notice Set a project's token if not already set.
+    /// @dev Only a project's owner or operator can set its token.
+    /// @param _projectId The ID of the project to which the set token belongs.
+    /// @param _token The new token.
+    function setTokenFor(uint256 _projectId, IJBToken _token)
+        external
+        virtual
+        override
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
+    {
+        tokenStore.setFor(_projectId, _token);
+    }
+
+    /// @notice Claims internally accounted for tokens into a holder's wallet.
+    /// @dev Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
+    /// @param _holder The owner of the tokens being claimed.
+    /// @param _projectId The ID of the project whose tokens are being claimed.
+    /// @param _amount The amount of tokens to claim.
+    /// @param _beneficiary The account into which the claimed tokens will go.
+    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+        external
+        virtual
+        override
+        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
+    {
+        tokenStore.claimFor(_holder, _projectId, _amount, _beneficiary);
+    }
+
+    /// @notice Allows a holder to transfer unclaimed tokens to another account.
+    /// @dev Only a token holder or an operator can transfer its unclaimed tokens.
+    /// @param _holder The address to transfer tokens from.
+    /// @param _projectId The ID of the project whose tokens are being transferred.
+    /// @param _recipient The recipient of the tokens.
+    /// @param _amount The amount of tokens to transfer.
+    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+        external
+        virtual
+        override
+        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
+    {
+        // Get a reference to the current funding cycle for the project.
+        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+
+        // Must not be paused.
+        if (_fundingCycle.tokenCreditTransfersPaused()) revert TRANSFERS_PAUSED();
+
+        tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
     }
 
     //*********************************************************************//
@@ -523,7 +657,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             tokenCount,
             _leftoverTokenCount,
             _memo,
-            msg.sender
+            _msgSender()
         );
     }
 
@@ -567,12 +701,12 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
                     // If a `splitHook` is set in the splits, set it as the beneficiary.
                     // Otherwise, if a `projectId` is set in the split, set the project's owner as the beneficiary.
                     // Otherwise, if the split has a beneficiary send to the split's beneficiary.
-                    // Otherwise, send to the `msg.sender`.
+                    // Otherwise, send to the `_msgSender()`.
                     _split.splitHook != IJBSplitHook(address(0))
                         ? address(_split.splitHook)
                         : _split.projectId != 0
                             ? projects.ownerOf(_split.projectId)
-                            : _split.beneficiary != address(0) ? _split.beneficiary : msg.sender,
+                            : _split.beneficiary != address(0) ? _split.beneficiary : _msgSender(),
                     _projectId,
                     _tokenCount
                 );
@@ -593,7 +727,7 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
             }
 
             emit SendReservedTokensToSplit(
-                _projectId, _domain, _groupId, _split, _tokenCount, msg.sender
+                _projectId, _domain, _groupId, _split, _tokenCount, _msgSender()
             );
 
             unchecked {
@@ -698,5 +832,27 @@ contract JBController is JBPermissioned, ERC165, IJBController, IJBMigratable {
         if (_numberOfTerminalConfigs > 0) {
             directory.setTerminalsOf(_projectId, _terminals);
         }
+    }
+
+    /// @notice Returns the sender, prefered to use over ` _msgSender()`
+    /// @return _sender the sender address of this call.
+    function _msgSender()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (address _sender)
+    {
+        return ERC2771Context._msgSender();
+    }
+
+    /// @notice Returns the calldata, prefered to use over `msg.data`
+    /// @return _calldata the `msg.data` of this call
+    function _msgData()
+        internal
+        view
+        override(ERC2771Context, Context)
+        returns (bytes calldata _calldata)
+    {
+        return ERC2771Context._msgData();
     }
 }

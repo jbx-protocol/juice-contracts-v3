@@ -2,9 +2,10 @@
 pragma solidity ^0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
+import {IJBDirectoryAccessControl} from "./interfaces/IJBDirectoryAccessControl.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
@@ -46,16 +47,13 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @notice Mints ERC-721s that represent project ownership and transfers.
     IJBProjects public immutable override projects;
 
-    /// @notice The contract storing and managing project rulesets.
-    IJBRulesets public immutable override rulesets;
-
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
 
     /// @notice The controller, which dictates how terminals interact with tokens and rulesets, for a given project ID.
     /// @custom:member _projectId The ID of the project to get the controller of.
-    mapping(uint256 => address) public override controllerOf;
+    mapping(uint256 => IERC165) public override controllerOf;
 
     /// @notice Addresses allowed to set a project's first controller on their behalf. These addresses/contracts have been vetted and verified by this contract's owner.
     /// @custom:param _address The address that is either allowed or not.
@@ -156,16 +154,12 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
 
     /// @param _permissions A contract storing permissions.
     /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
-    /// @param _rulesets A contract storing and managing project rulesets.
     /// @param _owner The address that will own the contract.
-    constructor(
-        IJBPermissions _permissions,
-        IJBProjects _projects,
-        IJBRulesets _rulesets,
-        address _owner
-    ) JBPermissioned(_permissions) Ownable(_owner) {
+    constructor(IJBPermissions _permissions, IJBProjects _projects, address _owner)
+        JBPermissioned(_permissions)
+        Ownable(_owner)
+    {
         projects = _projects;
-        rulesets = _rulesets;
     }
 
     //*********************************************************************//
@@ -179,7 +173,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @dev - or an allowedlisted address is setting a controller for a project that doesn't already have a controller.
     /// @param _projectId The ID of the project to set a new controller for.
     /// @param _controller The address of the new controller to set for the project.
-    function setControllerOf(uint256 _projectId, address _controller)
+    function setControllerOf(uint256 _projectId, IERC165 _controller)
         external
         override
         requirePermissionAllowingOverride(
@@ -187,24 +181,27 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
             _projectId,
             JBPermissionIds.SET_CONTROLLER,
             (
-                msg.sender == address(controllerOf[_projectId])
-                    || (isAllowedToSetFirstController[msg.sender] && controllerOf[_projectId] == address(0))
+                isAllowedToSetFirstController[msg.sender]
+                    && address(controllerOf[_projectId]) == address(0)
             )
         )
     {
         // The project must exist.
         if (projects.count() < _projectId) revert INVALID_PROJECT_ID_IN_DIRECTORY();
 
-        // Get a reference to the project's current ruleset.
-        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
+        // Keep a reference to the current controller.
+        IERC165 _currentController = controllerOf[_projectId];
 
-        // Setting controller is allowed if called from the current controller,
-        // OR if the project doesn't have a current controller,
-        // OR if the project's ruleset allows setting the controller. Otherwise, revert.
-        if (
-            msg.sender != address(controllerOf[_projectId])
-                && controllerOf[_projectId] != address(0) && !_ruleset.global().allowSetController
-        ) revert SET_CONTROLLER_NOT_ALLOWED();
+        // Get a reference to the flag indicating if the project is allowed to set terminals.
+        bool _allowSetController = address(_currentController) == address(0)
+            || !_currentController.supportsInterface(type(IJBDirectoryAccessControl).interfaceId)
+            ? true
+            : IJBDirectoryAccessControl(address(_currentController)).setControllerAllowed(_projectId);
+
+        // Setting controller is allowed if called from the current controller, or if the project doesn't have a current controller, or if the project's funding cycle allows setting the controller. Revert otherwise.
+        if (!_allowSetController) {
+            revert SET_CONTROLLER_NOT_ALLOWED();
+        }
 
         // Set the new controller.
         controllerOf[_projectId] = _controller;
@@ -227,12 +224,15 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
             msg.sender == address(controllerOf[_projectId])
         )
     {
-        // Get a reference to the project's current ruleset.
-        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
+        // Keep a reference to the current controller.
+        IERC165 _controller = controllerOf[_projectId];
+
+        // Get a reference to the flag indicating if the project is allowed to set terminals.
+        bool _allowSetTerminals = !_controller.supportsInterface(type(IJBDirectoryAccessControl).interfaceId)
+            || IJBDirectoryAccessControl(address(_controller)).setTerminalsAllowed(_projectId);
 
         // Setting terminals must be allowed if not called from the current controller.
-        if (msg.sender != address(controllerOf[_projectId]) && !_ruleset.global().allowSetTerminals)
-        {
+        if (msg.sender != address(controllerOf[_projectId]) && !_allowSetTerminals) {
             revert SET_TERMINALS_NOT_ALLOWED();
         }
 
@@ -321,12 +321,15 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         // Ensure that the terminal has not already been added.
         if (isTerminalOf(_projectId, _terminal)) return;
 
-        // Get a reference to the project's current ruleset.
-        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
+        // Keep a reference to the current controller.
+        IERC165 _controller = controllerOf[_projectId];
 
-        // Unless the caller is the project's controller, the project's ruleset must allow setting terminals.
-        if (msg.sender != address(controllerOf[_projectId]) && !_ruleset.global().allowSetTerminals)
-        {
+        // Get a reference to the flag indicating if the project is allowed to set terminals.
+        bool _allowSetTerminals = !_controller.supportsInterface(type(IJBDirectoryAccessControl).interfaceId)
+            || IJBDirectoryAccessControl(address(_controller)).setTerminalsAllowed(_projectId);
+
+        // Setting terminals must be allowed if not called from the current controller.
+        if (msg.sender != address(controllerOf[_projectId]) && !_allowSetTerminals) {
             revert SET_TERMINALS_NOT_ALLOWED();
         }
 

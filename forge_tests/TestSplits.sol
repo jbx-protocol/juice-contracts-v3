@@ -25,7 +25,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         _tokens = jbTokens();
         _splitsGuy = payable(makeAddr("guy"));
 
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
+        _projectMetadata = "myIPFSHash";
         _data = JBRulesetData({
             duration: 3 days,
             weight: 1000 * 10 ** 18,

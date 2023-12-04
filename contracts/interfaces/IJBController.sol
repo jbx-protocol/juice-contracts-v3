@@ -10,15 +10,19 @@ import {JBProjectMetadata} from "./../structs/JBProjectMetadata.sol";
 import {JBTerminalConfig} from "./../structs/JBTerminalConfig.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
+import {IJBDirectoryAccessControl} from "./IJBDirectoryAccessControl.sol";
 import {IJBFundAccessLimits} from "./IJBFundAccessLimits.sol";
 import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBMigratable} from "./IJBMigratable.sol";
+import {IJBProjectMetadataRegistry} from "./IJBProjectMetadataRegistry.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBSplits} from "./IJBSplits.sol";
 import {IJBTokens} from "./IJBTokens.sol";
 
-interface IJBController is IERC165 {
-    event LaunchProject(uint256 rulesetId, uint256 projectId, string memo, address caller);
+interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAccessControl {
+    event LaunchProject(
+        uint256 rulesetId, uint256 projectId, string metadata, string memo, address caller
+    );
 
     event LaunchRulesets(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
@@ -66,6 +70,8 @@ interface IJBController is IERC165 {
 
     event PrepMigration(uint256 indexed projectId, address from, address caller);
 
+    event SetMetadata(uint256 indexed projectId, string metadata, address caller);
+
     function projects() external view returns (IJBProjects);
 
     function rulesets() external view returns (IJBRulesets);
@@ -107,7 +113,7 @@ interface IJBController is IERC165 {
 
     function launchProjectFor(
         address owner,
-        JBProjectMetadata calldata projectMetadata,
+        string calldata projectMetadata,
         JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
@@ -146,4 +152,22 @@ interface IJBController is IERC165 {
         returns (uint256);
 
     function migrateController(uint256 projectId, IJBMigratable to) external;
+
+    function setSplitsOf(
+        uint256 projectId,
+        uint256 domain,
+        JBGroupedSplits[] calldata groupedSplits
+    ) external;
+
+    function issueTokenFor(uint256 projectId, string calldata name, string calldata symbol)
+        external
+        returns (IJBToken token);
+
+    function setTokenFor(uint256 _projectId, IJBToken _token) external;
+
+    function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
+        external;
+
+    function transferFrom(address holder, uint256 projectId, address recipient, uint256 amount)
+        external;
 }

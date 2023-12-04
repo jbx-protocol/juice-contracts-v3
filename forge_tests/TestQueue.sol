@@ -24,7 +24,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _terminal = jbMultiTerminal();
         _controller = jbController();
 
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
+        _projectMetadata = "myIPFSHash";
         _deadline = new JBDeadline(_DEADLINE_DURATION);
         _data = JBRulesetData({
             duration: _RULESET_DURATION * 1 days,
@@ -38,7 +38,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             decayRate: 0,
             approvalHook: JBDeadline(address(0))
         });
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
+        _projectMetadata = "myIPFSHash";
 
         _metadata = JBRulesetMetadata({
             global: JBGlobalRulesetMetadata({
