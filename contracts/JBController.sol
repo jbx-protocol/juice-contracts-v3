@@ -281,7 +281,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS` permission can launch rulesets for a project.
     /// @param _projectId The ID of the project to launch rulesets for.
-    /// @param _rulesetConfigurations The ruleset configurations to schedule.
+    /// @param _rulesetConfigurations The ruleset configurations to queue.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return rulesetId The ID of the ruleset that was successfully launched.
@@ -486,9 +486,6 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.MIGRATE_CONTROLLER)
     {
-        // Keep a reference to the directory.
-        IJBDirectory _directory = directory;
-
         // Get a reference to the project's current ruleset.
         JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
@@ -800,7 +797,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
                 _projectId, _ruleset.rulesetId, _rulesetConfig.fundAccessLimitGroup
             );
 
-            // Return the ruleset's ID if this is the last configuration being scheduled.
+            // Return the ruleset's ID if this is the last configuration being queued.
             if (_i == _numberOfConfigurations - 1) {
                 rulesetId = _ruleset.rulesetId;
             }
