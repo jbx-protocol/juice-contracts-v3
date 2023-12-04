@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestDelegates_Local is TestBaseWorkflow {
+contract TestPayDelegates_Local is TestBaseWorkflow {
     uint8 private constant _WEIGHT_DECIMALS = 18;
     uint8 private constant _NATIVE_TOKEN_DECIMALS = 18;
     uint256 private constant _WEIGHT = 1000 * 10 ** _WEIGHT_DECIMALS;
@@ -36,18 +36,16 @@ contract TestDelegates_Local is TestBaseWorkflow {
         });
 
         JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: true,
@@ -73,7 +71,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

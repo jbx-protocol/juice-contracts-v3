@@ -29,18 +29,16 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             ballot: JBReconfigurationBufferBallot(address(0))
         });
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
@@ -71,7 +69,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // dummy project that will receive fees
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -79,7 +77,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -95,7 +93,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     ) external {
         // Issue an ERC-20 token for project.
         vm.prank(_projectOwner);
-        _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        _controller.issueTokenFor(_projectId, "TestName", "TestSymbol");
 
         // Make a payment.
         _terminal.pay{value: _ethPayAmount}({

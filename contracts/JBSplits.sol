@@ -11,9 +11,10 @@ import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 import {JBGroupedSplits} from "./structs/JBGroupedSplits.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
+import {JBControllerUtility} from "contracts/abstract/JBControllerUtility.sol";
 
 /// @notice Stores splits for each project.
-contract JBSplitsStore is JBOperatable, IJBSplitsStore {
+contract JBSplitsStore is JBControllerUtility, IJBSplitsStore {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -51,16 +52,6 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
         _packedSplitParts2Of;
 
     //*********************************************************************//
-    // ---------------- public immutable stored properties --------------- //
-    //*********************************************************************//
-
-    /// @notice Mints ERC-721's that represent project ownership and transfers.
-    IJBProjects public immutable override projects;
-
-    /// @notice The directory of terminals and controllers for projects.
-    IJBDirectory public immutable override directory;
-
-    //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
@@ -82,22 +73,15 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _operatorStore A contract storing operator assignments.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    constructor(IJBOperatorStore _operatorStore, IJBProjects _projects, IJBDirectory _directory)
-        JBOperatable(_operatorStore)
-    {
-        projects = _projects;
-        directory = _directory;
-    }
+    constructor(IJBDirectory _directory) JBControllerUtility(_directory) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
     /// @notice Sets a project's splits.
-    /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
+    /// @dev Only the current controller contract of the project can set its splits.
     /// @dev The new splits must include any currently set splits that are locked.
     /// @param _projectId The ID of the project for which splits are being added.
     /// @param _domain An identifier within which the splits should be considered active.
@@ -105,12 +89,7 @@ contract JBSplitsStore is JBOperatable, IJBSplitsStore {
     function set(uint256 _projectId, uint256 _domain, JBGroupedSplits[] calldata _groupedSplits)
         external
         override
-        requirePermissionAllowingOverride(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.SET_SPLITS,
-            address(directory.controllerOf(_projectId)) == msg.sender
-        )
+        onlyController(_projectId)
     {
         // Keep a reference to the number of grouped splits.
         uint256 _numberOfGroupedSplits = _groupedSplits.length;

@@ -18,6 +18,10 @@ import "../contracts/JBMultiTerminal.sol";
 
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+    // NOTICE: Make sure this is the correct forwarder address for the chain your deploying to.
+    address internal constant _TRUSTED_FORWARDER =
+        address(0xB2b5841DBeF766d4b521221732F9B618fCf34A87);
+
     JBOperatorStore _operatorStore;
     JBProjects _projects;
     JBPrices _prices;
@@ -36,19 +40,13 @@ contract Deploy is Script {
     }
 
     function _deployContracts(address _manager) internal {
-        // 1
         _operatorStore = new JBOperatorStore();
-        // 2
-        _projects = new JBProjects(_operatorStore, _manager);
-        // 3
+        _projects = new JBProjects(_manager);
         _prices = new JBPrices(_operatorStore, _projects, _manager);
-        address _directoryAddress = addressFrom(address(this), 5);
-        //4
-        _fundingCycleStore = new JBFundingCycleStore(IJBDirectory(_directoryAddress));
-        // 5
-        _directory = new JBDirectory(_operatorStore, _projects, _fundingCycleStore, address(this));
-        _tokenStore = new JBTokenStore(_operatorStore, _projects, _directory, _fundingCycleStore);
-        _splitsStore = new JBSplitsStore(_operatorStore, _projects, _directory);
+        _directory = new JBDirectory(_operatorStore, _projects, address(this));
+        _tokenStore = new JBTokenStore(_directory);
+        _fundingCycleStore = new JBFundingCycleStore(_directory);
+        _splitsStore = new JBSplitsStore(_directory);
         _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(_directory);
         _controller = new JBController3_1(
             _operatorStore,
@@ -57,13 +55,21 @@ contract Deploy is Script {
             _fundingCycleStore,
             _tokenStore,
             _splitsStore,
-            _fundAccessConstraintsStore
+            _fundAccessConstraintsStore,
+            _TRUSTED_FORWARDER
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
         _terminalStore = new JBTerminalStore(_directory, _fundingCycleStore, _prices);
         _multiTerminal = new JBMultiTerminal(
-            _operatorStore, _projects, _directory, _splitsStore, _terminalStore, _PERMIT2, _manager
+            _operatorStore,
+            _projects,
+            _directory,
+            _splitsStore,
+            _terminalStore,
+            _PERMIT2,
+            _TRUSTED_FORWARDER,
+            _manager
         );
     }
 
