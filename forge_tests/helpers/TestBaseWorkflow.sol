@@ -190,7 +190,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
     function setUp() public virtual {
         _jbOperatorStore = new JBOperatorStore();
 
-        _usdcToken = new MockERC20('USDC', 'USDC');
+        _usdcToken = new MockERC20("USDC", "USDC");
 
         _jbProjects = new JBProjects(_multisig);
 
@@ -198,9 +198,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
 
         _jbDirectory = new JBDirectory(_jbOperatorStore, _jbProjects, _multisig);
 
-        _jbTokenStore = new JBTokenStore(
-            _jbDirectory
-        );
+        _jbTokenStore = new JBTokenStore(_jbDirectory);
 
         _jbFundingCycleStore = new JBFundingCycleStore(_jbDirectory);
 
@@ -227,7 +225,7 @@ contract TestBaseWorkflow is Test, DeployPermit2 {
             _jbSplitsStore,
             _jbFundAccessConstraintsStore,
             _trustedForwarder
-            );
+        );
         vm.label(address(_jbController), "JBController3_1");
 
         _metadataHelper = new MetadataResolverHelper();
