@@ -374,7 +374,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _token The token being paid out from the surplus.
     /// @param _amount The amount of terminal tokens to use from the project's current surplus allowance, as a fixed point number with the same amount of decimals as this terminal.
     /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus allowances.
-    /// @param _minTokensUsed The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
+    /// @param _minTokensPaidOut The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
     /// @param _beneficiary The address to send the surplus funds to.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return netAmountPaidOut The number of tokens that were sent to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
@@ -383,7 +383,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         address _token,
         uint256 _amount,
         uint256 _currency,
-        uint256 _minTokensUsed,
+        uint256 _minTokensPaidOut,
         address payable _beneficiary,
         string calldata _memo
     )
@@ -394,7 +394,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         returns (uint256 netAmountPaidOut)
     {
         return _useAllowanceOf(
-            _projectId, _token, _amount, _currency, _minTokensUsed, _beneficiary, _memo
+            _projectId, _token, _amount, _currency, _minTokensPaidOut, _beneficiary, _memo
         );
     }
 
@@ -914,7 +914,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
     /// @param _token The token being paid out from the surplus.
     /// @param _amount The amount of terminal tokens to use from the project's current surplus allowance, as a fixed point number with the same amount of decimals as this terminal.
     /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus allowances.
-    /// @param _minTokensUsed The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
+    /// @param _minTokensPaidOut The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return netAmountPaidOut The number of tokens that were sent to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
@@ -923,7 +923,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         address _token,
         uint256 _amount,
         uint256 _currency,
-        uint256 _minTokensUsed,
+        uint256 _minTokensPaidOut,
         address payable _beneficiary,
         string memory _memo
     ) internal returns (uint256 netAmountPaidOut) {
@@ -933,7 +933,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
         );
 
         // The amount being withdrawn must be at least as much as was expected.
-        if (_amountPaidOut < _minTokensUsed) revert INADEQUATE_PAYOUT_AMOUNT();
+        if (_amountPaidOut < _minTokensPaidOut) revert INADEQUATE_PAYOUT_AMOUNT();
 
         // Get a reference to the project owner.
         // The project owner will receive tokens minted by paying the platform fee.
@@ -1106,7 +1106,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, IJBMultiTerminal {
                 // If this terminal's token is the native token, send it in `msg.value`.
                 try _split.splitHook.process{value: _payValue}(_data) {}
                 catch (bytes memory __reason) {
-                    _reason = __reason.length == 0 ? abi.encode("Process fail") : __reason;
+                    _reason = __reason.length == 0 ? abi.encode("splitHook fail") : __reason;
                 }
             } else {
                 _reason = abi.encode("IERC165 fail");
