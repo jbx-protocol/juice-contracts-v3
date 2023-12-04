@@ -8,6 +8,7 @@ import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
 import {IJBPrices} from "./interfaces/IJBPrices.sol";
+import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {JBOperations} from "./libraries/JBOperations.sol";
 
 /// @notice Manages and normalizes price feeds.
@@ -31,7 +32,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
     //*********************************************************************//
 
     /// @notice Mints ERC-721's that represent project ownership and transfers.
-    IJBProjects public immutable override projects;
+    IJBProjects public immutable override PROJECTS;
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -102,7 +103,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
         JBOperatable(_operatorStore)
         Ownable(_owner)
     {
-        projects = _projects;
+        PROJECTS = _projects;
     }
 
     //*********************************************************************//
@@ -122,7 +123,7 @@ contract JBPrices is Ownable, JBOperatable, IJBPrices {
         // Otherwise, only the project owner or an operator can add a feed for the project.
         if (_projectId != DEFAULT_PROJECT_ID || msg.sender != owner()) {
             _requirePermission(
-                projects.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
+                PROJECTS.ownerOf(_projectId), _projectId, JBOperations.ADD_PRICE_FEED
             );
         }
 

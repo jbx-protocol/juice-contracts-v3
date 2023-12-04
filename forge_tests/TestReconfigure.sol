@@ -6,7 +6,6 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 // A project's funding cycle's can be scheduled, and rescheduled so long as the provided reconfiguration ballot is approved.
 contract TestReconfigureProject_Local is TestBaseWorkflow {
     IJBController3_1 private _controller;
-    JBProjectMetadata private _projectMetadata;
     JBFundingCycleData private _data;
     JBFundingCycleData private _dataReconfiguration;
     JBFundingCycleMetadata private _metadata;
@@ -24,7 +23,6 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _terminal = jbPayoutRedemptionTerminal();
         _controller = jbController();
 
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
         _ballot = new JBReconfigurationBufferBallot(_BALLOT_DURATION);
         _data = JBFundingCycleData({
             duration: _CYCLE_DURATION * 1 days,
@@ -38,21 +36,18 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             discountRate: 0,
             ballot: JBReconfigurationBufferBallot(address(0))
         });
-        _projectMetadata = JBProjectMetadata({content: "myIPFSHash", domain: 1});
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
@@ -81,7 +76,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
 
         uint256 projectId = _controller.launchProjectFor({
             owner: address(multisig()),
-            projectMetadata: _projectMetadata,
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""

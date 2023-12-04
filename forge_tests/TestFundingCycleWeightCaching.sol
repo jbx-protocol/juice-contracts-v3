@@ -32,18 +32,16 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         });
 
         _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: 0,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: false,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: true,
             useDataSourceForPay: false,
@@ -76,7 +74,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         //     // Create the project to test.
         //     _projectId1 = _controller.launchProjectFor({
         //         owner: _projectOwner,
-        //         projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+        //         projectMetadata: "myIPFSHash",
         //         fundingCycleConfigurations: _cycleConfigurations,
         //         terminalConfigurations: new JBTerminalConfig[](0),
         //         memo: ""
@@ -85,7 +83,7 @@ contract TestFundingCycleWeightCaching_Local is TestBaseWorkflow {
         //     // Create the project to test.
         //     _projectId2 = _controller.launchProjectFor({
         //         owner: _projectOwner,
-        //         projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+        //         projectMetadata: "myIPFSHash",
         //         fundingCycleConfigurations: _cycleConfigurations,
         //         terminalConfigurations: new JBTerminalConfig[](0),
         //         memo: ""

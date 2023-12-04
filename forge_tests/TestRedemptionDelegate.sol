@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestDelegates_Local is TestBaseWorkflow {
+contract TestRedmeptionDelegates_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
     address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));
 
@@ -34,18 +34,16 @@ contract TestDelegates_Local is TestBaseWorkflow {
         });
 
         JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
-            global: JBGlobalFundingCycleMetadata({
-                allowSetTerminals: false,
-                allowSetController: false,
-                pauseTransfers: false
-            }),
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             baseCurrency: uint32(uint160(JBTokens.ETH)),
             pausePay: false,
+            pauseTokenCreditTransfers: false,
             allowMinting: true,
             allowTerminalMigration: false,
+            allowSetTerminals: false,
             allowControllerMigration: false,
+            allowSetController: false,
             holdFees: false,
             useTotalOverflowForRedemptions: false,
             useDataSourceForPay: false,
@@ -72,7 +70,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
         // First project for fee collection
         _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 0}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -80,7 +78,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
-            projectMetadata: JBProjectMetadata({content: "myIPFSHash", domain: 1}),
+            projectMetadata: "myIPFSHash",
             fundingCycleConfigurations: _cycleConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
@@ -88,7 +86,7 @@ contract TestDelegates_Local is TestBaseWorkflow {
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _tokenStore.issueFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _controller.issueTokenFor(_projectId, "TestName", "TestSymbol");
 
         // Make sure the project's new JBToken is set.
         assertEq(address(_tokenStore.tokenOf(_projectId)), address(_token));

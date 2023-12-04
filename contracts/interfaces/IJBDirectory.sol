@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBPaymentTerminal} from "./terminal/IJBPaymentTerminal.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 
 interface IJBDirectory {
-    event SetController(uint256 indexed projectId, address indexed controller, address caller);
+    event SetController(uint256 indexed projectId, IERC165 indexed controller, address caller);
 
     event AddTerminal(
         uint256 indexed projectId, IJBPaymentTerminal indexed terminal, address caller
@@ -25,9 +26,7 @@ interface IJBDirectory {
 
     function projects() external view returns (IJBProjects);
 
-    function fundingCycleStore() external view returns (IJBFundingCycleStore);
-
-    function controllerOf(uint256 projectId) external view returns (address);
+    function controllerOf(uint256 projectId) external view returns (IERC165);
 
     function isAllowedToSetFirstController(address account) external view returns (bool);
 
@@ -43,7 +42,7 @@ interface IJBDirectory {
         view
         returns (IJBPaymentTerminal);
 
-    function setControllerOf(uint256 projectId, address controller) external;
+    function setControllerOf(uint256 projectId, IERC165 controller) external;
 
     function setTerminalsOf(uint256 projectId, IJBPaymentTerminal[] calldata terminals) external;
 

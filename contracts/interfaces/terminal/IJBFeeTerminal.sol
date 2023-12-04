@@ -7,24 +7,27 @@ import {JBFee} from "../../structs/JBFee.sol";
 interface IJBFeeTerminal is IJBPaymentTerminal {
     event HoldFee(
         uint256 indexed projectId,
+        address indexed token,
         uint256 indexed amount,
-        uint256 indexed fee,
+        uint256 fee,
         address beneficiary,
         address caller
     );
 
     event ProcessFee(
         uint256 indexed projectId,
+        address indexed token,
         uint256 indexed amount,
-        bool indexed wasHeld,
+        bool wasHeld,
         address beneficiary,
         address caller
     );
 
     event RefundHeldFees(
         uint256 indexed projectId,
+        address indexed token,
         uint256 indexed amount,
-        uint256 indexed refundedFees,
+        uint256 refundedFees,
         uint256 leftoverAmount,
         address caller
     );
@@ -32,6 +35,7 @@ interface IJBFeeTerminal is IJBPaymentTerminal {
 
     event FeeReverted(
         uint256 indexed projectId,
+        address indexed token,
         uint256 indexed feeProjectId,
         uint256 amount,
         bytes reason,
@@ -40,7 +44,7 @@ interface IJBFeeTerminal is IJBPaymentTerminal {
 
     function FEE() external view returns (uint256);
 
-    function heldFeesOf(uint256 projectId) external view returns (JBFee[] memory);
+    function heldFeesOf(uint256 projectId, address token) external view returns (JBFee[] memory);
 
     function isFeelessAddress(address account) external view returns (bool);
 
