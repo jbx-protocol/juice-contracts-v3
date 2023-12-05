@@ -62,7 +62,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             projectId: 0,
             beneficiary: _splitsGuy,
             lockedUntil: 0,
-            splitHook: IJBSplitHook(address(0))
+            hook: IJBSplitHook(address(0))
         });
 
         // A dummy used to check that splits groups of "0" cannot bypass payout limits.
@@ -72,7 +72,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             projectId: 0,
             beneficiary: _splitsGuy,
             lockedUntil: 0,
-            splitHook: IJBSplitHook(address(0))
+            hook: IJBSplitHook(address(0))
         });
 
         _splitsGroup[0] =
@@ -88,7 +88,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             projectId: 0,
             beneficiary: _splitsGuy,
             lockedUntil: 0,
-            splitHook: IJBSplitHook(address(0))
+            hook: IJBSplitHook(address(0))
         });
 
         // Reserved rate split group.
@@ -219,7 +219,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             projectId: 0,
             beneficiary: _splitsGuy,
             lockedUntil: 0,
-            splitHook: IJBSplitHook(address(0))
+            hook: IJBSplitHook(address(0))
         });
 
         // A dummy used to check that splits groups of "0" don't bypass payout limits.
@@ -229,7 +229,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             projectId: 0,
             beneficiary: _splitsGuy,
             lockedUntil: 0,
-            splitHook: IJBSplitHook(address(0))
+            hook: IJBSplitHook(address(0))
         });
 
         _splitsGroup[0] = JBSplitGroup({groupId: _currencyId, splits: _splits});

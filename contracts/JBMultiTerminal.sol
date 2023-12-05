@@ -641,9 +641,9 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         netPayoutAmount = _amount;
 
         // If there's a split hook set, transfer to its `process` function.
-        if (_split.splitHook != IJBSplitHook(address(0))) {
+        if (_split.hook != IJBSplitHook(address(0))) {
             // This payout is eligible for a fee since the funds are leaving this contract and the split hook isn't a feeless address.
-            if (!isFeelessAddress[address(_split.splitHook)]) {
+            if (!isFeelessAddress[address(_split.hook)]) {
                 netPayoutAmount -= JBFees.feeAmountIn(_amount, FEE);
             }
 
@@ -660,20 +660,20 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             // Make sure that the address supports the split hook interface.
             if (
                 ERC165Checker.supportsInterface(
-                    address(_split.splitHook), type(IJBSplitHook).interfaceId
+                    address(_split.hook), type(IJBSplitHook).interfaceId
                 )
             ) {
                 revert("400:SPLIT_HOOK");
             }
 
             // Trigger any inherited pre-transfer logic.
-            _beforeTransferFor(address(_split.splitHook), _token, netPayoutAmount);
+            _beforeTransferFor(address(_split.hook), _token, netPayoutAmount);
 
             // Get a reference to the amount being paid in `msg.value`.
             uint256 _payValue = _token == JBTokenList.Native ? netPayoutAmount : 0;
 
             // If this terminal's token is the native token, send it in `msg.value`.
-            _split.splitHook.process{value: _payValue}(_payload);
+            _split.hook.process{value: _payValue}(_payload);
 
             // Otherwise, if a project is specified, make a payment to it.
         } else if (_split.projectId != 0) {

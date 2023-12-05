@@ -710,12 +710,12 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             // Mints tokens for the split if needed.
             if (_tokenCount > 0) {
                 _tokens.mintFor(
-                    // If a `splitHook` is set in the splits, set it as the beneficiary.
+                    // If a `hook` is set in the splits, set it as the beneficiary.
                     // Otherwise, if a `projectId` is set in the split, set the project's owner as the beneficiary.
                     // Otherwise, if the split has a beneficiary send to the split's beneficiary.
                     // Otherwise, send to the `_msgSender()`.
-                    _split.splitHook != IJBSplitHook(address(0))
-                        ? address(_split.splitHook)
+                    _split.hook != IJBSplitHook(address(0))
+                        ? address(_split.hook)
                         : _split.projectId != 0
                             ? projects.ownerOf(_split.projectId)
                             : _split.beneficiary != address(0) ? _split.beneficiary : _msgSender(),
@@ -724,12 +724,12 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
                 );
 
                 // If there's a split hook, trigger its `process` function.
-                if (_split.splitHook != IJBSplitHook(address(0))) {
+                if (_split.hook != IJBSplitHook(address(0))) {
                     // Get a reference to the project's token.
                     address _token = address(_tokens.tokenOf(_projectId));
 
                     // Process.
-                    _split.splitHook.process(
+                    _split.hook.process(
                         JBSplitHookPayload(_token, _tokenCount, 18, _projectId, _groupId, _split)
                     );
                 }

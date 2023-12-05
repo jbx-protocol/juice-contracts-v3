@@ -93,9 +93,9 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
 
         vm.prank(makeAddr("zeroOwner"));
-        uint256 configured = _controller.queueRulesetsOf(_projectOne, _rulesetConfig, "");
+        uint256 queued = _controller.queueRulesetsOf(_projectOne, _rulesetConfig, "");
 
-        assertEq(configured, block.timestamp);
+        assertEq(queued, block.timestamp);
     }
 
     function testFailSetOperators() public {

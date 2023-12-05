@@ -11,14 +11,14 @@ import {IJBSplitHook} from "./../interfaces/IJBSplitHook.sol";
 /// @custom:member preferAddToBalance If this split were to `pay` a project through its terminal, this flag indicates whether it should prefer using the terminal's `addToBalance` function instead.
 /// @custom:member percent The percent of the total token amount that this split sends. This number is out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member projectId The ID of a project to `pay`, if applicable. Resulting tokens will be routed to the `beneficiary`.
-/// @custom:member beneficiary Receives this split's tokens if the `splitHook` and `projectId` are zero. If the `projectId` is specified, the `beneficiary` receives any project tokens minted by this split.
+/// @custom:member beneficiary Receives this split's tokens if the `hook` and `projectId` are zero. If the `projectId` is specified, the `beneficiary` receives any project tokens minted by this split.
 /// @custom:member lockedUntil The split cannot be changed until this timestamp. The `lockedUntil` timestamp can be increased while a split is locked. If `lockedUntil` is zero, this split can be changed at any time.
-/// @custom:member splitHook A contract which will receive this split's tokens and properties, and can define custom behavior.
+/// @custom:member hook A contract which will receive this split's tokens and properties, and can define custom behavior.
 struct JBSplit {
     bool preferAddToBalance;
     uint256 percent;
     uint256 projectId;
     address payable beneficiary;
     uint256 lockedUntil;
-    IJBSplitHook splitHook;
+    IJBSplitHook hook;
 }

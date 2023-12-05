@@ -51,6 +51,8 @@
     "deploy:optimism-testnet": "source .env && forge script DeployOptimismTestnet --chain-id 1 --rpc-url $RPC_OPTIMISM_TESTNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_OPTIMISM_TESTNET -vvv",
     "deploy:polygon-mainnet": "source .env && forge script DeployPolygonMainnet --chain-id 1 --rpc-url $RPC_POLYGON_MAINNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_POLYGON_MAINNET -vvv",
     "deploy:polygon-mumbai": "source .env && forge script DeployPolygonMumbai --chain-id 1 --rpc-url $RPC_POLYGON_MUMBAI --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_POLYGON_MUMBAI -vvv",
-    "lint": "forge fmt"
+    "lint": "forge fmt",
+    "unused": "bash ./utils/unused-imports.sh",
+    "unimported": "python ./utils/check-used.py"
   }
 }

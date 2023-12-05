@@ -48,7 +48,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
     }
 
-    function equals(JBRuleset memory configured, JBRuleset memory stored)
+    function equals(JBRuleset memory queued, JBRuleset memory stored)
         internal
         view
         returns (bool)
@@ -57,15 +57,15 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         return (
             keccak256(
                 abi.encodePacked(
-                    configured.cycleNumber,
-                    configured.rulesetId,
-                    configured.basedOnId,
-                    configured.start,
-                    configured.duration,
-                    configured.weight,
-                    configured.decayRate,
-                    configured.approvalHook,
-                    configured.metadata
+                    queued.cycleNumber,
+                    queued.rulesetId,
+                    queued.basedOnId,
+                    queued.start,
+                    queued.duration,
+                    queued.weight,
+                    queued.decayRate,
+                    queued.approvalHook,
+                    queued.metadata
                 )
             )
                 == keccak256(
@@ -114,8 +114,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         // Get a reference to the first ruleset.
         JBRuleset memory ruleset = _rulesets.currentOf(projectId);
 
-        // Reference configured attributes for sake of comparison.
-        JBRuleset memory configured = JBRuleset({
+        // Reference queued attributes for sake of comparison.
+        JBRuleset memory queued = JBRuleset({
             cycleNumber: 1,
             rulesetId: block.timestamp,
             basedOnId: 0,
@@ -127,7 +127,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             metadata: ruleset.metadata
         });
 
-        bool same = equals(configured, ruleset);
+        bool same = equals(queued, ruleset);
 
         assertEq(same, true);
     }
@@ -171,8 +171,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
 
         JBRuleset memory ruleset = _rulesets.currentOf(_projectId);
 
-        // Reference configured attributes for sake of comparison.
-        JBRuleset memory configured = JBRuleset({
+        // Reference queued attributes for sake of comparison.
+        JBRuleset memory queued = JBRuleset({
             cycleNumber: 1,
             rulesetId: block.timestamp,
             basedOnId: 0,
@@ -184,7 +184,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             metadata: ruleset.metadata
         });
 
-        bool same = equals(configured, ruleset);
+        bool same = equals(queued, ruleset);
 
         assertEq(same, true);
     }
@@ -241,8 +241,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             // Reference for sake of comparison.
             JBRuleset memory ruleset = _rulesets.currentOf(_projectId);
 
-            // Reference configured attributes for sake of comparison.
-            JBRuleset memory configured = JBRuleset({
+            // Reference queued attributes for sake of comparison.
+            JBRuleset memory queued = JBRuleset({
                 cycleNumber: 1,
                 rulesetId: block.timestamp,
                 basedOnId: 0,
@@ -254,7 +254,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                 metadata: ruleset.metadata
             });
 
-            bool same = equals(configured, ruleset);
+            bool same = equals(queued, ruleset);
 
             assertEq(same, true);
         }

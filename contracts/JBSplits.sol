@@ -45,13 +45,13 @@ contract JBSplits is JBControlled, IJBSplits {
         _packedSplitParts1Of;
 
     /// @notice More packed split data given the split's project, domain, and group IDs, as well as the split's index within that group.
-    /// @dev `lockedUntil` in bits 0-47, `splitHook` address in bits 48-207.
+    /// @dev `lockedUntil` in bits 0-47, `hook` address in bits 48-207.
     /// @dev This packed data is often 0.
     /// @custom:param _projectId The ID of the project that the domain applies to.
     /// @custom:param _domainId The ID of the domain that the group is in.
     /// @custom:param _groupId The ID of the group the split is in.
     /// @custom:param _index The split's index within the group (in the order that the split were set).
-    /// @custom:return The split's `lockedUntil` and `splitHook` packed into one `uint256`.
+    /// @custom:return The split's `lockedUntil` and `hook` packed into one `uint256`.
     mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256)))) private
         _packedSplitParts2Of;
 
@@ -182,14 +182,14 @@ contract JBSplits is JBControlled, IJBSplits {
             _packedSplitParts1Of[_projectId][_domainId][_groupId][_i] = _packedSplitParts1;
 
             // If there's data to store in the second packed split part, pack and store.
-            if (_splits[_i].lockedUntil > 0 || _splits[_i].splitHook != IJBSplitHook(address(0))) {
+            if (_splits[_i].lockedUntil > 0 || _splits[_i].hook != IJBSplitHook(address(0))) {
                 // `lockedUntil` should fit within a uint48
                 if (_splits[_i].lockedUntil > type(uint48).max) revert INVALID_LOCKED_UNTIL();
 
                 // Pack `lockedUntil` in bits 0-47.
                 uint256 _packedSplitParts2 = uint48(_splits[_i].lockedUntil);
-                // Pack `splitHook` in bits 48-207.
-                _packedSplitParts2 |= uint256(uint160(address(_splits[_i].splitHook))) << 48;
+                // Pack `hook` in bits 48-207.
+                _packedSplitParts2 |= uint256(uint160(address(_splits[_i].hook))) << 48;
 
                 // Store the second split part.
                 _packedSplitParts2Of[_projectId][_domainId][_groupId][_i] = _packedSplitParts2;
@@ -226,7 +226,7 @@ contract JBSplits is JBControlled, IJBSplits {
             if (
                 _splits[_i].percent == _lockedSplit.percent
                     && _splits[_i].beneficiary == _lockedSplit.beneficiary
-                    && _splits[_i].splitHook == _lockedSplit.splitHook
+                    && _splits[_i].hook == _lockedSplit.hook
                     && _splits[_i].projectId == _lockedSplit.projectId
                     && _splits[_i].preferAddToBalance == _lockedSplit.preferAddToBalance
                 // Allow the lock to be extended.
@@ -281,8 +281,8 @@ contract JBSplits is JBControlled, IJBSplits {
             if (_packedSplitPart2 > 0) {
                 // `lockedUntil` in bits 0-47.
                 _split.lockedUntil = uint256(uint48(_packedSplitPart2));
-                // `splitHook` in bits 48-207.
-                _split.splitHook = IJBSplitHook(address(uint160(_packedSplitPart2 >> 48)));
+                // `hook` in bits 48-207.
+                _split.hook = IJBSplitHook(address(uint160(_packedSplitPart2 >> 48)));
             }
 
             // Add the split to the value being returned.
