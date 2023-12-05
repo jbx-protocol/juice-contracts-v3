@@ -3,7 +3,6 @@ pragma solidity ^0.8.6;
 
 import {JBCurrencyIds} from "@juicebox/libraries/JBCurrencyIds.sol";
 import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
-import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
 import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 
 contract AccessJBLib {
@@ -16,7 +15,7 @@ contract AccessJBLib {
     }
 
     function NativeToken() external pure returns (address) {
-        return JBTokenList.NATIVE;
+        return JBConstants.NATIVE_TOKEN;
     }
 
     function MAX_FEE() external pure returns (uint256) {

@@ -71,11 +71,10 @@ import {IJBPermissioned} from "@juicebox/interfaces/IJBPermissioned.sol";
 import {IJBRulesetApprovalHook} from "@juicebox/interfaces/IJBRulesetApprovalHook.sol";
 import {IJBPrices} from "@juicebox/interfaces/IJBPrices.sol";
 
-import {JBTokenList} from "@juicebox/libraries/JBTokenList.sol";
+import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBCurrencyIds} from "@juicebox/libraries/JBCurrencyIds.sol";
 import {JBTokenStandards} from "@juicebox/libraries/JBTokenStandards.sol";
 import {JBRulesetMetadataResolver} from "@juicebox/libraries/JBRulesetMetadataResolver.sol";
-import {JBConstants} from "@juicebox/libraries/JBConstants.sol";
 import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";

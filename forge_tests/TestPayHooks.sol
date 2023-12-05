@@ -38,7 +38,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
+            baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -65,7 +65,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -128,16 +128,16 @@ contract TestPayHooks_Local is TestBaseWorkflow {
                 projectId: _projectId,
                 rulesetId: _ruleset.id,
                 amount: JBTokenAmount(
-                    JBTokenList.NATIVE,
+                    JBConstants.NATIVE_TOKEN,
                     _nativePayAmount,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).decimals,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).currency
+                    _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).currency
                     ),
                 forwardedAmount: JBTokenAmount(
-                    JBTokenList.NATIVE,
+                    JBConstants.NATIVE_TOKEN,
                     _payHookAmounts[i],
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).decimals,
-                    _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).currency
+                    _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).decimals,
+                    _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).currency
                     ),
                 weight: _WEIGHT,
                 projectTokenCount: PRBMath.mulDiv(
@@ -180,7 +180,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Forge Test",

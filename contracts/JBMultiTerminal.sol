@@ -26,7 +26,6 @@ import {JBFees} from "./libraries/JBFees.sol";
 import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
 import {JBMetadataResolver} from "./libraries/JBMetadataResolver.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
-import {JBTokenList} from "./libraries/JBTokenList.sol";
 import {JBTokenStandards} from "./libraries/JBTokenStandards.sol";
 import {JBDidRedeemData} from "./structs/JBDidRedeemData.sol";
 import {JBDidPayData} from "./structs/JBDidPayData.sol";
@@ -229,7 +228,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     /// @return This terminal's balance.
     function _balance(address _token) internal view virtual returns (uint256) {
         // If the `_token` is native, get the native token balance.
-        return _token == JBTokenList.NATIVE
+        return _token == JBConstants.NATIVE_TOKEN
             ? address(this).balance
             : IERC20(_token).balanceOf(address(this));
     }
@@ -432,7 +431,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _beforeTransferFor(address(_to), _token, balance);
 
             // If this terminal's token is the native token, send it in `msg.value`.
-            uint256 _payValue = _token == JBTokenList.NATIVE ? balance : 0;
+            uint256 _payValue = _token == JBConstants.NATIVE_TOKEN ? balance : 0;
 
             // Withdraw the balance to transfer to the new terminal;
             _to.addToBalanceOf{value: _payValue}(_projectId, _token, balance, false, "", bytes(""));
@@ -604,7 +603,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             );
         } else {
             // Keep a reference to the amount that'll be paid in.
-            uint256 _payValue = _token == JBTokenList.NATIVE ? _amount : 0;
+            uint256 _payValue = _token == JBConstants.NATIVE_TOKEN ? _amount : 0;
             // Send the fee.
             // If this terminal's token is ETH, send it in msg.value.
             _feeTerminal.pay{value: _payValue}(
@@ -670,7 +669,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _beforeTransferFor(address(_split.hook), _token, netPayoutAmount);
 
             // Get a reference to the amount being paid in `msg.value`.
-            uint256 _payValue = _token == JBTokenList.NATIVE ? netPayoutAmount : 0;
+            uint256 _payValue = _token == JBConstants.NATIVE_TOKEN ? netPayoutAmount : 0;
 
             // If this terminal's token is the native token, send it in `msg.value`.
             _split.hook.process{value: _payValue}(_payload);
@@ -701,7 +700,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                     _addToBalanceOf(_split.projectId, _token, netPayoutAmount, false, "", _metadata);
                 } else {
                     // Get a reference to the amount being added to balance through `msg.value`.
-                    uint256 _payValue = _token == JBTokenList.NATIVE ? netPayoutAmount : 0;
+                    uint256 _payValue = _token == JBConstants.NATIVE_TOKEN ? netPayoutAmount : 0;
 
                     // Add to balance.
                     // If this terminal's token is the native token, send it in `msg.value`.
@@ -728,7 +727,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                     );
                 } else {
                     // Keep a reference to the amount being paid through `msg.value`.
-                    uint256 _payValue = _token == JBTokenList.NATIVE ? netPayoutAmount : 0;
+                    uint256 _payValue = _token == JBConstants.NATIVE_TOKEN ? netPayoutAmount : 0;
 
                     // Make the payment.
                     // If this terminal's token is the native token, send it in `msg.value`.
@@ -776,7 +775,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         }
 
         // If the terminal's token is the native token, override `_amount` with `msg.value`.
-        if (_token == JBTokenList.NATIVE) return msg.value;
+        if (_token == JBConstants.NATIVE_TOKEN) return msg.value;
 
         // If the terminal's token is not native, revert if there is a non-zero `msg.value`.
         if (msg.value != 0) revert NO_MSG_VALUE_ALLOWED();
@@ -1321,7 +1320,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _beforeTransferFor(address(_payload.hook), _tokenAmount.token, _payload.amount);
 
             // Keep a reference to the amount that'll be paid as a `msg.value`.
-            uint256 _payValue = _tokenAmount.token == JBTokenList.NATIVE ? _payload.amount : 0;
+            uint256 _payValue = _tokenAmount.token == JBConstants.NATIVE_TOKEN ? _payload.amount : 0;
 
             // Fulfill the payload.
             _payload.hook.didPay{value: _payValue}(_data);
@@ -1407,7 +1406,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
             // Keep a reference to the amount that'll be paid as a `msg.value`.
             uint256 _payValue =
-                _beneficiaryTokenAmount.token == JBTokenList.NATIVE ? _payload.amount : 0;
+                _beneficiaryTokenAmount.token == JBConstants.NATIVE_TOKEN ? _payload.amount : 0;
 
             // Fulfill the payload.
             _payload.hook.didRedeem{value: _payValue}(_data);
@@ -1555,7 +1554,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         virtual
     {
         // If the token is the native token, assume the native token standard.
-        if (_token == JBTokenList.NATIVE) return Address.sendValue(_to, _amount);
+        if (_token == JBConstants.NATIVE_TOKEN) return Address.sendValue(_to, _amount);
 
         if (_from == address(this)) return IERC20(_token).safeTransfer(_to, _amount);
 
@@ -1574,7 +1573,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     /// @param _amount The number of tokens being transferred, as a fixed point number with the same number of decimals as this terminal.
     function _beforeTransferFor(address _to, address _token, uint256 _amount) internal virtual {
         // If the token is the native token, assume the native token standard.
-        if (_token == JBTokenList.NATIVE) return;
+        if (_token == JBConstants.NATIVE_TOKEN) return;
         IERC20(_token).safeIncreaseAllowance(_to, _amount);
     }
 

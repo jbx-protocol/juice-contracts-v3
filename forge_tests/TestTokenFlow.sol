@@ -31,7 +31,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
+            baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: true,
@@ -59,7 +59,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -147,7 +147,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _terminal.pay{value: 1 ether}({
             projectId: _projectId,
             amount: 1 ether,
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",

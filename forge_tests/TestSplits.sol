@@ -34,7 +34,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
+            baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -76,7 +76,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         });
 
         _splitsGroup[0] =
-            JBSplitGroup({groupId: uint32(uint160(JBTokenList.NATIVE)), splits: _splits});
+            JBSplitGroup({groupId: uint32(uint160(JBConstants.NATIVE_TOKEN)), splits: _splits});
 
         // A dummy used to check that splits groups of "0" cannot bypass payout limits.
         _splitsGroup[1] = JBSplitGroup({groupId: 0, splits: _splits});
@@ -102,13 +102,13 @@ contract TestSplits_Local is TestBaseWorkflow {
 
         _payoutLimits[0] = JBCurrencyAmount({
             amount: _nativePayoutLimit,
-            currency: uint32(uint160(JBTokenList.NATIVE))
+            currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
         });
         _surplusPayoutLimits[0] =
-            JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBTokenList.NATIVE))});
+            JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
             surplusPayoutLimits: _surplusPayoutLimits
         });
@@ -125,7 +125,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -158,7 +158,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             beneficiary: _payee,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -169,8 +169,8 @@ contract TestSplits_Local is TestBaseWorkflow {
         _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativePayoutLimit,
-            currency: uint32(uint160(JBTokenList.NATIVE)),
-            token: JBTokenList.NATIVE, // Unused.
+            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
+            token: JBConstants.NATIVE_TOKEN, // Unused.
             minReturnedTokens: 0
         });
 
@@ -188,8 +188,8 @@ contract TestSplits_Local is TestBaseWorkflow {
         _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativePayoutLimit,
-            currency: uint32(uint160(JBTokenList.NATIVE)),
-            token: JBTokenList.NATIVE, // Unused.
+            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
+            token: JBConstants.NATIVE_TOKEN, // Unused.
             minReturnedTokens: 0
         });
 
@@ -243,7 +243,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         _surplusPayoutLimits[0] = JBCurrencyAmount({amount: 2 ether, currency: _currencyId});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
             surplusPayoutLimits: _surplusPayoutLimits
         });
@@ -260,7 +260,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.NATIVE,
+            token: JBConstants.NATIVE_TOKEN,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
