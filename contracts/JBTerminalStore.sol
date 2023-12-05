@@ -33,11 +33,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
     error INVALID_AMOUNT_TO_SEND_HOOK();
-    error CURRENCY_MISMATCH();
     error PAYOUT_LIMIT_EXCEEDED();
     error RULESET_PAYMENT_PAUSED();
-    error RULESET_PAYOUT_PAUSED();
-    error RULESET_REDEEM_PAUSED();
     error INADEQUATE_CONTROLLER_ALLOWANCE();
     error INADEQUATE_TERMINAL_STORE_BALANCE();
     error INSUFFICIENT_TOKENS();

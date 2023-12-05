@@ -44,7 +44,6 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_HOOK();
     error RULESET_ALREADY_LAUNCHED();
     error INVALID_BASE_CURRENCY();
     error INVALID_REDEMPTION_RATE();
@@ -52,7 +51,6 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     error CONTROLLER_MIGRATION_NOT_ALLOWED();
     error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
     error NO_BURNABLE_TOKENS();
-    error NOT_CURRENT_CONTROLLER();
     error CREDIT_TRANSFERS_PAUSED();
     error ZERO_TOKENS_TO_MINT();
 

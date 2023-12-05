@@ -62,7 +62,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     //*********************************************************************//
 
     error ACCOUNTING_CONTEXT_ALREADY_SET();
-    error FEE_TOO_HIGH();
     error INADEQUATE_PAYOUT_AMOUNT();
     error INADEQUATE_RECLAIM_AMOUNT();
     error UNDER_MIN_RETURNED_TOKENS();
