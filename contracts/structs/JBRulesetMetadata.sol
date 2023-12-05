@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 /// @custom:member baseCurrency The currency on which to base the ruleset's weight.
 /// @custom:member pausePay A flag indicating if the pay functionality should be paused during the ruleset.
 /// @custom:member pauseCreditTransfers A flag indicating if the project token transfer functionality should be paused during the funding cycle.
-/// @custom:member allowDiscretionaryMinting A flag indicating if the project owner or an operator with the `MINT_TOKENS` permission from the owner should be allowed to mint project tokens on demand during this ruleset.
+/// @custom:member allowOwnerMinting A flag indicating if the project owner or an operator with the `MINT_TOKENS` permission from the owner should be allowed to mint project tokens on demand during this ruleset.
 /// @custom:member allowTerminalMigration A flag indicating if migrating terminals should be allowed during this ruleset.
 /// @custom:member allowSetTerminals A flag indicating if a project's terminals can be added or removed.
 /// @custom:member allowControllerMigration A flag indicating if migrating controllers should be allowed during this ruleset.
@@ -23,7 +23,7 @@ struct JBRulesetMetadata {
     uint256 baseCurrency;
     bool pausePay;
     bool pauseCreditTransfers;
-    bool allowDiscretionaryMinting;
+    bool allowOwnerMinting;
     bool allowTerminalMigration;
     bool allowSetTerminals;
     bool allowControllerMigration;

@@ -55,7 +55,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
             pauseCreditTransfers: false,
-            allowDiscretionaryMinting: true,
+            allowOwnerMinting: true,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowControllerMigration: false,

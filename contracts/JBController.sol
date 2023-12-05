@@ -374,7 +374,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
             // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
-                !_ruleset.allowDiscretionaryMinting()
+                !_ruleset.allowOwnerMinting()
                     && !directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
                     && _msgSender() != address(_ruleset.dataHook())
             ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
