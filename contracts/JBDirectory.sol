@@ -168,7 +168,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
 
     /// @notice Set a project's controller. Controllers manage how terminals interact with tokens and rulesets.
     /// @dev A controller can be set if:
-    /// @dev - The project's ruleset allows setting the controller, and the message sender is the project owner or an operator with permission to `SET_CONTROLLER` from them.
+    /// @dev - The project's ruleset allows setting the controller, and the message sender is the project owner or an operator with the `SET_CONTROLLER` permission from them.
     /// @dev - OR the message sender is the project's current controller.
     /// @dev - OR an allowedlisted address is setting a controller for a project that doesn't already have a controller.
     /// @param _projectId The ID of the project to set the controller of.

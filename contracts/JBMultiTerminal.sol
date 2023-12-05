@@ -324,7 +324,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Holders can redeem a project's tokens to reclaim some of that project's surplus tokens, or to trigger rules determined by the current ruleset's data hook and redeem hook.
-    /// @dev Only a token's holder or an operator with the `JBPermissionIds.REDEEM_TOKENS` permission from that holder can redeem those tokens.
+    /// @dev Only a token's holder or an operator with the `REDEEM_TOKENS` permission from that holder can redeem those tokens.
     /// @param _holder The account whose tokens are being redeemed.
     /// @param _projectId The ID of the project the project tokens belong to.
     /// @param _tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
@@ -375,7 +375,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Allows a project to pay out funds from its surplus up to the current surplus allowance.
-    /// @dev Only a project's owner or an operator with the `JBPermissionIds.USE_ALLOWANCE` permission from that owner can use the surplus allowance.
+    /// @dev Only a project's owner or an operator with the `USE_ALLOWANCE` permission from that owner can use the surplus allowance.
     /// @dev Incurs the protocol fee unless the caller is a feeless address.
     /// @param _projectId The ID of the project to use the surplus allowance of.
     /// @param _token The token being paid out from the surplus.
@@ -406,7 +406,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Migrate a project's funds and operations to a new terminal that accepts the same token type.
-    /// @dev Only a project's owner or an operator with the `JBPermissionIds.MIGRATE_TERMINAL` permission from that owner can migrate the project's terminal.
+    /// @dev Only a project's owner or an operator with the `MIGRATE_TERMINAL` permission from that owner can migrate the project's terminal.
     /// @param _projectId The ID of the project being migrated.
     /// @param _token The address of the token being migrated.
     /// @param _to The terminal contract being migrated to, which will receive the project's funds and operations.
@@ -442,7 +442,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Process any fees that are being held for the project.
-    /// @dev Only a project's owner, an operator with the `JBPermissionIds.PROCESS_FEES` permission from that owner, or this terminal's owner can process held fees.
+    /// @dev Only a project's owner, an operator with the `PROCESS_FEES` permission from that owner, or this terminal's owner can process held fees.
     /// @param _projectId The ID of the project to process held fees for.
     function processHeldFees(uint256 _projectId, address _token)
         external
@@ -507,7 +507,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Adds accounting contexts for a project to this terminal so the project can begin accepting the tokens in those contexts.
-    /// @dev Only a project's owner, an operator with the `JBPermissionIds.SET_ACCOUNTING_CONTEXT` permission from that owner, or a project's controller can add accounting contexts for the project.
+    /// @dev Only a project's owner, an operator with the `SET_ACCOUNTING_CONTEXT` permission from that owner, or a project's controller can add accounting contexts for the project.
     /// @param _projectId The ID of the project having to add accounting contexts for.
     /// @param _accountingContextConfigs The accounting contexts to add.
     function addAccountingContextsFor(
@@ -931,7 +931,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Holders can redeem their tokens to claim some of a project's surplus, or to trigger rules determined by the project's current ruleset's data hook.
-    /// @dev Only a token holder or a an operator with the `JBPermissionIds.REDEEM_TOKENS` permission from that holder can redeem those tokens.
+    /// @dev Only a token holder or a an operator with the `REDEEM_TOKENS` permission from that holder can redeem those tokens.
     /// @param _holder The account redeeming tokens.
     /// @param _projectId The ID of the project whose tokens are being redeemed.
     /// @param _token The address of the token which is being reclaimed.
@@ -1104,7 +1104,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     }
 
     /// @notice Allows a project to send out funds from its surplus up to the current surplus allowance.
-    /// @dev Only a project's owner or an operator with the `JBPermissionIds.USE_ALLOWANCE` permission from that owner can use the surplus allowance.
+    /// @dev Only a project's owner or an operator with the `USE_ALLOWANCE` permission from that owner can use the surplus allowance.
     /// @dev Incurs the protocol fee unless the caller is a feeless address.
     /// @param _projectId The ID of the project to use the surplus allowance of.
     /// @param _token The token being paid out from the surplus.

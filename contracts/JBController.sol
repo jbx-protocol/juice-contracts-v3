@@ -315,7 +315,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Queues one or more rulesets that will take effect once the current ruleset expires. Rulesets only take effect if they are approved by the previous ruleset's approval hook.
-    /// @dev Only a project's owner or a designated operator can queue rulesets for it.
+    /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS` permission from them can queue rulesets for a project.
     /// @param _projectId The ID of the project that rulesets are being queued for.
     /// @param _rulesetConfigurations The configurations of the rulesets to queue.
     /// @param _memo A memo to pass along to the emitted event.
@@ -338,7 +338,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Mint new project tokens into an account, optionally reserving a portion according to the current ruleset's reserved rate.
-    /// @dev Only a project's owner, an operator with the `MINT_TOKENS` permission, one of the project's terminals, or its current data hook can mint a project's tokens.
+    /// @dev Only a project's owner, an operator with the `MINT_TOKENS` permission from them, one of the project's terminals, or its current data hook can mint a project's tokens.
     /// @dev If the ruleset has discretionary minting disabled, this function can only be called by the terminal or data hook.
     /// @param _projectId The ID of the project the tokens being minted belong to.
     /// @param _tokenCount The total number of tokens to mint, including any tokens that will be reserved.
@@ -365,7 +365,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             // Get a reference to the project's current ruleset.
             JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
-            // Minting limited to: project owner, authorized operators, the project's terminals, or the project's current ruleset data hook
+            // Minting limited to: project owner, operators with the `MINT_TOKENS` permission from the owner, the project's terminals, or the project's current ruleset data hook
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
@@ -477,7 +477,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Allows a project to migrate from this controller to another one.
-    /// @dev Only a project's owner or an operator with the `MIGRATE_CONTROLLER` permission can migrate it.
+    /// @dev Only a project's owner or an operator with the `MIGRATE_CONTROLLER` permission from the owner can migrate it.
     /// @param _projectId The ID of the project that will be migrated from this controller.
     /// @param _to The controller the project is migrating to.
     function migrateController(uint256 _projectId, IJBMigratable _to)
@@ -526,7 +526,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Sets a project's split groups.
-    /// @dev Only a project's owner or an operator with `JBPermissionIds.SET_SPLITS` permission from the owner can set its splits through the project's controller.
+    /// @dev Only a project's owner or an operator with `SET_SPLITS` permission from the owner can set its splits through the project's controller.
     /// @dev The new split groups must include any currently set splits that are locked.
     /// @param _projectId The ID of the project split groups are being set for.
     /// @param _domainId The ID of the domain the split groups should be active in (this is often a `rulesetId`).
@@ -547,7 +547,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
     /// @notice Deploys an ERC-20 token for a project. It will be used when claiming tokens (with credits).
     /// @dev Deploys a project's ERC-20 token contract.
-    /// @dev Only a project's owner or an operator with `JBPermissionIds.ISSUE_TOKENS` permission from the owner can deploy its token.
+    /// @dev Only a project's owner or an operator with `ISSUE_TOKENS` permission from the owner can deploy its token.
     /// @param _projectId The ID of the project to deploy an ERC-20 token for.
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
@@ -563,7 +563,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Set a project's token if not already set.
-    /// @dev Only a project's owner or an operator with `JBPermissionIds.SET_TOKEN` permission from the owner can set its token.
+    /// @dev Only a project's owner or an operator with `SET_TOKEN` permission from the owner can set its token.
     /// @param _projectId The ID of the project to set the token of.
     /// @param _token The new token's address.
     function setTokenFor(uint256 _projectId, IJBToken _token)
@@ -576,7 +576,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Redeem credits to claim tokens into a holder's wallet.
-    /// @dev Only a credit holder or an operator with the `JBPermissionIds.CLAIM_TOKENS` permission from that holder can redeem those credits to claim tokens.
+    /// @dev Only a credit holder or an operator with the `CLAIM_TOKENS` permission from that holder can redeem those credits to claim tokens.
     /// @param _holder The owner of the credits being redeemed.
     /// @param _projectId The ID of the project whose tokens are being claimed.
     /// @param _amount The amount of tokens to claim.
@@ -596,7 +596,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     /// @notice Allows a holder to transfer credits to another account.
-    /// @dev Only a credit holder or an operator with the `JBPermissionIds.TRANSFER_TOKENS` permission from that holder can transfer those credits.
+    /// @dev Only a credit holder or an operator with the `TRANSFER_TOKENS` permission from that holder can transfer those credits.
     /// @param _holder The address to transfer credits from.
     /// @param _projectId The ID of the project whose credits are being transferred.
     /// @param _recipient The recipient of the credits.
