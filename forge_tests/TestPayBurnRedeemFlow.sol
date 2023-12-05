@@ -26,7 +26,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
             duration: 0,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: JBDeadline(address(0))
+            hook: JBDeadline(address(0))
         });
         _metadata = JBRulesetMetadata({
             reservedRate: 0,

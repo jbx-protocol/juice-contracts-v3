@@ -28,7 +28,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             duration: 3 days,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         _metadata = JBRulesetMetadata({

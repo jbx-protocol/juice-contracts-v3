@@ -28,7 +28,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
             duration: _DURATION,
             weight: 1000 * 10 ** _WEIGHT_DECIMALS,
             decayRate: _DECAY_RATE,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         _metadata = JBRulesetMetadata({

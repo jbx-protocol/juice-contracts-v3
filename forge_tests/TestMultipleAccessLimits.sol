@@ -30,7 +30,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             duration: 0,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
         _metadata = JBRulesetMetadata({
             reservedRate: 0,

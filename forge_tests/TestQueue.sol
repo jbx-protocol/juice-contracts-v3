@@ -28,13 +28,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: 1000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         });
         _dataQueue = JBRulesetData({
             duration: _RULESET_DURATION * 1 days,
             weight: 69 * 10 ** 18,
             decayRate: 0,
-            approvalHook: JBDeadline(address(0))
+            hook: JBDeadline(address(0))
         });
 
         _metadata = JBRulesetMetadata({
@@ -162,7 +162,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightFirstQueued,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _firstQueued[0].metadata = _metadata;
         _firstQueued[0].splitGroups = _splitGroup;
@@ -179,7 +179,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightSecondQueued,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _secondQueued[0].metadata = _metadata;
         _secondQueued[0].splitGroups = _splitGroup;
@@ -226,7 +226,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: 10_000 ether,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         });
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
@@ -254,7 +254,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
                 duration: _RULESET_DURATION * 1 days,
                 weight: initialRuleset.weight - (i + 1), // i+1 -> next ruleset
                 decayRate: 0,
-                approvalHook: _deadline
+                hook: _deadline
             });
             JBRulesetConfig[] memory _config = new JBRulesetConfig[](1);
             _config[0].mustStartAtOrAfter = 0;
@@ -325,7 +325,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: 12_345 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(6969)) // Wrong approval hook address.
+            hook: IJBRulesetApprovalHook(address(6969)) // Wrong approval hook address.
         });
 
         vm.prank(multisig());
@@ -349,13 +349,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _shortDuration,
             weight: 10_000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         });
         _dataQueue = JBRulesetData({
             duration: _RULESET_DURATION * 1 days,
             weight: 69 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
@@ -421,13 +421,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: 5 minutes,
             weight: 10_000 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
         _dataQueue = JBRulesetData({
             duration: _RULESET_DURATION * 1 days,
             weight: 69 * 10 ** 18,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
@@ -486,7 +486,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightInitial,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
@@ -510,7 +510,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightFirstQueued,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _firstQueued[0].metadata = _metadata;
         _firstQueued[0].splitGroups = _splitGroup;
@@ -533,7 +533,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightSecondQueued,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _secondQueued[0].metadata = _metadata;
         _secondQueued[0].splitGroups = _splitGroup;
@@ -600,7 +600,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightFirstQueued,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _firstQueued[0].metadata = _metadata;
         _firstQueued[0].splitGroups = _splitGroup;
@@ -625,7 +625,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             duration: _RULESET_DURATION * 1 days,
             weight: _weightSecondQueued,
             decayRate: 0,
-            approvalHook: _deadline
+            hook: _deadline
         }); // 3 day deadline duration.
         _secondQueued[0].metadata = _metadata;
         _secondQueued[0].splitGroups = _splitGroup;

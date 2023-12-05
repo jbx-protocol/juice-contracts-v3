@@ -26,7 +26,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
             duration: 0,
             weight: 0,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         _metadata = JBRulesetMetadata({

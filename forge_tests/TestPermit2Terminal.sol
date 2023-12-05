@@ -46,7 +46,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             duration: 0,
             weight: _WEIGHT,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({

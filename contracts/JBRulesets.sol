@@ -312,15 +312,16 @@ contract JBRulesets is JBControlled, IJBRulesets {
         }
 
         // Approval hook should be a valid contract, supporting the correct interface
-        if (_data.approvalHook != IJBRulesetApprovalHook(address(0))) {
-            address _approvalHook = address(_data.approvalHook);
+        if (_data.hook != IJBRulesetApprovalHook(address(0))) {
+            address _approvalHook = address(_data.hook);
 
             // Revert if there isn't a contract at the address
             if (_approvalHook.code.length == 0) revert INVALID_RULESET_APPROVAL_HOOK();
 
             // Make sure the approval hook supports the expected interface.
-            try _data.approvalHook.supportsInterface(type(IJBRulesetApprovalHook).interfaceId)
-            returns (bool _supports) {
+            try _data.hook.supportsInterface(type(IJBRulesetApprovalHook).interfaceId) returns (
+                bool _supports
+            ) {
                 if (!_supports) revert INVALID_RULESET_APPROVAL_HOOK(); // Contract exists at the address but with the wrong interface
             } catch {
                 revert INVALID_RULESET_APPROVAL_HOOK(); // No ERC165 support
@@ -339,11 +340,11 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Efficiently stores the ruleset's user-defined properties.
         // If all user config properties are zero, no need to store anything as the default value will have the same outcome.
         if (
-            _data.approvalHook != IJBRulesetApprovalHook(address(0)) || _data.duration > 0
+            _data.hook != IJBRulesetApprovalHook(address(0)) || _data.duration > 0
                 || _data.decayRate > 0
         ) {
             // approval hook in bits 0-159 bytes.
-            uint256 packed = uint160(address(_data.approvalHook));
+            uint256 packed = uint160(address(_data.hook));
 
             // duration in bits 160-191 bytes.
             packed |= _data.duration << 160;
@@ -467,10 +468,8 @@ contract JBRulesets is JBControlled, IJBRulesets {
 
         // The time when the duration of the base ruleset's approval hook has finished.
         // If the provided ruleset has no approval hook, return the current timestamp.
-        uint256 _timestampAfterApprovalHook = _baseRuleset.approvalHook
-            == IJBRulesetApprovalHook(address(0))
-            ? 0
-            : _rulesetId + _baseRuleset.approvalHook.duration();
+        uint256 _timestampAfterApprovalHook = _baseRuleset.hook
+            == IJBRulesetApprovalHook(address(0)) ? 0 : _rulesetId + _baseRuleset.hook.duration();
 
         _initializeRulesetFor(
             _projectId,
@@ -681,7 +680,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
             _baseRuleset.duration,
             _deriveWeightFrom(_baseRuleset, _start),
             _baseRuleset.decayRate,
-            _baseRuleset.approvalHook,
+            _baseRuleset.hook,
             _baseRuleset.metadata
         );
     }
@@ -838,12 +837,12 @@ contract JBRulesets is JBControlled, IJBRulesets {
         JBRuleset memory _approvalHookRuleset = _getStructFor(_projectId, _approvalHookRulesetId);
 
         // If there is no approval hook, it's considered empty.
-        if (_approvalHookRuleset.approvalHook == IJBRulesetApprovalHook(address(0))) {
+        if (_approvalHookRuleset.hook == IJBRulesetApprovalHook(address(0))) {
             return JBApprovalStatus.Empty;
         }
 
         // Return the approval hook's approval status.
-        return _approvalHookRuleset.approvalHook.approvalStatusOf(_projectId, _rulesetId, _start);
+        return _approvalHookRuleset.hook.approvalStatusOf(_projectId, _rulesetId, _start);
     }
 
     /// @notice Unpack a ruleset's packed stored values into an easy-to-work-with ruleset struct.
@@ -874,7 +873,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         uint256 _packedUserProperties = _packedUserPropertiesOf[_projectId][_rulesetId];
 
         // approval hook in bits 0-159 bits.
-        ruleset.approvalHook = IJBRulesetApprovalHook(address(uint160(_packedUserProperties)));
+        ruleset.hook = IJBRulesetApprovalHook(address(uint160(_packedUserProperties)));
         // `duration` in bits 160-191 bits.
         ruleset.duration = uint256(uint32(_packedUserProperties >> 160));
         // decay rate in bits 192-223 bits.

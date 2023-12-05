@@ -25,7 +25,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             duration: 0,
             weight: 0,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         _metadata = JBRulesetMetadata({
@@ -64,7 +64,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                     queued.duration,
                     queued.weight,
                     queued.decayRate,
-                    queued.approvalHook,
+                    queued.hook,
                     queued.metadata
                 )
             )
@@ -77,7 +77,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                         stored.duration,
                         stored.weight,
                         stored.decayRate,
-                        stored.approvalHook,
+                        stored.hook,
                         stored.metadata
                     )
                 )
@@ -123,7 +123,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             duration: _data.duration,
             weight: _data.weight,
             decayRate: _data.decayRate,
-            approvalHook: _data.approvalHook,
+            hook: _data.hook,
             metadata: ruleset.metadata
         });
 
@@ -140,7 +140,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             duration: 14,
             weight: _weight,
             decayRate: 450_000_000,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         // Package up ruleset configuration.
@@ -180,7 +180,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             duration: _data.duration,
             weight: _weight,
             decayRate: _data.decayRate,
-            approvalHook: _data.approvalHook,
+            hook: _data.hook,
             metadata: ruleset.metadata
         });
 
@@ -197,7 +197,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             duration: 14,
             weight: _weight,
             decayRate: 450_000_000,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         // Package up ruleset configuration.
@@ -250,7 +250,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                 duration: _data.duration,
                 weight: _weight,
                 decayRate: _data.decayRate,
-                approvalHook: _data.approvalHook,
+                hook: _data.hook,
                 metadata: ruleset.metadata
             });
 

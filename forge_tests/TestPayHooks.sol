@@ -32,7 +32,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
             duration: 0,
             weight: _WEIGHT,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
@@ -116,17 +116,17 @@ contract TestPayHooks_Local is TestBaseWorkflow {
             address _hookAddress = address(bytes20(keccak256(abi.encodePacked("PayHook", i))));
 
             // Send along some metadata to the pay hook.
-            bytes memory _dataHookMetadata = bytes("Some data hook metadata");
+            bytes memory _hookMetadata = bytes("Some data hook metadata");
 
             // Package up the hook payload struct.
             _payloads[i] =
-                JBPayHookPayload(IJBPayHook(_hookAddress), _payHookAmounts[i], _dataHookMetadata);
+                JBPayHookPayload(IJBPayHook(_hookAddress), _payHookAmounts[i], _hookMetadata);
 
             // Keep a reference to the data that'll be received by the hook.
             JBDidPayData memory _didPayData = JBDidPayData({
                 payer: _payer,
                 projectId: _projectId,
-                currentRulesetId: _ruleset.id,
+                rulesetId: _ruleset.id,
                 amount: JBTokenAmount(
                     JBTokenList.NATIVE,
                     _nativePayAmount,
@@ -144,7 +144,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
                     _nativePayAmount, _DATA_HOOK_WEIGHT, 10 ** _NATIVE_TOKEN_DECIMALS
                     ),
                 beneficiary: _beneficiary,
-                dataHookMetadata: _dataHookMetadata,
+                hookMetadata: _hookMetadata,
                 payerMetadata: _PAYER_METADATA
             });
 

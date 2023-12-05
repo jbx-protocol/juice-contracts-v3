@@ -1315,7 +1315,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             });
 
             // Pass the correct metadata from the data hook.
-            _data.dataHookMetadata = _payload.metadata;
+            _data.hookMetadata = _payload.metadata;
 
             // Trigger any inherited pre-transfer logic.
             _beforeTransferFor(address(_payload.hook), _tokenAmount.token, _payload.amount);
@@ -1403,7 +1403,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             });
 
             // Pass the correct metadata from the data hook.
-            _data.dataHookMetadata = _payload.metadata;
+            _data.hookMetadata = _payload.metadata;
 
             // Keep a reference to the amount that'll be paid as a `msg.value`.
             uint256 _payValue =

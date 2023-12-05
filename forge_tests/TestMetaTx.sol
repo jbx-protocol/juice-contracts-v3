@@ -78,7 +78,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             duration: 0,
             weight: _WEIGHT,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({

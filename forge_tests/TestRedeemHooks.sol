@@ -30,7 +30,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
             duration: 0,
             weight: _WEIGHT,
             decayRate: 0,
-            approvalHook: IJBRulesetApprovalHook(address(0))
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
@@ -140,7 +140,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         JBDidRedeemData memory _redeemData = JBDidRedeemData({
             holder: address(this),
             projectId: _projectId,
-            currentRulesetId: _ruleset.id,
+            rulesetId: _ruleset.id,
             projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
                 JBTokenList.NATIVE,
@@ -156,7 +156,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
                 ),
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             beneficiary: payable(address(this)),
-            dataHookMetadata: "",
+            hookMetadata: "",
             redeemerMetadata: ""
         });
 
