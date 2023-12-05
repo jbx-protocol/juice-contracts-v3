@@ -87,8 +87,6 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     }
 
     function testFuzzPayBurnRedeemFlow(
-        bool _payPreferClaimed,
-        bool _burnPreferClaimed,
         uint96 _nativePayAmount,
         uint256 _burnTokenAmount,
         uint256 _redeemTokenAmount

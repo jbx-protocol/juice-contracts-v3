@@ -86,12 +86,11 @@ contract TestRedeem_Local is TestBaseWorkflow {
     }
 
     function testRedeem(uint256 _tokenAmountToRedeem) external {
-        bool _payPreferClaimed = true;
         uint96 _nativePayAmount = 10 ether;
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _controller.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
+        _controller.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
 
         // Pay the project.
         _terminal.pay{value: _nativePayAmount}({

@@ -74,13 +74,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         });
     }
 
-    function testFuzzTokenFlow(
-        uint208 _mintAmount,
-        uint256 _burnAmount,
-        bool _issueToken,
-        bool _mintPreferClaimed,
-        bool _burnPreferClaimed
-    ) public {
+    function testFuzzTokenFlow(uint208 _mintAmount, uint256 _burnAmount, bool _issueToken) public {
         vm.startPrank(_projectOwner);
 
         if (_issueToken) {

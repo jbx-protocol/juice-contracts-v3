@@ -56,7 +56,6 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         public
         returns (uint256, JBCurrencyAmount[] memory, JBAccountingContextConfig[] memory)
     {
-        uint256 _nativePayAmount = 1.5 ether;
         uint256 _nativePayoutLimit = 1 ether;
         uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // Will exceed the project's balance in the terminal.
@@ -141,15 +140,10 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     function testAccessConstraintsDelineation() external {
         uint256 _nativePayAmount = 1.5 ether;
         uint256 _nativePayoutLimit = 1 ether;
-        uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // Will exceed the project's balance in the terminal.
-        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
-        (
-            uint256 _projectId,
-            JBCurrencyAmount[] memory _payoutLimits,
-            JBAccountingContextConfig[] memory _accountingContexts
-        ) = launchProjectsForTestBelow();
+        (uint256 _projectId, JBCurrencyAmount[] memory _payoutLimits,) =
+            launchProjectsForTestBelow();
 
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
