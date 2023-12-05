@@ -6,7 +6,7 @@ import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 /// Funds can be accessed in three ways:
 /// 1. project owners set a payout limit to prioritize spending to pre-determined destinations. funds being removed from the protocol incurs fees unless the recipients are feeless addresses.
-/// 2. project owners set a surplus allowance to allow spending funds from the project's surplus balance in the terminal (i.e. the balance in excess of their payout limit). incurs fees unless the caller is a feeless address.
+/// 2. project owners set a surplus payout limit to allow spending funds from the project's surplus balance in the terminal (i.e. the balance in excess of their payout limit). incurs fees unless the caller is a feeless address.
 /// 3. token holders can redeem tokens to access surplus funds. incurs fees if the redemption rate != 100%, unless the beneficiary is a feeless address.
 /// Each of these only incurs protocol fees if the `_FEE_PROJECT_ID` (project with ID #1) accepts the token being accessed.
 contract TestAccessToFunds_Local is TestBaseWorkflow {
@@ -67,11 +67,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
     }
 
-    // Tests that basic payout limit and surplus allowance limits work as intended.
-    function testNativeAllowance() public {
+    // Tests that basic payout limit and surplus payout limits work as intended.
+    function testNativePayoutLimits() public {
         // Hardcode values to use.
         uint256 _nativeCurrencyPayoutLimit = 10 * 10 ** _NATIVE_DECIMALS;
-        uint256 _nativeCurrencySurplusAllowance = 5 * 10 ** _NATIVE_DECIMALS;
+        uint256 _nativeCurrencySurplusPayoutLimit = 5 * 10 ** _NATIVE_DECIMALS;
 
         // Package up the limits for the given terminal.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
@@ -83,10 +83,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
-            // Specify a surplus allowance.
-            JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
-            _surplusAllowances[0] = JBCurrencyAmount({
-                amount: _nativeCurrencySurplusAllowance,
+            // Specify a surplus payout limit.
+            JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+            _surplusPayoutLimits[0] = JBCurrencyAmount({
+                amount: _nativeCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
@@ -94,7 +94,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 terminal: address(_terminal),
                 token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
-                surplusAllowances: _surplusAllowances
+                surplusPayoutLimits: _surplusPayoutLimits
             });
         }
 
@@ -139,9 +139,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
 
         // Get a reference to the amount being paid.
-        // The amount being paid is the payout limit plus two times the surplus allowance.
+        // The amount being paid is the payout limit plus two times the surplus payout limit.
         uint256 _nativePayAmount =
-            _nativeCurrencyPayoutLimit + (2 * _nativeCurrencySurplusAllowance);
+            _nativeCurrencyPayoutLimit + (2 * _nativeCurrencySurplusPayoutLimit);
 
         // Pay the project such that the `_beneficiary` receives project tokens.
         _terminal.pay{value: _nativePayAmount}({
@@ -166,11 +166,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _nativePayAmount
         );
 
-        // Use the full surplus allowance.
+        // Use the full surplus payout limit.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _nativeCurrencySurplusAllowance,
+            amount: _nativeCurrencySurplusPayoutLimit,
             currency: uint32(uint160(JBTokenList.NATIVE)),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -180,20 +180,20 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary received the funds and that they are no longer in the terminal.
         uint256 _beneficiaryNativeBalance = PRBMath.mulDiv(
-            _nativeCurrencySurplusAllowance,
+            _nativeCurrencySurplusPayoutLimit,
             JBConstants.MAX_FEE,
             JBConstants.MAX_FEE + _terminal.FEE()
         );
         assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
         assertEq(
             jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-            _nativePayAmount - _nativeCurrencySurplusAllowance
+            _nativePayAmount - _nativeCurrencySurplusPayoutLimit
         );
 
         // Make sure the fee was paid correctly.
         assertEq(
             jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-            _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
+            _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance
         );
         assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
 
@@ -201,7 +201,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(
             _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
             PRBMath.mulDiv(
-                _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
+                _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance,
                 _data.weight,
                 10 ** _NATIVE_DECIMALS
             ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE
@@ -226,7 +226,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the fee was paid correctly.
         assertEq(
             jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-            (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+            (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                 + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance)
         );
         assertEq(
@@ -238,7 +238,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(
             _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
             PRBMath.mulDiv(
-                (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+                (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                     + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance),
                 _data.weight,
                 10 ** _NATIVE_DECIMALS
@@ -263,7 +263,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Get the expected amount of native tokens reclaimed by the redemption.
         uint256 _nativeReclaimAmount = PRBMath.mulDiv(
             PRBMath.mulDiv(
-                _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit,
+                _nativePayAmount - _nativeCurrencySurplusPayoutLimit - _nativeCurrencyPayoutLimit,
                 _beneficiaryTokenBalance,
                 PRBMath.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
             ),
@@ -286,7 +286,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the fee was paid correctly.
         assertEq(
             jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-            (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+            (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                 + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance) + _feeAmount
         );
         assertEq(
@@ -303,8 +303,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         );
     }
 
-    function testFuzzNativeAllowance(
-        uint224 _nativeCurrencySurplusAllowance,
+    function testFuzzNativePayoutLimits(
+        uint224 _nativeCurrencySurplusPayoutLimit,
         uint224 _nativeCurrencyPayoutLimit,
         uint256 _nativePayAmount
     ) public {
@@ -314,9 +314,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the values don't overflow the registry.
         unchecked {
             vm.assume(
-                _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
-                    >= _nativeCurrencySurplusAllowance
-                    && _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+                _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
+                    >= _nativeCurrencySurplusPayoutLimit
+                    && _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                         >= _nativeCurrencyPayoutLimit
             );
         }
@@ -331,10 +331,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
-            // Specify a surplus allowance.
-            JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
-            _surplusAllowances[0] = JBCurrencyAmount({
-                amount: _nativeCurrencySurplusAllowance,
+            // Specify a surplus payout limit.
+            JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+            _surplusPayoutLimits[0] = JBCurrencyAmount({
+                amount: _nativeCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
@@ -342,7 +342,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 terminal: address(_terminal),
                 token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
-                surplusAllowances: _surplusAllowances
+                surplusPayoutLimits: _surplusPayoutLimits
             });
         }
 
@@ -409,20 +409,21 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _nativePayAmount
         );
 
-        // Revert if there's no surplus allowance.
-        if (_nativeCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
+        // Revert if there's no surplus payout limit.
+        if (_nativeCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
             // Revert if there's no surplus, or if too much is being withdrawn.
-        } else if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit > _nativePayAmount)
-        {
+        } else if (
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit > _nativePayAmount
+        ) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full surplus allowance.
+        // Use the full surplus payout limit.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _nativeCurrencySurplusAllowance,
+            amount: _nativeCurrencySurplusPayoutLimit,
             currency: uint32(uint160(JBTokenList.NATIVE)),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -434,23 +435,23 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _beneficiaryNativeBalance;
 
         // Check the collected balance if one is expected.
-        if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
+        if (_nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryNativeBalance = PRBMath.mulDiv(
-                _nativeCurrencySurplusAllowance,
+                _nativeCurrencySurplusPayoutLimit,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                _nativePayAmount - _nativeCurrencySurplusAllowance
+                _nativePayAmount - _nativeCurrencySurplusPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-                _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
+                _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
 
@@ -458,14 +459,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 PRBMath.mulDiv(
-                    _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
+                    _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance,
                     _data.weight,
                     10 ** _NATIVE_DECIMALS
                 ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE
             );
         } else {
-            // Set the native token surplus allowance to 0 if it wasn't used.
-            _nativeCurrencySurplusAllowance = 0;
+            // Set the surplus payout limit for the native token to 0 if it wasn't used.
+            _nativeCurrencySurplusPayoutLimit = 0;
         }
 
         // Revert if the payout limit is greater than the balance.
@@ -496,13 +497,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit
+                _nativePayAmount - _nativeCurrencySurplusPayoutLimit - _nativeCurrencyPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-                (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+                (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                     + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance)
             );
             assertEq(
@@ -514,7 +515,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 PRBMath.mulDiv(
-                    (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+                    (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                         + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance),
                     _data.weight,
                     10 ** _NATIVE_DECIMALS
@@ -538,11 +539,12 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), 0);
 
         // Check for a new beneficiary balance if one is expected.
-        if (_nativePayAmount > _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit) {
+        if (_nativePayAmount > _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit) {
             // Get the expected amount reclaimed.
             uint256 _nativeReclaimAmount = PRBMath.mulDiv(
                 PRBMath.mulDiv(
-                    _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit,
+                    _nativePayAmount - _nativeCurrencySurplusPayoutLimit
+                        - _nativeCurrencyPayoutLimit,
                     _beneficiaryTokenBalance,
                     PRBMath.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                 ),
@@ -564,7 +566,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the fee was paid correctly.
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-                (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+                (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                     + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance) + _feeAmount
             );
             assertEq(
@@ -582,8 +584,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
 
-    function testFuzzNativeAllowanceWithRevertingFeeProject(
-        uint224 _nativeCurrencySurplusAllowance,
+    function testFuzzNativePayoutLimitsWithRevertingFeeProject(
+        uint224 _nativeCurrencySurplusPayoutLimit,
         uint224 _nativeCurrencyPayoutLimit,
         uint256 _nativePayAmount,
         bool _feeProjectAcceptsToken
@@ -594,9 +596,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the values don't overflow the registry.
         unchecked {
             vm.assume(
-                _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
-                    >= _nativeCurrencySurplusAllowance
-                    && _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+                _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
+                    >= _nativeCurrencySurplusPayoutLimit
+                    && _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                         >= _nativeCurrencyPayoutLimit
             );
         }
@@ -611,10 +613,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
-            // Specify a surplus allowance.
-            JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
-            _surplusAllowances[0] = JBCurrencyAmount({
-                amount: _nativeCurrencySurplusAllowance,
+            // Specify a surplus payout limit.
+            JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+            _surplusPayoutLimits[0] = JBCurrencyAmount({
+                amount: _nativeCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
@@ -622,7 +624,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 terminal: address(_terminal),
                 token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
-                surplusAllowances: _surplusAllowances
+                surplusPayoutLimits: _surplusPayoutLimits
             });
         }
 
@@ -693,20 +695,21 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _nativePayAmount
         );
 
-        // Revert if there's no surplus allowance.
-        if (_nativeCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
+        // Revert if there's no surplus payout limit.
+        if (_nativeCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
             // Revert if there's no surplus, or if too much is being withdrawn.
-        } else if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit > _nativePayAmount)
-        {
+        } else if (
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit > _nativePayAmount
+        ) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full surplus allowance.
+        // Use the full surplus payout limit.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _nativeCurrencySurplusAllowance,
+            amount: _nativeCurrencySurplusPayoutLimit,
             currency: uint32(uint160(JBTokenList.NATIVE)),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -718,10 +721,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _beneficiaryNativeBalance;
 
         // Check the collected balance if one is expected.
-        if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
+        if (_nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryNativeBalance = PRBMath.mulDiv(
-                _nativeCurrencySurplusAllowance,
+                _nativeCurrencySurplusPayoutLimit,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
@@ -742,8 +745,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the beneficiary got no tokens.
             assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), 0);
         } else {
-            // Set the native token's surplus allowance to 0 if it wasn't used.
-            _nativeCurrencySurplusAllowance = 0;
+            // Set the native token's surplus payout limit to 0 if it wasn't used.
+            _nativeCurrencySurplusPayoutLimit = 0;
         }
 
         // Revert if the payout limit is greater than the balance.
@@ -808,7 +811,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), 0);
 
         // Check for a new beneficiary balance if one is expected.
-        if (_nativePayAmount > _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit) {
+        if (_nativePayAmount > _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit) {
             // Get the expected amount reclaimed.
             uint256 _nativeReclaimAmount = PRBMath.mulDiv(
                 PRBMath.mulDiv(
@@ -854,8 +857,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
 
-    function testFuzzNativeTokenAllowanceForTheFeeProject(
-        uint224 _nativeCurrencySurplusAllowance,
+    function testFuzzNativePayoutLimitsForTheFeeProject(
+        uint224 _nativeCurrencySurplusPayoutLimit,
         uint224 _nativeCurrencyPayoutLimit,
         uint256 _nativePayAmount
     ) public {
@@ -865,9 +868,9 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the values don't overflow the registry.
         unchecked {
             vm.assume(
-                _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
-                    >= _nativeCurrencySurplusAllowance
-                    && _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+                _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
+                    >= _nativeCurrencySurplusPayoutLimit
+                    && _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                         >= _nativeCurrencyPayoutLimit
             );
         }
@@ -882,10 +885,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
-            // Specify a surplus allowance.
-            JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
-            _surplusAllowances[0] = JBCurrencyAmount({
-                amount: _nativeCurrencySurplusAllowance,
+            // Specify a surplus payout limit.
+            JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+            _surplusPayoutLimits[0] = JBCurrencyAmount({
+                amount: _nativeCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
@@ -893,7 +896,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 terminal: address(_terminal),
                 token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
-                surplusAllowances: _surplusAllowances
+                surplusPayoutLimits: _surplusPayoutLimits
             });
         }
 
@@ -952,20 +955,21 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _nativePayAmount
         );
 
-        // Revert if there's no surplus allowance.
-        if (_nativeCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
+        // Revert if there's no surplus payout limit.
+        if (_nativeCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
             // Revert if there's no surplus, or if too much is being withdrawn.
-        } else if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit > _nativePayAmount)
-        {
+        } else if (
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit > _nativePayAmount
+        ) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full surplus allowance.
+        // Use the full surplus payout limit.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _nativeCurrencySurplusAllowance,
+            amount: _nativeCurrencySurplusPayoutLimit,
             currency: uint32(uint160(JBTokenList.NATIVE)),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -977,10 +981,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _beneficiaryNativeBalance;
 
         // Check the collected balance if one is expected.
-        if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
+        if (_nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryNativeBalance = PRBMath.mulDiv(
-                _nativeCurrencySurplusAllowance,
+                _nativeCurrencySurplusPayoutLimit,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
@@ -995,14 +999,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 PRBMath.mulDiv(
-                    _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
+                    _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance,
                     _data.weight,
                     10 ** _NATIVE_DECIMALS
                 ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE
             );
         } else {
-            // Set the native token surplus allowance to 0 if it wasn't used.
-            _nativeCurrencySurplusAllowance = 0;
+            // Set the surplus payout limit for the native token to 0 if it wasn't used.
+            _nativeCurrencySurplusPayoutLimit = 0;
         }
 
         // Revert if the payout limit is greater than the balance.
@@ -1044,7 +1048,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 PRBMath.mulDiv(
-                    (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+                    (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                         + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance),
                     _data.weight,
                     10 ** _NATIVE_DECIMALS
@@ -1065,10 +1069,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Check for a new beneficiary balance if one is expected.
-        if (_nativePayAmount > _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit) {
+        if (_nativePayAmount > _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit) {
             // Keep a reference to the total amount paid, including from fees.
             uint256 _totalPaid = _nativePayAmount
-                + (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
+                + (_nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance)
                 + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance);
 
             // Get the expected amount reclaimed.
@@ -1115,11 +1119,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         }
     }
 
-    function testFuzzMultiCurrencyAllowance(
-        uint224 _nativeCurrencySurplusAllowance,
+    function testFuzzMultiCurrencyPayoutLimits(
+        uint224 _nativeCurrencySurplusPayoutLimit,
         uint224 _nativeCurrencyPayoutLimit,
         uint256 _nativePayAmount,
-        uint224 _usdCurrencySurplusAllowance,
+        uint224 _usdCurrencySurplusPayoutLimit,
         uint224 _usdCurrencyPayoutLimit,
         uint256 _usdcPayAmount
     ) public {
@@ -1129,18 +1133,19 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the values don't overflow the registry.
         unchecked {
-            // vm.assume(_nativeCurrencySurplusAllowance + _cumulativePayoutLimit  >= _nativeCurrencySurplusAllowance && _nativeCurrencySurplusAllowance + _cumulativePayoutLimit >= _cumulativePayoutLimit);
-            // vm.assume(_usdCurrencySurplusAllowance + (_usdCurrencyPayoutLimit + PRBMath.mulDiv(_nativeCurrencyPayoutLimit, _USD_PRICE_PER_NATIVE, 10**_PRICE_FEED_DECIMALS))*2 >= _usdCurrencySurplusAllowance && _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit >= _usdCurrencyPayoutLimit);
+            // vm.assume(_nativeCurrencySurplusPayoutLimit + _cumulativePayoutLimit  >= _nativeCurrencySurplusPayoutLimit && _nativeCurrencySurplusPayoutLimit + _cumulativePayoutLimit >= _cumulativePayoutLimit);
+            // vm.assume(_usdCurrencySurplusPayoutLimit + (_usdCurrencyPayoutLimit + PRBMath.mulDiv(_nativeCurrencyPayoutLimit, _USD_PRICE_PER_NATIVE, 10**_PRICE_FEED_DECIMALS))*2 >= _usdCurrencySurplusPayoutLimit && _usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit >= _usdCurrencyPayoutLimit);
             vm.assume(
-                _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
-                    >= _nativeCurrencySurplusAllowance
-                    && _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+                _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
+                    >= _nativeCurrencySurplusPayoutLimit
+                    && _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                         >= _nativeCurrencyPayoutLimit
             );
             vm.assume(
-                _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit
-                    >= _usdCurrencySurplusAllowance
-                    && _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit >= _usdCurrencyPayoutLimit
+                _usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit
+                    >= _usdCurrencySurplusPayoutLimit
+                    && _usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit
+                        >= _usdCurrencyPayoutLimit
             );
         }
 
@@ -1159,14 +1164,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 currency: uint32(uint160(address(_usdcToken)))
             });
 
-            // Specify surplus allowances.
-            JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
-            _surplusAllowances[0] = JBCurrencyAmount({
-                amount: _nativeCurrencySurplusAllowance,
+            // Specify surplus payout limits.
+            JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](2);
+            _surplusPayoutLimits[0] = JBCurrencyAmount({
+                amount: _nativeCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
-            _surplusAllowances[1] = JBCurrencyAmount({
-                amount: _usdCurrencySurplusAllowance,
+            _surplusPayoutLimits[1] = JBCurrencyAmount({
+                amount: _usdCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(address(_usdcToken)))
             });
 
@@ -1174,7 +1179,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 terminal: address(_terminal),
                 token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
-                surplusAllowances: _surplusAllowances
+                surplusPayoutLimits: _surplusPayoutLimits
             });
 
             // Package up the ruleset configuration.
@@ -1298,21 +1303,21 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
         }
 
-        // Revert if there's no native token allowance.
-        if (_nativeCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
+        // Revert if there's no surplus payout limit for the native token.
+        if (_nativeCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
         } else if (
-            _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                 + _toNative(_usdCurrencyPayoutLimit) > _nativePayAmount
         ) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full native token surplus allowance.
+        // Use the full surplus payout limit for the native token.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _nativeCurrencySurplusAllowance,
+            amount: _nativeCurrencySurplusPayoutLimit,
             currency: uint32(uint160(JBTokenList.NATIVE)),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -1325,25 +1330,25 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Check the collected balance if one is expected.
         if (
-            _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                 + _toNative(_usdCurrencyPayoutLimit) <= _nativePayAmount
         ) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryNativeBalance = PRBMath.mulDiv(
-                _nativeCurrencySurplusAllowance,
+                _nativeCurrencySurplusPayoutLimit,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                _nativePayAmount - _nativeCurrencySurplusAllowance
+                _nativePayAmount - _nativeCurrencySurplusPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-                _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
+                _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
 
@@ -1352,34 +1357,34 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
                     PRBMath.mulDiv(
-                        _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
+                        _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance,
                         _data.weight,
                         10 ** _NATIVE_DECIMALS
                     )
                 )
             );
         } else {
-            // Set the native token surplus allowance to 0 if it wasn't used.
-            _nativeCurrencySurplusAllowance = 0;
+            // Set the surplus payout limit for the native token to 0 if it wasn't used.
+            _nativeCurrencySurplusPayoutLimit = 0;
         }
 
-        // Revert if there's no native token allowance.
-        if (_usdCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
-            // revert if the USD surplus allowance resolved to native tokens is greater than 0, and there is sufficient surplus to pull from including what was already pulled from.
+        // Revert if there's no surplus payout limit for the native token.
+        if (_usdCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
+            // revert if the USD surplus payout limit resolved to native tokens is greater than 0, and there is sufficient surplus to pull from including what was already pulled from.
         } else if (
-            _toNative(_usdCurrencySurplusAllowance) > 0
-                && _toNative(_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit)
-                    + _nativeCurrencyPayoutLimit + _nativeCurrencySurplusAllowance > _nativePayAmount
+            _toNative(_usdCurrencySurplusPayoutLimit) > 0
+                && _toNative(_usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit)
+                    + _nativeCurrencyPayoutLimit + _nativeCurrencySurplusPayoutLimit > _nativePayAmount
         ) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full native token surplus allowance.
+        // Use the full surplus payout limit for the native token.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _usdCurrencySurplusAllowance,
+            amount: _usdCurrencySurplusPayoutLimit,
             currency: uint32(uint160(address(_usdcToken))),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -1389,26 +1394,27 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Check the collected balance if one is expected.
         if (
-            _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
-                + _toNative(_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit) <= _nativePayAmount
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
+                + _toNative(_usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit)
+                <= _nativePayAmount
         ) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryNativeBalance += PRBMath.mulDiv(
-                _toNative(_usdCurrencySurplusAllowance),
+                _toNative(_usdCurrencySurplusPayoutLimit),
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                _nativePayAmount - _nativeCurrencySurplusAllowance
-                    - _toNative(_usdCurrencySurplusAllowance)
+                _nativePayAmount - _nativeCurrencySurplusPayoutLimit
+                    - _toNative(_usdCurrencySurplusPayoutLimit)
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-                _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
+                _nativeCurrencySurplusPayoutLimit + _toNative(_usdCurrencySurplusPayoutLimit)
                     - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -1418,16 +1424,16 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
                     PRBMath.mulDiv(
-                        _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
-                            - _beneficiaryNativeBalance,
+                        _nativeCurrencySurplusPayoutLimit
+                            + _toNative(_usdCurrencySurplusPayoutLimit) - _beneficiaryNativeBalance,
                         _data.weight,
                         10 ** _NATIVE_DECIMALS
                     )
                 )
             );
         } else {
-            // Set the native token surplus allowance to 0 if it wasn't used.
-            _usdCurrencySurplusAllowance = 0;
+            // Set the surplus payout limit for the native token to 0 if it wasn't used.
+            _usdCurrencySurplusPayoutLimit = 0;
         }
 
         // Payout limits
@@ -1459,8 +1465,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
                 assertEq(
                     jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                    _nativePayAmount - _nativeCurrencySurplusAllowance
-                        - _toNative(_usdCurrencySurplusAllowance) - _nativeCurrencyPayoutLimit
+                    _nativePayAmount - _nativeCurrencySurplusPayoutLimit
+                        - _toNative(_usdCurrencySurplusPayoutLimit) - _nativeCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
@@ -1468,7 +1474,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     jbTerminalStore().balanceOf(
                         address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE
                     ),
-                    _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
+                    _nativeCurrencySurplusPayoutLimit + _toNative(_usdCurrencySurplusPayoutLimit)
                         - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit
                         - _projectOwnerNativeBalance
                 );
@@ -1478,7 +1484,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 );
 
                 // Make sure the project owner got the expected number of tokens.
-                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(PRBMath.mulDiv(_nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
+                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(PRBMath.mulDiv(_nativeCurrencySurplusPayoutLimit + _toNative(_usdCurrencySurplusPayoutLimit) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
             }
 
             // Revert if the payout limit is greater than the balance.
@@ -1519,8 +1525,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
                 assertEq(
                     jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                    _nativePayAmount - _nativeCurrencySurplusAllowance
-                        - _toNative(_usdCurrencySurplusAllowance) - _nativeCurrencyPayoutLimit
+                    _nativePayAmount - _nativeCurrencySurplusPayoutLimit
+                        - _toNative(_usdCurrencySurplusPayoutLimit) - _nativeCurrencyPayoutLimit
                         - _toNative(_usdCurrencyPayoutLimit)
                 );
 
@@ -1530,8 +1536,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                         address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE
                     ),
                     (
-                        _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
-                            - _beneficiaryNativeBalance
+                        _nativeCurrencySurplusPayoutLimit
+                            + _toNative(_usdCurrencySurplusPayoutLimit) - _beneficiaryNativeBalance
                     )
                         + (
                             _nativeCurrencyPayoutLimit + _toNative(_usdCurrencyPayoutLimit)
@@ -1547,15 +1553,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Keep a reference to the remaining native token surplus.
         uint256 _nativeSurplus = _nativeCurrencyPayoutLimit + _toNative(_usdCurrencyPayoutLimit)
-            + _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
+            + _nativeCurrencySurplusPayoutLimit + _toNative(_usdCurrencySurplusPayoutLimit)
             >= _nativePayAmount
             ? 0
             : _nativePayAmount - _nativeCurrencyPayoutLimit - _toNative(_usdCurrencyPayoutLimit)
-                - _nativeCurrencySurplusAllowance - _toNative(_usdCurrencySurplusAllowance);
+                - _nativeCurrencySurplusPayoutLimit - _toNative(_usdCurrencySurplusPayoutLimit);
 
         // Keep a reference to the remaining native token balance.
-        uint256 _nativeBalance = _nativePayAmount - _nativeCurrencySurplusAllowance
-            - _toNative(_usdCurrencySurplusAllowance);
+        uint256 _nativeBalance = _nativePayAmount - _nativeCurrencySurplusPayoutLimit
+            - _toNative(_usdCurrencySurplusPayoutLimit);
         if (_nativeCurrencyPayoutLimit <= _nativePayAmount) {
             _nativeBalance -= _nativeCurrencyPayoutLimit;
             if (_toNative(_usdCurrencyPayoutLimit) + _nativeCurrencyPayoutLimit < _nativePayAmount)
@@ -1763,11 +1769,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
     // Project 2 accepts native tokens into `_terminal` and USDC into `_terminal2`.
     // Project 1 accepts USDC and native token fees into `_terminal`.
-    function testFuzzMultiTerminalAllowance(
-        uint224 _nativeCurrencySurplusAllowance,
+    function testFuzzMultiTerminalPayoutLimits(
+        uint224 _nativeCurrencySurplusPayoutLimit,
         uint224 _nativeCurrencyPayoutLimit,
         uint256 _nativePayAmount,
-        uint224 _usdCurrencySurplusAllowance,
+        uint224 _usdCurrencySurplusPayoutLimit,
         uint224 _usdCurrencyPayoutLimit,
         uint256 _usdcPayAmount
     ) public {
@@ -1785,15 +1791,16 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the values don't overflow the registry.
         unchecked {
             vm.assume(
-                _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
-                    >= _nativeCurrencySurplusAllowance
-                    && _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
+                _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
+                    >= _nativeCurrencySurplusPayoutLimit
+                    && _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit
                         >= _nativeCurrencyPayoutLimit
             );
             vm.assume(
-                _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit
-                    >= _usdCurrencySurplusAllowance
-                    && _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit >= _usdCurrencyPayoutLimit
+                _usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit
+                    >= _usdCurrencySurplusPayoutLimit
+                    && _usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit
+                        >= _usdCurrencyPayoutLimit
             );
         }
 
@@ -1813,15 +1820,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 currency: uint32(uint160(address(_usdcToken)))
             });
 
-            // Specify surplus allowances.
-            JBCurrencyAmount[] memory _surplusAllowances1 = new JBCurrencyAmount[](1);
-            JBCurrencyAmount[] memory _surplusAllowances2 = new JBCurrencyAmount[](1);
-            _surplusAllowances1[0] = JBCurrencyAmount({
-                amount: _nativeCurrencySurplusAllowance,
+            // Specify surplus payout limits.
+            JBCurrencyAmount[] memory _surplusPayoutLimits1 = new JBCurrencyAmount[](1);
+            JBCurrencyAmount[] memory _surplusPayoutLimits2 = new JBCurrencyAmount[](1);
+            _surplusPayoutLimits1[0] = JBCurrencyAmount({
+                amount: _nativeCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(JBTokenList.NATIVE))
             });
-            _surplusAllowances2[0] = JBCurrencyAmount({
-                amount: _usdCurrencySurplusAllowance,
+            _surplusPayoutLimits2[0] = JBCurrencyAmount({
+                amount: _usdCurrencySurplusPayoutLimit,
                 currency: uint32(uint160(address(_usdcToken)))
             });
 
@@ -1829,14 +1836,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 terminal: address(_terminal),
                 token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits1,
-                surplusAllowances: _surplusAllowances1
+                surplusPayoutLimits: _surplusPayoutLimits1
             });
 
             _fundAccessLimitGroup[1] = JBFundAccessLimitGroup({
                 terminal: address(_terminal2),
                 token: address(_usdcToken),
                 payoutLimits: _payoutLimits2,
-                surplusAllowances: _surplusAllowances2
+                surplusPayoutLimits: _surplusPayoutLimits2
             });
 
             // Package up the ruleset configuration.
@@ -1982,19 +1989,20 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
         }
 
-        // Revert if there's no native token allowance.
-        if (_nativeCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
-        } else if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit > _nativePayAmount)
-        {
+        // Revert if there's no surplus payout limit for the native token.
+        if (_nativeCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
+        } else if (
+            _nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit > _nativePayAmount
+        ) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full native token surplus allowance.
+        // Use the full surplus payout limit for the native token.
         vm.prank(_projectOwner);
-        _terminal.useAllowanceOf({
+        _terminal.payoutSurplusOf({
             projectId: _projectId,
-            amount: _nativeCurrencySurplusAllowance,
+            amount: _nativeCurrencySurplusPayoutLimit,
             currency: uint32(uint160(JBTokenList.NATIVE)),
             token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
@@ -2006,23 +2014,23 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _beneficiaryNativeBalance;
 
         // Check the collected balance if one is expected.
-        if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
+        if (_nativeCurrencySurplusPayoutLimit + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryNativeBalance = PRBMath.mulDiv(
-                _nativeCurrencySurplusAllowance,
+                _nativeCurrencySurplusPayoutLimit,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                _nativePayAmount - _nativeCurrencySurplusAllowance
+                _nativePayAmount - _nativeCurrencySurplusPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
-                _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
+                _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
 
@@ -2031,30 +2039,30 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
                     PRBMath.mulDiv(
-                        _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
+                        _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance,
                         _data.weight,
                         10 ** _NATIVE_DECIMALS
                     )
                 )
             );
         } else {
-            // Set the native token surplus allowance to 0 if it wasn't used.
-            _nativeCurrencySurplusAllowance = 0;
+            // Set the surplus payout limit for the native token to 0 if it wasn't used.
+            _nativeCurrencySurplusPayoutLimit = 0;
         }
 
-        // Revert if there's no native token allowance.
-        if (_usdCurrencySurplusAllowance == 0) {
-            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_ALLOWANCE()"));
-            // Revert if the USD surplus allowance resolved to native tokens is greater than 0, and there is sufficient surplus to pull from including what was already pulled from.
-        } else if (_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit > _usdcPayAmount) {
+        // Revert if there's no surplus payout limit for the native token.
+        if (_usdCurrencySurplusPayoutLimit == 0) {
+            vm.expectRevert(abi.encodeWithSignature("INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT()"));
+            // Revert if the USD surplus payout limit resolved to native tokens is greater than 0, and there is sufficient surplus to pull from including what was already pulled from.
+        } else if (_usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit > _usdcPayAmount) {
             vm.expectRevert(abi.encodeWithSignature("INADEQUATE_TERMINAL_STORE_BALANCE()"));
         }
 
-        // Use the full native token surplus allowance.
+        // Use the full surplus payout limit for the native token.
         vm.prank(_projectOwner);
-        _terminal2.useAllowanceOf({
+        _terminal2.payoutSurplusOf({
             projectId: _projectId,
-            amount: _usdCurrencySurplusAllowance,
+            amount: _usdCurrencySurplusPayoutLimit,
             currency: uint32(uint160(address(_usdcToken))),
             token: address(_usdcToken),
             minReturnedTokens: 0,
@@ -2066,17 +2074,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         uint256 _beneficiaryUsdcBalance;
 
         // Check the collected balance if one is expected.
-        if (_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit <= _usdcPayAmount) {
+        if (_usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit <= _usdcPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
             _beneficiaryUsdcBalance += PRBMath.mulDiv(
-                _usdCurrencySurplusAllowance,
+                _usdCurrencySurplusPayoutLimit,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
             );
             assertEq(_usdcToken.balanceOf(_beneficiary), _beneficiaryUsdcBalance);
             assertEq(
                 jbTerminalStore().balanceOf(address(_terminal2), _projectId, address(_usdcToken)),
-                _usdcPayAmount - _usdCurrencySurplusAllowance
+                _usdcPayAmount - _usdCurrencySurplusPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
@@ -2084,15 +2092,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 jbTerminalStore().balanceOf(
                     address(_terminal), _FEE_PROJECT_ID, address(_usdcToken)
                 ),
-                _usdCurrencySurplusAllowance - _beneficiaryUsdcBalance
+                _usdCurrencySurplusPayoutLimit - _beneficiaryUsdcBalance
             );
             assertEq(
                 _usdcToken.balanceOf(address(_terminal2)),
-                _usdcPayAmount - _usdCurrencySurplusAllowance
+                _usdcPayAmount - _usdCurrencySurplusPayoutLimit
             );
             assertEq(
                 _usdcToken.balanceOf(address(_terminal)),
-                _usdCurrencySurplusAllowance - _beneficiaryUsdcBalance
+                _usdCurrencySurplusPayoutLimit - _beneficiaryUsdcBalance
             );
 
             // Make sure the beneficiary got the expected number of tokens.
@@ -2100,10 +2108,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
                     PRBMath.mulDiv(
-                        _nativeCurrencySurplusAllowance
+                        _nativeCurrencySurplusPayoutLimit
                             + _toNative(
                                 PRBMath.mulDiv(
-                                    _usdCurrencySurplusAllowance,
+                                    _usdCurrencySurplusPayoutLimit,
                                     10 ** _NATIVE_DECIMALS,
                                     10 ** _usdcToken.decimals()
                                 )
@@ -2121,8 +2129,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 )
             );
         } else {
-            // Set the native token surplus allowance to 0 if it wasn't used.
-            _usdCurrencySurplusAllowance = 0;
+            // Set the surplus payout limit for the native token to 0 if it wasn't used.
+            _usdCurrencySurplusPayoutLimit = 0;
         }
 
         // Payout limits
@@ -2154,7 +2162,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
                 assertEq(
                     jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
-                    _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit
+                    _nativePayAmount - _nativeCurrencySurplusPayoutLimit
+                        - _nativeCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
@@ -2162,7 +2171,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     jbTerminalStore().balanceOf(
                         address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE
                     ),
-                    _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
+                    _nativeCurrencySurplusPayoutLimit - _beneficiaryNativeBalance
                         + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance
                 );
                 assertEq(
@@ -2171,7 +2180,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 );
 
                 // Make sure the project owner got the expected number of tokens.
-                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(PRBMath.mulDiv(_nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
+                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(PRBMath.mulDiv(_nativeCurrencySurplusPayoutLimit + _toNative(_usdCurrencySurplusPayoutLimit) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
             }
 
             // Revert if the payout limit is greater than the balance.
@@ -2203,7 +2212,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     jbTerminalStore().balanceOf(
                         address(_terminal2), _projectId, address(_usdcToken)
                     ),
-                    _usdcPayAmount - _usdCurrencySurplusAllowance - _usdCurrencyPayoutLimit
+                    _usdcPayAmount - _usdCurrencySurplusPayoutLimit - _usdCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
@@ -2211,34 +2220,34 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     jbTerminalStore().balanceOf(
                         address(_terminal), _FEE_PROJECT_ID, address(_usdcToken)
                     ),
-                    _usdCurrencySurplusAllowance - _beneficiaryUsdcBalance + _usdCurrencyPayoutLimit
-                        - _projectOwnerUsdcBalance
+                    _usdCurrencySurplusPayoutLimit - _beneficiaryUsdcBalance
+                        + _usdCurrencyPayoutLimit - _projectOwnerUsdcBalance
                 );
                 assertEq(
                     _usdcToken.balanceOf(address(_terminal2)),
-                    _usdcPayAmount - _usdCurrencySurplusAllowance - _usdCurrencyPayoutLimit
+                    _usdcPayAmount - _usdCurrencySurplusPayoutLimit - _usdCurrencyPayoutLimit
                 );
                 assertEq(
                     _usdcToken.balanceOf(address(_terminal)),
-                    _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit - _beneficiaryUsdcBalance
-                        - _projectOwnerUsdcBalance
+                    _usdCurrencySurplusPayoutLimit + _usdCurrencyPayoutLimit
+                        - _beneficiaryUsdcBalance - _projectOwnerUsdcBalance
                 );
             }
         }
 
         // Keep a reference to the remaining native token surplus.
-        uint256 _nativeSurplus = _nativeCurrencyPayoutLimit + _nativeCurrencySurplusAllowance
+        uint256 _nativeSurplus = _nativeCurrencyPayoutLimit + _nativeCurrencySurplusPayoutLimit
             >= _nativePayAmount
             ? 0
-            : _nativePayAmount - _nativeCurrencyPayoutLimit - _nativeCurrencySurplusAllowance;
+            : _nativePayAmount - _nativeCurrencyPayoutLimit - _nativeCurrencySurplusPayoutLimit;
 
-        uint256 _usdcSurplus = _usdCurrencyPayoutLimit + _usdCurrencySurplusAllowance
+        uint256 _usdcSurplus = _usdCurrencyPayoutLimit + _usdCurrencySurplusPayoutLimit
             >= _usdcPayAmount
             ? 0
-            : _usdcPayAmount - _usdCurrencyPayoutLimit - _usdCurrencySurplusAllowance;
+            : _usdcPayAmount - _usdCurrencyPayoutLimit - _usdCurrencySurplusPayoutLimit;
 
         // Keep a reference to the remaining native token balance.
-        uint256 _usdcBalanceInTerminal = _usdcPayAmount - _usdCurrencySurplusAllowance;
+        uint256 _usdcBalanceInTerminal = _usdcPayAmount - _usdCurrencySurplusPayoutLimit;
 
         if (_usdCurrencyPayoutLimit <= _usdcPayAmount) {
             _usdcBalanceInTerminal -= _usdCurrencyPayoutLimit;
@@ -2434,7 +2443,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         vm.stopPrank();
 
         // Keep a reference to the remaining native token balance.
-        uint256 _projectNativeBalance = _nativePayAmount - _nativeCurrencySurplusAllowance;
+        uint256 _projectNativeBalance = _nativePayAmount - _nativeCurrencySurplusPayoutLimit;
         if (_nativeCurrencyPayoutLimit <= _nativePayAmount) {
             _projectNativeBalance -= _nativeCurrencyPayoutLimit;
         }

@@ -18,7 +18,7 @@ library JBPermissionIds {
     uint256 public constant SET_CONTROLLER = 14;
     uint256 public constant SET_TERMINALS = 15;
     uint256 public constant SET_PRIMARY_TERMINAL = 16;
-    uint256 public constant USE_ALLOWANCE = 17;
+    uint256 public constant PAYOUT_SURPLUS = 17;
     uint256 public constant SET_SPLITS = 18;
     uint256 public constant ADD_PRICE_FEED = 19;
     uint256 public constant SET_ACCOUNTING_CONTEXT = 20;

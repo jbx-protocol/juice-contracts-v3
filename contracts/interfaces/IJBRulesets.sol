@@ -22,7 +22,7 @@ interface IJBRulesets is IJBControlled {
 
     function latestRulesetIdOf(uint256 projectId) external view returns (uint256);
 
-    function getRuleset(uint256 projectId, uint256 rulesetId)
+    function getRulesetOf(uint256 projectId, uint256 rulesetId)
         external
         view
         returns (JBRuleset memory);

@@ -58,7 +58,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
 
     /// @notice Cached weight values to derive rulesets from.
     /// @custom:param _projectId The ID of the project to which the cache applies.
-    mapping(uint256 => JBRulesetWeightCache) internal _weightCache;
+    mapping(uint256 => JBRulesetWeightCache) internal _weightCacheOf;
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
@@ -77,7 +77,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
     /// @param _projectId The ID of the project to which the ruleset belongs.
     /// @param _rulesetId The ID of the ruleset to get the struct of.
     /// @return ruleset The ruleset struct.
-    function getRuleset(uint256 _projectId, uint256 _rulesetId)
+    function getRulesetOf(uint256 _projectId, uint256 _rulesetId)
         external
         view
         override
@@ -378,7 +378,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (_latestQueuedRuleset.duration == 0 || _latestQueuedRuleset.decayRate == 0) return;
 
         // Get a reference to the current cache.
-        JBRulesetWeightCache storage _cache = _weightCache[_latestQueuedRuleset.id];
+        JBRulesetWeightCache storage _cache = _weightCacheOf[_latestQueuedRuleset.id];
 
         // Determine the largest start timestamp the cache can be filled to.
         uint256 _maxStart = _latestQueuedRuleset.start
@@ -755,7 +755,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Check the cache if needed.
         if (_decayMultiple > _DECAY_MULTIPLE_CACHE_LOOKUP_THRESHOLD) {
             // Get a cached weight for the rulesetId.
-            JBRulesetWeightCache memory _cache = _weightCache[_baseRuleset.id];
+            JBRulesetWeightCache memory _cache = _weightCacheOf[_baseRuleset.id];
 
             // If a cached value is available, use it.
             if (_cache.decayMultiple > 0) {

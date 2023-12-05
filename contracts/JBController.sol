@@ -117,7 +117,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         override
         returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
-        ruleset = rulesets.getRuleset(_projectId, _rulesetId);
+        ruleset = rulesets.getRulesetOf(_projectId, _rulesetId);
         metadata = ruleset.expandMetadata();
     }
 
