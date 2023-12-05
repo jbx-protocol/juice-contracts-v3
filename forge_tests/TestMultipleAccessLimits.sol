@@ -64,7 +64,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
         _payoutLimits[0] = JBCurrencyAmount({
             amount: _nativePayoutLimit,
@@ -74,13 +74,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
         });
-        _surplusPayoutLimits[0] =
+        _surplusAllowances[0] =
             JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
 
         // Package up ruleset config.
@@ -236,23 +236,23 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
     }
 
-    function testFuzzedInvalidSurplusPayoutLimitCurrencyOrdering(uint24 ALLOWCURRENCY) external {
+    function testFuzzedInvalidAllowanceCurrencyOrdering(uint24 ALLOWCURRENCY) external {
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](2);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
 
         _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _nativeCurrency});
 
-        _surplusPayoutLimits[0] = JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY});
 
-        _surplusPayoutLimits[1] =
+        _surplusAllowances[1] =
             JBCurrencyAmount({amount: 1, currency: ALLOWCURRENCY == 0 ? 0 : ALLOWCURRENCY - 1});
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
 
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
@@ -280,7 +280,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         vm.prank(_projectOwner);
 
-        vm.expectRevert(abi.encodeWithSignature("INVALID_SURPLUS_PAYOUT_LIMIT_CURRENCY_ORDERING()"));
+        vm.expectRevert(abi.encodeWithSignature("INVALID_SURPLUS_ALLOWANCE_CURRENCY_ORDERING()"));
 
         _controller.launchProjectFor({
             owner: _projectOwner,
@@ -294,20 +294,20 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     function testFuzzedInvalidDistCurrencyOrdering(uint24 _payoutCurrency) external {
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
         _payoutLimits[0] = JBCurrencyAmount({amount: 1, currency: _payoutCurrency});
 
         _payoutLimits[1] =
             JBCurrencyAmount({amount: 1, currency: _payoutCurrency == 0 ? 0 : _payoutCurrency - 1});
 
-        _surplusPayoutLimits[0] = JBCurrencyAmount({amount: 1, currency: 1});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
 
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
@@ -348,32 +348,32 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
     function testFuzzedConfigureAccess(
         uint256 _payoutLimit,
-        uint256 _surplusPayoutLimit,
+        uint256 _surplusAllowance,
         uint256 _payoutCurrency,
         uint256 ALLOWCURRENCY
     ) external {
         _payoutCurrency = bound(uint256(_payoutCurrency), uint256(0), type(uint24).max - 1);
         _payoutLimit = bound(uint256(_payoutLimit), uint232(1), uint232(type(uint24).max - 1));
-        _surplusPayoutLimit =
-            bound(uint256(_surplusPayoutLimit), uint232(1), uint232(type(uint24).max - 1));
+        _surplusAllowance =
+            bound(uint256(_surplusAllowance), uint232(1), uint232(type(uint24).max - 1));
         ALLOWCURRENCY = bound(uint256(ALLOWCURRENCY), uint256(0), type(uint24).max - 1);
 
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](2);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
 
         _payoutLimits[0] = JBCurrencyAmount({amount: _payoutLimit, currency: _payoutCurrency});
 
         _payoutLimits[1] = JBCurrencyAmount({amount: _payoutLimit, currency: _payoutCurrency + 1});
-        _surplusPayoutLimits[0] =
-            JBCurrencyAmount({amount: _surplusPayoutLimit, currency: ALLOWCURRENCY});
-        _surplusPayoutLimits[1] =
-            JBCurrencyAmount({amount: _surplusPayoutLimit, currency: ALLOWCURRENCY + 1});
+        _surplusAllowances[0] =
+            JBCurrencyAmount({amount: _surplusAllowance, currency: ALLOWCURRENCY});
+        _surplusAllowances[1] =
+            JBCurrencyAmount({amount: _surplusAllowance, currency: ALLOWCURRENCY + 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
@@ -414,19 +414,19 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
         _payoutLimits[0] = JBCurrencyAmount({amount: _nativePayoutLimit, currency: _nativeCurrency});
         _payoutLimits[1] = JBCurrencyAmount({
             amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
         });
-        _surplusPayoutLimits[0] = JBCurrencyAmount({amount: 1, currency: 1});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
 
         // Package up ruleset config.
@@ -537,7 +537,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             terminal: address(__terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: new JBCurrencyAmount[](0)
+            surplusAllowances: new JBCurrencyAmount[](0)
         });
 
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);

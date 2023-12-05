@@ -38,7 +38,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     error RULESET_PAYMENT_PAUSED();
     error RULESET_PAYOUT_PAUSED();
     error RULESET_REDEEM_PAUSED();
-    error INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT();
+    error INADEQUATE_CONTROLLER_ALLOWANCE();
     error INADEQUATE_TERMINAL_STORE_BALANCE();
     error INSUFFICIENT_TOKENS();
     error INVALID_RULESET();
@@ -90,20 +90,20 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             )
     ) public override usedPayoutLimitOf;
 
-    /// @notice The currency-denominated amounts of funds that a project has used from its surplus payout limit during the current ruleset for each terminal, in terms of the surplus payout limit's currency.
-    /// @dev Increases as projects pay out from their surplus payout limit.
-    /// @dev The used surplus payout limit is represented as a fixed point number with the same amount of decimals as the terminal it applies to.
-    /// @custom:param _terminal The terminal the surplus payout limit applies to.
-    /// @custom:param _projectId The ID of the project to get the used surplus payout limit of.
-    /// @custom:param _token The token the surplus payout limit applies to in the terminal.
-    /// @custom:param _rulesetId The ID of the ruleset the surplus payout limit was used during.
-    /// @custom:param _currency The currency the surplus payout limit is in terms of.
+    /// @notice The currency-denominated amounts of funds that a project has used from its surplus allowance during the current ruleset for each terminal, in terms of the surplus allowance's currency.
+    /// @dev Increases as projects use their allowance.
+    /// @dev The used surplus allowance is represented as a fixed point number with the same amount of decimals as the terminal it applies to.
+    /// @custom:param _terminal The terminal the surplus allowance applies to.
+    /// @custom:param _projectId The ID of the project to get the used surplus allowance of.
+    /// @custom:param _token The token the surplus allowance applies to in the terminal.
+    /// @custom:param _rulesetId The ID of the ruleset the surplus allowance was used during.
+    /// @custom:param _currency The currency the surplus allowance is in terms of.
     mapping(
         address
             => mapping(
                 uint256 => mapping(address => mapping(uint256 => mapping(uint256 => uint256)))
             )
-    ) public override usedSurplusPayoutLimitOf;
+    ) public override usedSurplusAllowanceOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
@@ -533,15 +533,15 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         }
     }
 
-    /// @notice Records a use of a project's surplus payout limit.
-    /// @dev When surplus payout limit is "used", it is taken out of the project's surplus within a terminal.
-    /// @param _projectId The ID of the project to use the surplus payout limit of.
-    /// @param _accountingContext The accounting context of the token whose balances should contribute to the surplus payout limit being reclaimed from.
-    /// @param _amount The amount to use from the surplus payout limit, as a fixed point number.
-    /// @param _currency The currency of the `_amount`. Must match the currency of the surplus payout limit.
-    /// @return ruleset The ruleset during the surplus payout limit is being used during, as a `JBRuleset` struct.
+    /// @notice Records a use of a project's surplus allowance.
+    /// @dev When surplus allowance is "used", it is taken out of the project's surplus within a terminal.
+    /// @param _projectId The ID of the project to use the surplus allowance of.
+    /// @param _accountingContext The accounting context of the token whose balances should contribute to the surplus allowance being reclaimed from.
+    /// @param _amount The amount to use from the surplus allowance, as a fixed point number.
+    /// @param _currency The currency of the `_amount`. Must match the currency of the surplus allowance.
+    /// @return ruleset The ruleset during the surplus allowance is being used during, as a `JBRuleset` struct.
     /// @return usedAmount The amount of terminal tokens used, as a fixed point number with the same amount of decimals as its relative terminal.
-    function recordSurplusPayoutOf(
+    function recordUsedAllowanceOf(
         uint256 _projectId,
         JBAccountingContext calldata _accountingContext,
         uint256 _amount,
@@ -550,19 +550,19 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Get a reference to the project's current ruleset.
         ruleset = RULESETS.currentOf(_projectId);
 
-        // Get a reference to the new used surplus payout limit for this ruleset ID.
-        uint256 _newUsedSurplusPayoutLimitOf = usedSurplusPayoutLimitOf[msg.sender][_projectId][_accountingContext
+        // Get a reference to the new used surplus allowance for this ruleset ID.
+        uint256 _newUsedSurplusAllowanceOf = usedSurplusAllowanceOf[msg.sender][_projectId][_accountingContext
             .token][ruleset.id][_currency] + _amount;
 
-        // There must be sufficient surplus payout limit available.
-        uint256 _surplusPayoutLimit = IJBController(address(DIRECTORY.controllerOf(_projectId)))
-            .fundAccessLimits().surplusPayoutLimitOf(
+        // There must be sufficient surplus allowance available.
+        uint256 _surplusAllowance = IJBController(address(DIRECTORY.controllerOf(_projectId)))
+            .fundAccessLimits().surplusAllowanceOf(
             _projectId, ruleset.id, msg.sender, _accountingContext.token, _currency
         );
 
         // Make sure the new used amount is within the allowance.
-        if (_newUsedSurplusPayoutLimitOf > _surplusPayoutLimit || _surplusPayoutLimit == 0) {
-            revert INADEQUATE_CONTROLLER_SURPLUS_PAYOUT_LIMIT();
+        if (_newUsedSurplusAllowanceOf > _surplusAllowance || _surplusAllowance == 0) {
+            revert INADEQUATE_CONTROLLER_ALLOWANCE();
         }
 
         // Convert the amount to this store's terminal's token.
@@ -594,8 +594,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         ) revert INADEQUATE_TERMINAL_STORE_BALANCE();
 
         // Store the incremented value.
-        usedSurplusPayoutLimitOf[msg.sender][_projectId][_accountingContext.token][ruleset.id][_currency]
-        = _newUsedSurplusPayoutLimitOf;
+        usedSurplusAllowanceOf[msg.sender][_projectId][_accountingContext.token][ruleset.id][_currency]
+        = _newUsedSurplusAllowanceOf;
 
         // Update the project's balance.
         balanceOf[msg.sender][_projectId][_accountingContext.token] =

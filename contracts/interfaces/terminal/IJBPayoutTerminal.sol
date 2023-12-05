@@ -29,7 +29,7 @@ interface IJBPayoutTerminal is IJBTerminal {
         address caller
     );
 
-    event PayoutSurplus(
+    event UseAllowance(
         uint256 indexed rulesetId,
         uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
@@ -53,7 +53,7 @@ interface IJBPayoutTerminal is IJBTerminal {
         uint256 minReturnedTokens
     ) external returns (uint256 netLeftoverPayoutAmount);
 
-    function payoutSurplusOf(
+    function useAllowanceOf(
         uint256 projectId,
         address token,
         uint256 amount,

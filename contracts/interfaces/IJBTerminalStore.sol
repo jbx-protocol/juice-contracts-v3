@@ -30,7 +30,7 @@ interface IJBTerminalStore {
         uint256 currency
     ) external view returns (uint256);
 
-    function usedSurplusPayoutLimitOf(
+    function usedSurplusAllowanceOf(
         address terminal,
         uint256 projectId,
         address token,
@@ -104,7 +104,7 @@ interface IJBTerminalStore {
         uint256 currency
     ) external returns (JBRuleset memory ruleset, uint256 amountPaidOut);
 
-    function recordSurplusPayoutOf(
+    function recordUsedAllowanceOf(
         uint256 projectId,
         JBAccountingContext calldata accountingContext,
         uint256 amount,

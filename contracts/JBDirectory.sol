@@ -300,7 +300,7 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @dev A project can set its own controller without being on the allow list.
     /// @dev If you would like an address/contract allowlisted, please reach out to the contract owner.
     /// @param _address The address to allow or not allow.
-    /// @param _flag Whether the address is being allowed or not allowed. Use `true` to allow and `false` to not allow.
+    /// @param _flag Whether the address is allowed or not allowed to set first controllers for projects. Use `true` to allow and `false` to not allow.
     function setIsAllowedToSetFirstController(address _address, bool _flag)
         external
         override

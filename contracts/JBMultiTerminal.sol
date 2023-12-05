@@ -104,7 +104,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     //*********************************************************************//
 
     /// @notice The fee percent (out of `JBConstants.MAX_FEE`).
-    /// @dev Fees are charged on payouts to addresses, payouts from the surplus, and on redemptions where the redemption rate is less than 100%.
+    /// @dev Fees are charged on payouts to addresses, when the surplus allowance is used, and on redemptions where the redemption rate is less than 100%.
     uint256 public constant override FEE = 25_000_000; // 2.5%
 
     //*********************************************************************//
@@ -132,7 +132,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
     /// @notice Feeless addresses for this terminal.
     /// @dev Feeless addresses can receive payouts without incurring a fee.
-    /// @dev Feeless addresses can pay out from the surplus payout limit without incurring a fee.
+    /// @dev Feeless addresses can use the surplus allowance without incurring a fee.
     /// @dev Feeless addresses can be the beneficary of redemptions without incurring a fee.
     /// @custom:param _address The address that may or may not be feeless.
     mapping(address => bool) public override isFeelessAddress;
@@ -172,7 +172,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     /// @param _projectId The ID of the project to get the current total surplus of.
     /// @param _decimals The number of decimals to include in the fixed point returned value.
     /// @param _currency The currency to express the returned value in terms of.
-    /// @return The current amount of surplus the project has in this terminal, in terms of `_currency` and with the specified number of decimals.
+    /// @return The current surplus amount the project has in this terminal, in terms of `_currency` and with the specified number of decimals.
     function currentSurplusOf(uint256 _projectId, uint256 _decimals, uint256 _currency)
         external
         view
@@ -373,18 +373,18 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         return _sendPayoutsOf(_projectId, _token, _amount, _currency, _minReturnedTokens);
     }
 
-    /// @notice Allows a project to pay out funds from its surplus up to the current surplus payout limit.
-    /// @dev Only a project's owner or an operator with the `PAYOUT_SURPLUS` permission from that owner can send payouts from the surplus.
+    /// @notice Allows a project to pay out funds from its surplus up to the current surplus allowance.
+    /// @dev Only a project's owner or an operator with the `USE_ALLOWANCE` permission from that owner can use the surplus allowance.
     /// @dev Incurs the protocol fee unless the caller is a feeless address.
-    /// @param _projectId The ID of the project to pay out from the surplus of.
+    /// @param _projectId The ID of the project to use the surplus allowance of.
     /// @param _token The token being paid out from the surplus.
-    /// @param _amount The amount of terminal tokens to use from the project's current surplus payout limit, as a fixed point number with the same amount of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus payout limits.
-    /// @param _minTokensPaidOut The minimum number of terminal tokens that should be paid out from the surplus (including fees), as a fixed point number with 18 decimals. If the amount paid out would be less than this amount, the transaction is reverted.
+    /// @param _amount The amount of terminal tokens to use from the project's current surplus allowance, as a fixed point number with the same amount of decimals as this terminal.
+    /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus allowances.
+    /// @param _minTokensPaidOut The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
     /// @param _beneficiary The address to send the surplus funds to.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return netAmountPaidOut The number of tokens that were sent to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
-    function payoutSurplusOf(
+    function useAllowanceOf(
         uint256 _projectId,
         address _token,
         uint256 _amount,
@@ -396,10 +396,10 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         external
         virtual
         override
-        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIds.PAYOUT_SURPLUS)
+        requirePermission(PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIds.USE_ALLOWANCE)
         returns (uint256 netAmountPaidOut)
     {
-        return _payoutSurplusOf(
+        return _useAllowanceOf(
             _projectId, _token, _amount, _currency, _minTokensPaidOut, _beneficiary, _memo
         );
     }
@@ -494,7 +494,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     /// @notice Sets an address as feeless or not feeless for this terminal.
     /// @dev Only the owner of this contract can set addresses as feeless or not feeless.
     /// @dev Feeless addresses can receive payouts without incurring a fee.
-    /// @dev Feeless addresses can use the surplus payout limit without incurring a fee.
+    /// @dev Feeless addresses can use the surplus allowance without incurring a fee.
     /// @dev Feeless addresses can be the beneficary of redemptions without incurring a fee.
     /// @param _address The address to make feeless or not feeless.
     /// @param _flag A flag indicating whether the `_address` should be made feeless or not feeless.
@@ -1102,18 +1102,18 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         );
     }
 
-    /// @notice Allows a project to send out funds from its surplus up to the current surplus payout limit.
-    /// @dev Only a project's owner or an operator with the `PAYOUT_SURPLUS` permission from that owner can use the surplus payout limit.
+    /// @notice Allows a project to send out funds from its surplus up to the current surplus allowance.
+    /// @dev Only a project's owner or an operator with the `USE_ALLOWANCE` permission from that owner can use the surplus allowance.
     /// @dev Incurs the protocol fee unless the caller is a feeless address.
-    /// @param _projectId The ID of the project to use the surplus payout limit of.
+    /// @param _projectId The ID of the project to use the surplus allowance of.
     /// @param _token The token being paid out from the surplus.
-    /// @param _amount The amount of terminal tokens to use from the project's current surplus payout limit, as a fixed point number with the same amount of decimals as this terminal.
-    /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus payout limits.
-    /// @param _minTokensPaidOut The minimum number of terminal tokens that should be used from the surplus payout limit (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
+    /// @param _amount The amount of terminal tokens to use from the project's current surplus allowance, as a fixed point number with the same amount of decimals as this terminal.
+    /// @param _currency The expected currency of the amount being paid out. Must match the currency of one of the project's current ruleset's surplus allowances.
+    /// @param _minTokensPaidOut The minimum number of terminal tokens that should be used from the surplus allowance (including fees), as a fixed point number with 18 decimals. If the amount of surplus used would be less than this amount, the transaction is reverted.
     /// @param _beneficiary The address to send the funds to.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return netAmountPaidOut The number of tokens that were sent to the beneficiary, as a fixed point number with the same amount of decimals as the terminal.
-    function _payoutSurplusOf(
+    function _useAllowanceOf(
         uint256 _projectId,
         address _token,
         uint256 _amount,
@@ -1122,8 +1122,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         address payable _beneficiary,
         string memory _memo
     ) internal returns (uint256 netAmountPaidOut) {
-        // Record the surplus payout.
-        (JBRuleset memory _ruleset, uint256 _amountPaidOut) = STORE.recordSurplusPayoutOf(
+        // Record the use of the allowance.
+        (JBRuleset memory _ruleset, uint256 _amountPaidOut) = STORE.recordUsedAllowanceOf(
             _projectId, _accountingContextForTokenOf[_projectId][_token], _amount, _currency
         );
 
@@ -1148,7 +1148,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _transferFor(address(this), _beneficiary, _token, netAmountPaidOut);
         }
 
-        emit PayoutSurplus(
+        emit UseAllowance(
             _ruleset.id,
             _ruleset.cycleNumber,
             _projectId,

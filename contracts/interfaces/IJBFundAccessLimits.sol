@@ -27,20 +27,20 @@ interface IJBFundAccessLimits is IERC165 {
         uint256 currency
     ) external view returns (uint256 payoutLimit);
 
-    function surplusPayoutLimitsOf(
+    function surplusAllowancesOf(
         uint256 projectId,
         uint256 rulesetId,
         address terminal,
         address token
-    ) external view returns (JBCurrencyAmount[] memory surplusPayoutLimits);
+    ) external view returns (JBCurrencyAmount[] memory surplusAllowances);
 
-    function surplusPayoutLimitOf(
+    function surplusAllowanceOf(
         uint256 projectId,
         uint256 rulesetId,
         address terminal,
         address token,
         uint256 currency
-    ) external view returns (uint256 surplusPayoutLimit);
+    ) external view returns (uint256 surplusAllowance);
 
     function setFundAccessLimitsFor(
         uint256 projectId,

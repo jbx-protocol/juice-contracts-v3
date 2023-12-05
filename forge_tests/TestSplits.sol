@@ -98,19 +98,19 @@ contract TestSplits_Local is TestBaseWorkflow {
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
         _payoutLimits[0] = JBCurrencyAmount({
             amount: _nativePayoutLimit,
             currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
         });
-        _surplusPayoutLimits[0] =
+        _surplusAllowances[0] =
             JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
 
         // Package up ruleset configuration.
@@ -237,15 +237,15 @@ contract TestSplits_Local is TestBaseWorkflow {
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
-        JBCurrencyAmount[] memory _surplusPayoutLimits = new JBCurrencyAmount[](1);
+        JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
         _payoutLimits[0] = JBCurrencyAmount({amount: _nativePayoutLimit, currency: _currencyId});
-        _surplusPayoutLimits[0] = JBCurrencyAmount({amount: 2 ether, currency: _currencyId});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 2 ether, currency: _currencyId});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
             token: JBConstants.NATIVE_TOKEN,
             payoutLimits: _payoutLimits,
-            surplusPayoutLimits: _surplusPayoutLimits
+            surplusAllowances: _surplusAllowances
         });
 
         // Package up ruleset configuration.
