@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
 // A project's rulesets can be queued, and re-queued as long as the current ruleset approval hook approves.
-contract TestReconfigureProject_Local is TestBaseWorkflow {
+contract TestRulesetQueuing_Local is TestBaseWorkflow {
     IJBController private _controller;
     JBRulesetData private _data;
     JBRulesetData private _dataQueue;
