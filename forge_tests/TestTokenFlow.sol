@@ -79,18 +79,15 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         if (_issueToken) {
             // Issue an ERC-20 token for project.
-            _controller.deployERC20TokenFor({
+            _controller.deployERC20For({
                 projectId: _projectId,
                 name: "TestName",
                 symbol: "TestSymbol"
             });
         } else {
             // Create a new `IJBToken` and change it's owner to the `JBTokens` contract.
-            IJBToken _newToken = new JBERC20Token({
-                _name: "NewTestName",
-                _symbol: "NewTestSymbol",
-                _owner: _projectOwner
-            });
+            IJBToken _newToken =
+                new JBERC20({_name: "NewTestName", _symbol: "NewTestSymbol", _owner: _projectOwner});
 
             Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
@@ -158,11 +155,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         vm.startPrank(_projectOwner);
 
         // Issue an ERC-20 token for project.
-        _controller.deployERC20TokenFor({
-            projectId: _projectId,
-            name: "TestName",
-            symbol: "TestSymbol"
-        });
+        _controller.deployERC20For({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
 
         // Mint claimed tokens to beneficiary: since this is 1,000 over `uint(208)` it will revert.
         vm.expectRevert(abi.encodeWithSignature("OVERFLOW_ALERT()"));

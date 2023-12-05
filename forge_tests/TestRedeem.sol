@@ -90,7 +90,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        _controller.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
+        _controller.deployERC20For(_projectId, "TestName", "TestSymbol");
 
         // Pay the project.
         _terminal.pay{value: _nativePayAmount}({

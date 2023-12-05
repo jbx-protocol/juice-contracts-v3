@@ -17,7 +17,7 @@ import {JBPermissions} from "@juicebox/JBPermissions.sol";
 import {JBPrices} from "@juicebox/JBPrices.sol";
 import {JBProjects} from "@juicebox/JBProjects.sol";
 import {JBSplits} from "@juicebox/JBSplits.sol";
-import {JBERC20Token} from "@juicebox/JBERC20Token.sol";
+import {JBERC20} from "@juicebox/JBERC20.sol";
 import {JBTokens} from "@juicebox/JBTokens.sol";
 import {JBDeadline} from "@juicebox/JBDeadline.sol";
 import {JBApprovalStatus} from "@juicebox/enums/JBApprovalStatus.sol";

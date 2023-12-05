@@ -157,7 +157,7 @@ interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAcce
     function setSplitGroupsOf(uint256 projectId, uint256 domain, JBSplitGroup[] calldata splitGroup)
         external;
 
-    function deployERC20TokenFor(uint256 projectId, string calldata name, string calldata symbol)
+    function deployERC20For(uint256 projectId, string calldata name, string calldata symbol)
         external
         returns (IJBToken token);
 

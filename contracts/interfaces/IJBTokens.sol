@@ -7,7 +7,7 @@ import {IJBToken} from "./IJBToken.sol";
 import {IJBControlled} from "./IJBControlled.sol";
 
 interface IJBTokens is IJBControlled {
-    event DeployERC20Token(
+    event DeployERC20(
         uint256 indexed projectId,
         IJBToken indexed token,
         string name,
@@ -66,7 +66,7 @@ interface IJBTokens is IJBControlled {
         view
         returns (uint256 result);
 
-    function deployERC20TokenFor(uint256 projectId, string calldata name, string calldata symbol)
+    function deployERC20For(uint256 projectId, string calldata name, string calldata symbol)
         external
         returns (IJBToken token);
 

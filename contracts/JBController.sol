@@ -550,14 +550,14 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
     /// @return token The address of the token that was deployed.
-    function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+    function deployERC20For(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         virtual
         override
         requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.ISSUE_TOKEN)
         returns (IJBToken token)
     {
-        return tokens.deployERC20TokenFor(_projectId, _name, _symbol);
+        return tokens.deployERC20For(_projectId, _name, _symbol);
     }
 
     /// @notice Set a project's token if not already set.

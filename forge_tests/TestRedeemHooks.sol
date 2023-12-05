@@ -88,7 +88,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _controller.deployERC20TokenFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _controller.deployERC20For(_projectId, "TestName", "TestSymbol");
 
         // Make sure the project's new project token is set.
         assertEq(address(_tokens.tokenOf(_projectId)), address(_token));

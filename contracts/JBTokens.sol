@@ -9,7 +9,7 @@ import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
 import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
-import {JBERC20Token} from "./JBERC20Token.sol";
+import {JBERC20} from "./JBERC20.sol";
 
 /// @notice Manages minting, burning, and balances of projects' tokens and token credits.
 /// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
@@ -117,7 +117,7 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
     /// @return token The address of the token that was deployed.
-    function deployERC20TokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+    function deployERC20For(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         override
         onlyController(_projectId)
@@ -133,7 +133,7 @@ contract JBTokens is JBControlled, IJBTokens {
         if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
         // Deploy the token contract.
-        token = new JBERC20Token(_name, _symbol, address(this));
+        token = new JBERC20(_name, _symbol, address(this));
 
         // Store the token contract.
         tokenOf[_projectId] = token;
@@ -141,7 +141,7 @@ contract JBTokens is JBControlled, IJBTokens {
         // Store the project for the token.
         projectIdOf[token] = _projectId;
 
-        emit DeployERC20Token(_projectId, token, _name, _symbol, msg.sender);
+        emit DeployERC20(_projectId, token, _name, _symbol, msg.sender);
     }
 
     /// @notice Set a project's token if not already set.
