@@ -50,7 +50,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2, //50%
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2, //50%
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -80,19 +80,19 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
             _payoutLimits[0] = JBCurrencyAmount({
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             // Specify a surplus allowance.
             JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
             _surplusAllowances[0] = JBCurrencyAmount({
                 amount: _nativeCurrencySurplusAllowance,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
                 terminal: address(_terminal),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
             });
@@ -105,13 +105,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
             _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-            _rulesetConfigurations[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _rulesetConfigurations[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs =
                 new JBAccountingContextConfig[](1);
             _accountingContextConfigs[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
             _terminalConfigurations[0] = JBTerminalConfig({
@@ -147,7 +147,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -162,7 +162,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the terminal holds the full native token balance.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount
         );
 
@@ -171,8 +171,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _nativeCurrencySurplusAllowance,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -186,13 +186,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         );
         assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount - _nativeCurrencySurplusAllowance
         );
 
         // Make sure the fee was paid correctly.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
             _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
         );
         assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -211,8 +211,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativeCurrencyPayoutLimit,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0
         });
 
@@ -225,7 +225,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the fee was paid correctly.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
             (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                 + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance)
         );
@@ -250,7 +250,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             count: _beneficiaryTokenBalance,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
@@ -285,7 +285,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the fee was paid correctly.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
             (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                 + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance) + _feeAmount
         );
@@ -328,19 +328,19 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
             _payoutLimits[0] = JBCurrencyAmount({
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             // Specify a surplus allowance.
             JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
             _surplusAllowances[0] = JBCurrencyAmount({
                 amount: _nativeCurrencySurplusAllowance,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
                 terminal: address(_terminal),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
             });
@@ -353,13 +353,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
             _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-            _rulesetConfigurations[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _rulesetConfigurations[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs =
                 new JBAccountingContextConfig[](1);
             _accountingContextConfigs[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
             _terminalConfigurations[0] = JBTerminalConfig({
@@ -390,7 +390,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -405,7 +405,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the terminal holds the full native token balance.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount
         );
 
@@ -423,8 +423,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _nativeCurrencySurplusAllowance,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -443,13 +443,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _nativeCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -481,8 +481,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativeCurrencyPayoutLimit,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0
         });
 
@@ -495,13 +495,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                     + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance)
             );
@@ -528,7 +528,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             holder: _beneficiary,
             projectId: _projectId,
             count: _beneficiaryTokenBalance,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
@@ -563,7 +563,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                     + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance) + _feeAmount
             );
@@ -608,19 +608,19 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
             _payoutLimits[0] = JBCurrencyAmount({
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             // Specify a surplus allowance.
             JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
             _surplusAllowances[0] = JBCurrencyAmount({
                 amount: _nativeCurrencySurplusAllowance,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
                 terminal: address(_terminal),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
             });
@@ -631,7 +631,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContextConfig[] memory _accountingContextConfigs =
                 new JBAccountingContextConfig[](1);
             _accountingContextConfigs[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
 
@@ -658,7 +658,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
             _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-            _rulesetConfigurations[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _rulesetConfigurations[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             // Create the project to test.
             _projectId = _controller.launchProjectFor({
@@ -674,7 +674,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -689,7 +689,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the terminal holds the full native token balance.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount
         );
 
@@ -707,8 +707,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _nativeCurrencySurplusAllowance,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -728,13 +728,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             // Make sure the fee stays in the terminal.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _beneficiaryNativeBalance
             );
 
             // Make sure the fee was not taken.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 0
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -759,8 +759,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativeCurrencyPayoutLimit,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0
         });
 
@@ -774,13 +774,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
             // Make sure the fee stays in the terminal.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _beneficiaryNativeBalance - _projectOwnerNativeBalance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 0
             );
             assertEq(
@@ -798,7 +798,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             holder: _beneficiary,
             projectId: _projectId,
             count: _beneficiaryTokenBalance,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
@@ -833,14 +833,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             // Make sure the fee stays in the terminal.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _beneficiaryNativeBalance - _projectOwnerNativeBalance
                     - (_nativeReclaimAmount - _feeAmount)
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 0
             );
             assertEq(
@@ -879,19 +879,19 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
             _payoutLimits[0] = JBCurrencyAmount({
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             // Specify a surplus allowance.
             JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
             _surplusAllowances[0] = JBCurrencyAmount({
                 amount: _nativeCurrencySurplusAllowance,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
                 terminal: address(_terminal),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
             });
@@ -904,13 +904,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
             _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-            _rulesetConfigurations[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _rulesetConfigurations[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs =
                 new JBAccountingContextConfig[](1);
             _accountingContextConfigs[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
 
@@ -933,7 +933,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -948,7 +948,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the terminal holds the full native token balance.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount
         );
 
@@ -966,8 +966,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _nativeCurrencySurplusAllowance,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -986,7 +986,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -1018,8 +1018,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativeCurrencyPayoutLimit,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0
         });
 
@@ -1032,7 +1032,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 / (_terminal.FEE() + JBConstants.MAX_FEE);
             assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _beneficiaryNativeBalance - _projectOwnerNativeBalance
             );
             assertEq(
@@ -1058,7 +1058,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             holder: _beneficiary,
             projectId: _projectId,
             count: _beneficiaryTokenBalance,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
             metadata: new bytes(0)
@@ -1103,7 +1103,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
 
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _beneficiaryNativeBalance - _projectOwnerNativeBalance
                     - (_nativeReclaimAmount - _feeAmount)
             );
@@ -1152,7 +1152,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](2);
             _payoutLimits[0] = JBCurrencyAmount({
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
             _payoutLimits[1] = JBCurrencyAmount({
                 amount: _usdCurrencyPayoutLimit,
@@ -1163,7 +1163,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](2);
             _surplusAllowances[0] = JBCurrencyAmount({
                 amount: _nativeCurrencySurplusAllowance,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
             _surplusAllowances[1] = JBCurrencyAmount({
                 amount: _usdCurrencySurplusAllowance,
@@ -1172,7 +1172,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
                 terminal: address(_terminal),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits,
                 surplusAllowances: _surplusAllowances
             });
@@ -1183,13 +1183,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
             _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-            _rulesetConfigurations[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _rulesetConfigurations[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
             JBAccountingContextConfig[] memory _accountingContextConfigs =
                 new JBAccountingContextConfig[](2);
             _accountingContextConfigs[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContextConfigs[1] = JBAccountingContextConfig({
@@ -1231,7 +1231,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _prices.addPriceFeedFor({
                 projectId: 0,
                 pricingCurrency: uint32(uint160(address(_usdcToken))),
-                unitCurrency: uint32(uint160(JBTokenList.Native)),
+                unitCurrency: uint32(uint160(JBTokenList.NATIVE)),
                 priceFeed: _priceFeedNativeUsd
             });
 
@@ -1242,7 +1242,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -1273,7 +1273,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the terminal holds the full native token balance.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount
         );
         // Make sure the USDC is accounted for.
@@ -1313,8 +1313,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _nativeCurrencySurplusAllowance,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -1336,13 +1336,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _nativeCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -1381,7 +1381,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: _usdCurrencySurplusAllowance,
             currency: uint32(uint160(address(_usdcToken))),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -1400,14 +1400,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _nativeCurrencySurplusAllowance
                     - _toNative(_usdCurrencySurplusAllowance)
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
                     - _beneficiaryNativeBalance
             );
@@ -1444,8 +1444,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _terminal.sendPayoutsOf({
                 projectId: _projectId,
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native)),
-                token: JBTokenList.Native,
+                currency: uint32(uint160(JBTokenList.NATIVE)),
+                token: JBTokenList.NATIVE,
                 minReturnedTokens: 0
             });
 
@@ -1458,7 +1458,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                     _nativePayAmount - _nativeCurrencySurplusAllowance
                         - _toNative(_usdCurrencySurplusAllowance) - _nativeCurrencyPayoutLimit
                 );
@@ -1466,7 +1466,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 // Make sure the fee was paid correctly.
                 assertEq(
                     jbTerminalStore().balanceOf(
-                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native
+                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE
                     ),
                     _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
                         - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit
@@ -1503,7 +1503,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 projectId: _projectId,
                 amount: _usdCurrencyPayoutLimit,
                 currency: uint32(uint160(address(_usdcToken))),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 minReturnedTokens: 0
             });
 
@@ -1518,7 +1518,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 ) / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                     _nativePayAmount - _nativeCurrencySurplusAllowance
                         - _toNative(_usdCurrencySurplusAllowance) - _nativeCurrencyPayoutLimit
                         - _toNative(_usdCurrencyPayoutLimit)
@@ -1527,7 +1527,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 // Make sure the fee was paid correctly.
                 assertEq(
                     jbTerminalStore().balanceOf(
-                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native
+                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE
                     ),
                     (
                         _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
@@ -1568,7 +1568,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure it's correct.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativeBalance
         );
 
@@ -1650,7 +1650,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     holder: _beneficiary,
                     projectId: _projectId,
                     count: _tokenCountToRedeemForNative,
-                    token: JBTokenList.Native,
+                    token: JBTokenList.NATIVE,
                     minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
@@ -1734,7 +1734,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     holder: _beneficiary,
                     projectId: _projectId,
                     count: _beneficiaryTokenBalance,
-                    token: JBTokenList.Native,
+                    token: JBTokenList.NATIVE,
                     minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
@@ -1756,7 +1756,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the balance is adjusted by the reclaim amount.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativeBalance - _nativeReclaimAmount
         );
     }
@@ -1806,7 +1806,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _payoutLimits2 = new JBCurrencyAmount[](1);
             _payoutLimits1[0] = JBCurrencyAmount({
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
             _payoutLimits2[0] = JBCurrencyAmount({
                 amount: _usdCurrencyPayoutLimit,
@@ -1818,7 +1818,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBCurrencyAmount[] memory _surplusAllowances2 = new JBCurrencyAmount[](1);
             _surplusAllowances1[0] = JBCurrencyAmount({
                 amount: _nativeCurrencySurplusAllowance,
-                currency: uint32(uint160(JBTokenList.Native))
+                currency: uint32(uint160(JBTokenList.NATIVE))
             });
             _surplusAllowances2[0] = JBCurrencyAmount({
                 amount: _usdCurrencySurplusAllowance,
@@ -1827,7 +1827,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
             _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
                 terminal: address(_terminal),
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 payoutLimits: _payoutLimits1,
                 surplusAllowances: _surplusAllowances1
             });
@@ -1845,7 +1845,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _rulesetConfigurations[0].data = _data;
             _rulesetConfigurations[0].metadata = _metadata;
             _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-            _rulesetConfigurations[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _rulesetConfigurations[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             JBTerminalConfig[] memory _terminalConfigurations1 = new JBTerminalConfig[](1);
             JBTerminalConfig[] memory _terminalConfigurations2 = new JBTerminalConfig[](2);
@@ -1856,7 +1856,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             JBAccountingContextConfig[] memory _accountingContextConfigs3 =
                 new JBAccountingContextConfig[](1);
             _accountingContextConfigs1[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContextConfigs1[1] = JBAccountingContextConfig({
@@ -1864,7 +1864,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 standard: JBTokenStandards.ERC20
             });
             _accountingContextConfigs2[0] = JBAccountingContextConfig({
-                token: JBTokenList.Native,
+                token: JBTokenList.NATIVE,
                 standard: JBTokenStandards.NATIVE
             });
             _accountingContextConfigs3[0] = JBAccountingContextConfig({
@@ -1915,7 +1915,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _prices.addPriceFeedFor({
                 projectId: 0,
                 pricingCurrency: uint32(uint160(address(_usdcToken))),
-                unitCurrency: uint32(uint160(JBTokenList.Native)),
+                unitCurrency: uint32(uint160(JBTokenList.NATIVE)),
                 priceFeed: _priceFeedNativeUsd
             });
 
@@ -1926,7 +1926,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",
@@ -1957,7 +1957,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the terminal holds the full native token balance.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativePayAmount
         );
         // Make sure the USDC is accounted for.
@@ -1995,8 +1995,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         _terminal.useAllowanceOf({
             projectId: _projectId,
             amount: _nativeCurrencySurplusAllowance,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native,
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE,
             minReturnedTokens: 0,
             beneficiary: payable(_beneficiary),
             memo: "MEMO"
@@ -2015,13 +2015,13 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             );
             assertEq(_beneficiary.balance, _beneficiaryNativeBalance);
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                 _nativePayAmount - _nativeCurrencySurplusAllowance
             );
 
             // Make sure the fee was paid correctly.
             assertEq(
-                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native),
+                jbTerminalStore().balanceOf(address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE),
                 _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
             );
             assertEq(address(_terminal).balance, _nativePayAmount - _beneficiaryNativeBalance);
@@ -2139,8 +2139,8 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             _terminal.sendPayoutsOf({
                 projectId: _projectId,
                 amount: _nativeCurrencyPayoutLimit,
-                currency: uint32(uint160(JBTokenList.Native)),
-                token: JBTokenList.Native,
+                currency: uint32(uint160(JBTokenList.NATIVE)),
+                token: JBTokenList.NATIVE,
                 minReturnedTokens: 0
             });
 
@@ -2153,14 +2153,14 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     / (_terminal.FEE() + JBConstants.MAX_FEE);
                 assertEq(_projectOwner.balance, _projectOwnerNativeBalance);
                 assertEq(
-                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+                    jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
                     _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit
                 );
 
                 // Make sure the fee was paid correctly.
                 assertEq(
                     jbTerminalStore().balanceOf(
-                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.Native
+                        address(_terminal), _FEE_PROJECT_ID, JBTokenList.NATIVE
                     ),
                     _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance
                         + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance
@@ -2322,7 +2322,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                         holder: _beneficiary,
                         projectId: _projectId,
                         count: _tokenCountToRedeemForNative,
-                        token: JBTokenList.Native,
+                        token: JBTokenList.NATIVE,
                         minReclaimed: 0,
                         beneficiary: payable(_beneficiary),
                         metadata: new bytes(0)
@@ -2413,7 +2413,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     holder: _beneficiary,
                     projectId: _projectId,
                     count: _beneficiaryTokenBalance,
-                    token: JBTokenList.Native,
+                    token: JBTokenList.NATIVE,
                     minReclaimed: 0,
                     beneficiary: payable(_beneficiary),
                     metadata: new bytes(0)
@@ -2441,7 +2441,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the balance is adjusted by the reclaim amount.
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _projectNativeBalance - _nativeReclaimAmount
         );
     }

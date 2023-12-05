@@ -281,7 +281,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 _payer,
                 _amount,
                 _projectId,
-                ruleset.rulesetId,
+                ruleset.id,
                 _beneficiary,
                 ruleset.weight,
                 ruleset.reservedRate(),
@@ -426,7 +426,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                     msg.sender,
                     _holder,
                     _projectId,
-                    ruleset.rulesetId,
+                    ruleset.id,
                     _tokenCount,
                     _totalSupply,
                     _currentSurplus,
@@ -498,7 +498,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Amount must be within what is still available to pay out.
         uint256 _payoutLimit = IJBController(address(DIRECTORY.controllerOf(_projectId)))
             .fundAccessLimits().payoutLimitOf(
-            _projectId, ruleset.rulesetId, msg.sender, _accountingContext.token, _currency
+            _projectId, ruleset.id, msg.sender, _accountingContext.token, _currency
         );
 
         // Make sure the new used amount is within the payout limit.
@@ -552,12 +552,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         // Get a reference to the new used surplus allowance for this ruleset ID.
         uint256 _newUsedSurplusAllowanceOf = usedSurplusAllowanceOf[msg.sender][_projectId][_accountingContext
-            .token][ruleset.rulesetId][_currency] + _amount;
+            .token][ruleset.id][_currency] + _amount;
 
         // There must be sufficient surplus allowance available.
         uint256 _surplusAllowance = IJBController(address(DIRECTORY.controllerOf(_projectId)))
             .fundAccessLimits().surplusAllowanceOf(
-            _projectId, ruleset.rulesetId, msg.sender, _accountingContext.token, _currency
+            _projectId, ruleset.id, msg.sender, _accountingContext.token, _currency
         );
 
         // Make sure the new used amount is within the allowance.
@@ -594,7 +594,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         ) revert INADEQUATE_TERMINAL_STORE_BALANCE();
 
         // Store the incremented value.
-        usedSurplusAllowanceOf[msg.sender][_projectId][_accountingContext.token][ruleset.rulesetId][_currency]
+        usedSurplusAllowanceOf[msg.sender][_projectId][_accountingContext.token][ruleset.id][_currency]
         = _newUsedSurplusAllowanceOf;
 
         // Update the project's balance.
@@ -761,7 +761,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         JBCurrencyAmount[] memory _payoutLimits = IJBController(
             address(DIRECTORY.controllerOf(_projectId))
         ).fundAccessLimits().payoutLimitsOf(
-            _projectId, _ruleset.rulesetId, address(_terminal), _accountingContext.token
+            _projectId, _ruleset.id, address(_terminal), _accountingContext.token
         );
 
         // Keep a reference to the payout limit being iterated on.

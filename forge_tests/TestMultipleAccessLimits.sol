@@ -19,7 +19,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
     function setUp() public override {
         super.setUp();
 
-        _nativeCurrency = uint32(uint160(JBTokenList.Native));
+        _nativeCurrency = uint32(uint160(JBTokenList.NATIVE));
         _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
@@ -35,7 +35,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -68,17 +68,17 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _payoutLimits[0] = JBCurrencyAmount({
             amount: _nativePayoutLimit,
-            currency: uint32(uint160(JBTokenList.Native))
+            currency: uint32(uint160(JBTokenList.NATIVE))
         });
         _payoutLimits[1] = JBCurrencyAmount({
             amount: _usdPayoutLimit,
             currency: uint32(uint160(address(usdcToken())))
         });
         _surplusAllowances[0] =
-            JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBTokenList.Native))});
+            JBCurrencyAmount({amount: 1 ether, currency: uint32(uint160(JBTokenList.NATIVE))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -89,12 +89,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] = JBAccountingContextConfig({
@@ -127,7 +127,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
-            pricingCurrency: uint32(uint160(JBTokenList.Native)),
+            pricingCurrency: uint32(uint160(JBTokenList.NATIVE)),
             unitCurrency: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedNativeUsd
         });
@@ -148,7 +148,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -167,8 +167,8 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.sendPayoutsOf({
             projectId: _projectId,
             amount: _nativePayoutLimit,
-            currency: uint32(uint160(JBTokenList.Native)),
-            token: JBTokenList.Native, // Unused.
+            currency: uint32(uint160(JBTokenList.NATIVE)),
+            token: JBTokenList.NATIVE, // Unused.
             minReturnedTokens: 0
         });
 
@@ -203,7 +203,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: _usdAmountAvailableToPayout,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // token
+            token: JBTokenList.NATIVE, // token
             minReturnedTokens: 0
         });
 
@@ -214,7 +214,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -231,7 +231,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: _usdAmountAvailableToPayout,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, //token (unused)
+            token: JBTokenList.NATIVE, //token (unused)
             minReturnedTokens: 0
         });
     }
@@ -250,7 +250,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -261,14 +261,14 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         _projectOwner = multisig();
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] = JBAccountingContextConfig({
@@ -305,7 +305,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
 
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -316,14 +316,14 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         _projectOwner = multisig();
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] = JBAccountingContextConfig({
@@ -371,7 +371,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             JBCurrencyAmount({amount: _surplusAllowance, currency: ALLOWCURRENCY + 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -380,12 +380,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] = JBAccountingContextConfig({
@@ -424,7 +424,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _surplusAllowances[0] = JBCurrencyAmount({amount: 1, currency: 1});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             payoutLimits: _payoutLimits,
             surplusAllowances: _surplusAllowances
         });
@@ -435,12 +435,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] = JBAccountingContextConfig({
@@ -470,7 +470,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -487,7 +487,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1_800_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             minReturnedTokens: 0
         });
 
@@ -516,7 +516,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1_700_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             minReturnedTokens: 0
         });
     }
@@ -535,7 +535,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(__terminal),
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             payoutLimits: _payoutLimits,
             surplusAllowances: new JBCurrencyAmount[](0)
         });
@@ -546,12 +546,12 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroups;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] = JBAccountingContextConfig({
@@ -572,7 +572,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         __terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -602,7 +602,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 3_000_000_000,
             currency: uint32(uint160(address(usdcToken()))),
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             minReturnedTokens: 0
         });
 
@@ -641,7 +641,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             projectId: _projectId,
             amount: 1 ether,
             currency: _nativeCurrency,
-            token: JBTokenList.Native, // Unused.
+            token: JBTokenList.NATIVE, // Unused.
             minReturnedTokens: 0
         });
 

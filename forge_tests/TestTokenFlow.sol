@@ -31,7 +31,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: JBConstants.MAX_RESERVED_RATE / 2,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: true,
@@ -53,13 +53,13 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -147,7 +147,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         _terminal.pay{value: 1 ether}({
             projectId: _projectId,
             amount: 1 ether,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "",

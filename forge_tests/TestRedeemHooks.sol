@@ -36,7 +36,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: true,
@@ -58,12 +58,12 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -110,7 +110,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         uint256 _beneficiaryTokensReceived = _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: address(this),
             minReturnedTokens: 0,
             memo: "Forge Test",
@@ -126,7 +126,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         // Make sure the native token balance in terminal is up to date.
         uint256 _nativeTerminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativeTerminalBalance
         );
 
@@ -140,19 +140,19 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         JBDidRedeemData memory _redeemData = JBDidRedeemData({
             holder: address(this),
             projectId: _projectId,
-            currentRulesetId: _ruleset.rulesetId,
+            currentRulesetId: _ruleset.id,
             projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
-                JBTokenList.Native,
+                JBTokenList.NATIVE,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).currency
                 ),
             forwardedAmount: JBTokenAmount(
-                JBTokenList.Native,
+                JBTokenList.NATIVE,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.Native).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBTokenList.NATIVE).currency
                 ),
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             beneficiary: payable(address(this)),
@@ -184,7 +184,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
             holder: address(this),
             projectId: _projectId,
             count: _beneficiaryTokenBalance / 2,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             minReclaimed: 0,
             beneficiary: payable(address(this)),
             metadata: new bytes(0)

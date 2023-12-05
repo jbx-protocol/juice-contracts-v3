@@ -117,7 +117,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         override
         returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
-        ruleset = rulesets.getRulesetStruct(_projectId, _rulesetId);
+        ruleset = rulesets.getRuleset(_projectId, _rulesetId);
         metadata = ruleset.expandMetadata();
     }
 
@@ -653,7 +653,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         uint256 _leftoverTokenCount = tokenCount == 0
             ? 0
             : _sendTokensToSplitGroupOf(
-                _projectId, _ruleset.rulesetId, JBSplitGroupIds.RESERVED_TOKENS, tokenCount
+                _projectId, _ruleset.id, JBSplitGroupIds.RESERVED_TOKENS, tokenCount
             );
 
         // Mint any leftover tokens to the project owner.
@@ -662,7 +662,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         }
 
         emit SendReservedTokensToSplits(
-            _ruleset.rulesetId,
+            _ruleset.id,
             _ruleset.cycleNumber,
             _projectId,
             _owner,
@@ -790,16 +790,16 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             );
 
             // Set the configuration's split groups.
-            splits.setSplitGroupsOf(_projectId, _ruleset.rulesetId, _rulesetConfig.splitGroups);
+            splits.setSplitGroupsOf(_projectId, _ruleset.id, _rulesetConfig.splitGroups);
 
             // Set the configuration's fund access limits.
             fundAccessLimits.setFundAccessLimitsFor(
-                _projectId, _ruleset.rulesetId, _rulesetConfig.fundAccessLimitGroup
+                _projectId, _ruleset.id, _rulesetConfig.fundAccessLimitGroups
             );
 
             // Return the ruleset's ID if this is the last configuration being queued.
             if (_i == _numberOfConfigurations - 1) {
-                rulesetId = _ruleset.rulesetId;
+                rulesetId = _ruleset.id;
             }
 
             unchecked {

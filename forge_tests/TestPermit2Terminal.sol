@@ -52,7 +52,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: true,
@@ -74,12 +74,12 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _accountingContexts[1] =
@@ -110,7 +110,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         _prices.addPriceFeedFor({
             projectId: _projectId,
-            pricingCurrency: uint32(uint160(JBTokenList.Native)),
+            pricingCurrency: uint32(uint160(JBTokenList.NATIVE)),
             unitCurrency: uint32(uint160(address(usdcToken()))),
             priceFeed: _priceFeedNativeUsd
         });

@@ -40,7 +40,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -64,13 +64,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -94,7 +94,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Deploy a project.
         uint256 projectId = launchProjectForTest();
@@ -108,7 +108,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_ruleset.weight, _data.weight);
 
         // Keep a reference to the ruleset's ID.
-        uint256 _currentRulesetId = _ruleset.rulesetId;
+        uint256 _currentRulesetId = _ruleset.id;
 
         // Increment the weight to create a difference.
         _rulesetConfig[0].data.weight = _rulesetConfig[0].data.weight + 1;
@@ -120,7 +120,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the current ruleset hasn't changed.
         _ruleset = jbRulesets().currentOf(projectId);
         assertEq(_ruleset.cycleNumber, 1);
-        assertEq(_ruleset.rulesetId, _currentRulesetId);
+        assertEq(_ruleset.id, _currentRulesetId);
         assertEq(_ruleset.weight, _data.weight);
 
         // Go to the start of the next ruleset.
@@ -150,7 +150,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_ruleset.weight, _data.weight);
 
         // Keep a reference to the current ruleset ID.
-        uint256 _currentRulesetId = _ruleset.rulesetId;
+        uint256 _currentRulesetId = _ruleset.id;
 
         // Jump to the next ruleset.
         vm.warp(block.timestamp + _ruleset.duration);
@@ -166,7 +166,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _firstQueued[0].metadata = _metadata;
         _firstQueued[0].splitGroups = _splitGroup;
-        _firstQueued[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _firstQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Queue.
         vm.prank(multisig());
@@ -183,7 +183,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _secondQueued[0].metadata = _metadata;
         _secondQueued[0].splitGroups = _splitGroup;
-        _secondQueued[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _secondQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Queue again
         vm.prank(multisig());
@@ -195,7 +195,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // The current ruleset should not have changed, still in ruleset #2, cycled over from ruleset #1.
         _ruleset = jbRulesets().currentOf(projectId);
         assertEq(_ruleset.cycleNumber, 2);
-        assertEq(_ruleset.rulesetId, _currentRulesetId);
+        assertEq(_ruleset.id, _currentRulesetId);
         assertEq(_ruleset.weight, _data.weight);
 
         // Jump to after the deadline has passed, but before the next ruleset.
@@ -204,7 +204,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the queued ruleset is the second one queued.
         JBRuleset memory queuedRuleset = jbRulesets().upcomingRulesetOf(projectId);
         assertEq(queuedRuleset.cycleNumber, 3);
-        assertEq(queuedRuleset.rulesetId, secondRulesetId);
+        assertEq(queuedRuleset.id, secondRulesetId);
         assertEq(queuedRuleset.weight, _weightSecondQueued);
 
         // Go the the start of the queued ruleset.
@@ -213,7 +213,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the second queued is now the current ruleset.
         JBRuleset memory _newRuleset = jbRulesets().currentOf(projectId);
         assertEq(_newRuleset.cycleNumber, 3);
-        assertEq(_newRuleset.rulesetId, secondRulesetId);
+        assertEq(_newRuleset.id, secondRulesetId);
         assertEq(_newRuleset.weight, _weightSecondQueued);
     }
 
@@ -233,7 +233,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Launch a project to test.
         uint256 projectId = launchProjectForTest();
@@ -261,7 +261,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
             _config[0].data = _data;
             _config[0].metadata = _metadata;
             _config[0].splitGroups = _splitGroup;
-            _config[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+            _config[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
             // Queue the ruleset.
             vm.prank(multisig());
@@ -315,7 +315,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Launch the project.
         uint256 projectId = launchProjectForTest();
@@ -336,7 +336,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _config[0].data = _dataNew;
         _config[0].metadata = _metadata;
         _config[0].splitGroups = _splitGroup;
-        _config[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _config[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         _controller.queueRulesetsOf(projectId, _config, "");
     }
@@ -362,7 +362,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Launch a project to test.
         uint256 projectId = launchProjectForTest();
@@ -375,7 +375,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         assertEq(_ruleset.weight, _data.weight);
 
         // Keep a reference to the current ruleset ID.
-        uint256 _currentRulesetId = _ruleset.rulesetId;
+        uint256 _currentRulesetId = _ruleset.id;
 
         // Package up a reconfiguration.
         JBRulesetConfig[] memory _config = new JBRulesetConfig[](1);
@@ -383,7 +383,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _config[0].data = _dataQueue;
         _config[0].metadata = _metadata;
         _config[0].splitGroups = _splitGroup;
-        _config[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _config[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Submit the reconfiguration.
         vm.prank(multisig());
@@ -392,7 +392,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the ruleset hasn't changed.
         _ruleset = jbRulesets().currentOf(projectId);
         assertEq(_ruleset.cycleNumber, 1);
-        assertEq(_ruleset.rulesetId, _currentRulesetId);
+        assertEq(_ruleset.id, _currentRulesetId);
         assertEq(_ruleset.weight, _data.weight);
 
         // Go the the second ruleset.
@@ -434,7 +434,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Launch a project to test with.
         uint256 projectId = launchProjectForTest();
@@ -453,7 +453,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _config[0].data = _dataQueue;
         _config[0].metadata = _metadata;
         _config[0].splitGroups = _splitGroup;
-        _config[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _config[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         vm.prank(multisig());
         _controller.queueRulesetsOf(projectId, _config, "");
@@ -490,7 +490,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Launch the project to test with.
         uint256 projectId = launchProjectForTest();
@@ -501,7 +501,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the first ruleset has begun.
         assertEq(_ruleset.cycleNumber, 1);
         assertEq(_ruleset.weight, _weightInitial);
-        assertEq(_ruleset.rulesetId, block.timestamp);
+        assertEq(_ruleset.id, block.timestamp);
 
         // Package up a new config.
         JBRulesetConfig[] memory _firstQueued = new JBRulesetConfig[](1);
@@ -514,7 +514,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _firstQueued[0].metadata = _metadata;
         _firstQueued[0].splitGroups = _splitGroup;
-        _firstQueued[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _firstQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Queue a ruleset to be overridden (will be in `ApprovalExpected` status of the approval hook).
         vm.prank(multisig());
@@ -523,7 +523,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the ruleset is queued.
         JBRuleset memory _queued = jbRulesets().upcomingRulesetOf(projectId);
         assertEq(_queued.cycleNumber, 2);
-        assertEq(_queued.rulesetId, _initialRulesetId + 1);
+        assertEq(_queued.id, _initialRulesetId + 1);
         assertEq(_queued.weight, _weightFirstQueued);
 
         // Package up another config.
@@ -537,7 +537,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _secondQueued[0].metadata = _metadata;
         _secondQueued[0].splitGroups = _splitGroup;
-        _secondQueued[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _secondQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Queue the ruleset.
         // Will follow the cycled over (ruleset #1) ruleset, after overriding the above config, because the first ruleset queued is in `ApprovalExpected` status (the 3 day deadline has not passed).
@@ -548,7 +548,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure this latest queued ruleset implies a cycled over ruleset from ruleset #1.
         JBRuleset memory _requeued = jbRulesets().upcomingRulesetOf(projectId);
         assertEq(_requeued.cycleNumber, 2);
-        assertEq(_requeued.rulesetId, _initialRulesetId);
+        assertEq(_requeued.id, _initialRulesetId);
         assertEq(_requeued.weight, _weightInitial);
 
         // Warp to when the initial ruleset rolls over and again becomes the current.
@@ -557,13 +557,13 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure the new current is a rolled over ruleset.
         JBRuleset memory _initialIsCurrent = jbRulesets().currentOf(projectId);
         assertEq(_initialIsCurrent.cycleNumber, 2);
-        assertEq(_initialIsCurrent.rulesetId, _initialRulesetId);
+        assertEq(_initialIsCurrent.id, _initialRulesetId);
         assertEq(_initialIsCurrent.weight, _weightInitial);
 
         // Second queued ruleset that replaced our first queued ruleset.
         JBRuleset memory _requeued2 = jbRulesets().upcomingRulesetOf(projectId);
         assertEq(_requeued2.cycleNumber, 3);
-        assertEq(_requeued2.rulesetId, _initialRulesetId + 2);
+        assertEq(_requeued2.id, _initialRulesetId + 2);
         assertEq(_requeued2.weight, _weightSecondQueued);
     }
 
@@ -581,7 +581,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
-        _rulesetConfig[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Deploy a project to test.
         uint256 projectId = launchProjectForTest();
@@ -604,7 +604,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _firstQueued[0].metadata = _metadata;
         _firstQueued[0].splitGroups = _splitGroup;
-        _firstQueued[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _firstQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Becomes queued & will be overwritten as 3 days will not pass and its status is `ApprovalExpected`.
         vm.prank(multisig());
@@ -614,7 +614,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         JBRuleset memory queuedToOverwrite = jbRulesets().upcomingRulesetOf(projectId);
 
         assertEq(queuedToOverwrite.cycleNumber, 2);
-        assertEq(queuedToOverwrite.rulesetId, _expectedRulesetId + 1);
+        assertEq(queuedToOverwrite.id, _expectedRulesetId + 1);
         assertEq(queuedToOverwrite.weight, _weightFirstQueued);
 
         // Package up another config to overwrite.
@@ -629,7 +629,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         }); // 3 day deadline duration.
         _secondQueued[0].metadata = _metadata;
         _secondQueued[0].splitGroups = _splitGroup;
-        _secondQueued[0].fundAccessLimitGroup = _fundAccessLimitGroup;
+        _secondQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Queuing the second ruleset will overwrite the first queued ruleset.
         vm.prank(multisig());
@@ -638,7 +638,7 @@ contract TestReconfigureProject_Local is TestBaseWorkflow {
         // Make sure it's overwritten.
         JBRuleset memory queued = jbRulesets().upcomingRulesetOf(projectId);
         assertEq(queued.cycleNumber, 2);
-        assertEq(queued.rulesetId, _expectedRulesetId + 2);
+        assertEq(queued.id, _expectedRulesetId + 2);
         assertEq(queued.weight, _weightSecondQueued);
     }
 

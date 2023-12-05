@@ -32,7 +32,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -54,13 +54,13 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -90,7 +90,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         vm.prank(makeAddr("zeroOwner"));
         uint256 queued = _controller.queueRulesetsOf(_projectOne, _rulesetConfig, "");

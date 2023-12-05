@@ -125,7 +125,7 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
     ) external override {
         // If the message sender is this contract's owner and the `projectId` being set for is the default (0), no permissions necessary.
         // Otherwise, only a project's owner or an operator with the `ADD_PRICE_FEED` permission from that owner can add a feed for a project.
-        if (msg.sender != owner() || _projectId != DEFAULT_PROJECT_ID) {
+        if (_projectId != DEFAULT_PROJECT_ID || msg.sender != owner()) {
             _requirePermission(
                 PROJECTS.ownerOf(_projectId), _projectId, JBPermissionIds.ADD_PRICE_FEED
             );

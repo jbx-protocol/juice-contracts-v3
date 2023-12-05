@@ -31,7 +31,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -58,7 +58,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             keccak256(
                 abi.encodePacked(
                     queued.cycleNumber,
-                    queued.rulesetId,
+                    queued.id,
                     queued.basedOnId,
                     queued.start,
                     queued.duration,
@@ -71,7 +71,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
                 == keccak256(
                     abi.encodePacked(
                         stored.cycleNumber,
-                        stored.rulesetId,
+                        stored.id,
                         stored.basedOnId,
                         stored.start,
                         stored.duration,
@@ -91,13 +91,13 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -117,7 +117,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         // Reference queued attributes for sake of comparison.
         JBRuleset memory queued = JBRuleset({
             cycleNumber: 1,
-            rulesetId: block.timestamp,
+            id: block.timestamp,
             basedOnId: 0,
             start: block.timestamp,
             duration: _data.duration,
@@ -149,13 +149,13 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -174,7 +174,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         // Reference queued attributes for sake of comparison.
         JBRuleset memory queued = JBRuleset({
             cycleNumber: 1,
-            rulesetId: block.timestamp,
+            id: block.timestamp,
             basedOnId: 0,
             start: block.timestamp,
             duration: _data.duration,
@@ -206,13 +206,13 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -244,7 +244,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
             // Reference queued attributes for sake of comparison.
             JBRuleset memory queued = JBRuleset({
                 cycleNumber: 1,
-                rulesetId: block.timestamp,
+                id: block.timestamp,
                 basedOnId: 0,
                 start: block.timestamp,
                 duration: _data.duration,

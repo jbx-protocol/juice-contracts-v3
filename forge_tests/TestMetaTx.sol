@@ -84,7 +84,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: true,
@@ -106,12 +106,12 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
         _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] =
@@ -149,7 +149,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         bytes memory _data = abi.encodeWithSelector(
             IJBTerminal.pay.selector,
             _projectId,
-            JBTokenList.Native,
+            JBTokenList.NATIVE,
             _payAmount,
             _signer,
             0, // minReturnedTokens
@@ -185,7 +185,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
             IJBRedeemTerminal.redeemTokensOf.selector,
             _signer,
             _projectId,
-            JBTokenList.Native,
+            JBTokenList.NATIVE,
             _beneficiaryTokenBalance,
             0, // minReturnedTokens
             payable(_signer),

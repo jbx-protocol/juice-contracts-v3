@@ -34,7 +34,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: 0,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -69,7 +69,7 @@ contract TestRulesetWeightCaching_Local is TestBaseWorkflow {
         //     _rulesetConfigurations[0].data = _data;
         //     _rulesetConfigurations[0].metadata = _metadata;
         //     _rulesetConfigurations[0].splitGroups = new JBSplitGroup[](0);
-        //     _rulesetConfigurations[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        //     _rulesetConfigurations[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         //     // Create the project to test.
         //     _projectId1 = _controller.launchProjectFor({

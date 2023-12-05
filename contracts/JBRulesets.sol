@@ -77,7 +77,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
     /// @param _projectId The ID of the project to which the ruleset belongs.
     /// @param _rulesetId The ID of the ruleset to get the struct of.
     /// @return ruleset The ruleset struct.
-    function getRulesetStruct(uint256 _projectId, uint256 _rulesetId)
+    function getRuleset(uint256 _projectId, uint256 _rulesetId)
         external
         view
         override
@@ -104,8 +104,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         ruleset = _getStructFor(_projectId, _rulesetId);
 
         // Resolve the approval status.
-        approvalStatus =
-            _approvalStatusOf(_projectId, ruleset.rulesetId, ruleset.start, ruleset.basedOnId);
+        approvalStatus = _approvalStatusOf(_projectId, ruleset.id, ruleset.start, ruleset.basedOnId);
     }
 
     /// @notice The ruleset that's up next for a project.
@@ -165,7 +164,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (
             _approvalStatus == JBApprovalStatus.Approved
                 || _approvalStatus == JBApprovalStatus.Empty
-        ) return _simulateCycledRuleset(ruleset, false);
+        ) return _simulateCycledRulesetBasedOn(ruleset, false);
 
         // Get the ruleset of its base ruleset, which carries the last approved configuration.
         ruleset = _getStructFor(_projectId, ruleset.basedOnId);
@@ -174,7 +173,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (ruleset.duration == 0) return _getStructFor(0, 0);
 
         // Return a simulated cycled ruleset.
-        return _simulateCycledRuleset(ruleset, false);
+        return _simulateCycledRulesetBasedOn(ruleset, false);
     }
 
     /// @notice The ruleset that is currently active for the specified project.
@@ -245,7 +244,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (_ruleset.duration == 0) return _ruleset;
 
         // Return a simulation of the current ruleset.
-        return _simulateCycledRuleset(_ruleset, true);
+        return _simulateCycledRulesetBasedOn(_ruleset, true);
     }
 
     /// @notice The current approval status of a given project's latest ruleset.
@@ -263,7 +262,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Resolve the struct for the latest ruleset.
         JBRuleset memory _ruleset = _getStructFor(_projectId, _rulesetId);
 
-        return _approvalStatusOf(_projectId, _ruleset.rulesetId, _ruleset.start, _ruleset.basedOnId);
+        return _approvalStatusOf(_projectId, _ruleset.id, _ruleset.start, _ruleset.basedOnId);
     }
 
     //*********************************************************************//
@@ -379,7 +378,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (_latestQueuedRuleset.duration == 0 || _latestQueuedRuleset.decayRate == 0) return;
 
         // Get a reference to the current cache.
-        JBRulesetWeightCache storage _cache = _weightCache[_latestQueuedRuleset.rulesetId];
+        JBRulesetWeightCache storage _cache = _weightCache[_latestQueuedRuleset.id];
 
         // Determine the largest start timestamp the cache can be filled to.
         uint256 _maxStart = _latestQueuedRuleset.start
@@ -462,7 +461,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         }
 
         // The specified `rulesetId` can't be the same as the base ruleset's ID.
-        if (_baseRuleset.rulesetId == _rulesetId) {
+        if (_baseRuleset.id == _rulesetId) {
             revert BLOCK_ALREADY_CONTAINS_RULESET();
         }
 
@@ -509,7 +508,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
                 _projectId,
                 _rulesetCycleNumber,
                 _weight,
-                _baseRuleset.rulesetId,
+                _baseRuleset.id,
                 _mustStartAtOrAfter
             );
         } else {
@@ -526,14 +525,14 @@ contract JBRulesets is JBControlled, IJBRulesets {
 
             // Update the intrinsic properties.
             _packAndStoreIntrinsicPropertiesOf(
-                _rulesetId, _projectId, _rulesetCycleNumber, _weight, _baseRuleset.rulesetId, _start
+                _rulesetId, _projectId, _rulesetCycleNumber, _weight, _baseRuleset.id, _start
             );
         }
 
         // Set the project's latest ruleset configuration.
         latestRulesetIdOf[_projectId] = _rulesetId;
 
-        emit RulesetInitialized(_rulesetId, _projectId, _baseRuleset.rulesetId);
+        emit RulesetInitialized(_rulesetId, _projectId, _baseRuleset.id);
     }
 
     /// @notice Efficiently stores the provided intrinsic properties of a ruleset.
@@ -602,7 +601,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
             // If the base ruleset starts in the future,
             if (block.timestamp < _baseRuleset.start) {
                 // Set the `rulesetId` to the one found.
-                rulesetId = _baseRuleset.rulesetId;
+                rulesetId = _baseRuleset.id;
                 // Check the ruleset it was based on in the next iteration.
                 _basedOnId = _baseRuleset.basedOnId;
             } else {
@@ -643,7 +642,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
 
             // Return the ruleset's `rulesetId` if it has started.
             if (block.timestamp >= _ruleset.start) {
-                return _ruleset.rulesetId;
+                return _ruleset.id;
             }
 
             _ruleset = _getStructFor(_projectId, _ruleset.basedOnId);
@@ -658,7 +657,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
     /// @param _baseRuleset The ruleset that the simulated ruleset should be based on.
     /// @param _allowMidRuleset A flag indicating if the simulated ruleset is allowed to already be mid ruleset.
     /// @return A simulated ruleset struct: the next ruleset by default. This will be overwritten if a new ruleset is queued for the project.
-    function _simulateCycledRuleset(JBRuleset memory _baseRuleset, bool _allowMidRuleset)
+    function _simulateCycledRulesetBasedOn(JBRuleset memory _baseRuleset, bool _allowMidRuleset)
         private
         view
         returns (JBRuleset memory)
@@ -676,7 +675,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
 
         return JBRuleset(
             _rulesetCycleNumber,
-            _baseRuleset.rulesetId,
+            _baseRuleset.id,
             _baseRuleset.basedOnId,
             _start,
             _baseRuleset.duration,
@@ -756,7 +755,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Check the cache if needed.
         if (_decayMultiple > _DECAY_MULTIPLE_CACHE_LOOKUP_THRESHOLD) {
             // Get a cached weight for the rulesetId.
-            JBRulesetWeightCache memory _cache = _weightCache[_baseRuleset.rulesetId];
+            JBRulesetWeightCache memory _cache = _weightCache[_baseRuleset.id];
 
             // If a cached value is available, use it.
             if (_cache.decayMultiple > 0) {
@@ -817,7 +816,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         view
         returns (JBApprovalStatus)
     {
-        return _approvalStatusOf(_projectId, _ruleset.rulesetId, _ruleset.start, _ruleset.basedOnId);
+        return _approvalStatusOf(_projectId, _ruleset.id, _ruleset.start, _ruleset.basedOnId);
     }
 
     /// @notice The approval status of a given ruleset (ID) for a given project (ID).
@@ -859,7 +858,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Return an empty ruleset if the specified `rulesetId` is 0.
         if (_rulesetId == 0) return ruleset;
 
-        ruleset.rulesetId = _rulesetId;
+        ruleset.id = _rulesetId;
 
         uint256 _packedIntrinsicProperties = _packedIntrinsicPropertiesOf[_projectId][_rulesetId];
 

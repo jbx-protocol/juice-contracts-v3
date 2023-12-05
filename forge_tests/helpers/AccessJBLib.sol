@@ -16,7 +16,7 @@ contract AccessJBLib {
     }
 
     function NativeToken() external pure returns (address) {
-        return JBTokenList.Native;
+        return JBTokenList.NATIVE;
     }
 
     function MAX_FEE() external pure returns (uint256) {

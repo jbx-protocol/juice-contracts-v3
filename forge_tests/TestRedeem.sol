@@ -31,7 +31,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE / 2,
-            baseCurrency: uint32(uint160(JBTokenList.Native)),
+            baseCurrency: uint32(uint160(JBTokenList.NATIVE)),
             pausePay: false,
             pauseCreditTransfers: false,
             allowDiscretionaryMinting: false,
@@ -52,13 +52,13 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _rulesetConfig[0].data = _data;
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
-        _rulesetConfig[0].fundAccessLimitGroup = new JBFundAccessLimitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContextConfigs =
             new JBAccountingContextConfig[](1);
         _accountingContextConfigs[0] = JBAccountingContextConfig({
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             standard: JBTokenStandards.NATIVE
         });
         _terminalConfigurations[0] = JBTerminalConfig({
@@ -96,7 +96,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
             amount: _nativePayAmount,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             beneficiary: _beneficiary,
             minReturnedTokens: 0,
             memo: "Take my money!",
@@ -110,7 +110,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         // Make sure the native token balance in terminal is up to date.
         uint256 _nativeTerminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativeTerminalBalance
         );
 
@@ -122,7 +122,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         uint256 _nativeReclaimAmt = _terminal.redeemTokensOf({
             holder: _beneficiary,
             projectId: _projectId,
-            token: JBTokenList.Native,
+            token: JBTokenList.NATIVE,
             count: _tokenAmountToRedeem,
             minReclaimed: 0,
             beneficiary: payable(_beneficiary),
@@ -163,7 +163,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Make sure the native token balance in terminal should be up to date (with 1 wei precision).
         assertApproxEqAbs(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.Native),
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokenList.NATIVE),
             _nativeTerminalBalance - _nativeReclaimAmt - (_nativeReclaimAmt * 25 / 1000),
             1
         );
