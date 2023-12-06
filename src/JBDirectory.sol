@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -90,17 +90,13 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         uint256 _numberOfTerminals = _terminalsOf[_projectId].length;
 
         // Return the first terminal which accepts the specified token.
-        for (uint256 _i; _i < _numberOfTerminals;) {
+        for (uint256 _i; _i < _numberOfTerminals; ++_i) {
             // Keep a reference to the terminal being iterated on.
             IJBTerminal _terminal = _terminalsOf[_projectId][_i];
 
             // If the terminal accepts the specified token, return it.
             if (_terminal.accountingContextForTokenOf(_projectId, _token).token != address(0)) {
                 return _terminal;
-            }
-
-            unchecked {
-                ++_i;
             }
         }
 
@@ -121,13 +117,9 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
         uint256 _numberOfTerminals = _terminalsOf[_projectId].length;
 
         // Loop through and return true if the terminal is contained.
-        for (uint256 _i; _i < _numberOfTerminals;) {
+        for (uint256 _i; _i < _numberOfTerminals; ++_i) {
             // If the terminal being iterated on matches the provided terminal, return true.
             if (_terminalsOf[_projectId][_i] == _terminal) return true;
-
-            unchecked {
-                ++_i;
-            }
         }
 
         // Otherwise, return false.
@@ -242,17 +234,9 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
 
         // Make sure duplicates were not added.
         if (_numberOfTerminals > 1) {
-            for (uint256 _i; _i < _numberOfTerminals;) {
-                for (uint256 _j = _i + 1; _j < _numberOfTerminals;) {
+            for (uint256 _i; _i < _numberOfTerminals; ++_i) {
+                for (uint256 _j = _i + 1; _j < _numberOfTerminals; ++_j) {
                     if (_terminals[_i] == _terminals[_j]) revert DUPLICATE_TERMINALS();
-
-                    unchecked {
-                        ++_j;
-                    }
-                }
-
-                unchecked {
-                    ++_i;
                 }
             }
         }

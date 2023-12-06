@@ -1,5 +1,5 @@
 [profile.default]
-solc = '0.8.21'
+solc = '0.8.23'
 evm_version = 'paris'                   # Required for L2s (Optimism, Arbitrum, etc.)
 match_contract = "_Local"               # Do not run fork tests
 sizes = true

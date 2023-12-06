@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.23;
 
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
@@ -110,16 +110,12 @@ contract JBSplits is JBControlled, IJBSplits {
         uint256 _numberOfSplitGroups = _splitGroups.length;
 
         // Set each grouped splits.
-        for (uint256 _i; _i < _numberOfSplitGroups;) {
+        for (uint256 _i; _i < _numberOfSplitGroups; ++_i) {
             // Get a reference to the grouped split being iterated on.
             JBSplitGroup memory _splitGroup = _splitGroups[_i];
 
             // Set the splits for the group.
             _setSplitsOf(_projectId, _domainId, _splitGroup.groupId, _splitGroup.splits);
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -142,15 +138,11 @@ contract JBSplits is JBControlled, IJBSplits {
         uint256 _numberOfCurrentSplits = _currentSplits.length;
 
         // Check to see if all locked splits are included in the array of splits which is being set.
-        for (uint256 _i; _i < _numberOfCurrentSplits;) {
+        for (uint256 _i; _i < _numberOfCurrentSplits; ++_i) {
             // If not locked, continue.
             if (block.timestamp < _currentSplits[_i].lockedUntil && !_includesLockedSplits(_splits, _currentSplits[_i]))
             {
                 revert PREVIOUS_LOCKED_SPLITS_NOT_INCLUDED();
-            }
-
-            unchecked {
-                ++_i;
             }
         }
 
@@ -160,7 +152,7 @@ contract JBSplits is JBControlled, IJBSplits {
         // Keep a reference to the number of splits to set.
         uint256 _numberOfSplits = _splits.length;
 
-        for (uint256 _i; _i < _numberOfSplits;) {
+        for (uint256 _i; _i < _numberOfSplits; ++_i) {
             // The percent should be greater than 0.
             if (_splits[_i].percent == 0) revert INVALID_SPLIT_PERCENT();
 
@@ -205,10 +197,6 @@ contract JBSplits is JBControlled, IJBSplits {
             }
 
             emit SetSplit(_projectId, _domainId, _groupId, _splits[_i], msg.sender);
-
-            unchecked {
-                ++_i;
-            }
         }
 
         // Store the number of splits for the project, domain, and group.
@@ -223,7 +211,7 @@ contract JBSplits is JBControlled, IJBSplits {
         // Keep a reference to the number of splits.
         uint256 _numberOfSplits = _splits.length;
 
-        for (uint256 _i; _i < _numberOfSplits;) {
+        for (uint256 _i; _i < _numberOfSplits; ++_i) {
             // Check for sameness.
             if (
                 _splits[_i].percent == _lockedSplit.percent && _splits[_i].beneficiary == _lockedSplit.beneficiary
@@ -232,10 +220,6 @@ contract JBSplits is JBControlled, IJBSplits {
                 // Allow the lock to be extended.
                 && _splits[_i].lockedUntil >= _lockedSplit.lockedUntil
             ) return true;
-
-            unchecked {
-                ++_i;
-            }
         }
 
         return false;
@@ -263,7 +247,7 @@ contract JBSplits is JBControlled, IJBSplits {
         JBSplit[] memory _splits = new JBSplit[](_splitCount);
 
         // Loop through each split and unpack the values into structs.
-        for (uint256 _i; _i < _splitCount;) {
+        for (uint256 _i; _i < _splitCount; ++_i) {
             // Get a reference to the first part of the split's packed data.
             uint256 _packedSplitPart1 = _packedSplitParts1Of[_projectId][_domainId][_groupId][_i];
 
@@ -292,10 +276,6 @@ contract JBSplits is JBControlled, IJBSplits {
 
             // Add the split to the value being returned.
             _splits[_i] = _split;
-
-            unchecked {
-                ++_i;
-            }
         }
 
         return _splits;
