@@ -155,7 +155,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = Common.mulDiv(
+        uint256 _beneficiaryTokenBalance = mulDiv(
             _nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
@@ -179,7 +179,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-        uint256 _beneficiaryNativeBalance = Common.mulDiv(
+        uint256 _beneficiaryNativeBalance = mulDiv(
             _nativeCurrencySurplusAllowance,
             JBConstants.MAX_FEE,
             JBConstants.MAX_FEE + _terminal.FEE()
@@ -202,7 +202,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the project owner got the expected number of tokens.
         assertEq(
             _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
-            Common.mulDiv(
+            mulDiv(
                 _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
                 _data.weight,
                 10 ** _NATIVE_DECIMALS
@@ -241,7 +241,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the project owner got the expected number of tokens.
         assertEq(
             _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
-            Common.mulDiv(
+            mulDiv(
                 (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                     + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance),
                 _data.weight,
@@ -265,17 +265,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), 0);
 
         // Get the expected amount of native tokens reclaimed by the redemption.
-        uint256 _nativeReclaimAmount = Common.mulDiv(
-            Common.mulDiv(
+        uint256 _nativeReclaimAmount = mulDiv(
+            mulDiv(
                 _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit,
                 _beneficiaryTokenBalance,
-                Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
             ),
             _metadata.redemptionRate
-                + Common.mulDiv(
+                + mulDiv(
                     _beneficiaryTokenBalance,
                     JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                    Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                    mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                 ),
             JBConstants.MAX_REDEMPTION_RATE
         );
@@ -304,7 +304,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the project owner got the expected number of the fee project's tokens by paying the fee.
         assertEq(
             _tokens.totalBalanceOf(_beneficiary, _FEE_PROJECT_ID),
-            Common.mulDiv(_feeAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+            mulDiv(_feeAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                 * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE
         );
     }
@@ -404,7 +404,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = Common.mulDiv(
+        uint256 _beneficiaryTokenBalance = mulDiv(
             _nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
@@ -442,7 +442,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryNativeBalance = Common.mulDiv(
+            _beneficiaryNativeBalance = mulDiv(
                 _nativeCurrencySurplusAllowance,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -467,7 +467,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the beneficiary got the expected number of tokens.
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
-                Common.mulDiv(
+                mulDiv(
                     _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
                     _data.weight,
                     10 ** _NATIVE_DECIMALS
@@ -527,7 +527,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the project owner got the expected number of the fee project's tokens.
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
-                Common.mulDiv(
+                mulDiv(
                     (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                         + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance),
                     _data.weight,
@@ -554,17 +554,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check for a new beneficiary balance if one is expected.
         if (_nativePayAmount > _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit) {
             // Get the expected amount reclaimed.
-            uint256 _nativeReclaimAmount = Common.mulDiv(
-                Common.mulDiv(
+            uint256 _nativeReclaimAmount = mulDiv(
+                mulDiv(
                     _nativePayAmount - _nativeCurrencySurplusAllowance - _nativeCurrencyPayoutLimit,
                     _beneficiaryTokenBalance,
-                    Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                    mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                 ),
                 _metadata.redemptionRate
-                    + Common.mulDiv(
+                    + mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                        Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                        mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                     ),
                 JBConstants.MAX_REDEMPTION_RATE
             );
@@ -592,7 +592,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the project owner got the expected number of tokens from the fee.
             assertEq(
                 _tokens.totalBalanceOf(_beneficiary, _FEE_PROJECT_ID),
-                Common.mulDiv(_feeAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                mulDiv(_feeAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                     * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE
             );
         }
@@ -698,7 +698,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = Common.mulDiv(
+        uint256 _beneficiaryTokenBalance = mulDiv(
             _nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
@@ -736,7 +736,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryNativeBalance = Common.mulDiv(
+            _beneficiaryNativeBalance = mulDiv(
                 _nativeCurrencySurplusAllowance,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -834,17 +834,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check for a new beneficiary balance if one is expected.
         if (_nativePayAmount > _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit) {
             // Get the expected amount reclaimed.
-            uint256 _nativeReclaimAmount = Common.mulDiv(
-                Common.mulDiv(
+            uint256 _nativeReclaimAmount = mulDiv(
+                mulDiv(
                     _nativePayAmount - _beneficiaryNativeBalance - _projectOwnerNativeBalance,
                     _beneficiaryTokenBalance,
-                    Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                    mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                 ),
                 _metadata.redemptionRate
-                    + Common.mulDiv(
+                    + mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                        Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                        mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                     ),
                 JBConstants.MAX_REDEMPTION_RATE
             );
@@ -969,7 +969,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary got the expected number of tokens.
-        uint256 _beneficiaryTokenBalance = Common.mulDiv(
+        uint256 _beneficiaryTokenBalance = mulDiv(
             _nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
@@ -1007,7 +1007,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryNativeBalance = Common.mulDiv(
+            _beneficiaryNativeBalance = mulDiv(
                 _nativeCurrencySurplusAllowance,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -1024,7 +1024,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the beneficiary got the expected number of tokens.
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
-                Common.mulDiv(
+                mulDiv(
                     _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
                     _data.weight,
                     10 ** _NATIVE_DECIMALS
@@ -1075,7 +1075,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the project owner got the expected number of tokens.
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
-                Common.mulDiv(
+                mulDiv(
                     (_nativeCurrencySurplusAllowance - _beneficiaryNativeBalance)
                         + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance),
                     _data.weight,
@@ -1104,17 +1104,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 + (_nativeCurrencyPayoutLimit - _projectOwnerNativeBalance);
 
             // Get the expected amount reclaimed.
-            uint256 _nativeReclaimAmount = Common.mulDiv(
-                Common.mulDiv(
+            uint256 _nativeReclaimAmount = mulDiv(
+                mulDiv(
                     _nativePayAmount - _beneficiaryNativeBalance - _projectOwnerNativeBalance,
                     _beneficiaryTokenBalance,
-                    Common.mulDiv(_totalPaid, _data.weight, 10 ** _NATIVE_DECIMALS)
+                    mulDiv(_totalPaid, _data.weight, 10 ** _NATIVE_DECIMALS)
                 ),
                 _metadata.redemptionRate
-                    + Common.mulDiv(
+                    + mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                        Common.mulDiv(_totalPaid, _data.weight, 10 ** _NATIVE_DECIMALS)
+                        mulDiv(_totalPaid, _data.weight, 10 ** _NATIVE_DECIMALS)
                     ),
                 JBConstants.MAX_REDEMPTION_RATE
             );
@@ -1125,7 +1125,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // Make sure the beneficiary received tokens from the fee just paid.
             assertEq(
                 _tokens.totalBalanceOf(_beneficiary, _projectId),
-                Common.mulDiv(_feeAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+                mulDiv(_feeAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
                     * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE
             );
 
@@ -1164,7 +1164,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the values don't overflow the registry.
         unchecked {
             // vm.assume(_nativeCurrencySurplusAllowance + _cumulativePayoutLimit  >= _nativeCurrencySurplusAllowance && _nativeCurrencySurplusAllowance + _cumulativePayoutLimit >= _cumulativePayoutLimit);
-            // vm.assume(_usdCurrencySurplusAllowance + (_usdCurrencyPayoutLimit + Common.mulDiv(_nativeCurrencyPayoutLimit, _USD_PRICE_PER_NATIVE, 10**_PRICE_FEED_DECIMALS))*2 >= _usdCurrencySurplusAllowance && _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit >= _usdCurrencyPayoutLimit);
+            // vm.assume(_usdCurrencySurplusAllowance + (_usdCurrencyPayoutLimit + mulDiv(_nativeCurrencyPayoutLimit, _USD_PRICE_PER_NATIVE, 10**_PRICE_FEED_DECIMALS))*2 >= _usdCurrencySurplusAllowance && _usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit >= _usdCurrencyPayoutLimit);
             vm.assume(
                 _nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit
                     >= _nativeCurrencySurplusAllowance
@@ -1285,7 +1285,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary got the expected number of tokens from the native token payment.
         uint256 _beneficiaryTokenBalance = _unreservedPortion(
-            Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+            mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
         );
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
         // Mint USDC to this contract.
@@ -1319,10 +1319,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Convert the USD amount to a native token amount, by way of the current weight used for issuance.
-            uint256 _usdWeightedPayAmountConvertedToNative = Common.mulDiv(
+            uint256 _usdWeightedPayAmountConvertedToNative = mulDiv(
                 _usdcPayAmount,
                 _data.weight,
-                Common.mulDiv(
+                mulDiv(
                     _USD_PRICE_PER_NATIVE, 10 ** _usdcToken.decimals(), 10 ** _PRICE_FEED_DECIMALS
                 )
             );
@@ -1363,7 +1363,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 + _toNative(_usdCurrencyPayoutLimit) <= _nativePayAmount
         ) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryNativeBalance = Common.mulDiv(
+            _beneficiaryNativeBalance = mulDiv(
                 _nativeCurrencySurplusAllowance,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -1389,7 +1389,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
-                    Common.mulDiv(
+                    mulDiv(
                         _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
                         _data.weight,
                         10 ** _NATIVE_DECIMALS
@@ -1431,7 +1431,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 + _toNative(_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit) <= _nativePayAmount
         ) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryNativeBalance += Common.mulDiv(
+            _beneficiaryNativeBalance += mulDiv(
                 _toNative(_usdCurrencySurplusAllowance),
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -1459,7 +1459,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
-                    Common.mulDiv(
+                    mulDiv(
                         _nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance)
                             - _beneficiaryNativeBalance,
                         _data.weight,
@@ -1522,7 +1522,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 );
 
                 // Make sure the project owner got the expected number of tokens.
-                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(Common.mulDiv(_nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
+                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(mulDiv(_nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
             }
 
             // Revert if the payout limit is greater than the balance.
@@ -1627,7 +1627,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the total token supply is correct.
         assertEq(
             _controller.totalTokenSupplyWithReservedTokensOf(_projectId),
-            Common.mulDiv(
+            mulDiv(
                 _beneficiaryTokenBalance,
                 JBConstants.MAX_RESERVED_RATE,
                 JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
@@ -1642,29 +1642,29 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // If there's surplus.
         if (
             _toNative(
-                Common.mulDiv(_usdcPayAmount, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals())
+                mulDiv(_usdcPayAmount, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals())
             ) + _nativeSurplus > 0
         ) {
             // Get the expected amount reclaimed.
-            _nativeReclaimAmount = Common.mulDiv(
-                Common.mulDiv(
+            _nativeReclaimAmount = mulDiv(
+                mulDiv(
                     _toNative(
-                        Common.mulDiv(
+                        mulDiv(
                             _usdcPayAmount, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals()
                         )
                     ) + _nativeSurplus,
                     _beneficiaryTokenBalance,
-                    Common.mulDiv(
+                    mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_RESERVED_RATE,
                         JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
                     )
                 ),
                 _metadata.redemptionRate
-                    + Common.mulDiv(
+                    + mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                        Common.mulDiv(
+                        mulDiv(
                             _beneficiaryTokenBalance,
                             JBConstants.MAX_RESERVED_RATE,
                             JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
@@ -1676,17 +1676,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             // If there is more to reclaim than there are native tokens in the tank.
             if (_nativeReclaimAmount > _nativeSurplus) {
                 // Keep a reference to the amount to redeem for native tokens, a proportion of available surplus in native tokens.
-                uint256 _tokenCountToRedeemForNative = Common.mulDiv(
+                uint256 _tokenCountToRedeemForNative = mulDiv(
                     _beneficiaryTokenBalance,
                     _nativeSurplus,
                     _nativeSurplus
                         + _toNative(
-                            Common.mulDiv(
+                            mulDiv(
                                 _usdcPayAmount, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals()
                             )
                         )
                 );
-                uint256 _tokenSupply = Common.mulDiv(
+                uint256 _tokenSupply = mulDiv(
                     _beneficiaryTokenBalance,
                     JBConstants.MAX_RESERVED_RATE,
                     JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
@@ -1713,10 +1713,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     metadata: new bytes(0)
                 });
 
-                _nativeReclaimAmount = Common.mulDiv(
-                    Common.mulDiv(
+                _nativeReclaimAmount = mulDiv(
+                    mulDiv(
                         _toNative(
-                            Common.mulDiv(
+                            mulDiv(
                                 _usdcPayAmount, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals()
                             )
                         ) + _nativeSurplus,
@@ -1724,7 +1724,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                         _tokenSupply
                     ),
                     _metadata.redemptionRate
-                        + Common.mulDiv(
+                        + mulDiv(
                             _tokenCountToRedeemForNative,
                             JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
                             _tokenSupply
@@ -1732,11 +1732,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                     JBConstants.MAX_REDEMPTION_RATE
                 );
 
-                uint256 _usdcReclaimAmount = Common.mulDiv(
-                    Common.mulDiv(
+                uint256 _usdcReclaimAmount = mulDiv(
+                    mulDiv(
                         _usdcPayAmount
                             + _toUsd(
-                                Common.mulDiv(
+                                mulDiv(
                                     _nativeSurplus - _nativeReclaimAmount,
                                     10 ** _usdcToken.decimals(),
                                     10 ** _NATIVE_DECIMALS
@@ -1746,7 +1746,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                         _tokenSupply - _tokenCountToRedeemForNative
                     ),
                     _metadata.redemptionRate
-                        + Common.mulDiv(
+                        + mulDiv(
                             _beneficiaryTokenBalance - _tokenCountToRedeemForNative,
                             JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
                             _tokenSupply - _tokenCountToRedeemForNative
@@ -1981,7 +1981,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         // Make sure the beneficiary got the expected number of tokens from the native token payment.
         uint256 _beneficiaryTokenBalance = _unreservedPortion(
-            Common.mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
+            mulDiv(_nativePayAmount, _data.weight, 10 ** _NATIVE_DECIMALS)
         );
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
         // Mint USDC to this contract.
@@ -2015,10 +2015,10 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
 
         {
             // Convert the USD amount to a native token amount, by way of the current weight used for issuance.
-            uint256 _usdWeightedPayAmountConvertedToNative = Common.mulDiv(
+            uint256 _usdWeightedPayAmountConvertedToNative = mulDiv(
                 _usdcPayAmount,
                 _data.weight,
-                Common.mulDiv(
+                mulDiv(
                     _USD_PRICE_PER_NATIVE, 10 ** _usdcToken.decimals(), 10 ** _PRICE_FEED_DECIMALS
                 )
             );
@@ -2054,7 +2054,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_nativeCurrencySurplusAllowance + _nativeCurrencyPayoutLimit <= _nativePayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryNativeBalance = Common.mulDiv(
+            _beneficiaryNativeBalance = mulDiv(
                 _nativeCurrencySurplusAllowance,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -2080,7 +2080,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
-                    Common.mulDiv(
+                    mulDiv(
                         _nativeCurrencySurplusAllowance - _beneficiaryNativeBalance,
                         _data.weight,
                         10 ** _NATIVE_DECIMALS
@@ -2118,7 +2118,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Check the collected balance if one is expected.
         if (_usdCurrencySurplusAllowance + _usdCurrencyPayoutLimit <= _usdcPayAmount) {
             // Make sure the beneficiary received the funds and that they are no longer in the terminal.
-            _beneficiaryUsdcBalance += Common.mulDiv(
+            _beneficiaryUsdcBalance += mulDiv(
                 _usdCurrencySurplusAllowance,
                 JBConstants.MAX_FEE,
                 JBConstants.MAX_FEE + _terminal.FEE()
@@ -2149,17 +2149,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
             assertEq(
                 _tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID),
                 _unreservedPortion(
-                    Common.mulDiv(
+                    mulDiv(
                         _nativeCurrencySurplusAllowance
                             + _toNative(
-                                Common.mulDiv(
+                                mulDiv(
                                     _usdCurrencySurplusAllowance,
                                     10 ** _NATIVE_DECIMALS,
                                     10 ** _usdcToken.decimals()
                                 )
                             ) - _beneficiaryNativeBalance
                             - _toNative(
-                                Common.mulDiv(
+                                mulDiv(
                                     _beneficiaryUsdcBalance,
                                     10 ** _NATIVE_DECIMALS,
                                     10 ** _usdcToken.decimals()
@@ -2223,7 +2223,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 );
 
                 // Make sure the project owner got the expected number of tokens.
-                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(Common.mulDiv(_nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
+                // assertEq(_tokens.totalBalanceOf(_projectOwner, _FEE_PROJECT_ID), _unreservedPortion(mulDiv(_nativeCurrencySurplusAllowance + _toNative(_usdCurrencySurplusAllowance) - _beneficiaryNativeBalance + _nativeCurrencyPayoutLimit - _projectOwnerNativeBalance, _data.weight, 10 ** _NATIVE_DECIMALS)));
             }
 
             // Revert if the payout limit is greater than the balance.
@@ -2301,7 +2301,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         // Make sure the total token supply is correct.
         assertEq(
             jbController().totalTokenSupplyWithReservedTokensOf(_projectId),
-            Common.mulDiv(
+            mulDiv(
                 _beneficiaryTokenBalance,
                 JBConstants.MAX_RESERVED_RATE,
                 JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
@@ -2317,30 +2317,30 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
         if (
             _nativeSurplus
                 + _toNative(
-                    Common.mulDiv(_usdcSurplus, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals())
+                    mulDiv(_usdcSurplus, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals())
                 ) > 0
         ) {
             // Get the expected amount reclaimed.
-            _nativeReclaimAmount = Common.mulDiv(
-                Common.mulDiv(
+            _nativeReclaimAmount = mulDiv(
+                mulDiv(
                     _nativeSurplus
                         + _toNative(
-                            Common.mulDiv(
+                            mulDiv(
                                 _usdcSurplus, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals()
                             )
                         ),
                     _beneficiaryTokenBalance,
-                    Common.mulDiv(
+                    mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_RESERVED_RATE,
                         JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
                     )
                 ),
                 _metadata.redemptionRate
-                    + Common.mulDiv(
+                    + mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
-                        Common.mulDiv(
+                        mulDiv(
                             _beneficiaryTokenBalance,
                             JBConstants.MAX_RESERVED_RATE,
                             JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
@@ -2354,17 +2354,17 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                 uint256 _usdcReclaimAmount;
                 {
                     // Keep a reference to the amount of project tokens to redeem for native tokens, a proportion of available native token surplus.
-                    uint256 _tokenCountToRedeemForNative = Common.mulDiv(
+                    uint256 _tokenCountToRedeemForNative = mulDiv(
                         _beneficiaryTokenBalance,
                         _nativeSurplus,
                         _nativeSurplus
                             + _toNative(
-                                Common.mulDiv(
+                                mulDiv(
                                     _usdcSurplus, 10 ** _NATIVE_DECIMALS, 10 ** _usdcToken.decimals()
                                 )
                             )
                     );
-                    uint256 _tokenSupply = Common.mulDiv(
+                    uint256 _tokenSupply = mulDiv(
                         _beneficiaryTokenBalance,
                         JBConstants.MAX_RESERVED_RATE,
                         JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate
@@ -2391,11 +2391,11 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                         metadata: new bytes(0)
                     });
 
-                    _nativeReclaimAmount = Common.mulDiv(
-                        Common.mulDiv(
+                    _nativeReclaimAmount = mulDiv(
+                        mulDiv(
                             _nativeSurplus
                                 + _toNative(
-                                    Common.mulDiv(
+                                    mulDiv(
                                         _usdcSurplus,
                                         10 ** _NATIVE_DECIMALS,
                                         10 ** _usdcToken.decimals()
@@ -2405,18 +2405,18 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                             _tokenSupply
                         ),
                         _metadata.redemptionRate
-                            + Common.mulDiv(
+                            + mulDiv(
                                 _tokenCountToRedeemForNative,
                                 JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
                                 _tokenSupply
                             ),
                         JBConstants.MAX_REDEMPTION_RATE
                     );
-                    _usdcReclaimAmount = Common.mulDiv(
-                        Common.mulDiv(
+                    _usdcReclaimAmount = mulDiv(
+                        mulDiv(
                             _usdcSurplus
                                 + _toUsd(
-                                    Common.mulDiv(
+                                    mulDiv(
                                         _nativeSurplus - _nativeReclaimAmount,
                                         10 ** _usdcToken.decimals(),
                                         10 ** _NATIVE_DECIMALS
@@ -2426,7 +2426,7 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
                             _tokenSupply - _tokenCountToRedeemForNative
                         ),
                         _metadata.redemptionRate
-                            + Common.mulDiv(
+                            + mulDiv(
                                 _beneficiaryTokenBalance - _tokenCountToRedeemForNative,
                                 JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
                                 _tokenSupply - _tokenCountToRedeemForNative
@@ -2499,15 +2499,15 @@ contract TestAccessToFunds_Local is TestBaseWorkflow {
     }
 
     function _toNative(uint256 _usdVal) internal pure returns (uint256) {
-        return Common.mulDiv(_usdVal, 10 ** _PRICE_FEED_DECIMALS, _USD_PRICE_PER_NATIVE);
+        return mulDiv(_usdVal, 10 ** _PRICE_FEED_DECIMALS, _USD_PRICE_PER_NATIVE);
     }
 
     function _toUsd(uint256 _nativeVal) internal pure returns (uint256) {
-        return Common.mulDiv(_nativeVal, _USD_PRICE_PER_NATIVE, 10 ** _PRICE_FEED_DECIMALS);
+        return mulDiv(_nativeVal, _USD_PRICE_PER_NATIVE, 10 ** _PRICE_FEED_DECIMALS);
     }
 
     function _unreservedPortion(uint256 _fullPortion) internal view returns (uint256) {
-        return Common.mulDiv(
+        return mulDiv(
             _fullPortion,
             JBConstants.MAX_RESERVED_RATE - _metadata.reservedRate,
             JBConstants.MAX_RESERVED_RATE

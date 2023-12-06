@@ -107,7 +107,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _beneficiaryTokenBalance = UD60x18.mul(_nativePayAmount, _data.weight);
+        uint256 _beneficiaryTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the native token balance in terminal is up to date.

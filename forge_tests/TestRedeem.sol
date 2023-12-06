@@ -104,7 +104,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _beneficiaryTokenBalance = UD60x18.mul(_nativePayAmount, _data.weight);
+        uint256 _beneficiaryTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the native token balance in terminal is up to date.
@@ -130,10 +130,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         // Keep a reference to the expected amount redeemed.
-        uint256 _grossRedeemed = Common.mulDiv(
-            Common.mulDiv(_nativeTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
+        uint256 _grossRedeemed = mulDiv(
+            mulDiv(_nativeTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
             _metadata.redemptionRate
-                + Common.mulDiv(
+                + mulDiv(
                     _tokenAmountToRedeem,
                     JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
                     _beneficiaryTokenBalance
@@ -143,7 +143,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
 
         // Compute the fee taken.
         uint256 _fee = _grossRedeemed
-            - Common.mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
+            - mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
 
         // Compute the net amount received, still in project.
         uint256 _netReceived = _grossRedeemed - _fee;

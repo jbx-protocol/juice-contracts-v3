@@ -118,7 +118,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _beneficiaryTokenBalance = UD60x18.mul(_nativePayAmount, _WEIGHT);
+        uint256 _beneficiaryTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_WEIGHT)));
         assertEq(_tokens.totalBalanceOf(address(this), _projectId), _beneficiaryTokenBalance);
         assertEq(_beneficiaryTokensReceived, _beneficiaryTokenBalance);
         emit log_uint(_beneficiaryTokenBalance);

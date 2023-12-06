@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Common} from "@paulrberg/contracts/math/Common.sol";
+import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBRulesetDataHook} from "./interfaces/IJBRulesetDataHook.sol";
@@ -344,7 +344,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             );
 
         // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
-        tokenCount = Common.mulDiv(_amount.value, _weight, _weightRatio);
+        tokenCount = mulDiv(_amount.value, _weight, _weightRatio);
     }
 
     /// @notice Records a redemption from a project.
@@ -506,7 +506,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Convert the amount to the balance's currency.
         amountPaidOut = (_currency == _accountingContext.currency)
             ? _amount
-            : Common.mulDiv(
+            : mulDiv(
                 _amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
@@ -565,7 +565,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Convert the amount to this store's terminal's token.
         usedAmount = _currency == _accountingContext.currency
             ? _amount
-            : Common.mulDiv(
+            : mulDiv(
                 _amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
@@ -660,17 +660,17 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         if (_ruleset.redemptionRate() == 0) return 0;
 
         // Get a reference to the linear proportion.
-        uint256 _base = Common.mulDiv(_surplus, _tokenCount, _totalSupply);
+        uint256 _base = mulDiv(_surplus, _tokenCount, _totalSupply);
 
         // These conditions are all part of the same curve. Edge conditions are separated because fewer operation are necessary.
         if (_ruleset.redemptionRate() == JBConstants.MAX_REDEMPTION_RATE) {
             return _base;
         }
 
-        return Common.mulDiv(
+        return mulDiv(
             _base,
             _ruleset.redemptionRate()
-                + Common.mulDiv(
+                + mulDiv(
                     _tokenCount,
                     JBConstants.MAX_REDEMPTION_RATE - _ruleset.redemptionRate(),
                     _totalSupply
@@ -746,7 +746,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Add up all the balances.
         surplus = (surplus == 0 || _accountingContext.currency == _targetCurrency)
             ? surplus
-            : Common.mulDiv(
+            : mulDiv(
                 surplus,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_payoutLimitRemaining`'s fidelity as possible when converting.
                 PRICES.pricePerUnitOf(
@@ -787,7 +787,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             _payoutLimit.amount = _payoutLimit.amount == 0
                 || _payoutLimit.currency == _targetCurrency
                 ? _payoutLimit.amount
-                : Common.mulDiv(
+                : mulDiv(
                     _payoutLimit.amount,
                     10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_payoutLimitRemaining`'s fidelity as possible when converting.
                     PRICES.pricePerUnitOf(
