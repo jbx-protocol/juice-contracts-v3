@@ -10,7 +10,7 @@ import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBTokenUriResolver} from "./interfaces/IJBTokenUriResolver.sol";
 
 /// @notice Stores project ownership and metadata.
-/// @dev Projects are represented as ERC-721's.
+/// @dev Projects are represented as ERC-721s.
 contract JBProjects is ERC721Votes, Ownable, IJBProjects {
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
@@ -85,10 +85,6 @@ contract JBProjects is ERC721Votes, Ownable, IJBProjects {
 
         emit Create(projectId, _owner, _msgSender());
     }
-
-    //*********************************************************************//
-    // ------------------------ internal functions ----------------------- //
-    //*********************************************************************//
 
     /// @notice Sets the address of the resolver used to retrieve the tokenURI of projects.
     /// @param _newResolver The address of the new resolver.

@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
-import {IJBRedemptionDelegate3_1_1} from "../IJBRedemptionDelegate3_1_1.sol";
-import {JBDidRedeemData3_1_1} from "../../structs/JBDidRedeemData3_1_1.sol";
+import {IJBTerminal} from "./IJBTerminal.sol";
+import {IJBRedeemHook} from "../IJBRedeemHook.sol";
+import {JBDidRedeemData} from "../../structs/JBDidRedeemData.sol";
 
-interface IJBRedemptionTerminal is IJBPaymentTerminal {
+/// @notice A terminal that can be redeemed from.
+interface IJBRedeemTerminal is IJBTerminal {
     event RedeemTokens(
-        uint256 indexed fundingCycleConfiguration,
-        uint256 indexed fundingCycleNumber,
+        uint256 indexed rulesetId,
+        uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
         address holder,
         address beneficiary,
@@ -18,10 +19,10 @@ interface IJBRedemptionTerminal is IJBPaymentTerminal {
         address caller
     );
 
-    event DelegateDidRedeem(
-        IJBRedemptionDelegate3_1_1 indexed delegate,
-        JBDidRedeemData3_1_1 data,
-        uint256 delegatedAmount,
+    event HookDidRedeem(
+        IJBRedeemHook indexed hook,
+        JBDidRedeemData data,
+        uint256 payloadAmount,
         uint256 fee,
         address caller
     );

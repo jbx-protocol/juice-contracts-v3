@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBOperatorStore} from "./IJBOperatorStore.sol";
+import {IJBPermissions} from "./IJBPermissions.sol";
 
-interface IJBOperatable {
-    function operatorStore() external view returns (IJBOperatorStore);
+interface IJBPermissioned {
+    function permissions() external view returns (IJBPermissions);
 }

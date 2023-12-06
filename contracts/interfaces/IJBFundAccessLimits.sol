@@ -2,51 +2,49 @@
 pragma solidity ^0.8.0;
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {JBFundAccessConstraints} from "./../structs/JBFundAccessConstraints.sol";
+import {JBFundAccessLimitGroup} from "./../structs/JBFundAccessLimitGroup.sol";
 import {JBCurrencyAmount} from "./../structs/JBCurrencyAmount.sol";
 import {IJBPayoutTerminal} from "./terminal/IJBPayoutTerminal.sol";
 
-interface IJBFundAccessConstraintsStore is IERC165 {
-    event SetFundAccessConstraints(
-        uint256 indexed fundingCycleConfiguration,
+interface IJBFundAccessLimits is IERC165 {
+    event SetFundAccessLimits(
+        uint256 indexed rulesetId,
         uint256 indexed projectId,
-        JBFundAccessConstraints constraints,
+        JBFundAccessLimitGroup limits,
         address caller
     );
 
-    function distributionLimitsOf(
-        uint256 projectId,
-        uint256 configuration,
-        address terminal,
-        address token
-    ) external view returns (JBCurrencyAmount[] memory distributionLimits);
+    function payoutLimitsOf(uint256 projectId, uint256 rulesetId, address terminal, address token)
+        external
+        view
+        returns (JBCurrencyAmount[] memory payoutLimits);
 
-    function distributionLimitOf(
+    function payoutLimitOf(
         uint256 projectId,
-        uint256 configuration,
+        uint256 rulesetId,
         address terminal,
         address token,
         uint256 currency
-    ) external view returns (uint256 distributionLimit);
+    ) external view returns (uint256 payoutLimit);
 
-    function overflowAllowancesOf(
+    function surplusAllowancesOf(
         uint256 projectId,
-        uint256 configuration,
+        uint256 rulesetId,
         address terminal,
         address token
-    ) external view returns (JBCurrencyAmount[] memory overflowAllowances);
+    ) external view returns (JBCurrencyAmount[] memory surplusAllowances);
 
-    function overflowAllowanceOf(
+    function surplusAllowanceOf(
         uint256 projectId,
-        uint256 configuration,
+        uint256 rulesetId,
         address terminal,
         address token,
         uint256 currency
-    ) external view returns (uint256 overflowAllowance);
+    ) external view returns (uint256 surplusAllowance);
 
-    function setFor(
+    function setFundAccessLimitsFor(
         uint256 projectId,
-        uint256 configuration,
-        JBFundAccessConstraints[] memory fundAccessConstaints
+        uint256 rulesetId,
+        JBFundAccessLimitGroup[] memory fundAccessConstaints
     ) external;
 }

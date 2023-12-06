@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import {JBSplit} from "./JBSplit.sol";
 
-/// @custom:member group The group indentifier.
-/// @custom:member splits The splits to associate with the group.
-struct JBGroupedSplits {
-    uint256 group;
+/// @custom:member groupId An identifier for the group.
+/// @custom:member splits The splits in the group.
+struct JBSplitGroup {
+    uint256 groupId;
     JBSplit[] splits;
 }

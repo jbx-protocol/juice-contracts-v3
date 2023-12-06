@@ -2,11 +2,11 @@
 pragma solidity ^0.8.16;
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-import {IJBOperatable} from "./../interfaces/IJBOperatable.sol";
-import {IJBOperatorStore} from "./../interfaces/IJBOperatorStore.sol";
+import {IJBPermissioned} from "./../interfaces/IJBPermissioned.sol";
+import {IJBPermissions} from "./../interfaces/IJBPermissions.sol";
 
-/// @notice Modifiers to allow access to functions based on the message sender's operator status.
-abstract contract JBOperatable is Context, IJBOperatable {
+/// @notice Modifiers to allow access to functions based on which permissions the message's sender has.
+abstract contract JBPermissioned is Context, IJBPermissioned {
     //*********************************************************************//
     // --------------------------- custom errors -------------------------- //
     //*********************************************************************//
@@ -16,27 +16,27 @@ abstract contract JBOperatable is Context, IJBOperatable {
     // ---------------------------- modifiers ---------------------------- //
     //*********************************************************************//
 
-    /// @notice Only allows the speficied account or an operator of the account to proceed.
+    /// @notice Restrict access to the specified account, or an operator they have given permissions to.
     /// @param _account The account to check for.
-    /// @param _domain The domain namespace to look for an operator within.
-    /// @param _permissionIndex The index of the permission to check for.
-    modifier requirePermission(address _account, uint256 _domain, uint256 _permissionIndex) {
-        _requirePermission(_account, _domain, _permissionIndex);
+    /// @param _projectId The project ID to check permissions under.
+    /// @param _permissionId The ID of the permission to check for.
+    modifier requirePermission(address _account, uint256 _projectId, uint256 _permissionId) {
+        _requirePermission(_account, _projectId, _permissionId);
         _;
     }
 
-    /// @notice Only allows the speficied account, an operator of the account to proceed, or a truthy override flag.
+    /// @notice If the `_override` flag is truthy, proceed. Otherwise, restrict access to the specified account, and operator(s) they have given permissions to.
     /// @param _account The account to check for.
-    /// @param _domain The domain namespace to look for an operator within.
-    /// @param _permissionIndex The index of the permission to check for.
-    /// @param _override A condition to force allowance for.
+    /// @param _projectId The project ID to check permissions under.
+    /// @param _permissionId The ID of the permission to check for.
+    /// @param _override An override which will allow access regardless of permissions.
     modifier requirePermissionAllowingOverride(
         address _account,
-        uint256 _domain,
-        uint256 _permissionIndex,
+        uint256 _projectId,
+        uint256 _permissionId,
         bool _override
     ) {
-        _requirePermissionAllowingOverride(_account, _domain, _permissionIndex, _override);
+        _requirePermissionAllowingOverride(_account, _projectId, _permissionId, _override);
         _;
     }
 
@@ -44,50 +44,50 @@ abstract contract JBOperatable is Context, IJBOperatable {
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
-    /// @notice A contract storing operator assignments.
-    IJBOperatorStore public immutable override operatorStore;
+    /// @notice A contract storing permissions.
+    IJBPermissions public immutable override permissions;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _operatorStore A contract storing operator assignments.
-    constructor(IJBOperatorStore _operatorStore) {
-        operatorStore = _operatorStore;
+    /// @param _permissions A contract storing permissions.
+    constructor(IJBPermissions _permissions) {
+        permissions = _permissions;
     }
 
     //*********************************************************************//
     // -------------------------- internal views ------------------------- //
     //*********************************************************************//
 
-    /// @notice Require the message sender is either the account or has the specified permission.
+    /// @notice Require the message sender to be the account or have the relevant permission.
     /// @param _account The account to allow.
-    /// @param _domain The domain namespace within which the permission index will be checked.
-    /// @param _permissionIndex The permission index that an operator must have within the specified domain to be allowed.
-    function _requirePermission(address _account, uint256 _domain, uint256 _permissionIndex)
+    /// @param _projectId The project ID to check the permission under.
+    /// @param _permissionId The required permission ID. The operator must have this permission within the specified project ID.
+    function _requirePermission(address _account, uint256 _projectId, uint256 _permissionId)
         internal
         view
     {
         address _sender = _msgSender();
         if (
             _sender != _account
-                && !operatorStore.hasPermission(_sender, _account, _domain, _permissionIndex)
-                && !operatorStore.hasPermission(_sender, _account, 0, _permissionIndex)
+                && !permissions.hasPermission(_sender, _account, _projectId, _permissionId)
+                && !permissions.hasPermission(_sender, _account, 0, _permissionId)
         ) revert UNAUTHORIZED();
     }
 
-    /// @notice Require the message sender is either the account, has the specified permission, or the override condition is true.
+    /// @notice If the override condition is truthy, proceed. Otherwise, require the message sender to be the account or have the relevant permission.
     /// @param _account The account to allow.
-    /// @param _domain The domain namespace within which the permission index will be checked.
-    /// @param _domain The permission index that an operator must have within the specified domain to be allowed.
-    /// @param _override The override condition to allow.
+    /// @param _projectId The project ID to check the permission under.
+    /// @param _permissionId The required permission ID. The operator must have this permission within the specified project ID.
+    /// @param _override An override condition which will allow access regardless of permissions.
     function _requirePermissionAllowingOverride(
         address _account,
-        uint256 _domain,
-        uint256 _permissionIndex,
+        uint256 _projectId,
+        uint256 _permissionId,
         bool _override
     ) internal view {
         if (_override) return;
-        _requirePermission(_account, _domain, _permissionIndex);
+        _requirePermission(_account, _projectId, _permissionId);
     }
 }

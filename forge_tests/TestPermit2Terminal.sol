@@ -9,32 +9,32 @@ import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
 
-    IJBController3_1 private _controller;
-    IJBPaymentTerminal private _terminal;
+    IJBController private _controller;
+    IJBTerminal private _terminal;
     IJBPrices private _prices;
-    IJBTokenStore private _tokenStore;
+    IJBTokens private _tokens;
     IERC20 private _usdc;
     MetadataResolverHelper private _helper;
     address private _projectOwner;
 
     uint256 _projectId;
 
-    // Permit2 params
+    // Permit2 params.
     bytes32 DOMAIN_SEPARATOR;
     address from;
     uint256 fromPrivateKey;
 
-    // Price
-    uint256 _ethPricePerUsd = 0.0005 * 10 ** 18; // 1/2000
+    // Price.
+    uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
 
     function setUp() public override {
         super.setUp();
 
         _controller = jbController();
         _projectOwner = multisig();
-        _terminal = jbPayoutRedemptionTerminal();
+        _terminal = jbMultiTerminal();
         _prices = jbPrices();
-        _tokenStore = jbTokenStore();
+        _tokens = jbTokens();
         _helper = metadataHelper();
         _usdc = usdcToken();
 
@@ -42,54 +42,56 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         from = vm.addr(fromPrivateKey);
         DOMAIN_SEPARATOR = permit2().DOMAIN_SEPARATOR();
 
-        JBFundingCycleData memory _data = JBFundingCycleData({
+        JBRulesetData memory _data = JBRulesetData({
             duration: 0,
             weight: _WEIGHT,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
-        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
+        JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
-            pauseTokenCreditTransfers: false,
-            allowMinting: true,
+            pauseCreditTransfers: false,
+            allowOwnerMinting: true,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowControllerMigration: false,
             allowSetController: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
-        // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        // Package up ruleset configuration.
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBConstants.NATIVE_TOKEN,
+            standard: JBTokenStandards.NATIVE
+        });
         _accountingContexts[1] =
             JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // First project for fee collection
+        // Create a first project to collect fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: "myIPFSHash",
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -97,32 +99,32 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: "myIPFSHash",
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         vm.startPrank(_projectOwner);
-        MockPriceFeed _priceFeedEthUsd = new MockPriceFeed(_ethPricePerUsd, 18);
-        vm.label(address(_priceFeedEthUsd), "MockPrice Feed ETH-USD");
+        MockPriceFeed _priceFeedNativeUsd = new MockPriceFeed(_nativePricePerUsd, 18);
+        vm.label(address(_priceFeedNativeUsd), "Mock Price Feed Native-USD");
 
-        _prices.addFeedFor({
+        _prices.addPriceFeedFor({
             projectId: _projectId,
-            currency: uint32(uint160(JBTokens.ETH)),
-            base: uint32(uint160(address(usdcToken()))),
-            priceFeed: _priceFeedEthUsd
+            pricingCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
+            unitCurrency: uint32(uint160(address(usdcToken()))),
+            priceFeed: _priceFeedNativeUsd
         });
 
         vm.stopPrank();
     }
 
     function testFuzzPayPermit2(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
-        // Setup: set fuzz boundaries
+        // Setup: set fuzz boundaries.
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
         _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
-        // Setup: prepare permit details for signing
+        // Setup: prepare permit details for signing.
         IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
             token: address(_usdc),
             amount: uint160(_coins),
@@ -136,7 +138,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             sigDeadline: _deadline
         });
 
-        // Setup: Sign permit details
+        // Setup: sign permit details.
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
         JBSingleAllowanceData memory permitData = JBSingleAllowanceData({
@@ -147,16 +149,16 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             signature: sig
         });
 
-        // Setup: prepare data for metadata helper
+        // Setup: prepare data for metadata helper.
         bytes4[] memory _ids = new bytes4[](1);
         bytes[] memory _datas = new bytes[](1);
         _datas[0] = abi.encode(permitData);
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
-        // Setup: Use jb metadata library to encode
+        // Setup: use the metadata library to encode.
         bytes memory _packedData = _helper.createMetadata(_ids, _datas);
 
-        // Setup: Give coins and approve permit2 contract
+        // Setup: give coins and approve permit2 contract.
         deal(address(_usdc), from, _coins);
         vm.prank(from);
         IERC20(address(_usdc)).approve(address(permit2()), _coins);
@@ -174,22 +176,22 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         emit log_uint(_minted);
 
-        // Check: that tokens were transfered
+        // Check: that tokens were transfered.
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);
 
-        // Check: that payer receives project token/balance
-        assertEq(_tokenStore.balanceOf(from, _projectId), _minted);
+        // Check: that payer receives project token/balance.
+        assertEq(_tokens.totalBalanceOf(from, _projectId), _minted);
     }
 
     function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline)
         public
     {
-        // Setup: set fuzz boundaries
+        // Setup: set fuzz boundaries.
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
         _deadline = bound(_deadline, block.timestamp + 1, type(uint256).max - 1);
 
-        // Setup: prepare permit details for signing
+        // Setup: prepare permit details for signing.
         IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
             token: address(_usdc),
             amount: uint160(_coins),
@@ -203,7 +205,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             sigDeadline: _deadline
         });
 
-        // Setup: Sign permit details
+        // Setup: sign permit details.
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
 
         JBSingleAllowanceData memory permitData = JBSingleAllowanceData({
@@ -214,27 +216,27 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             signature: sig
         });
 
-        // Setup: prepare data for metadata helper
+        // Setup: prepare data for metadata helper.
         bytes4[] memory _ids = new bytes4[](1);
         bytes[] memory _datas = new bytes[](1);
         _datas[0] = abi.encode(permitData);
         _ids[0] = bytes4(uint32(uint160(address(_terminal))));
 
-        // Setup: Use jb metadata library to encode
+        // Setup: use the metadata library to encode.
         bytes memory _packedData = _helper.createMetadata(_ids, _datas);
 
-        // Setup: Give coins and approve permit2 contract
+        // Setup: give coins and approve permit2 contract.
         deal(address(_usdc), from, _coins);
         vm.prank(from);
         IERC20(address(_usdc)).approve(address(permit2()), _coins);
 
-        // Test: Add to balance using permit2 data, which should transfer tokens
+        // Test: add to balance using permit2 data, which should transfer tokens.
         vm.prank(from);
         _terminal.addToBalanceOf(
             _projectId, address(_usdc), _coins, false, "testing permit2", _packedData
         );
 
-        // Check: that tokens were transfered
+        // Check: that tokens were transferred.
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);
     }
 }

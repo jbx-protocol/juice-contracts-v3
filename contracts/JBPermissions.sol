@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {JBOperatable} from "./abstract/JBOperatable.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
-import {JBOperatorData} from "./structs/JBOperatorData.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
+import {JBPermissionsData} from "./structs/JBPermissionsData.sol";
 
-/// @notice Stores operator permissions for all addresses. Addresses can give permissions to any other address to take specific indexed actions on their behalf.
-contract JBOperatorStore is JBOperatable, IJBOperatorStore {
+/// @notice Stores permissions for all addresses and operators. Addresses can give permissions to any other address (i.e. an *operator*) to execute specific operations on their behalf.
+contract JBPermissions is JBPermissioned, IJBPermissions {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
-    error PERMISSION_INDEX_OUT_OF_BOUNDS();
+    error PERMISSION_ID_OUT_OF_BOUNDS();
 
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
 
-    /// @notice The permissions that an operator has been given to operate on a specific domain.
-    /// @dev An account can give an operator permissions that only pertain to a specific domain namespace.
-    /// @dev There is no domain with a value of 0 – accounts can use the 0 domain to give an operator permissions to all domains on their behalf.
-    /// @dev Permissions are stored in a packed `uint256`. Each 256 bits represents the on/off state of a permission. Applications can specify the significance of each index.
+    /// @notice The permissions that an operator has been given by an account for a specific project.
+    /// @dev An account can give an operator permissions that only pertain to a specific project ID.
+    /// @dev There is no project with a ID of 0 – this ID is a wildcard which gives an operator permissions pertaining to *all* project IDs on an account's behalf. Use this with caution.
+    /// @dev Permissions are stored in a packed `uint256`. Each of the 256 bits represents the on/off state of a permission. Applications can specify the significance of each permission ID.
     /// @custom:param _operator The address of the operator.
-    /// @custom:param _account The address of the account being operated.
-    /// @custom:param _domain The domain within which the permissions apply. Applications can use the domain namespace as they wish.
+    /// @custom:param _account The address of the account being operated on behalf of.
+    /// @custom:param _projectId The project ID the permissions are scoped to. An ID of 0 grants permissions across all projects.
     mapping(address => mapping(address => mapping(uint256 => uint256))) public override
         permissionsOf;
 
@@ -31,44 +31,44 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
-    /// @notice Whether or not an operator has the permission to take a certain action pertaining to the specified domain.
+    /// @notice Check if an operator has a specific permission for a specific address and project ID.
     /// @param _operator The operator to check.
-    /// @param _account The account that has given out permissions to the operator.
-    /// @param _domain The domain that the operator has been given permissions to operate.
-    /// @param _permissionIndex The permission index to check for.
+    /// @param _account The account being operated on behalf of.
+    /// @param _projectId The project ID that the operator has permission to operate under. 0 represents all projects.
+    /// @param _permissionId The permission ID to check for.
     /// @return A flag indicating whether the operator has the specified permission.
     function hasPermission(
         address _operator,
         address _account,
-        uint256 _domain,
-        uint256 _permissionIndex
+        uint256 _projectId,
+        uint256 _permissionId
     ) external view override returns (bool) {
-        if (_permissionIndex > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();
+        if (_permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
-        return (((permissionsOf[_operator][_account][_domain] >> _permissionIndex) & 1) == 1);
+        return (((permissionsOf[_operator][_account][_projectId] >> _permissionId) & 1) == 1);
     }
 
-    /// @notice Whether or not an operator has the permission to take certain actions pertaining to the specified domain.
+    /// @notice Check if an operator has all of the specified permissions for a specific address and project ID.
     /// @param _operator The operator to check.
-    /// @param _account The account that has given out permissions to the operator.
-    /// @param _domain The domain that the operator has been given permissions to operate.
-    /// @param _permissionIndexes An array of permission indexes to check for.
+    /// @param _account The account being operated on behalf of.
+    /// @param _projectId The project ID that the operator has permission to operate under. 0 represents all projects.
+    /// @param _permissionIds An array of permission IDs to check for.
     /// @return A flag indicating whether the operator has all specified permissions.
     function hasPermissions(
         address _operator,
         address _account,
-        uint256 _domain,
-        uint256[] calldata _permissionIndexes
+        uint256 _projectId,
+        uint256[] calldata _permissionIds
     ) external view override returns (bool) {
         // Keep a reference to the number of permissions being iterated on.
-        uint256 _numberOfPermissions = _permissionIndexes.length;
+        uint256 _numberOfPermissions = _permissionIds.length;
 
         for (uint256 _i; _i < _numberOfPermissions;) {
-            uint256 _permissionIndex = _permissionIndexes[_i];
+            uint256 _permissionId = _permissionIds[_i];
 
-            if (_permissionIndex > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();
+            if (_permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
-            if (((permissionsOf[_operator][_account][_domain] >> _permissionIndex) & 1) == 0) {
+            if (((permissionsOf[_operator][_account][_projectId] >> _permissionId) & 1) == 0) {
                 return false;
             }
 
@@ -83,32 +83,35 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    constructor() JBOperatable(this) {}
+    constructor() JBPermissioned(this) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Sets permissions for an operators.
-    /// @dev Only an address can set its own operators.
-    /// @param _account The account having an operator set.
-    /// @param _operatorData The data that specifies the params for the operator being set.
-    function setOperatorOf(address _account, JBOperatorData calldata _operatorData)
+    /// @notice Sets permissions for an operator.
+    /// @dev Only an address can give permissions to or revoke permissions from its operators.
+    /// @param _account The account setting its operators' permissions.
+    /// @param _permissionsData The data which specifies the permissions the operator is being given.
+    function setPermissionsForOperator(
+        address _account,
+        JBPermissionsData calldata _permissionsData
+    )
         external
         override
-        requirePermission(_account, _operatorData.domain, JBOperations.ROOT)
+        requirePermission(_account, _permissionsData.projectId, JBPermissionIds.ROOT)
     {
-        // Pack the indexes into a uint256.
-        uint256 _packed = _packedPermissions(_operatorData.permissionIndexes);
+        // Pack the permission IDs into a uint256.
+        uint256 _packed = _packedPermissions(_permissionsData.permissionIds);
 
         // Store the new value.
-        permissionsOf[_operatorData.operator][_account][_operatorData.domain] = _packed;
+        permissionsOf[_permissionsData.operator][_account][_permissionsData.projectId] = _packed;
 
-        emit SetOperator(
-            _operatorData.operator,
+        emit OperatorPermissionsSet(
+            _permissionsData.operator,
             _account,
-            _operatorData.domain,
-            _operatorData.permissionIndexes,
+            _permissionsData.projectId,
+            _permissionsData.permissionIds,
             _packed,
             msg.sender
         );
@@ -118,24 +121,24 @@ contract JBOperatorStore is JBOperatable, IJBOperatorStore {
     // --------------------- private helper functions -------------------- //
     //*********************************************************************//
 
-    /// @notice Converts an array of permission indexes to a packed `uint256`.
-    /// @param _indexes The indexes of the permissions to pack.
+    /// @notice Converts an array of permission IDs to a packed `uint256`.
+    /// @param _permissionIds The IDs of the permissions to pack.
     /// @return packed The packed value.
-    function _packedPermissions(uint256[] calldata _indexes)
+    function _packedPermissions(uint256[] calldata _permissionIds)
         private
         pure
         returns (uint256 packed)
     {
-        // Keep a reference to the number of indexes being iterated on.
-        uint256 _numberOfIndexes = _indexes.length;
+        // Keep a reference to the number of IDs being iterated on.
+        uint256 _numberOfIds = _permissionIds.length;
 
-        for (uint256 _i; _i < _numberOfIndexes;) {
-            uint256 _index = _indexes[_i];
+        for (uint256 _i; _i < _numberOfIds;) {
+            uint256 _id = _permissionIds[_i];
 
-            if (_index > 255) revert PERMISSION_INDEX_OUT_OF_BOUNDS();
+            if (_id > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
-            // Turn the bit at the index on.
-            packed |= 1 << _index;
+            // Turn on the bit at the ID.
+            packed |= 1 << _id;
 
             unchecked {
                 ++_i;

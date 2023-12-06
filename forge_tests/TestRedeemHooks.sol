@@ -3,13 +3,13 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-contract TestRedmeptionDelegates_Local is TestBaseWorkflow {
+contract TestRedeemHooks_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
-    address private constant _DATA_SOURCE = address(bytes20(keccak256("datasource")));
+    address private constant _DATA_HOOK = address(bytes20(keccak256("datahook")));
 
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     IJBMultiTerminal private _terminal;
-    IJBTokenStore private _tokenStore;
+    IJBTokens private _tokens;
     address private _projectOwner;
     address private _beneficiary;
 
@@ -18,60 +18,62 @@ contract TestRedmeptionDelegates_Local is TestBaseWorkflow {
     function setUp() public override {
         super.setUp();
 
-        vm.label(_DATA_SOURCE, "Data Source");
+        vm.label(_DATA_HOOK, "Data Hook");
 
         _controller = jbController();
         _projectOwner = multisig();
         _beneficiary = beneficiary();
-        _terminal = jbPayoutRedemptionTerminal();
-        _tokenStore = jbTokenStore();
+        _terminal = jbMultiTerminal();
+        _tokens = jbTokens();
 
-        JBFundingCycleData memory _data = JBFundingCycleData({
+        JBRulesetData memory _data = JBRulesetData({
             duration: 0,
             weight: _WEIGHT,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
-        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
+        JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
-            pauseTokenCreditTransfers: false,
-            allowMinting: true,
+            pauseCreditTransfers: false,
+            allowOwnerMinting: true,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowControllerMigration: false,
             allowSetController: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: true,
-            dataSource: _DATA_SOURCE,
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: true,
+            dataHook: _DATA_HOOK,
             metadata: 0
         });
 
-        // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        // Package up ruleset configuration.
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBConstants.NATIVE_TOKEN,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
-        // First project for fee collection
+        // Create a first project to collect fees.
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: "myIPFSHash",
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -79,114 +81,110 @@ contract TestRedmeptionDelegates_Local is TestBaseWorkflow {
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: "myIPFSHash",
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
 
         // Issue the project's tokens.
         vm.prank(_projectOwner);
-        IJBToken _token = _controller.issueTokenFor(_projectId, "TestName", "TestSymbol");
+        IJBToken _token = _controller.deployERC20For(_projectId, "TestName", "TestSymbol");
 
-        // Make sure the project's new JBToken is set.
-        assertEq(address(_tokenStore.tokenOf(_projectId)), address(_token));
+        // Make sure the project's new project token is set.
+        assertEq(address(_tokens.tokenOf(_projectId)), address(_token));
     }
 
-    function testRedemptionDelegate() public {
-        // Reference and bound pay amount
-        uint256 _ethPayAmount = 10 ether;
+    function testRedeemHook() public {
+        // Reference and bound pay amount.
+        uint256 _nativePayAmount = 10 ether;
         uint256 _halfPaid = 5 ether;
 
-        // Delegate address
-        address _redDelegate = makeAddr("SOFA");
-        vm.label(_redDelegate, "Redemption Delegate");
+        // Redeem hook address.
+        address _redeemHook = makeAddr("SOFA");
+        vm.label(_redeemHook, "Redemption Delegate");
 
-        // Keep a reference to the current funding cycle.
-        (JBFundingCycle memory _fundingCycle,) = _controller.currentFundingCycleOf(_projectId);
+        // Keep a reference to the current ruleset.
+        (JBRuleset memory _ruleset,) = _controller.currentRulesetOf(_projectId);
 
-        vm.deal(address(this), _ethPayAmount);
-        uint256 _ficiaryAllocation = _terminal.pay{value: _ethPayAmount}({
+        vm.deal(address(this), _nativePayAmount);
+        uint256 _beneficiaryTokensReceived = _terminal.pay{value: _nativePayAmount}({
             projectId: _projectId,
-            amount: _ethPayAmount,
-            token: JBTokens.ETH,
+            amount: _nativePayAmount,
+            token: JBConstants.NATIVE_TOKEN,
             beneficiary: address(this),
             minReturnedTokens: 0,
             memo: "Forge Test",
             metadata: ""
         });
 
-        // Make sure the beneficiary has a balance of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_ethPayAmount, _WEIGHT);
-        assertEq(_tokenStore.balanceOf(address(this), _projectId), _beneficiaryTokenBalance);
-        assertEq(_ficiaryAllocation, _beneficiaryTokenBalance);
+        // Make sure the beneficiary has a balance of project tokens.
+        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _WEIGHT);
+        assertEq(_tokens.totalBalanceOf(address(this), _projectId), _beneficiaryTokenBalance);
+        assertEq(_beneficiaryTokensReceived, _beneficiaryTokenBalance);
         emit log_uint(_beneficiaryTokenBalance);
 
-        // Make sure the ETH balance in terminal is up to date.
-        uint256 _ethTerminalBalance = _ethPayAmount;
+        // Make sure the native token balance in terminal is up to date.
+        uint256 _nativeTerminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBTokens.ETH),
-            _ethTerminalBalance
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBConstants.NATIVE_TOKEN),
+            _nativeTerminalBalance
         );
 
-        // Reference allocations
-        JBRedemptionDelegateAllocation3_1_1[] memory _allocations =
-            new JBRedemptionDelegateAllocation3_1_1[](1);
+        // Reference payloads.
+        JBRedeemHookPayload[] memory _payloads = new JBRedeemHookPayload[](1);
 
-        _allocations[0] = JBRedemptionDelegateAllocation3_1_1({
-            delegate: IJBRedemptionDelegate3_1_1(_redDelegate),
-            amount: _halfPaid,
-            metadata: ""
-        });
+        _payloads[0] =
+            JBRedeemHookPayload({hook: IJBRedeemHook(_redeemHook), amount: _halfPaid, metadata: ""});
 
-        // Redemption Data
-        JBDidRedeemData3_1_1 memory _redeemData = JBDidRedeemData3_1_1({
+        // Redeem Data.
+        JBDidRedeemData memory _redeemData = JBDidRedeemData({
             holder: address(this),
             projectId: _projectId,
-            currentFundingCycleConfiguration: _fundingCycle.configuration,
+            rulesetId: _ruleset.id,
             projectTokenCount: _beneficiaryTokenBalance / 2,
             reclaimedAmount: JBTokenAmount(
-                JBTokens.ETH,
+                JBConstants.NATIVE_TOKEN,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).currency
                 ),
             forwardedAmount: JBTokenAmount(
-                JBTokens.ETH,
+                JBConstants.NATIVE_TOKEN,
                 _halfPaid,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).decimals,
-                _terminal.accountingContextForTokenOf(_projectId, JBTokens.ETH).currency
+                _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).decimals,
+                _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).currency
                 ),
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
             beneficiary: payable(address(this)),
-            dataSourceMetadata: "",
+            hookMetadata: "",
             redeemerMetadata: ""
         });
 
-        // Mock the delegate
+        // Mock the hook.
         vm.mockCall(
-            _redDelegate,
-            abi.encodeWithSelector(IJBRedemptionDelegate3_1_1.didRedeem.selector),
+            _redeemHook,
+            abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector),
             abi.encode(_redeemData)
         );
 
-        // Assert that the delegate gets called with the expected value
+        // Assert that the hook gets called with the expected value.
         vm.expectCall(
-            _redDelegate,
+            _redeemHook,
             _halfPaid,
-            abi.encodeWithSelector(IJBRedemptionDelegate3_1_1.didRedeem.selector, _redeemData)
+            abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector, _redeemData)
         );
 
         vm.mockCall(
-            _DATA_SOURCE,
-            abi.encodeWithSelector(IJBFundingCycleDataSource3_1_1.redeemParams.selector),
-            abi.encode(_halfPaid, _allocations)
+            _DATA_HOOK,
+            abi.encodeWithSelector(IJBRulesetDataHook.redeemParams.selector),
+            abi.encode(_halfPaid, _payloads)
         );
 
         _terminal.redeemTokensOf({
             holder: address(this),
             projectId: _projectId,
             count: _beneficiaryTokenBalance / 2,
-            token: JBTokens.ETH,
+            token: JBConstants.NATIVE_TOKEN,
             minReclaimed: 0,
             beneficiary: payable(address(this)),
             metadata: new bytes(0)

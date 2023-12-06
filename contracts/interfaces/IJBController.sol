@@ -2,40 +2,36 @@
 pragma solidity ^0.8.0;
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {JBBallotState} from "./../enums/JBBallotState.sol";
-import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
-import {JBFundingCycleConfig} from "./../structs/JBFundingCycleConfig.sol";
-import {JBFundingCycleMetadata} from "./../structs/JBFundingCycleMetadata.sol";
+import {JBApprovalStatus} from "./../enums/JBApprovalStatus.sol";
+import {JBRuleset} from "./../structs/JBRuleset.sol";
+import {JBRulesetConfig} from "./../structs/JBRulesetConfig.sol";
+import {JBRulesetMetadata} from "./../structs/JBRulesetMetadata.sol";
 import {JBTerminalConfig} from "./../structs/JBTerminalConfig.sol";
 import {JBSplit} from "./../structs/JBSplit.sol";
+import {JBSplitGroup} from "./../structs/JBSplitGroup.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
-import {IJBFundAccessConstraintsStore} from "./IJBFundAccessConstraintsStore.sol";
-import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
 import {IJBDirectoryAccessControl} from "./IJBDirectoryAccessControl.sol";
+import {IJBFundAccessLimits} from "./IJBFundAccessLimits.sol";
+import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBMigratable} from "./IJBMigratable.sol";
-import {IJBProjects} from "./IJBProjects.sol";
 import {IJBProjectMetadataRegistry} from "./IJBProjectMetadataRegistry.sol";
-import {IJBSplitsStore} from "./IJBSplitsStore.sol";
-import {IJBTokenStore} from "./IJBTokenStore.sol";
-import {JBGroupedSplits} from "./../structs/JBGroupedSplits.sol";
-import {IJBToken} from "./../interfaces/IJBToken.sol";
+import {IJBProjects} from "./IJBProjects.sol";
+import {IJBSplits} from "./IJBSplits.sol";
+import {IJBToken} from "./IJBToken.sol";
+import {IJBTokens} from "./IJBTokens.sol";
 
-interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAccessControl {
+interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAccessControl {
     event LaunchProject(
-        uint256 configuration, uint256 projectId, string metadata, string memo, address caller
+        uint256 rulesetId, uint256 projectId, string metadata, string memo, address caller
     );
 
-    event LaunchFundingCycles(
-        uint256 configuration, uint256 projectId, string memo, address caller
-    );
+    event LaunchRulesets(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
-    event ReconfigureFundingCycles(
-        uint256 configuration, uint256 projectId, string memo, address caller
-    );
+    event QueueRulesets(uint256 rulesetId, uint256 projectId, string memo, address caller);
 
-    event DistributeReservedTokens(
-        uint256 indexed fundingCycleConfiguration,
-        uint256 indexed fundingCycleNumber,
+    event SendReservedTokensToSplits(
+        uint256 indexed rulesetId,
+        uint256 indexed rulesetCycleNumber,
         uint256 indexed projectId,
         address beneficiary,
         uint256 tokenCount,
@@ -44,7 +40,7 @@ interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry, IJBDirectoryA
         address caller
     );
 
-    event DistributeToReservedTokenSplit(
+    event SendReservedTokensToSplit(
         uint256 indexed projectId,
         uint256 indexed domain,
         uint256 indexed group,
@@ -71,7 +67,7 @@ interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry, IJBDirectoryA
         address caller
     );
 
-    event Migrate(uint256 indexed projectId, IJBMigratable to, address caller);
+    event MigrateController(uint256 indexed projectId, IJBMigratable to, address caller);
 
     event PrepMigration(uint256 indexed projectId, address from, address caller);
 
@@ -79,60 +75,63 @@ interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry, IJBDirectoryA
 
     function projects() external view returns (IJBProjects);
 
-    function fundingCycleStore() external view returns (IJBFundingCycleStore);
+    function rulesets() external view returns (IJBRulesets);
 
-    function tokenStore() external view returns (IJBTokenStore);
+    function tokens() external view returns (IJBTokens);
 
-    function splitsStore() external view returns (IJBSplitsStore);
+    function splits() external view returns (IJBSplits);
 
-    function fundAccessConstraintsStore() external view returns (IJBFundAccessConstraintsStore);
+    function fundAccessLimits() external view returns (IJBFundAccessLimits);
 
     function directory() external view returns (IJBDirectory);
 
-    function reservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
+    function pendingReservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
 
-    function totalOutstandingTokensOf(uint256 projectId) external view returns (uint256);
-
-    function getFundingCycleOf(uint256 projectId, uint256 configuration)
+    function totalTokenSupplyWithReservedTokensOf(uint256 projectId)
         external
         view
-        returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+        returns (uint256);
 
-    function latestConfiguredFundingCycleOf(uint256 projectId)
+    function getRulesetOf(uint256 projectId, uint256 rulesetId)
         external
         view
-        returns (JBFundingCycle memory, JBFundingCycleMetadata memory metadata, JBBallotState);
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata);
 
-    function currentFundingCycleOf(uint256 projectId)
+    function latestQueuedRulesetOf(uint256 projectId)
         external
         view
-        returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+        returns (JBRuleset memory, JBRulesetMetadata memory metadata, JBApprovalStatus);
 
-    function queuedFundingCycleOf(uint256 projectId)
+    function currentRulesetOf(uint256 projectId)
         external
         view
-        returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata);
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata);
+
+    function queuedRulesetOf(uint256 projectId)
+        external
+        view
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata);
 
     function launchProjectFor(
         address owner,
         string calldata projectMetadata,
-        JBFundingCycleConfig[] calldata fundingCycleConfigurations,
+        JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
     ) external returns (uint256 projectId);
 
-    function launchFundingCyclesFor(
+    function launchRulesetsFor(
         uint256 projectId,
-        JBFundingCycleConfig[] calldata fundingCycleConfigurations,
+        JBRulesetConfig[] calldata rulesetConfigurations,
         JBTerminalConfig[] memory terminalConfigurations,
         string calldata memo
-    ) external returns (uint256 configured);
+    ) external returns (uint256 rulesetId);
 
-    function reconfigureFundingCyclesOf(
+    function queueRulesetsOf(
         uint256 projectId,
-        JBFundingCycleConfig[] calldata fundingCycleConfigurations,
+        JBRulesetConfig[] calldata rulesetConfigurations,
         string calldata memo
-    ) external returns (uint256 configured);
+    ) external returns (uint256 rulesetId);
 
     function mintTokensOf(
         uint256 projectId,
@@ -149,27 +148,28 @@ interface IJBController3_1 is IERC165, IJBProjectMetadataRegistry, IJBDirectoryA
         string calldata memo
     ) external;
 
-    function distributeReservedTokensOf(uint256 projectId, string memory memo)
+    function sendReservedTokensToSplitsOf(uint256 projectId, string memory memo)
         external
         returns (uint256);
 
-    function migrate(uint256 projectId, IJBMigratable to) external;
+    function migrateController(uint256 projectId, IJBMigratable to) external;
 
-    function setSplitsOf(
-        uint256 projectId,
-        uint256 domain,
-        JBGroupedSplits[] calldata groupedSplits
-    ) external;
+    function setSplitGroupsOf(uint256 projectId, uint256 domain, JBSplitGroup[] calldata splitGroup)
+        external;
 
-    function issueTokenFor(uint256 projectId, string calldata name, string calldata symbol)
+    function deployERC20For(uint256 projectId, string calldata name, string calldata symbol)
         external
         returns (IJBToken token);
 
     function setTokenFor(uint256 _projectId, IJBToken _token) external;
 
-    function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
+    function claimTokensFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
         external;
 
-    function transferFrom(address holder, uint256 projectId, address recipient, uint256 amount)
-        external;
+    function transferCreditsFrom(
+        address holder,
+        uint256 projectId,
+        address recipient,
+        uint256 amount
+    ) external;
 }

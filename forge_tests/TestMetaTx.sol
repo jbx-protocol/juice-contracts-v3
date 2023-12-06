@@ -8,9 +8,9 @@ import {ERC2771ForwarderMock, ForwardRequest} from "./mock/ERC2771ForwarderMock.
 contract TestMetaTx_Local is TestBaseWorkflow {
     uint256 private constant _WEIGHT = 1000 * 10 ** 18;
 
-    IJBController3_1 private _controller;
+    IJBController private _controller;
     IJBMultiTerminal private _terminal;
-    JBTokenStore private _tokenStore;
+    JBTokens private _tokens;
     ERC2771ForwarderMock internal _erc2771Forwarder = ERC2771ForwarderMock(address(123_456));
     address private _projectOwner;
 
@@ -59,8 +59,8 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         super.setUp();
 
         _controller = jbController();
-        _tokenStore = jbTokenStore();
-        _terminal = jbPayoutRedemptionTerminal();
+        _tokens = jbTokens();
+        _terminal = jbMultiTerminal();
 
         // Deploy forwarder
         deployCodeTo("ERC2771ForwarderMock.sol", abi.encode("ERC2771Forwarder"), address(123_456));
@@ -74,44 +74,46 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         // In case we need to test access control
         _projectOwner = _signer;
 
-        JBFundingCycleData memory _data = JBFundingCycleData({
+        JBRulesetData memory _data = JBRulesetData({
             duration: 0,
             weight: _WEIGHT,
-            discountRate: 0,
-            ballot: IJBFundingCycleBallot(address(0))
+            decayRate: 0,
+            hook: IJBRulesetApprovalHook(address(0))
         });
 
-        JBFundingCycleMetadata memory _metadata = JBFundingCycleMetadata({
+        JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
-            baseCurrency: uint32(uint160(JBTokens.ETH)),
+            baseCurrency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
             pausePay: false,
-            pauseTokenCreditTransfers: false,
-            allowMinting: true,
+            pauseCreditTransfers: false,
+            allowOwnerMinting: true,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowControllerMigration: false,
             allowSetController: false,
             holdFees: false,
-            useTotalOverflowForRedemptions: false,
-            useDataSourceForPay: false,
-            useDataSourceForRedeem: false,
-            dataSource: address(0),
+            useTotalSurplusForRedemptions: false,
+            useDataHookForPay: false,
+            useDataHookForRedeem: false,
+            dataHook: address(0),
             metadata: 0
         });
 
         // Package up cycle config.
-        JBFundingCycleConfig[] memory _cycleConfig = new JBFundingCycleConfig[](1);
-        _cycleConfig[0].mustStartAtOrAfter = 0;
-        _cycleConfig[0].data = _data;
-        _cycleConfig[0].metadata = _metadata;
-        _cycleConfig[0].groupedSplits = new JBGroupedSplits[](0);
-        _cycleConfig[0].fundAccessConstraints = new JBFundAccessConstraints[](0);
+        JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
+        _rulesetConfig[0].mustStartAtOrAfter = 0;
+        _rulesetConfig[0].data = _data;
+        _rulesetConfig[0].metadata = _metadata;
+        _rulesetConfig[0].splitGroups = new JBSplitGroup[](0);
+        _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] =
-            JBAccountingContextConfig({token: JBTokens.ETH, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[0] = JBAccountingContextConfig({
+            token: JBConstants.NATIVE_TOKEN,
+            standard: JBTokenStandards.NATIVE
+        });
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -119,7 +121,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: "myIPFSHash",
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -127,7 +129,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         _projectId = _controller.launchProjectFor({
             owner: _projectOwner,
             projectMetadata: "myIPFSHash",
-            fundingCycleConfigurations: _cycleConfig,
+            rulesetConfigurations: _rulesetConfig,
             terminalConfigurations: _terminalConfigurations,
             memo: ""
         });
@@ -145,9 +147,9 @@ contract TestMetaTx_Local is TestBaseWorkflow {
 
         // Setup: meta tx data
         bytes memory _data = abi.encodeWithSelector(
-            IJBPaymentTerminal.pay.selector,
+            IJBTerminal.pay.selector,
             _projectId,
-            JBTokens.ETH,
+            JBConstants.NATIVE_TOKEN,
             _payAmount,
             _signer,
             0, // minReturnedTokens
@@ -176,14 +178,14 @@ contract TestMetaTx_Local is TestBaseWorkflow {
 
         // Check: Ensure the beneficiary (signer) has a balance of tokens.
         uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
-        assertEq(_tokenStore.balanceOf(_signer, _projectId), _beneficiaryTokenBalance);
+        assertEq(_tokens.totalBalanceOf(_signer, _projectId), _beneficiaryTokenBalance);
 
         // Setup 2: meta tx data for redeem
         bytes memory _data2 = abi.encodeWithSelector(
-            IJBRedemptionTerminal.redeemTokensOf.selector,
+            IJBRedeemTerminal.redeemTokensOf.selector,
             _signer,
             _projectId,
-            JBTokens.ETH,
+            JBConstants.NATIVE_TOKEN,
             _beneficiaryTokenBalance,
             0, // minReturnedTokens
             payable(_signer),

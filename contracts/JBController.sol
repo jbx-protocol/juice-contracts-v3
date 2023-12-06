@@ -6,81 +6,72 @@ import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
-import {JBOperatable} from "./abstract/JBOperatable.sol";
-import {JBBallotState} from "./enums/JBBallotState.sol";
-import {IJBController3_1} from "./interfaces/IJBController3_1.sol";
+import {JBPermissioned} from "./abstract/JBPermissioned.sol";
+import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
+import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
-import {IJBFundAccessConstraintsStore} from "./interfaces/IJBFundAccessConstraintsStore.sol";
-import {IJBFundingCycleStore} from "./interfaces/IJBFundingCycleStore.sol";
+import {IJBFundAccessLimits} from "./interfaces/IJBFundAccessLimits.sol";
+import {IJBRulesets} from "./interfaces/IJBRulesets.sol";
 import {IJBDirectoryAccessControl} from "./interfaces/IJBDirectoryAccessControl.sol";
 import {IJBMigratable} from "./interfaces/IJBMigratable.sol";
-import {IJBOperatable} from "./interfaces/IJBOperatable.sol";
-import {IJBOperatorStore} from "./interfaces/IJBOperatorStore.sol";
-import {IJBPaymentTerminal} from "./interfaces/terminal/IJBPaymentTerminal.sol";
+import {IJBPermissioned} from "./interfaces/IJBPermissioned.sol";
+import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
+import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBProjectMetadataRegistry} from "./interfaces/IJBProjectMetadataRegistry.sol";
-import {IJBSplitAllocator} from "./interfaces/IJBSplitAllocator.sol";
-import {IJBSplitsStore} from "./interfaces/IJBSplitsStore.sol";
-import {IJBTokenStore} from "./interfaces/IJBTokenStore.sol";
+import {IJBSplitHook} from "./interfaces/IJBSplitHook.sol";
+import {IJBSplits} from "./interfaces/IJBSplits.sol";
 import {IJBToken} from "./interfaces/IJBToken.sol";
-import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
+import {IJBTokens} from "./interfaces/IJBTokens.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
-import {JBFundingCycleMetadataResolver} from "./libraries/JBFundingCycleMetadataResolver.sol";
-import {JBOperations} from "./libraries/JBOperations.sol";
-import {JBSplitsGroups} from "./libraries/JBSplitsGroups.sol";
-import {JBFundingCycle} from "./structs/JBFundingCycle.sol";
-import {JBFundingCycleConfig} from "./structs/JBFundingCycleConfig.sol";
-import {JBFundingCycleMetadata} from "./structs/JBFundingCycleMetadata.sol";
+import {JBRulesetMetadataResolver} from "./libraries/JBRulesetMetadataResolver.sol";
+import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
+import {JBSplitGroupIds} from "./libraries/JBSplitGroupIds.sol";
+import {JBRuleset} from "./structs/JBRuleset.sol";
+import {JBRulesetConfig} from "./structs/JBRulesetConfig.sol";
+import {JBRulesetMetadata} from "./structs/JBRulesetMetadata.sol";
 import {JBTerminalConfig} from "./structs/JBTerminalConfig.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
-import {JBSplitAllocationData} from "./structs/JBSplitAllocationData.sol";
-import {JBGroupedSplits} from "./structs/JBGroupedSplits.sol";
+import {JBSplitGroup} from "./structs/JBSplitGroup.sol";
+import {JBSplitHookPayload} from "./structs/JBSplitHookPayload.sol";
 
-/// @notice Stitches together funding cycles and project tokens, making sure all activity is accounted for and correct.
-contract JBController3_1 is
-    JBOperatable,
-    ERC2771Context,
-    ERC165,
-    IJBController3_1,
-    IJBMigratable
-{
-    // A library that parses the packed funding cycle metadata into a more friendly format.
-    using JBFundingCycleMetadataResolver for JBFundingCycle;
+/// @notice Stitches together rulesets and project tokens, making sure all activity is accounted for and correct.
+contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, IJBMigratable {
+    // A library that parses packed ruleset metadata into a friendlier format.
+    using JBRulesetMetadataResolver for JBRuleset;
 
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error BURN_PAUSED_AND_SENDER_NOT_VALID_TERMINAL_DELEGATE();
-    error FUNDING_CYCLE_ALREADY_LAUNCHED();
+    error RULESET_ALREADY_LAUNCHED();
     error INVALID_BASE_CURRENCY();
     error INVALID_REDEMPTION_RATE();
     error INVALID_RESERVED_RATE();
-    error MIGRATION_NOT_ALLOWED();
-    error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
+    error CONTROLLER_MIGRATION_NOT_ALLOWED();
+    error MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
     error NO_BURNABLE_TOKENS();
-    error NOT_CURRENT_CONTROLLER();
-    error TRANSFERS_PAUSED();
+    error CREDIT_TRANSFERS_PAUSED();
     error ZERO_TOKENS_TO_MINT();
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
 
-    /// @notice Mints ERC-721's that represent project ownership.
+    /// @notice Mints ERC-721s that represent project ownership and transfers.
     IJBProjects public immutable override projects;
 
-    /// @notice The contract storing all funding cycle configurations.
-    IJBFundingCycleStore public immutable override fundingCycleStore;
+    /// @notice The contract storing and managing project rulesets.
+    IJBRulesets public immutable override rulesets;
 
     /// @notice The contract that manages token minting and burning.
-    IJBTokenStore public immutable override tokenStore;
+    IJBTokens public immutable override tokens;
 
     /// @notice The contract that stores splits for each project.
-    IJBSplitsStore public immutable override splitsStore;
+    IJBSplits public immutable override splits;
 
-    /// @notice A contract that stores fund access constraints for each project.
-    IJBFundAccessConstraintsStore public immutable override fundAccessConstraintsStore;
+    /// @notice A contract that stores fund access limits for each project.
+    IJBFundAccessLimits public immutable override fundAccessLimits;
 
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override directory;
@@ -89,8 +80,9 @@ contract JBController3_1 is
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
 
-    /// @notice The current undistributed reserved token balance of.
-    mapping(uint256 => uint256) public override reservedTokenBalanceOf;
+    /// @notice The reserved token balance that has not yet been realized (sent out to the reserved split group) for a project.
+    /// @custom:param projectId The ID of the project to get the pending reserved token balance of.
+    mapping(uint256 => uint256) public override pendingReservedTokenBalanceOf;
 
     /// @notice The metadata for each project, which can be used across several domains.
     /// @custom:param _projectId The ID of the project to which the metadata belongs.
@@ -100,92 +92,92 @@ contract JBController3_1 is
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
-    /// @notice Gets the current total amount of outstanding tokens for a project.
-    /// @param _projectId The ID of the project to get total outstanding tokens of.
-    /// @return The current total amount of outstanding tokens for the project.
-    function totalOutstandingTokensOf(uint256 _projectId)
+    /// @notice Gets the current token supply of a project, including pending reserved tokens.
+    /// @param _projectId The ID of the project to get the total token supply of.
+    /// @return The current total token supply of the project, including pending reserved tokens that have not been sent to splits yet.
+    function totalTokenSupplyWithReservedTokensOf(uint256 _projectId)
         external
         view
         override
         returns (uint256)
     {
         // Add the reserved tokens to the total supply.
-        return tokenStore.totalSupplyOf(_projectId) + reservedTokenBalanceOf[_projectId];
+        return tokens.totalSupplyOf(_projectId) + pendingReservedTokenBalanceOf[_projectId];
     }
 
-    /// @notice A project's funding cycle for the specified configuration along with its metadata.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return fundingCycle The funding cycle.
-    /// @return metadata The funding cycle's metadata.
-    function getFundingCycleOf(uint256 _projectId, uint256 _configuration)
+    /// @notice A get `JBRuleset` and `JBRulesetMetadata` structs for the specified `rulesetId`.
+    /// @param _projectId The ID of the project the ruleset belongs to.
+    /// @return ruleset The ruleset as a `JBRuleset` struct.
+    /// @return metadata The ruleset's metadata as a `JBRulesetMetadata` struct.
+    function getRulesetOf(uint256 _projectId, uint256 _rulesetId)
         external
         view
         override
-        returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
-        fundingCycle = fundingCycleStore.get(_projectId, _configuration);
-        metadata = fundingCycle.expandMetadata();
+        ruleset = rulesets.getRulesetOf(_projectId, _rulesetId);
+        metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's latest configured funding cycle along with its metadata and the ballot state of the configuration.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return fundingCycle The latest configured funding cycle.
-    /// @return metadata The latest configured funding cycle's metadata.
-    /// @return ballotState The state of the configuration.
-    function latestConfiguredFundingCycleOf(uint256 _projectId)
+    /// @notice The latest ruleset queued for a project. Returns the ruleset's struct, its current approval status, and its metadata.
+    /// @param _projectId The ID of the project the ruleset belongs to.
+    /// @return ruleset The latest queued ruleset as a `JBRuleset` struct.
+    /// @return metadata The latest queued ruleset's metadata as a `JBRulesetMetadata` struct.
+    /// @return approvalStatus The approval status of the ruleset.
+    function latestQueuedRulesetOf(uint256 _projectId)
         external
         view
         override
         returns (
-            JBFundingCycle memory fundingCycle,
-            JBFundingCycleMetadata memory metadata,
-            JBBallotState ballotState
+            JBRuleset memory ruleset,
+            JBRulesetMetadata memory metadata,
+            JBApprovalStatus approvalStatus
         )
     {
-        (fundingCycle, ballotState) = fundingCycleStore.latestConfiguredOf(_projectId);
-        metadata = fundingCycle.expandMetadata();
+        (ruleset, approvalStatus) = rulesets.latestQueuedRulesetOf(_projectId);
+        metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's current funding cycle along with its metadata.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return fundingCycle The current funding cycle.
-    /// @return metadata The current funding cycle's metadata.
-    function currentFundingCycleOf(uint256 _projectId)
+    /// @notice A project's current ruleset along with its metadata.
+    /// @param _projectId The ID of the project the ruleset belongs to.
+    /// @return ruleset The current ruleset as a `JBRuleset` struct.
+    /// @return metadata The current ruleset's metadata as a `JBRulesetMetadata` struct.
+    function currentRulesetOf(uint256 _projectId)
         external
         view
         override
-        returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
-        fundingCycle = fundingCycleStore.currentOf(_projectId);
-        metadata = fundingCycle.expandMetadata();
+        ruleset = rulesets.currentOf(_projectId);
+        metadata = ruleset.expandMetadata();
     }
 
-    /// @notice A project's queued funding cycle along with its metadata.
-    /// @param _projectId The ID of the project to which the funding cycle belongs.
-    /// @return fundingCycle The queued funding cycle.
-    /// @return metadata The queued funding cycle's metadata.
-    function queuedFundingCycleOf(uint256 _projectId)
+    /// @notice A project's queued ruleset along with its metadata.
+    /// @param _projectId The ID of the project the ruleset belongs to.
+    /// @return ruleset The queued ruleset as a `JBRuleset` struct.
+    /// @return metadata The queued ruleset's metadata as a `JBRulesetMetadata` struct.
+    function queuedRulesetOf(uint256 _projectId)
         external
         view
         override
-        returns (JBFundingCycle memory fundingCycle, JBFundingCycleMetadata memory metadata)
+        returns (JBRuleset memory ruleset, JBRulesetMetadata memory metadata)
     {
-        fundingCycle = fundingCycleStore.queuedOf(_projectId);
-        metadata = fundingCycle.expandMetadata();
+        ruleset = rulesets.upcomingRulesetOf(_projectId);
+        metadata = ruleset.expandMetadata();
     }
 
     /// @notice A flag indicating if the project currently allows terminals to be set.
     /// @param _projectId The ID of the project the flag is for.
     /// @return The flag
     function setTerminalsAllowed(uint256 _projectId) external view returns (bool) {
-        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetTerminals;
+        return rulesets.currentOf(_projectId).expandMetadata().allowSetTerminals;
     }
 
     /// @notice A flag indicating if the project currently allows its controller to be set.
     /// @param _projectId The ID of the project the flag is for.
     /// @return The flag
     function setControllerAllowed(uint256 _projectId) external view returns (bool) {
-        return fundingCycleStore.currentOf(_projectId).expandMetadata().allowSetController;
+        return rulesets.currentOf(_projectId).expandMetadata().allowSetController;
     }
 
     //*********************************************************************//
@@ -203,59 +195,60 @@ contract JBController3_1 is
         override(ERC165, IERC165)
         returns (bool)
     {
-        return _interfaceId == type(IJBController3_1).interfaceId
+        return _interfaceId == type(IJBController).interfaceId
             || _interfaceId == type(IJBProjectMetadataRegistry).interfaceId
             || _interfaceId == type(IJBDirectoryAccessControl).interfaceId
             || _interfaceId == type(IJBMigratable).interfaceId
-            || _interfaceId == type(IJBOperatable).interfaceId || super.supportsInterface(_interfaceId);
+            || _interfaceId == type(IJBPermissioned).interfaceId
+            || super.supportsInterface(_interfaceId);
     }
 
     //*********************************************************************//
     // ---------------------------- constructor -------------------------- //
     //*********************************************************************//
 
-    /// @param _operatorStore A contract storing operator assignments.
-    /// @param _projects A contract which mints ERC-721's that represent project ownership and transfers.
+    /// @param _permissions A contract storing permissions.
+    /// @param _projects A contract which mints ERC-721s that represent project ownership and transfers.
     /// @param _directory A contract storing directories of terminals and controllers for each project.
-    /// @param _fundingCycleStore A contract storing all funding cycle configurations.
-    /// @param _tokenStore A contract that manages token minting and burning.
-    /// @param _splitsStore A contract that stores splits for each project.
-    /// @param _fundAccessConstraintsStore A contract that stores fund access constraints for each project.
+    /// @param _rulesets A contract storing and managing project rulesets.
+    /// @param _tokens A contract that manages token minting and burning.
+    /// @param _splits A contract that stores splits for each project.
+    /// @param _fundAccessLimits A contract that stores fund access limits for each project.
     constructor(
-        IJBOperatorStore _operatorStore,
+        IJBPermissions _permissions,
         IJBProjects _projects,
         IJBDirectory _directory,
-        IJBFundingCycleStore _fundingCycleStore,
-        IJBTokenStore _tokenStore,
-        IJBSplitsStore _splitsStore,
-        IJBFundAccessConstraintsStore _fundAccessConstraintsStore,
+        IJBRulesets _rulesets,
+        IJBTokens _tokens,
+        IJBSplits _splits,
+        IJBFundAccessLimits _fundAccessLimits,
         address _trustedForwarder
-    ) JBOperatable(_operatorStore) ERC2771Context(_trustedForwarder) {
+    ) JBPermissioned(_permissions) ERC2771Context(_trustedForwarder) {
         projects = _projects;
         directory = _directory;
-        fundingCycleStore = _fundingCycleStore;
-        tokenStore = _tokenStore;
-        splitsStore = _splitsStore;
-        fundAccessConstraintsStore = _fundAccessConstraintsStore;
+        rulesets = _rulesets;
+        tokens = _tokens;
+        splits = _splits;
+        fundAccessLimits = _fundAccessLimits;
     }
 
     //*********************************************************************//
     // --------------------- external transactions ----------------------- //
     //*********************************************************************//
 
-    /// @notice Creates a project. This will mint an ERC-721 into the specified owner's account, configure a first funding cycle, and set up any splits.
+    /// @notice Creates a project. This will mint the project's ERC-721 to the specified owner's account, queue its first ruleset, and set up any splits.
     /// @dev Each operation within this transaction can be done in sequence separately.
     /// @dev Anyone can deploy a project on an owner's behalf.
     /// @param _owner The address to set as the owner of the project. The project ERC-721 will be owned by this address.
     /// @param _projectMetadata Metadata to associate with the project. This can be updated any time by the owner of the project.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @param _rulesetConfigurations The ruleset configurations to queue.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
     /// @return projectId The ID of the project.
     function launchProjectFor(
         address _owner,
         string calldata _projectMetadata,
-        JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
+        JBRulesetConfig[] calldata _rulesetConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
     ) external virtual override returns (uint256 projectId) {
@@ -273,91 +266,84 @@ contract JBController3_1 is
         // Set this contract as the project's controller in the directory.
         _directory.setControllerOf(projectId, IERC165(this));
 
-        // Configure the first funding cycle.
-        uint256 _configuration = _configureFundingCycles(projectId, _fundingCycleConfigurations);
+        // Queue the first ruleset.
+        uint256 _rulesetId = _queueRulesets(projectId, _rulesetConfigurations);
 
         // Configure the terminals.
         _configureTerminals(projectId, _terminalConfigurations);
 
-        emit LaunchProject(_configuration, projectId, _projectMetadata, _memo, _msgSender());
+        emit LaunchProject(_rulesetId, projectId, _projectMetadata, _memo, _msgSender());
     }
 
-    /// @notice Creates a funding cycle for an already existing project ERC-721.
+    /// @notice Creates an initial sequence of one or more rulesets for an existing project.
     /// @dev Each operation within this transaction can be done in sequence separately.
-    /// @dev Only a project owner or operator can launch its funding cycles.
-    /// @param _projectId The ID of the project to launch funding cycles for.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS` permission can launch rulesets for a project.
+    /// @param _projectId The ID of the project to launch rulesets for.
+    /// @param _rulesetConfigurations The ruleset configurations to queue.
     /// @param _terminalConfigurations The terminal configurations to add for the project.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
-    function launchFundingCyclesFor(
+    /// @return rulesetId The ID of the ruleset that was successfully launched.
+    function launchRulesetsFor(
         uint256 _projectId,
-        JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
+        JBRulesetConfig[] calldata _rulesetConfigurations,
         JBTerminalConfig[] calldata _terminalConfigurations,
         string memory _memo
     )
         external
         virtual
         override
-        requirePermission(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.RECONFIGURE_FUNDING_CYCLES
-        )
-        returns (uint256 configured)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.QUEUE_RULESETS)
+        returns (uint256 rulesetId)
     {
-        // If there is a previous configuration, reconfigureFundingCyclesOf should be called instead
-        if (fundingCycleStore.latestConfigurationOf(_projectId) > 0) {
-            revert FUNDING_CYCLE_ALREADY_LAUNCHED();
+        // If the project has already had rulesets, `queueRulesetsOf(...)` should be called instead
+        if (rulesets.latestRulesetIdOf(_projectId) > 0) {
+            revert RULESET_ALREADY_LAUNCHED();
         }
 
         // Set this contract as the project's controller in the directory.
         directory.setControllerOf(_projectId, IERC165(this));
 
-        // Configure the first funding cycle.
-        configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
+        // Queue the first ruleset.
+        rulesetId = _queueRulesets(_projectId, _rulesetConfigurations);
 
         // Configure the terminals.
         _configureTerminals(_projectId, _terminalConfigurations);
 
-        emit LaunchFundingCycles(configured, _projectId, _memo, _msgSender());
+        emit LaunchRulesets(rulesetId, _projectId, _memo, _msgSender());
     }
 
-    /// @notice Proposes a configuration of a subsequent funding cycle that will take effect once the current one expires if it is approved by the current funding cycle's ballot.
-    /// @dev Only a project's owner or a designated operator can configure its funding cycles.
-    /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
+    /// @notice Queues one or more rulesets that will take effect once the current ruleset expires. Rulesets only take effect if they are approved by the previous ruleset's approval hook.
+    /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS` permission from them can queue rulesets for a project.
+    /// @param _projectId The ID of the project that rulesets are being queued for.
+    /// @param _rulesetConfigurations The configurations of the rulesets to queue.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
-    function reconfigureFundingCyclesOf(
+    /// @return rulesetId The ID of the last ruleset which was successfully queued.
+    function queueRulesetsOf(
         uint256 _projectId,
-        JBFundingCycleConfig[] calldata _fundingCycleConfigurations,
+        JBRulesetConfig[] calldata _rulesetConfigurations,
         string calldata _memo
     )
         external
         virtual
         override
-        requirePermission(
-            projects.ownerOf(_projectId),
-            _projectId,
-            JBOperations.RECONFIGURE_FUNDING_CYCLES
-        )
-        returns (uint256 configured)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.QUEUE_RULESETS)
+        returns (uint256 rulesetId)
     {
-        // Configure the next funding cycle.
-        configured = _configureFundingCycles(_projectId, _fundingCycleConfigurations);
+        // Queue the next ruleset.
+        rulesetId = _queueRulesets(_projectId, _rulesetConfigurations);
 
-        emit ReconfigureFundingCycles(configured, _projectId, _memo, _msgSender());
+        emit QueueRulesets(rulesetId, _projectId, _memo, _msgSender());
     }
 
-    /// @notice Mint new token supply into an account, and optionally reserve a supply to be distributed according to the project's current funding cycle configuration.
-    /// @dev Only a project's owner, a designated operator, one of its terminals, or the current data source can mint its tokens.
-    /// @param _projectId The ID of the project to which the tokens being minted belong.
-    /// @param _tokenCount The amount of tokens to mint in total, counting however many should be reserved.
-    /// @param _beneficiary The account that the tokens are being minted for.
+    /// @notice Mint new project tokens into an account, optionally reserving a portion according to the current ruleset's reserved rate.
+    /// @dev Only a project's owner, an operator with the `MINT_TOKENS` permission from them, one of the project's terminals, or its current data hook can mint a project's tokens.
+    /// @dev If the ruleset has discretionary minting disabled, this function can only be called by the terminal or data hook.
+    /// @param _projectId The ID of the project the tokens being minted belong to.
+    /// @param _tokenCount The total number of tokens to mint, including any tokens that will be reserved.
+    /// @param _beneficiary The account which will receive the (non-reserved) minted tokens.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @param _useReservedRate Whether to use the current funding cycle's reserved rate in the mint calculation.
-    /// @return beneficiaryTokenCount The amount of tokens minted for the beneficiary.
+    /// @param _useReservedRate Whether to use the current ruleset's reserved rate in the minting calculations.
+    /// @return beneficiaryTokenCount The number of tokens minted for the beneficiary.
     function mintTokensOf(
         uint256 _projectId,
         uint256 _tokenCount,
@@ -372,33 +358,33 @@ contract JBController3_1 is
         // Keep a reference to the reserved rate to use
         uint256 _reservedRate;
 
-        // Scoped section prevents stack too deep. `_fundingCycle` only used within scope.
+        // Scoped section prevents stack too deep. `_ruleset` only used within scope.
         {
-            // Get a reference to the project's current funding cycle.
-            JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+            // Get a reference to the project's current ruleset.
+            JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
-            // Minting limited to: project owner, authorized callers, project terminal and current funding cycle data source
+            // Minting limited to: project owner, operators with the `MINT_TOKENS` permission from the owner, the project's terminals, or the project's current ruleset data hook
             _requirePermissionAllowingOverride(
                 projects.ownerOf(_projectId),
                 _projectId,
-                JBOperations.MINT_TOKENS,
-                directory.isTerminalOf(_projectId, IJBPaymentTerminal(_msgSender()))
-                    || _msgSender() == address(_fundingCycle.dataSource())
+                JBPermissionIds.MINT_TOKENS,
+                directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
+                    || _msgSender() == address(_ruleset.dataHook())
             );
 
-            // If the message sender is not a terminal or a datasource, the current funding cycle must allow minting.
+            // If the message sender is not a terminal or a data hook, the current ruleset must allow minting.
             if (
-                !_fundingCycle.mintingAllowed()
-                    && !directory.isTerminalOf(_projectId, IJBPaymentTerminal(_msgSender()))
-                    && _msgSender() != address(_fundingCycle.dataSource())
-            ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_DELEGATE();
+                !_ruleset.allowOwnerMinting()
+                    && !directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
+                    && _msgSender() != address(_ruleset.dataHook())
+            ) revert MINT_NOT_ALLOWED_AND_NOT_TERMINAL_HOOK();
 
             // Determine the reserved rate to use.
-            _reservedRate = _useReservedRate ? _fundingCycle.reservedRate() : 0;
+            _reservedRate = _useReservedRate ? _ruleset.reservedRate() : 0;
         }
 
         if (_reservedRate != JBConstants.MAX_RESERVED_RATE) {
-            // The unreserved token count that will be minted for the beneficiary.
+            // The unreserved number of tokens that will be minted to the beneficiary.
             beneficiaryTokenCount = PRBMath.mulDiv(
                 _tokenCount,
                 JBConstants.MAX_RESERVED_RATE - _reservedRate,
@@ -406,12 +392,12 @@ contract JBController3_1 is
             );
 
             // Mint the tokens.
-            tokenStore.mintFor(_beneficiary, _projectId, beneficiaryTokenCount);
+            tokens.mintFor(_beneficiary, _projectId, beneficiaryTokenCount);
         }
 
-        // Add reserved tokens if needed
+        // Add reserved tokens to the pending balance if needed
         if (_reservedRate > 0) {
-            reservedTokenBalanceOf[_projectId] += _tokenCount - beneficiaryTokenCount;
+            pendingReservedTokenBalanceOf[_projectId] += _tokenCount - beneficiaryTokenCount;
         }
 
         emit MintTokens(
@@ -425,10 +411,10 @@ contract JBController3_1 is
         );
     }
 
-    /// @notice Burns a token holder's supply.
-    /// @dev Only a token's holder, a designated operator, or a project's terminal can burn it.
-    /// @param _holder The account that is having its tokens burned.
-    /// @param _projectId The ID of the project to which the tokens being burned belong.
+    /// @notice Burns a project's tokens from a specific holder's balance.
+    /// @dev Only a token holder, an operator with the `BURN_TOKENS` permission from them, or a project's terminal can burn a holder's tokens.
+    /// @param _holder The account whose tokens are being burned.
+    /// @param _projectId The ID of the project that the tokens being burned belong to.
     /// @param _tokenCount The number of tokens to burn.
     /// @param _memo A memo to pass along to the emitted event.
     function burnTokensOf(
@@ -443,30 +429,31 @@ contract JBController3_1 is
         requirePermissionAllowingOverride(
             _holder,
             _projectId,
-            JBOperations.BURN_TOKENS,
-            directory.isTerminalOf(_projectId, IJBPaymentTerminal(_msgSender()))
+            JBPermissionIds.BURN_TOKENS,
+            directory.isTerminalOf(_projectId, IJBTerminal(_msgSender()))
         )
     {
         // There should be tokens to burn
         if (_tokenCount == 0) revert NO_BURNABLE_TOKENS();
 
         // Burn the tokens.
-        tokenStore.burnFrom(_holder, _projectId, _tokenCount);
+        tokens.burnFrom(_holder, _projectId, _tokenCount);
 
         emit BurnTokens(_holder, _projectId, _tokenCount, _memo, _msgSender());
     }
 
-    /// @notice Distributes all outstanding reserved tokens for a project.
+    /// @notice Sends a project's pending reserved tokens to its reserved token splits.
+    /// @dev If the project has no reserved token splits, or they don't add up to 100%, the leftover tokens are minted to the project's owner.
     /// @param _projectId The ID of the project to which the reserved tokens belong.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return The amount of minted reserved tokens.
-    function distributeReservedTokensOf(uint256 _projectId, string calldata _memo)
+    /// @return The amount of reserved tokens minted and sent.
+    function sendReservedTokensToSplitsOf(uint256 _projectId, string calldata _memo)
         external
         virtual
         override
         returns (uint256)
     {
-        return _distributeReservedTokensOf(_projectId, _memo);
+        return _sendReservedTokensToSplitsOf(_projectId, _memo);
     }
 
     /// @notice Allows other controllers to signal to this one that a migration is expected for the specified project.
@@ -487,43 +474,48 @@ contract JBController3_1 is
         }
     }
 
-    /// @notice Allows a project to migrate from this controller to another.
-    /// @dev Only a project's owner or a designated operator can migrate it.
+    /// @notice Allows a project to migrate from this controller to another one.
+    /// @dev Only a project's owner or an operator with the `MIGRATE_CONTROLLER` permission from the owner can migrate it.
     /// @param _projectId The ID of the project that will be migrated from this controller.
-    /// @param _to The controller to which the project is migrating.
-    function migrate(uint256 _projectId, IJBMigratable _to)
+    /// @param _to The controller the project is migrating to.
+    function migrateController(uint256 _projectId, IJBMigratable _to)
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.MIGRATE_CONTROLLER)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.MIGRATE_CONTROLLER)
     {
-        // Keep a reference to the directory.
-        IJBDirectory _directory = directory;
-
-        // Get a reference to the project's current funding cycle.
-        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+        // Get a reference to the project's current ruleset.
+        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Migration must be allowed.
-        if (!_fundingCycle.controllerMigrationAllowed()) revert MIGRATION_NOT_ALLOWED();
+        if (!_ruleset.allowControllerMigration()) {
+            revert CONTROLLER_MIGRATION_NOT_ALLOWED();
+        }
 
         // All reserved tokens must be minted before migrating.
-        if (reservedTokenBalanceOf[_projectId] != 0) _distributeReservedTokensOf(_projectId, "");
+        if (pendingReservedTokenBalanceOf[_projectId] != 0) {
+            _sendReservedTokensToSplitsOf(_projectId, "");
+        }
 
         // Make sure the new controller is prepped for the migration.
         _to.receiveMigrationFrom(IERC165(this), _projectId);
 
-        emit Migrate(_projectId, _to, _msgSender());
+        emit MigrateController(_projectId, _to, _msgSender());
     }
 
-    /// @notice Allows a project owner to set the project's metadata content for a particular domain namespace.
-    /// @dev Only a project's controller can set its metadata.
-    /// @dev Applications can use the domain namespace as they wish.
-    /// @param _projectId The ID of the project who's metadata is being changed.
-    /// @param _metadata A struct containing metadata content.
+    /// @notice Set a project's metadata content.
+    /// @dev Only a project's owner can set its metadata through the project's controller.
+    /// @dev Frontends typically use an IPFS hash for the metadata content.
+    /// @param _projectId The ID of the project to set the metadata of.
+    /// @param _metadata The metadata content to set.
     function setMetadataOf(uint256 _projectId, string calldata _metadata)
         external
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_PROJECT_METADATA)
+        requirePermission(
+            projects.ownerOf(_projectId),
+            _projectId,
+            JBPermissionIds.SET_PROJECT_METADATA
+        )
     {
         // Set the project's new metadata content within the specified domain.
         metadataOf[_projectId] = _metadata;
@@ -531,132 +523,145 @@ contract JBController3_1 is
         emit SetMetadata(_projectId, _metadata, _msgSender());
     }
 
-    /// @notice Sets a project's splits.
-    /// @dev Only the owner or operator of a project, or the current controller contract of the project, can set its splits.
-    /// @dev The new splits must include any currently set splits that are locked.
-    /// @param _projectId The ID of the project for which splits are being added.
-    /// @param _domain An identifier within which the splits should be considered active.
-    /// @param _groupedSplits An array of splits to set for any number of groups.
-    function setSplitsOf(
+    /// @notice Sets a project's split groups.
+    /// @dev Only a project's owner or an operator with `SET_SPLITS` permission from the owner can set its splits through the project's controller.
+    /// @dev The new split groups must include any currently set splits that are locked.
+    /// @param _projectId The ID of the project split groups are being set for.
+    /// @param _domainId The ID of the domain the split groups should be active in (this is often a `rulesetId`).
+    /// @param _splitGroups An array of split groups to set.
+    function setSplitGroupsOf(
         uint256 _projectId,
-        uint256 _domain,
-        JBGroupedSplits[] calldata _groupedSplits
+        uint256 _domainId,
+        JBSplitGroup[] calldata _splitGroups
     )
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_SPLITS)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.SET_SPLITS)
     {
         // Set splits for the group.
-        splitsStore.set(_projectId, _domain, _groupedSplits);
+        splits.setSplitGroupsOf(_projectId, _domainId, _splitGroups);
     }
 
-    /// @notice Issues a project's ERC-20 tokens that'll be used when claiming tokens.
+    /// @notice Deploys an ERC-20 token for a project. It will be used when claiming tokens (with credits).
     /// @dev Deploys a project's ERC-20 token contract.
-    /// @dev Only a project's owner or operator can issue its token.
-    /// @param _projectId The ID of the project being issued tokens.
+    /// @dev Only a project's owner or an operator with `ISSUE_TOKENS` permission from the owner can deploy its token.
+    /// @param _projectId The ID of the project to deploy an ERC-20 token for.
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
-    /// @return token The token that was issued.
-    function issueTokenFor(uint256 _projectId, string calldata _name, string calldata _symbol)
+    /// @return token The address of the token that was deployed.
+    function deployERC20For(uint256 _projectId, string calldata _name, string calldata _symbol)
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.ISSUE_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.ISSUE_TOKEN)
         returns (IJBToken token)
     {
-        return tokenStore.issueFor(_projectId, _name, _symbol);
+        return tokens.deployERC20For(_projectId, _name, _symbol);
     }
 
     /// @notice Set a project's token if not already set.
-    /// @dev Only a project's owner or operator can set its token.
-    /// @param _projectId The ID of the project to which the set token belongs.
-    /// @param _token The new token.
+    /// @dev Only a project's owner or an operator with `SET_TOKEN` permission from the owner can set its token.
+    /// @param _projectId The ID of the project to set the token of.
+    /// @param _token The new token's address.
     function setTokenFor(uint256 _projectId, IJBToken _token)
         external
         virtual
         override
-        requirePermission(projects.ownerOf(_projectId), _projectId, JBOperations.SET_TOKEN)
+        requirePermission(projects.ownerOf(_projectId), _projectId, JBPermissionIds.SET_TOKEN)
     {
-        tokenStore.setFor(_projectId, _token);
+        tokens.setTokenFor(_projectId, _token);
     }
 
-    /// @notice Claims internally accounted for tokens into a holder's wallet.
-    /// @dev Only a token holder or an operator specified by the token holder can claim its unclaimed tokens.
-    /// @param _holder The owner of the tokens being claimed.
+    /// @notice Redeem credits to claim tokens into a holder's wallet.
+    /// @dev Only a credit holder or an operator with the `CLAIM_TOKENS` permission from that holder can redeem those credits to claim tokens.
+    /// @param _holder The owner of the credits being redeemed.
     /// @param _projectId The ID of the project whose tokens are being claimed.
     /// @param _amount The amount of tokens to claim.
     /// @param _beneficiary The account into which the claimed tokens will go.
-    function claimFor(address _holder, uint256 _projectId, uint256 _amount, address _beneficiary)
+    function claimTokensFor(
+        address _holder,
+        uint256 _projectId,
+        uint256 _amount,
+        address _beneficiary
+    )
         external
         virtual
         override
-        requirePermission(_holder, _projectId, JBOperations.CLAIM_TOKENS)
+        requirePermission(_holder, _projectId, JBPermissionIds.CLAIM_TOKENS)
     {
-        tokenStore.claimFor(_holder, _projectId, _amount, _beneficiary);
+        tokens.claimTokensFor(_holder, _projectId, _amount, _beneficiary);
     }
 
-    /// @notice Allows a holder to transfer unclaimed tokens to another account.
-    /// @dev Only a token holder or an operator can transfer its unclaimed tokens.
-    /// @param _holder The address to transfer tokens from.
-    /// @param _projectId The ID of the project whose tokens are being transferred.
-    /// @param _recipient The recipient of the tokens.
-    /// @param _amount The amount of tokens to transfer.
-    function transferFrom(address _holder, uint256 _projectId, address _recipient, uint256 _amount)
+    /// @notice Allows a holder to transfer credits to another account.
+    /// @dev Only a credit holder or an operator with the `TRANSFER_TOKENS` permission from that holder can transfer those credits.
+    /// @param _holder The address to transfer credits from.
+    /// @param _projectId The ID of the project whose credits are being transferred.
+    /// @param _recipient The recipient of the credits.
+    /// @param _amount The amount of credits to transfer.
+    function transferCreditsFrom(
+        address _holder,
+        uint256 _projectId,
+        address _recipient,
+        uint256 _amount
+    )
         external
         virtual
         override
-        requirePermission(_holder, _projectId, JBOperations.TRANSFER_TOKENS)
+        requirePermission(_holder, _projectId, JBPermissionIds.TRANSFER_TOKENS)
     {
-        // Get a reference to the current funding cycle for the project.
-        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+        // Get a reference to the current ruleset for the project.
+        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
-        // Must not be paused.
-        if (_fundingCycle.tokenCreditTransfersPaused()) revert TRANSFERS_PAUSED();
+        // Credit transfers must not be paused.
+        if (_ruleset.pauseCreditTransfers()) revert CREDIT_TRANSFERS_PAUSED();
 
-        tokenStore.transferFrom(_holder, _projectId, _recipient, _amount);
+        tokens.transferCreditsFrom(_holder, _projectId, _recipient, _amount);
     }
 
     //*********************************************************************//
     // ------------------------ internal functions ----------------------- //
     //*********************************************************************//
 
-    /// @notice Distributes all outstanding reserved tokens for a project.
-    /// @param _projectId The ID of the project to which the reserved tokens belong.
+    /// @notice Sends pending reserved tokens to the project's reserved token splits.
+    /// @dev If the project has no reserved token splits, or they don't add up to 100%, the leftover tokens are minted to the project's owner.
+    /// @param _projectId The ID of the project the reserved tokens belong to.
     /// @param _memo A memo to pass along to the emitted event.
-    /// @return tokenCount The amount of minted reserved tokens.
-    function _distributeReservedTokensOf(uint256 _projectId, string memory _memo)
+    /// @return tokenCount The number of reserved tokens minted/sent.
+    function _sendReservedTokensToSplitsOf(uint256 _projectId, string memory _memo)
         internal
         returns (uint256 tokenCount)
     {
         // Keep a reference to the token store.
-        IJBTokenStore _tokenStore = tokenStore;
+        IJBTokens _tokens = tokens;
 
-        // Get the current funding cycle to read the reserved rate from.
-        JBFundingCycle memory _fundingCycle = fundingCycleStore.currentOf(_projectId);
+        // Get the current ruleset to read the reserved rate from.
+        JBRuleset memory _ruleset = rulesets.currentOf(_projectId);
 
         // Get a reference to the number of tokens that need to be minted.
-        tokenCount = reservedTokenBalanceOf[_projectId];
+        tokenCount = pendingReservedTokenBalanceOf[_projectId];
 
         // Reset the reserved token balance
-        reservedTokenBalanceOf[_projectId] = 0;
+        pendingReservedTokenBalanceOf[_projectId] = 0;
 
         // Get a reference to the project owner.
         address _owner = projects.ownerOf(_projectId);
 
-        // Distribute tokens to splits and get a reference to the leftover amount to mint after all splits have gotten their share.
+        // Send tokens to splits and get a reference to the leftover amount to mint after all splits have gotten their share.
         uint256 _leftoverTokenCount = tokenCount == 0
             ? 0
-            : _distributeToReservedTokenSplitsOf(
-                _projectId, _fundingCycle.configuration, JBSplitsGroups.RESERVED_TOKENS, tokenCount
+            : _sendTokensToSplitGroupOf(
+                _projectId, _ruleset.id, JBSplitGroupIds.RESERVED_TOKENS, tokenCount
             );
 
         // Mint any leftover tokens to the project owner.
-        if (_leftoverTokenCount > 0) _tokenStore.mintFor(_owner, _projectId, _leftoverTokenCount);
+        if (_leftoverTokenCount > 0) {
+            _tokens.mintFor(_owner, _projectId, _leftoverTokenCount);
+        }
 
-        emit DistributeReservedTokens(
-            _fundingCycle.configuration,
-            _fundingCycle.number,
+        emit SendReservedTokensToSplits(
+            _ruleset.id,
+            _ruleset.cycleNumber,
             _projectId,
             _owner,
             tokenCount,
@@ -666,26 +671,27 @@ contract JBController3_1 is
         );
     }
 
-    /// @notice Distribute tokens to the splits according to the specified funding cycle configuration.
-    /// @param _projectId The ID of the project for which reserved token splits are being distributed.
-    /// @param _domain The domain of the splits to distribute the reserved tokens between.
-    /// @param _group The group of the splits to distribute the reserved tokens between.
-    /// @param _amount The total amount of tokens to mint.
+    /// @notice Send `_amount` project tokens to the specified group of splits.
+    /// @dev This is used to send reserved tokens to the reserved token splits.
+    /// @param _projectId The ID of the project that the split group belongs to.
+    /// @param _domain The domain of the split group to send tokens to.
+    /// @param _groupId The group of the splits to send the tokens between.
+    /// @param _amount The total number of tokens to sent.
     /// @return leftoverAmount If the splits percents dont add up to 100%, the leftover amount is returned.
-    function _distributeToReservedTokenSplitsOf(
+    function _sendTokensToSplitGroupOf(
         uint256 _projectId,
         uint256 _domain,
-        uint256 _group,
+        uint256 _groupId,
         uint256 _amount
     ) internal returns (uint256 leftoverAmount) {
         // Keep a reference to the token store.
-        IJBTokenStore _tokenStore = tokenStore;
+        IJBTokens _tokens = tokens;
 
         // Set the leftover amount to the initial amount.
         leftoverAmount = _amount;
 
-        // Get a reference to the project's reserved token splits.
-        JBSplit[] memory _splits = splitsStore.splitsOf(_projectId, _domain, _group);
+        // Get a reference to the specified split group.
+        JBSplit[] memory _splits = splits.splitsOf(_projectId, _domain, _groupId);
 
         // Keep a reference to the number of splits being iterated on.
         uint256 _numberOfSplits = _splits.length;
@@ -695,18 +701,19 @@ contract JBController3_1 is
             // Get a reference to the split being iterated on.
             JBSplit memory _split = _splits[_i];
 
-            // The amount to send towards the split.
+            // Calculate the amount to send towards the split.
             uint256 _tokenCount =
                 PRBMath.mulDiv(_amount, _split.percent, JBConstants.SPLITS_TOTAL_PERCENT);
 
             // Mints tokens for the split if needed.
             if (_tokenCount > 0) {
-                _tokenStore.mintFor(
-                    // If an allocator is set in the splits, set it as the beneficiary.
-                    // Otherwise if a projectId is set in the split, set the project's owner as the beneficiary.
-                    // If the split has a beneficiary send to the split's beneficiary. Otherwise send to the  _msgSender().
-                    _split.allocator != IJBSplitAllocator(address(0))
-                        ? address(_split.allocator)
+                _tokens.mintFor(
+                    // If a `hook` is set in the splits, set it as the beneficiary.
+                    // Otherwise, if a `projectId` is set in the split, set the project's owner as the beneficiary.
+                    // Otherwise, if the split has a beneficiary send to the split's beneficiary.
+                    // Otherwise, send to the `_msgSender()`.
+                    _split.hook != IJBSplitHook(address(0))
+                        ? address(_split.hook)
                         : _split.projectId != 0
                             ? projects.ownerOf(_split.projectId)
                             : _split.beneficiary != address(0) ? _split.beneficiary : _msgSender(),
@@ -714,14 +721,14 @@ contract JBController3_1 is
                     _tokenCount
                 );
 
-                // If there's an allocator set, trigger its `allocate` function.
-                if (_split.allocator != IJBSplitAllocator(address(0))) {
+                // If there's a split hook, trigger its `process` function.
+                if (_split.hook != IJBSplitHook(address(0))) {
                     // Get a reference to the project's token.
-                    address _token = address(_tokenStore.tokenOf(_projectId));
+                    address _token = address(_tokens.tokenOf(_projectId));
 
-                    // Allocate.
-                    _split.allocator.allocate(
-                        JBSplitAllocationData(_token, _tokenCount, 18, _projectId, _group, _split)
+                    // Process.
+                    _split.hook.process(
+                        JBSplitHookPayload(_token, _tokenCount, 18, _projectId, _groupId, _split)
                     );
                 }
 
@@ -729,8 +736,8 @@ contract JBController3_1 is
                 leftoverAmount = leftoverAmount - _tokenCount;
             }
 
-            emit DistributeToReservedTokenSplit(
-                _projectId, _domain, _group, _split, _tokenCount, _msgSender()
+            emit SendReservedTokensToSplit(
+                _projectId, _domain, _groupId, _split, _tokenCount, _msgSender()
             );
 
             unchecked {
@@ -739,57 +746,59 @@ contract JBController3_1 is
         }
     }
 
-    /// @notice Configures a funding cycle and stores information pertinent to the configuration.
-    /// @param _projectId The ID of the project whose funding cycles are being reconfigured.
-    /// @param _fundingCycleConfigurations The funding cycle configurations to schedule.
-    /// @return configured The configuration timestamp of the funding cycle that was successfully reconfigured.
-    function _configureFundingCycles(
-        uint256 _projectId,
-        JBFundingCycleConfig[] calldata _fundingCycleConfigurations
-    ) internal returns (uint256 configured) {
-        // Keep a reference to the configuration being iterated on.
-        JBFundingCycleConfig memory _configuration;
+    /// @notice Queues one or more ruleset configurations and stores information pertinent to the configuration.
+    /// @param _projectId The ID of the project the rulesets are being queued for.
+    /// @param _rulesetConfigurations Configurations for the rulesets being queued.
+    /// @return rulesetId The ID of the last ruleset that was successfully queued.
+    function _queueRulesets(uint256 _projectId, JBRulesetConfig[] calldata _rulesetConfigurations)
+        internal
+        returns (uint256 rulesetId)
+    {
+        // Keep a reference to the ruleset config being iterated on.
+        JBRulesetConfig memory _rulesetConfig;
 
-        // Keep a reference to the number of configurations being scheduled.
-        uint256 _numberOfConfigurations = _fundingCycleConfigurations.length;
+        // Keep a reference to the number of ruleset configurations being queued.
+        uint256 _numberOfConfigurations = _rulesetConfigurations.length;
 
         for (uint256 _i; _i < _numberOfConfigurations;) {
-            // Get a reference to the configuration being iterated on.
-            _configuration = _fundingCycleConfigurations[_i];
+            // Get a reference to the ruleset config being iterated on.
+            _rulesetConfig = _rulesetConfigurations[_i];
 
             // Make sure the provided reserved rate is valid.
-            if (_configuration.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE) {
+            if (_rulesetConfig.metadata.reservedRate > JBConstants.MAX_RESERVED_RATE) {
                 revert INVALID_RESERVED_RATE();
             }
 
             // Make sure the provided redemption rate is valid.
-            if (_configuration.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE) {
+            if (_rulesetConfig.metadata.redemptionRate > JBConstants.MAX_REDEMPTION_RATE) {
                 revert INVALID_REDEMPTION_RATE();
             }
 
             // Make sure the provided base currency is valid.
-            if (_configuration.metadata.baseCurrency > type(uint32).max) {
+            if (_rulesetConfig.metadata.baseCurrency > type(uint32).max) {
                 revert INVALID_BASE_CURRENCY();
             }
 
-            // Configure the funding cycle's properties.
-            JBFundingCycle memory _fundingCycle = fundingCycleStore.configureFor(
+            // Use the configuration to queue the ruleset.
+            JBRuleset memory _ruleset = rulesets.queueFor(
                 _projectId,
-                _configuration.data,
-                JBFundingCycleMetadataResolver.packFundingCycleMetadata(_configuration.metadata),
-                _configuration.mustStartAtOrAfter
+                _rulesetConfig.data,
+                JBRulesetMetadataResolver.packRulesetMetadata(_rulesetConfig.metadata),
+                _rulesetConfig.mustStartAtOrAfter
             );
 
-            // Set splits for the group.
-            splitsStore.set(_projectId, _fundingCycle.configuration, _configuration.groupedSplits);
+            // Set the configuration's split groups.
+            splits.setSplitGroupsOf(_projectId, _ruleset.id, _rulesetConfig.splitGroups);
 
-            // Set the funds access constraints.
-            fundAccessConstraintsStore.setFor(
-                _projectId, _fundingCycle.configuration, _configuration.fundAccessConstraints
+            // Set the configuration's fund access limits.
+            fundAccessLimits.setFundAccessLimitsFor(
+                _projectId, _ruleset.id, _rulesetConfig.fundAccessLimitGroups
             );
 
-            // Return the configured timestamp if this is the last configuration being scheduled.
-            if (_i == _numberOfConfigurations - 1) configured = _fundingCycle.configuration;
+            // Return the ruleset's ID if this is the last configuration being queued.
+            if (_i == _numberOfConfigurations - 1) {
+                rulesetId = _ruleset.id;
+            }
 
             unchecked {
                 ++_i;
@@ -799,17 +808,17 @@ contract JBController3_1 is
 
     /// @notice Configure terminals for use.
     /// @param _projectId The ID of the project configuring the terminals for use.
-    /// @param _terminalConfigs The configurations to enact.
+    /// @param _terminalConfigs The terminal configurations to enact.
     function _configureTerminals(uint256 _projectId, JBTerminalConfig[] calldata _terminalConfigs)
         internal
     {
         // Keep a reference to the number of terminals being configured.
         uint256 _numberOfTerminalConfigs = _terminalConfigs.length;
 
-        // Set a array of terminals to populate.
-        IJBPaymentTerminal[] memory _terminals = new IJBPaymentTerminal[](_numberOfTerminalConfigs);
+        // Set an array of terminals to populate.
+        IJBTerminal[] memory _terminals = new IJBTerminal[](_numberOfTerminalConfigs);
 
-        // Keep a reference to the terminal configuration beingiterated on.
+        // Keep a reference to the terminal configuration being iterated on.
         JBTerminalConfig memory _terminalConfig;
 
         for (uint256 _i; _i < _numberOfTerminalConfigs;) {
@@ -817,7 +826,7 @@ contract JBController3_1 is
             _terminalConfig = _terminalConfigs[_i];
 
             // Set the accounting contexts.
-            _terminalConfig.terminal.setAccountingContextsFor(
+            _terminalConfig.terminal.addAccountingContextsFor(
                 _projectId, _terminalConfig.accountingContextConfigs
             );
 
@@ -830,7 +839,9 @@ contract JBController3_1 is
         }
 
         // Set the terminals in the directory.
-        if (_numberOfTerminalConfigs > 0) directory.setTerminalsOf(_projectId, _terminals);
+        if (_numberOfTerminalConfigs > 0) {
+            directory.setTerminalsOf(_projectId, _terminals);
+        }
     }
 
     /// @notice Returns the sender, prefered to use over ` _msgSender()`

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBRedemptionDelegate3_1_1} from "../interfaces/IJBRedemptionDelegate3_1_1.sol";
+import {IJBRedeemHook} from "../interfaces/IJBRedeemHook.sol";
 
-/// @custom:member delegate A delegate contract to use for subsequent calls.
-/// @custom:member amount The amount to send to the delegate.
-/// @custom:member metadata Metadata to pass the delegate.
-struct JBRedemptionDelegateAllocation3_1_1 {
-    IJBRedemptionDelegate3_1_1 delegate;
+/// @notice Payload sent from the ruleset's data hook back to the terminal upon redemption. This payload is forwarded to the specified redeem hook.
+/// @custom:member hook A redeem hook contract to use for subsequent calls.
+/// @custom:member amount The amount to send to the hook.
+/// @custom:member metadata Metadata to pass the hook.
+struct JBRedeemHookPayload {
+    IJBRedeemHook hook;
     uint256 amount;
     bytes metadata;
 }

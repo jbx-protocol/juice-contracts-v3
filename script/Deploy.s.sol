@@ -4,71 +4,68 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 
 import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
-import "../contracts/JBOperatorStore.sol";
+import "../contracts/JBPermissions.sol";
 import "../contracts/JBProjects.sol";
 import "../contracts/JBPrices.sol";
-import "../contracts/JBFundingCycleStore.sol";
+import "../contracts/JBRulesets.sol";
 import "../contracts/JBDirectory.sol";
-import "../contracts/JBTokenStore.sol";
-import "../contracts/JBSplitsStore.sol";
-import "../contracts/JBFundAccessConstraintsStore.sol";
-import "../contracts/JBController3_1.sol";
+import "../contracts/JBTokens.sol";
+import "../contracts/JBSplits.sol";
+import "../contracts/JBFundAccessLimits.sol";
+import "../contracts/JBController.sol";
 import "../contracts/JBTerminalStore.sol";
 import "../contracts/JBMultiTerminal.sol";
 
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
-    // NOTICE: Make sure this is the correct forwarder address for the chain your deploying to.
-    address internal constant _TRUSTED_FORWARDER =
-        address(0xB2b5841DBeF766d4b521221732F9B618fCf34A87);
 
-    JBOperatorStore _operatorStore;
+    JBPermissions _permissions;
     JBProjects _projects;
     JBPrices _prices;
     JBDirectory _directory;
-    JBFundingCycleStore _fundingCycleStore;
-    JBTokenStore _tokenStore;
-    JBSplitsStore _splitsStore;
-    JBFundAccessConstraintsStore _fundAccessConstraintsStore;
-    JBController3_1 _controller;
+    JBRulesets _rulesets;
+    JBTokens _tokens;
+    JBSplits _splits;
+    JBFundAccessLimits _fundAccessLimits;
+    JBController _controller;
     JBTerminalStore _terminalStore;
     JBMultiTerminal _multiTerminal;
 
-    function _run(address _manager) internal {
+    function _run(address _manager, address _trustedForwarder) internal {
         vm.broadcast();
-        _deployContracts(_manager);
+        _deployContracts(_manager, _trustedForwarder);
     }
 
-    function _deployContracts(address _manager) internal {
-        _operatorStore = new JBOperatorStore();
+    function _deployContracts(address _manager, address _trustedForwarder) internal {
+        _permissions = new JBPermissions();
         _projects = new JBProjects(_manager);
-        _prices = new JBPrices(_operatorStore, _projects, _manager);
-        _directory = new JBDirectory(_operatorStore, _projects, address(this));
-        _tokenStore = new JBTokenStore(_directory);
-        _fundingCycleStore = new JBFundingCycleStore(_directory);
-        _splitsStore = new JBSplitsStore(_directory);
-        _fundAccessConstraintsStore = new JBFundAccessConstraintsStore(_directory);
-        _controller = new JBController3_1(
-            _operatorStore,
+        _prices = new JBPrices(_permissions, _projects, _manager);
+        _directory = new JBDirectory(_permissions, _projects, address(this));
+        _tokens = new JBTokens(_directory);
+        _rulesets = new JBRulesets(_directory);
+        _splits = new JBSplits(_directory);
+        _fundAccessLimits = new JBFundAccessLimits(_directory);
+        _controller = new JBController(
+            _permissions,
             _projects,
             _directory,
-            _fundingCycleStore,
-            _tokenStore,
-            _splitsStore,
-            _fundAccessConstraintsStore,
-            _TRUSTED_FORWARDER
+            _rulesets,
+            _tokens,
+            _splits,
+            _fundAccessLimits,
+            _trustedForwarder
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
-        _terminalStore = new JBTerminalStore(_directory, _fundingCycleStore, _prices);
+        _terminalStore = new JBTerminalStore(_directory, _rulesets, _prices);
         _multiTerminal = new JBMultiTerminal(
-            _operatorStore,
+            _permissions,
             _projects,
             _directory,
-            _splitsStore,
+            _splits,
             _terminalStore,
             _PERMIT2,
-            _TRUSTED_FORWARDER,
+            _trustedForwarder,
             _manager
         );
     }
@@ -107,75 +104,89 @@ contract Deploy is Script {
 
 // Ethereum
 contract DeployEthereumMainnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 contract DeployEthereumGoerli is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 contract DeployEthereumSepolia is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 // Optimism
 
 contract DeployOptimismMainnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 contract DeployOptimismTestnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 // Polygon
 
 contract DeployPolygonMainnet is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }
 
 contract DeployPolygonMumbai is Deploy {
-    function setUp() public {}
+    address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
 
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
+    function setUp() public {}
+
     function run() public {
-        _run(_manager);
+        _run(_manager, _trustedForwarder);
     }
 }

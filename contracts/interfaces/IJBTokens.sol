@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
+import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBProjects} from "./IJBProjects.sol";
 import {IJBToken} from "./IJBToken.sol";
-import {IJBControllerUtility} from "./IJBControllerUtility.sol";
+import {IJBControlled} from "./IJBControlled.sol";
 
-interface IJBTokenStore is IJBControllerUtility {
-    event Issue(
+interface IJBTokens is IJBControlled {
+    event DeployERC20(
         uint256 indexed projectId,
         IJBToken indexed token,
         string name,
@@ -27,23 +27,23 @@ interface IJBTokenStore is IJBControllerUtility {
         address indexed holder,
         uint256 indexed projectId,
         uint256 amount,
-        uint256 initialUnclaimedBalance,
-        uint256 initialClaimedBalance,
+        uint256 initialCreditBalance,
+        uint256 initialTokenBalance,
         address caller
     );
 
-    event Claim(
+    event ClaimTokens(
         address indexed holder,
         uint256 indexed projectId,
-        uint256 initialUnclaimedBalance,
+        uint256 initialCreditBalance,
         uint256 amount,
         address beneficiary,
         address caller
     );
 
-    event Set(uint256 indexed projectId, IJBToken indexed newToken, address caller);
+    event SetToken(uint256 indexed projectId, IJBToken indexed newToken, address caller);
 
-    event Transfer(
+    event TransferCredits(
         address indexed holder,
         uint256 indexed projectId,
         address indexed recipient,
@@ -55,30 +55,34 @@ interface IJBTokenStore is IJBControllerUtility {
 
     function projectIdOf(IJBToken token) external view returns (uint256);
 
-    function unclaimedBalanceOf(address holder, uint256 projectId)
-        external
-        view
-        returns (uint256);
+    function creditBalanceOf(address holder, uint256 projectId) external view returns (uint256);
 
-    function unclaimedTotalSupplyOf(uint256 projectId) external view returns (uint256);
+    function totalCreditSupplyOf(uint256 projectId) external view returns (uint256);
 
     function totalSupplyOf(uint256 projectId) external view returns (uint256);
 
-    function balanceOf(address holder, uint256 projectId) external view returns (uint256 result);
+    function totalBalanceOf(address holder, uint256 projectId)
+        external
+        view
+        returns (uint256 result);
 
-    function issueFor(uint256 projectId, string calldata name, string calldata symbol)
+    function deployERC20For(uint256 projectId, string calldata name, string calldata symbol)
         external
         returns (IJBToken token);
 
-    function setFor(uint256 projectId, IJBToken token) external;
+    function setTokenFor(uint256 projectId, IJBToken token) external;
 
     function burnFrom(address holder, uint256 projectId, uint256 amount) external;
 
     function mintFor(address holder, uint256 projectId, uint256 amount) external;
 
-    function claimFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
+    function claimTokensFor(address holder, uint256 projectId, uint256 amount, address beneficiary)
         external;
 
-    function transferFrom(address holder, uint256 projectId, address recipient, uint256 amount)
-        external;
+    function transferCreditsFrom(
+        address holder,
+        uint256 projectId,
+        address recipient,
+        uint256 amount
+    ) external;
 }

@@ -5,12 +5,12 @@ import /* {*} from */ "../helpers/TestBaseWorkflow.sol";
 
 import {ERC165, IERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract MockMaliciousAllocator is ERC165, IJBSplitAllocator {
+contract MockMaliciousSplitHook is ERC165, IJBSplitHook {
     error NopeNotGonnaDoIt();
 
     uint256 revertMode;
 
-    function allocate(JBSplitAllocationData calldata _data) external payable override {
+    function process(JBSplitHookPayload calldata _data) external payable override {
         _data;
         if (revertMode == 0) {
             revert();
@@ -36,8 +36,8 @@ contract MockMaliciousAllocator is ERC165, IJBSplitAllocator {
         override(IERC165, ERC165)
         returns (bool)
     {
-        return _interfaceId == type(IJBSplitAllocator).interfaceId
-            || super.supportsInterface(_interfaceId);
+        return
+            _interfaceId == type(IJBSplitHook).interfaceId || super.supportsInterface(_interfaceId);
     }
 }
 
