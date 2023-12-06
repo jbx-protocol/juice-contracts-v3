@@ -86,8 +86,8 @@ import {MetadataResolverHelper} from "./MetadataResolverHelper.sol";
 
 import {MockERC20} from "./../mock/MockERC20.sol";
 
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
+import "@paulrberg/contracts/math/Common.sol";
+import "@paulrberg/contracts/math/UD60x18.sol";
 
 // Base contract for Juicebox system tests.
 // Provides common functionality, such as deploying contracts on test setup.

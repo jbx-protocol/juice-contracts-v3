@@ -5,7 +5,7 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
-import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
+import {Common} from "@paulrberg/contracts/math/Common.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
 import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
@@ -385,7 +385,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
         if (_reservedRate != JBConstants.MAX_RESERVED_RATE) {
             // The unreserved number of tokens that will be minted to the beneficiary.
-            beneficiaryTokenCount = PRBMath.mulDiv(
+            beneficiaryTokenCount = Common.mulDiv(
                 _tokenCount,
                 JBConstants.MAX_RESERVED_RATE - _reservedRate,
                 JBConstants.MAX_RESERVED_RATE
@@ -703,7 +703,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
             // Calculate the amount to send towards the split.
             uint256 _tokenCount =
-                PRBMath.mulDiv(_amount, _split.percent, JBConstants.SPLITS_TOTAL_PERCENT);
+                Common.mulDiv(_amount, _split.percent, JBConstants.SPLITS_TOTAL_PERCENT);
 
             // Mints tokens for the split if needed.
             if (_tokenCount > 0) {

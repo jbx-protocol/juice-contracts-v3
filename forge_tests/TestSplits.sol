@@ -175,7 +175,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         });
 
         // Calculate the amount returned after fees are processed.
-        uint256 _beneficiaryNativeBalance = PRBMath.mulDiv(
+        uint256 _beneficiaryNativeBalance = Common.mulDiv(
             _nativePayoutLimit, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE()
         );
 
@@ -197,7 +197,7 @@ contract TestSplits_Local is TestBaseWorkflow {
         _controller.sendReservedTokensToSplitsOf(_projectId, "");
 
         // 10 native tokens paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens sent.
-        uint256 _reserveRateDistributionAmount = PRBMath.mulDiv(
+        uint256 _reserveRateDistributionAmount = Common.mulDiv(
             _nativePayAmount, _data.weight, 10 ** 18
         ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
 
