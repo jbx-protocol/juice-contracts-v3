@@ -1,20 +1,22 @@
 {
-  "name": "@jbx-protocol/juice-contracts-v3",
+  "name": "@jbx-protocol/juice-contracts-v4",
   "bugs": "https://github.com/bananapus/juice-contracts-v4/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/bananapus/juice-contracts-v4"
   },
-  "version": "1.0.0",
+  "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall": "if [ \"$CI\" != \"true\" ]; then forge install; fi",
-    "test": "forge test",
+    "test:local": "forge test",
     "test:fork": "FOUNDRY_PROFILE=CI forge test",
+    "coverage:integration": "forge coverage --match-path ./src/*.sol --report lcov --report summary",
+    "build": "forge build",
     "size": "forge build --sizes",
-    "coverage": "forge coverage --match-path ./src/*.sol --report lcov --report summary",
+    "clean": "rm -rf ./cache && rm -rf ./artifacts",
     "doc": "forge doc",
     "tree": "forge tree",
+    "lint": "forge fmt",
     "deploy:ethereum-mainnet": "source .env && forge script DeployEthereumMainnet --chain-id 1 --rpc-url $RPC_ETHEREUM_MAINNET --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_ETHEREUM_MAINNET -vvv",
     "deploy:ethereum-goerli": "source .env && forge script DeployGoerli --chain-id 5 --rpc-url $RPC_ETHEREUM_GOERLI --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_ETHEREUM_GOERLI -vvv",
     "deploy:ethereum-sepolia": "source .env && forge script DeploySepolia --chain-id 5 --rpc-url $RPC_ETHEREUM_SEPOLIA --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ledger --sender $SENDER_ETHEREUM_SEPOLIA -vvv",

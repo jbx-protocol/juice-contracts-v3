@@ -3,7 +3,8 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// Project can issue token, receive payments in exchange for tokens, burn some of the claimed tokens, and allow holders to redeem rest of tokens.
+// Project can issue token, receive payments in exchange for tokens, burn some of the claimed tokens, and allow holders
+// to redeem rest of tokens.
 contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBMultiTerminal private _terminal;
@@ -22,12 +23,7 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         _controller = jbController();
         _terminal = jbMultiTerminal();
         _tokens = jbTokens();
-        _data = JBRulesetData({
-            duration: 0,
-            weight: 1000 * 10 ** 18,
-            decayRate: 0,
-            hook: JBDeadline(address(0))
-        });
+        _data = JBRulesetData({duration: 0, weight: 1000 * 10 ** 18, decayRate: 0, hook: JBDeadline(address(0))});
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
             redemptionRate: JBConstants.MAX_REDEMPTION_RATE,
@@ -61,10 +57,8 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -90,7 +84,9 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         uint96 _nativePayAmount,
         uint256 _burnTokenAmount,
         uint256 _redeemTokenAmount
-    ) external {
+    )
+        external
+    {
         // Issue an ERC-20 token for project.
         vm.prank(_projectOwner);
         _controller.deployERC20For(_projectId, "TestName", "TestSymbol");
@@ -107,14 +103,14 @@ contract TestPayBurnRedeemFlow_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _beneficiaryTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
+        uint256 _beneficiaryTokenBalance =
+            UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the native token balance in terminal is up to date.
         uint256 _terminalBalance = _nativePayAmount;
         assertEq(
-            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBConstants.NATIVE_TOKEN),
-            _terminalBalance
+            jbTerminalStore().balanceOf(address(_terminal), _projectId, JBConstants.NATIVE_TOKEN), _terminalBalance
         );
 
         // Burn tokens from beneficiary.

@@ -38,7 +38,11 @@ contract JBERC20 is ERC20Votes, ERC20Permit, Ownable, IJBToken {
     /// @param _name The name of the token.
     /// @param _symbol The symbol that the token should be represented by.
     /// @param _owner The owner of the token.
-    constructor(string memory _name, string memory _symbol, address _owner)
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address _owner
+    )
         ERC20(_name, _symbol)
         ERC20Permit(_name)
         Ownable(_owner)
@@ -65,22 +69,12 @@ contract JBERC20 is ERC20Votes, ERC20Permit, Ownable, IJBToken {
     }
 
     /// @notice required override.
-    function nonces(address owner)
-        public
-        view
-        virtual
-        override(ERC20Permit, Nonces)
-        returns (uint256)
-    {
+    function nonces(address owner) public view virtual override(ERC20Permit, Nonces) returns (uint256) {
         return super.nonces(owner);
     }
 
     /// @notice required override.
-    function _update(address from, address to, uint256 value)
-        internal
-        virtual
-        override(ERC20, ERC20Votes)
-    {
+    function _update(address from, address to, uint256 value) internal virtual override(ERC20, ERC20Votes) {
         super._update(from, to, value);
     }
 }

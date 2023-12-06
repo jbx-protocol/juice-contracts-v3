@@ -46,7 +46,10 @@ contract MetadataResolverHelper {
      * @return _found          Whether the {id:data} was found
      * @return _targetData The data for the ID (can be empty)
      */
-    function getData(bytes4 _id, bytes calldata _metadata)
+    function getData(
+        bytes4 _id,
+        bytes calldata _metadata
+    )
         public
         pure
         returns (bool _found, bytes memory _targetData)
@@ -64,7 +67,10 @@ contract MetadataResolverHelper {
      *
      * @return _metadata       The resulting metadata
      */
-    function createMetadata(bytes4[] calldata _ids, bytes[] calldata _datas)
+    function createMetadata(
+        bytes4[] calldata _ids,
+        bytes[] calldata _datas
+    )
         public
         pure
         returns (bytes memory _metadata)
@@ -78,10 +84,10 @@ contract MetadataResolverHelper {
         uint256 _offset = 1;
 
         // ... and after the id/offset lookup table, rounding up to 32 bytes words if not a multiple
-        _offset += ((_ids.length * JBMetadataResolver.TOTAL_ID_SIZE) - 1)
-            / JBMetadataResolver.WORD_SIZE + 1;
+        _offset += ((_ids.length * JBMetadataResolver.TOTAL_ID_SIZE) - 1) / JBMetadataResolver.WORD_SIZE + 1;
 
-        // For each id, add it to the lookup table with the next free offset, then increment the offset by the data length (rounded up)
+        // For each id, add it to the lookup table with the next free offset, then increment the offset by the data
+        // length (rounded up)
         for (uint256 _i; _i < _ids.length;) {
             _metadata = abi.encodePacked(_metadata, _ids[_i], bytes1(uint8(_offset)));
             _offset += _datas[_i].length / JBMetadataResolver.WORD_SIZE;
@@ -127,7 +133,11 @@ contract MetadataResolverHelper {
         bytes4 _idToAdd,
         bytes calldata _dataToAdd,
         bytes calldata _originalMetadata
-    ) public pure returns (bytes memory _newMetadata) {
+    )
+        public
+        pure
+        returns (bytes memory _newMetadata)
+    {
         return JBMetadataResolver.addToMetadata(_idToAdd, _dataToAdd, _originalMetadata);
     }
 }

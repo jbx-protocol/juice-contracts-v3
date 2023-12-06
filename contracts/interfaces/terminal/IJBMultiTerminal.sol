@@ -12,13 +12,7 @@ import {IJBFeeTerminal} from "./IJBFeeTerminal.sol";
 import {IJBPermitTerminal} from "./IJBPermitTerminal.sol";
 import {IJBSplits} from "../IJBSplits.sol";
 
-interface IJBMultiTerminal is
-    IJBTerminal,
-    IJBFeeTerminal,
-    IJBRedeemTerminal,
-    IJBPayoutTerminal,
-    IJBPermitTerminal
-{
+interface IJBMultiTerminal is IJBTerminal, IJBFeeTerminal, IJBRedeemTerminal, IJBPayoutTerminal, IJBPermitTerminal {
     function STORE() external view returns (IJBTerminalStore);
 
     function PROJECTS() external view returns (IJBProjects);

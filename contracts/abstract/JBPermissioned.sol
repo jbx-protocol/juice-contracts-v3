@@ -25,7 +25,8 @@ abstract contract JBPermissioned is Context, IJBPermissioned {
         _;
     }
 
-    /// @notice If the `_override` flag is truthy, proceed. Otherwise, restrict access to the specified account, and operator(s) they have given permissions to.
+    /// @notice If the `_override` flag is truthy, proceed. Otherwise, restrict access to the specified account, and
+    /// operator(s) they have given permissions to.
     /// @param _account The account to check for.
     /// @param _projectId The project ID to check permissions under.
     /// @param _permissionId The ID of the permission to check for.
@@ -63,30 +64,32 @@ abstract contract JBPermissioned is Context, IJBPermissioned {
     /// @notice Require the message sender to be the account or have the relevant permission.
     /// @param _account The account to allow.
     /// @param _projectId The project ID to check the permission under.
-    /// @param _permissionId The required permission ID. The operator must have this permission within the specified project ID.
-    function _requirePermission(address _account, uint256 _projectId, uint256 _permissionId)
-        internal
-        view
-    {
+    /// @param _permissionId The required permission ID. The operator must have this permission within the specified
+    /// project ID.
+    function _requirePermission(address _account, uint256 _projectId, uint256 _permissionId) internal view {
         address _sender = _msgSender();
         if (
-            _sender != _account
-                && !permissions.hasPermission(_sender, _account, _projectId, _permissionId)
+            _sender != _account && !permissions.hasPermission(_sender, _account, _projectId, _permissionId)
                 && !permissions.hasPermission(_sender, _account, 0, _permissionId)
         ) revert UNAUTHORIZED();
     }
 
-    /// @notice If the override condition is truthy, proceed. Otherwise, require the message sender to be the account or have the relevant permission.
+    /// @notice If the override condition is truthy, proceed. Otherwise, require the message sender to be the account or
+    /// have the relevant permission.
     /// @param _account The account to allow.
     /// @param _projectId The project ID to check the permission under.
-    /// @param _permissionId The required permission ID. The operator must have this permission within the specified project ID.
+    /// @param _permissionId The required permission ID. The operator must have this permission within the specified
+    /// project ID.
     /// @param _override An override condition which will allow access regardless of permissions.
     function _requirePermissionAllowingOverride(
         address _account,
         uint256 _projectId,
         uint256 _permissionId,
         bool _override
-    ) internal view {
+    )
+        internal
+        view
+    {
         if (_override) return;
         _requirePermission(_account, _projectId, _permissionId);
     }

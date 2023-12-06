@@ -30,14 +30,8 @@ contract MockMaliciousSplitHook is ERC165, IJBSplitHook {
         revertMode = _newMode;
     }
 
-    function supportsInterface(bytes4 _interfaceId)
-        public
-        view
-        override(IERC165, ERC165)
-        returns (bool)
-    {
-        return
-            _interfaceId == type(IJBSplitHook).interfaceId || super.supportsInterface(_interfaceId);
+    function supportsInterface(bytes4 _interfaceId) public view override(IERC165, ERC165) returns (bool) {
+        return _interfaceId == type(IJBSplitHook).interfaceId || super.supportsInterface(_interfaceId);
     }
 }
 

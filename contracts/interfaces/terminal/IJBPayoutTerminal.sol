@@ -41,9 +41,7 @@ interface IJBPayoutTerminal is IJBTerminal {
         address caller
     );
 
-    event PayoutReverted(
-        uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller
-    );
+    event PayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     function sendPayoutsOf(
         uint256 projectId,
@@ -51,7 +49,9 @@ interface IJBPayoutTerminal is IJBTerminal {
         uint256 amount,
         uint256 currency,
         uint256 minReturnedTokens
-    ) external returns (uint256 netLeftoverPayoutAmount);
+    )
+        external
+        returns (uint256 netLeftoverPayoutAmount);
 
     function useAllowanceOf(
         uint256 projectId,
@@ -61,5 +61,7 @@ interface IJBPayoutTerminal is IJBTerminal {
         uint256 minReturnedTokens,
         address payable beneficiary,
         string calldata memo
-    ) external returns (uint256 netAmountPaidOut);
+    )
+        external
+        returns (uint256 netAmountPaidOut);
 }

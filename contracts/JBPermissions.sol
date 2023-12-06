@@ -6,7 +6,8 @@ import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBPermissionsData} from "./structs/JBPermissionsData.sol";
 
-/// @notice Stores permissions for all addresses and operators. Addresses can give permissions to any other address (i.e. an *operator*) to execute specific operations on their behalf.
+/// @notice Stores permissions for all addresses and operators. Addresses can give permissions to any other address
+/// (i.e. an *operator*) to execute specific operations on their behalf.
 contract JBPermissions is JBPermissioned, IJBPermissions {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
@@ -19,13 +20,15 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
 
     /// @notice The permissions that an operator has been given by an account for a specific project.
     /// @dev An account can give an operator permissions that only pertain to a specific project ID.
-    /// @dev There is no project with a ID of 0 – this ID is a wildcard which gives an operator permissions pertaining to *all* project IDs on an account's behalf. Use this with caution.
-    /// @dev Permissions are stored in a packed `uint256`. Each of the 256 bits represents the on/off state of a permission. Applications can specify the significance of each permission ID.
+    /// @dev There is no project with a ID of 0 – this ID is a wildcard which gives an operator permissions pertaining
+    /// to *all* project IDs on an account's behalf. Use this with caution.
+    /// @dev Permissions are stored in a packed `uint256`. Each of the 256 bits represents the on/off state of a
+    /// permission. Applications can specify the significance of each permission ID.
     /// @custom:param _operator The address of the operator.
     /// @custom:param _account The address of the account being operated on behalf of.
-    /// @custom:param _projectId The project ID the permissions are scoped to. An ID of 0 grants permissions across all projects.
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public override
-        permissionsOf;
+    /// @custom:param _projectId The project ID the permissions are scoped to. An ID of 0 grants permissions across all
+    /// projects.
+    mapping(address => mapping(address => mapping(uint256 => uint256))) public override permissionsOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
@@ -42,7 +45,12 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
         address _account,
         uint256 _projectId,
         uint256 _permissionId
-    ) external view override returns (bool) {
+    )
+        external
+        view
+        override
+        returns (bool)
+    {
         if (_permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
         return (((permissionsOf[_operator][_account][_projectId] >> _permissionId) & 1) == 1);
@@ -59,7 +67,12 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
         address _account,
         uint256 _projectId,
         uint256[] calldata _permissionIds
-    ) external view override returns (bool) {
+    )
+        external
+        view
+        override
+        returns (bool)
+    {
         // Keep a reference to the number of permissions being iterated on.
         uint256 _numberOfPermissions = _permissionIds.length;
 
@@ -124,11 +137,7 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
     /// @notice Converts an array of permission IDs to a packed `uint256`.
     /// @param _permissionIds The IDs of the permissions to pack.
     /// @return packed The packed value.
-    function _packedPermissions(uint256[] calldata _permissionIds)
-        private
-        pure
-        returns (uint256 packed)
-    {
+    function _packedPermissions(uint256[] calldata _permissionIds) private pure returns (uint256 packed) {
         // Keep a reference to the number of IDs being iterated on.
         uint256 _numberOfIds = _permissionIds.length;
 

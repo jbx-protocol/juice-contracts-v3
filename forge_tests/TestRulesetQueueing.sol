@@ -69,10 +69,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -222,12 +220,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         _deadline = new JBDeadline(_deadlineDuration);
 
         // Package the ruleset data.
-        _data = JBRulesetData({
-            duration: _RULESET_DURATION * 1 days,
-            weight: 10_000 ether,
-            decayRate: 0,
-            hook: _deadline
-        });
+        _data =
+            JBRulesetData({duration: _RULESET_DURATION * 1 days, weight: 10_000 ether, decayRate: 0, hook: _deadline});
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
         _rulesetConfig[0].data = _data;
@@ -244,7 +238,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         JBRuleset memory upcomingRuleset = jbRulesets().upcomingRulesetOf(projectId);
 
         for (uint256 i = 0; i < _RULESET_DURATION + 1; i++) {
-            // If the deadline is less than the ruleset's duration, make sure the current ruleset's weight is linearly decremented.
+            // If the deadline is less than the ruleset's duration, make sure the current ruleset's weight is linearly
+            // decremented.
             if (_deadlineDuration + i * 1 days < currentRuleset.duration) {
                 assertEq(currentRuleset.weight, initialRuleset.weight - i);
             }
@@ -277,8 +272,7 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
             // If the full deadline duration included in the ruleset.
             if (
                 _deadlineDuration == 0
-                    || currentRuleset.duration % (_deadlineDuration + i * 1 days)
-                        < currentRuleset.duration
+                    || currentRuleset.duration % (_deadlineDuration + i * 1 days) < currentRuleset.duration
             ) {
                 // Make sure the current ruleset's weight is still linearly decremented.
                 assertEq(currentRuleset.weight, initialRuleset.weight - i);
@@ -345,12 +339,7 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         uint256 _shortDuration = 5 minutes;
 
         // Package a ruleset reconfiguration.
-        _data = JBRulesetData({
-            duration: _shortDuration,
-            weight: 10_000 * 10 ** 18,
-            decayRate: 0,
-            hook: _deadline
-        });
+        _data = JBRulesetData({duration: _shortDuration, weight: 10_000 * 10 ** 18, decayRate: 0, hook: _deadline});
         _dataQueue = JBRulesetData({
             duration: _RULESET_DURATION * 1 days,
             weight: 69 * 10 ** 18,
@@ -408,10 +397,7 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
 
         // Make sure the queued cycle is in effect.
         _newRuleset = jbRulesets().currentOf(projectId);
-        assertEq(
-            _newRuleset.cycleNumber,
-            _ruleset.cycleNumber + (_DEADLINE_DURATION / _shortDuration) + 1
-        );
+        assertEq(_newRuleset.cycleNumber, _ruleset.cycleNumber + (_DEADLINE_DURATION / _shortDuration) + 1);
         assertEq(_newRuleset.weight, _dataQueue.weight);
     }
 
@@ -482,12 +468,9 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         // Package up a config.
         JBRulesetConfig[] memory _rulesetConfig = new JBRulesetConfig[](1);
         _rulesetConfig[0].mustStartAtOrAfter = 0;
-        _rulesetConfig[0].data = JBRulesetData({
-            duration: _RULESET_DURATION * 1 days,
-            weight: _weightInitial,
-            decayRate: 0,
-            hook: _deadline
-        }); // 3 day deadline duration.
+        _rulesetConfig[0].data =
+            JBRulesetData({duration: _RULESET_DURATION * 1 days, weight: _weightInitial, decayRate: 0, hook: _deadline}); // 3
+            // day deadline duration.
         _rulesetConfig[0].metadata = _metadata;
         _rulesetConfig[0].splitGroups = _splitGroup;
         _rulesetConfig[0].fundAccessLimitGroups = _fundAccessLimitGroup;
@@ -540,7 +523,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         _secondQueued[0].fundAccessLimitGroups = _fundAccessLimitGroup;
 
         // Queue the ruleset.
-        // Will follow the cycled over (ruleset #1) ruleset, after overriding the above config, because the first ruleset queued is in `ApprovalExpected` status (the 3 day deadline has not passed).
+        // Will follow the cycled over (ruleset #1) ruleset, after overriding the above config, because the first
+        // ruleset queued is in `ApprovalExpected` status (the 3 day deadline has not passed).
         // Ruleset #1 rolls over because our `mustStartAtOrAfter` occurs later than when ruleset #1 ends.
         vm.prank(multisig());
         _controller.queueRulesetsOf(projectId, _secondQueued, "");
@@ -572,7 +556,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         uint256 _weightFirstQueued = 1234 * 10 ** 18;
         uint256 _weightSecondQueued = 6969 * 10 ** 18;
 
-        // Keep a reference to the expected ruleset ID (timestamp) after queuing, starting now, incremented later in-line for readability.
+        // Keep a reference to the expected ruleset ID (timestamp) after queuing, starting now, incremented later
+        // in-line for readability.
         uint256 _expectedRulesetId = block.timestamp;
 
         // Package up a config.
@@ -589,7 +574,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         // Keep a reference to the current ruleset.
         JBRuleset memory _ruleset = jbRulesets().currentOf(projectId);
 
-        // Initial ruleset data: will have a `block.timestamp` (`rulesetId`) that is 2 less than the second queued ruleset (`rulesetId` timestamps are incremented when queued in same block).
+        // Initial ruleset data: will have a `block.timestamp` (`rulesetId`) that is 2 less than the second queued
+        // ruleset (`rulesetId` timestamps are incremented when queued in same block).
         assertEq(_ruleset.cycleNumber, 1);
         assertEq(_ruleset.weight, _data.weight);
 
@@ -649,7 +635,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
 
         JBDeadline deadline = new JBDeadline(_duration);
 
-        JBApprovalStatus _currentStatus = deadline.approvalStatusOf(1, _rulesetId, _start); // 1 is the `projectId`, unused
+        JBApprovalStatus _currentStatus = deadline.approvalStatusOf(1, _rulesetId, _start); // 1 is the `projectId`,
+            // unused
 
         // Ruleset ID (timestamp) is after deadline -> approval hook failed.
         if (_rulesetId > _start) {
@@ -659,7 +646,8 @@ contract TestRulesetQueuing_Local is TestBaseWorkflow {
         else if (_start - _duration < _rulesetId) {
             assertEq(uint256(_currentStatus), uint256(JBApprovalStatus.Failed));
         }
-        // Deadline starts more than a `_duration` away (will be approved when enough time has passed) -> approval expected.
+        // Deadline starts more than a `_duration` away (will be approved when enough time has passed) -> approval
+        // expected.
         else if (block.timestamp + _duration < _start) {
             assertEq(uint256(_currentStatus), uint256(JBApprovalStatus.ApprovalExpected));
         }

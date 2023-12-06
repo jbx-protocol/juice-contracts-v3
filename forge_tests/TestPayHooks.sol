@@ -28,12 +28,8 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         _payer = address(1_234_567);
         _terminal = jbMultiTerminal();
 
-        JBRulesetData memory _data = JBRulesetData({
-            duration: 0,
-            weight: _WEIGHT,
-            decayRate: 0,
-            hook: IJBRulesetApprovalHook(address(0))
-        });
+        JBRulesetData memory _data =
+            JBRulesetData({duration: 0, weight: _WEIGHT, decayRate: 0, hook: IJBRulesetApprovalHook(address(0))});
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
@@ -64,10 +60,8 @@ contract TestPayHooks_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -84,8 +78,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         // Bound the number of allocations to a reasonable amount.
         _numberOfPayloads = bound(_numberOfPayloads, 1, 20);
         // Make sure the amount of tokens generated fits in a register, and that each payload can get some.
-        _nativePayAmount =
-            bound(_nativePayAmount, _numberOfPayloads, type(uint256).max / _DATA_HOOK_WEIGHT);
+        _nativePayAmount = bound(_nativePayAmount, _numberOfPayloads, type(uint256).max / _DATA_HOOK_WEIGHT);
 
         // epa * weight / epad < max*epad/weight
 
@@ -119,8 +112,7 @@ contract TestPayHooks_Local is TestBaseWorkflow {
             bytes memory _hookMetadata = bytes("Some data hook metadata");
 
             // Package up the hook payload struct.
-            _payloads[i] =
-                JBPayHookPayload(IJBPayHook(_hookAddress), _payHookAmounts[i], _hookMetadata);
+            _payloads[i] = JBPayHookPayload(IJBPayHook(_hookAddress), _payHookAmounts[i], _hookMetadata);
 
             // Keep a reference to the data that'll be received by the hook.
             JBDidPayData memory _didPayData = JBDidPayData({
@@ -140,26 +132,18 @@ contract TestPayHooks_Local is TestBaseWorkflow {
                     _terminal.accountingContextForTokenOf(_projectId, JBConstants.NATIVE_TOKEN).currency
                     ),
                 weight: _WEIGHT,
-                projectTokenCount: mulDiv(
-                    _nativePayAmount, _DATA_HOOK_WEIGHT, 10 ** _NATIVE_TOKEN_DECIMALS
-                    ),
+                projectTokenCount: mulDiv(_nativePayAmount, _DATA_HOOK_WEIGHT, 10 ** _NATIVE_TOKEN_DECIMALS),
                 beneficiary: _beneficiary,
                 hookMetadata: _hookMetadata,
                 payerMetadata: _PAYER_METADATA
             });
 
             // Mock the hook.
-            vm.mockCall(
-                _hookAddress,
-                abi.encodeWithSelector(IJBPayHook.didPay.selector),
-                abi.encode(_didPayData)
-            );
+            vm.mockCall(_hookAddress, abi.encodeWithSelector(IJBPayHook.didPay.selector), abi.encode(_didPayData));
 
             // Assert that the hook gets called with the expected value.
             vm.expectCall(
-                _hookAddress,
-                _payHookAmounts[i],
-                abi.encodeWithSelector(IJBPayHook.didPay.selector, _didPayData)
+                _hookAddress, _payHookAmounts[i], abi.encodeWithSelector(IJBPayHook.didPay.selector, _didPayData)
             );
 
             // Expect an event to be emitted for every hook.
@@ -188,7 +172,5 @@ contract TestPayHooks_Local is TestBaseWorkflow {
         });
     }
 
-    event HookDidPay(
-        IJBPayHook indexed hook, JBDidPayData data, uint256 hookdAmount, address caller
-    );
+    event HookDidPay(IJBPayHook indexed hook, JBDidPayData data, uint256 hookdAmount, address caller);
 }

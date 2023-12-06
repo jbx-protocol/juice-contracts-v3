@@ -58,10 +58,8 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -79,15 +77,10 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
 
         if (_issueToken) {
             // Issue an ERC-20 token for project.
-            _controller.deployERC20For({
-                projectId: _projectId,
-                name: "TestName",
-                symbol: "TestSymbol"
-            });
+            _controller.deployERC20For({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
         } else {
             // Create a new `IJBToken` and change it's owner to the `JBTokens` contract.
-            IJBToken _newToken =
-                new JBERC20({_name: "NewTestName", _symbol: "NewTestSymbol", _owner: _projectOwner});
+            IJBToken _newToken = new JBERC20({_name: "NewTestName", _symbol: "NewTestSymbol", _owner: _projectOwner});
 
             Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
@@ -110,8 +103,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             useReservedRate: true
         });
 
-        uint256 _expectedTokenBalance =
-            _mintAmount * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        uint256 _expectedTokenBalance = _mintAmount * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
 
         // Make sure the beneficiary has the correct amount of tokens.
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _expectedTokenBalance);

@@ -46,53 +46,31 @@ contract Deploy is Script {
         _splits = new JBSplits(_directory);
         _fundAccessLimits = new JBFundAccessLimits(_directory);
         _controller = new JBController(
-            _permissions,
-            _projects,
-            _directory,
-            _rulesets,
-            _tokens,
-            _splits,
-            _fundAccessLimits,
-            _trustedForwarder
+            _permissions, _projects, _directory, _rulesets, _tokens, _splits, _fundAccessLimits, _trustedForwarder
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
         _terminalStore = new JBTerminalStore(_directory, _rulesets, _prices);
         _multiTerminal = new JBMultiTerminal(
-            _permissions,
-            _projects,
-            _directory,
-            _splits,
-            _terminalStore,
-            _PERMIT2,
-            _trustedForwarder,
-            _manager
+            _permissions, _projects, _directory, _splits, _terminalStore, _PERMIT2, _trustedForwarder, _manager
         );
     }
 
     //https://ethereum.stackexchange.com/questions/24248/how-to-calculate-an-ethereum-contracts-address-during-its-creation-using-the-so
-    function addressFrom(address _origin, uint256 _nonce)
-        internal
-        pure
-        returns (address _address)
-    {
+    function addressFrom(address _origin, uint256 _nonce) internal pure returns (address _address) {
         bytes memory data;
         if (_nonce == 0x00) {
             data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), _origin, bytes1(0x80));
         } else if (_nonce <= 0x7f) {
             data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), _origin, uint8(_nonce));
         } else if (_nonce <= 0xff) {
-            data =
-                abi.encodePacked(bytes1(0xd7), bytes1(0x94), _origin, bytes1(0x81), uint8(_nonce));
+            data = abi.encodePacked(bytes1(0xd7), bytes1(0x94), _origin, bytes1(0x81), uint8(_nonce));
         } else if (_nonce <= 0xffff) {
-            data =
-                abi.encodePacked(bytes1(0xd8), bytes1(0x94), _origin, bytes1(0x82), uint16(_nonce));
+            data = abi.encodePacked(bytes1(0xd8), bytes1(0x94), _origin, bytes1(0x82), uint16(_nonce));
         } else if (_nonce <= 0xffffff) {
-            data =
-                abi.encodePacked(bytes1(0xd9), bytes1(0x94), _origin, bytes1(0x83), uint24(_nonce));
+            data = abi.encodePacked(bytes1(0xd9), bytes1(0x94), _origin, bytes1(0x83), uint24(_nonce));
         } else {
-            data =
-                abi.encodePacked(bytes1(0xda), bytes1(0x94), _origin, bytes1(0x84), uint32(_nonce));
+            data = abi.encodePacked(bytes1(0xda), bytes1(0x94), _origin, bytes1(0x84), uint32(_nonce));
         }
         bytes32 hash = keccak256(data);
         assembly {

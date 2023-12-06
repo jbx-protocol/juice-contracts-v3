@@ -17,10 +17,7 @@ interface IJBTerminalStore {
 
     function PRICES() external view returns (IJBPrices);
 
-    function balanceOf(address terminal, uint256 projectId, address token)
-        external
-        view
-        returns (uint256);
+    function balanceOf(address terminal, uint256 projectId, address token) external view returns (uint256);
 
     function usedPayoutLimitOf(
         address terminal,
@@ -28,7 +25,10 @@ interface IJBTerminalStore {
         address token,
         uint256 rulesetCycleNumber,
         uint256 currency
-    ) external view returns (uint256);
+    )
+        external
+        view
+        returns (uint256);
 
     function usedSurplusAllowanceOf(
         address terminal,
@@ -36,7 +36,10 @@ interface IJBTerminalStore {
         address token,
         uint256 rulesetId,
         uint256 currency
-    ) external view returns (uint256);
+    )
+        external
+        view
+        returns (uint256);
 
     function currentSurplusOf(
         address terminal,
@@ -44,9 +47,16 @@ interface IJBTerminalStore {
         JBAccountingContext[] calldata accountingContexts,
         uint256 decimals,
         uint256 currency
-    ) external view returns (uint256);
+    )
+        external
+        view
+        returns (uint256);
 
-    function currentTotalSurplusOf(uint256 projectId, uint256 decimals, uint256 currency)
+    function currentTotalSurplusOf(
+        uint256 projectId,
+        uint256 decimals,
+        uint256 currency
+    )
         external
         view
         returns (uint256);
@@ -59,14 +69,20 @@ interface IJBTerminalStore {
         uint256 _currency,
         uint256 tokenCount,
         bool useTotalSurplus
-    ) external view returns (uint256);
+    )
+        external
+        view
+        returns (uint256);
 
     function currentReclaimableSurplusOf(
         uint256 projectId,
         uint256 tokenCount,
         uint256 totalSupply,
         uint256 surplus
-    ) external view returns (uint256);
+    )
+        external
+        view
+        returns (uint256);
 
     function recordPaymentFrom(
         address payer,
@@ -76,11 +92,7 @@ interface IJBTerminalStore {
         bytes calldata metadata
     )
         external
-        returns (
-            JBRuleset memory ruleset,
-            uint256 tokenCount,
-            JBPayHookPayload[] memory hookPayloads
-        );
+        returns (JBRuleset memory ruleset, uint256 tokenCount, JBPayHookPayload[] memory hookPayloads);
 
     function recordRedemptionFor(
         address holder,
@@ -91,29 +103,27 @@ interface IJBTerminalStore {
         bytes calldata metadata
     )
         external
-        returns (
-            JBRuleset memory ruleset,
-            uint256 reclaimAmount,
-            JBRedeemHookPayload[] memory hookPayloads
-        );
+        returns (JBRuleset memory ruleset, uint256 reclaimAmount, JBRedeemHookPayload[] memory hookPayloads);
 
     function recordPayoutFor(
         uint256 projectId,
         JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
-    ) external returns (JBRuleset memory ruleset, uint256 amountPaidOut);
+    )
+        external
+        returns (JBRuleset memory ruleset, uint256 amountPaidOut);
 
     function recordUsedAllowanceOf(
         uint256 projectId,
         JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
-    ) external returns (JBRuleset memory ruleset, uint256 withdrawnAmount);
+    )
+        external
+        returns (JBRuleset memory ruleset, uint256 withdrawnAmount);
 
     function recordAddedBalanceFor(uint256 projectId, address token, uint256 amount) external;
 
-    function recordTerminalMigration(uint256 projectId, address token)
-        external
-        returns (uint256 balance);
+    function recordTerminalMigration(uint256 projectId, address token) external returns (uint256 balance);
 }

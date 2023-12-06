@@ -12,9 +12,11 @@ import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBERC20} from "./JBERC20.sol";
 
 /// @notice Manages minting, burning, and balances of projects' tokens and token credits.
-/// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and allows credit -> ERC-20 claiming.
+/// @dev Token balances can either be ERC-20s or token credits. This contract manages these two representations and
+/// allows credit -> ERC-20 claiming.
 /// @dev The total supply of a project's tokens and the balance of each account are calculated in this contract.
-/// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring their own IJBToken if they prefer.
+/// @dev An ERC-20 contract must be set by a project's owner for ERC-20 claiming to become available. Projects can bring
+/// their own IJBToken if they prefer.
 contract JBTokens is JBControlled, IJBTokens {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
@@ -61,12 +63,7 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param _holder The holder to get a balance for.
     /// @param _projectId The project to get the `_holder`s balance for.
     /// @return balance The combined token and token credit balance of the `_holder
-    function totalBalanceOf(address _holder, uint256 _projectId)
-        external
-        view
-        override
-        returns (uint256 balance)
-    {
+    function totalBalanceOf(address _holder, uint256 _projectId) external view override returns (uint256 balance) {
         // Get a reference to the holder's credits for the project.
         balance = creditBalanceOf[_holder][_projectId];
 
@@ -117,7 +114,11 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param _name The ERC-20's name.
     /// @param _symbol The ERC-20's symbol.
     /// @return token The address of the token that was deployed.
-    function deployERC20For(uint256 _projectId, string calldata _name, string calldata _symbol)
+    function deployERC20For(
+        uint256 _projectId,
+        string calldata _name,
+        string calldata _symbol
+    )
         external
         override
         onlyController(_projectId)
@@ -148,11 +149,7 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @dev Only a project's controller can set its token.
     /// @param _projectId The ID of the project to set the token of.
     /// @param _token The new token's address.
-    function setTokenFor(uint256 _projectId, IJBToken _token)
-        external
-        override
-        onlyController(_projectId)
-    {
+    function setTokenFor(uint256 _projectId, IJBToken _token) external override onlyController(_projectId) {
         // Can't set to the zero address.
         if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
 
@@ -179,7 +176,11 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param _holder The address receiving the new tokens.
     /// @param _projectId The ID of the project to which the tokens belong.
     /// @param _amount The amount of tokens to mint.
-    function mintFor(address _holder, uint256 _projectId, uint256 _amount)
+    function mintFor(
+        address _holder,
+        uint256 _projectId,
+        uint256 _amount
+    )
         external
         override
         onlyController(_projectId)
@@ -211,7 +212,11 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param _holder The address that owns the tokens which are being burned.
     /// @param _projectId The ID of the project to the burned tokens belong to.
     /// @param _amount The amount of tokens to burn.
-    function burnFrom(address _holder, uint256 _projectId, uint256 _amount)
+    function burnFrom(
+        address _holder,
+        uint256 _projectId,
+        uint256 _amount
+    )
         external
         override
         onlyController(_projectId)
@@ -247,8 +252,7 @@ contract JBTokens is JBControlled, IJBTokens {
 
         // Subtract the burned credits from the credit balance and credit supply.
         if (_creditsToBurn > 0) {
-            creditBalanceOf[_holder][_projectId] =
-                creditBalanceOf[_holder][_projectId] - _creditsToBurn;
+            creditBalanceOf[_holder][_projectId] = creditBalanceOf[_holder][_projectId] - _creditsToBurn;
             totalCreditSupplyOf[_projectId] = totalCreditSupplyOf[_projectId] - _creditsToBurn;
         }
 
@@ -269,7 +273,11 @@ contract JBTokens is JBControlled, IJBTokens {
         uint256 _projectId,
         uint256 _amount,
         address _beneficiary
-    ) external override onlyController(_projectId) {
+    )
+        external
+        override
+        onlyController(_projectId)
+    {
         // Get a reference to the project's current token.
         IJBToken _token = tokenOf[_projectId];
 
@@ -307,7 +315,11 @@ contract JBTokens is JBControlled, IJBTokens {
         uint256 _projectId,
         address _recipient,
         uint256 _amount
-    ) external override onlyController(_projectId) {
+    )
+        external
+        override
+        onlyController(_projectId)
+    {
         // Can't transfer to the zero address.
         if (_recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();
 
