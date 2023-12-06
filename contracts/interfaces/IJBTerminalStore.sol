@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBFundingCycle} from "./../structs/JBFundingCycle.sol";
-import {JBPayDelegateAllocation3_1_1} from "./../structs/JBPayDelegateAllocation3_1_1.sol";
-import {JBRedemptionDelegateAllocation3_1_1} from
-    "./../structs/JBRedemptionDelegateAllocation3_1_1.sol";
+import {JBRuleset} from "./../structs/JBRuleset.sol";
+import {JBPayHookPayload} from "./../structs/JBPayHookPayload.sol";
+import {JBRedeemHookPayload} from "./../structs/JBRedeemHookPayload.sol";
 import {JBAccountingContext} from "./../structs/JBAccountingContext.sol";
 import {JBTokenAmount} from "./../structs/JBTokenAmount.sol";
 import {IJBDirectory} from "./IJBDirectory.sol";
-import {IJBFundingCycleStore} from "./IJBFundingCycleStore.sol";
+import {IJBRulesets} from "./IJBRulesets.sol";
 import {IJBPrices} from "./IJBPrices.sol";
 
 interface IJBTerminalStore {
-    function FUNDING_CYCLE_STORE() external view returns (IJBFundingCycleStore);
+    function RULESETS() external view returns (IJBRulesets);
 
     function DIRECTORY() external view returns (IJBDirectory);
 
@@ -23,23 +22,23 @@ interface IJBTerminalStore {
         view
         returns (uint256);
 
-    function usedDistributionLimitOf(
+    function usedPayoutLimitOf(
         address terminal,
         uint256 projectId,
         address token,
-        uint256 fundingCycleNumber,
+        uint256 rulesetCycleNumber,
         uint256 currency
     ) external view returns (uint256);
 
-    function usedOverflowAllowanceOf(
+    function usedSurplusAllowanceOf(
         address terminal,
         uint256 projectId,
         address token,
-        uint256 fundingCycleConfiguration,
+        uint256 rulesetId,
         uint256 currency
     ) external view returns (uint256);
 
-    function currentOverflowOf(
+    function currentSurplusOf(
         address terminal,
         uint256 projectId,
         JBAccountingContext[] calldata accountingContexts,
@@ -47,26 +46,26 @@ interface IJBTerminalStore {
         uint256 currency
     ) external view returns (uint256);
 
-    function currentTotalOverflowOf(uint256 projectId, uint256 decimals, uint256 currency)
+    function currentTotalSurplusOf(uint256 projectId, uint256 decimals, uint256 currency)
         external
         view
         returns (uint256);
 
-    function currentReclaimableOverflowOf(
+    function currentReclaimableSurplusOf(
         address terminal,
         uint256 projectId,
         JBAccountingContext[] calldata accountingContexts,
         uint256 _decimals,
         uint256 _currency,
         uint256 tokenCount,
-        bool useTotalOverflow
+        bool useTotalSurplus
     ) external view returns (uint256);
 
-    function currentReclaimableOverflowOf(
+    function currentReclaimableSurplusOf(
         uint256 projectId,
         uint256 tokenCount,
         uint256 totalSupply,
-        uint256 overflow
+        uint256 surplus
     ) external view returns (uint256);
 
     function recordPaymentFrom(
@@ -78,9 +77,9 @@ interface IJBTerminalStore {
     )
         external
         returns (
-            JBFundingCycle memory fundingCycle,
+            JBRuleset memory ruleset,
             uint256 tokenCount,
-            JBPayDelegateAllocation3_1_1[] memory delegateAllocations
+            JBPayHookPayload[] memory hookPayloads
         );
 
     function recordRedemptionFor(
@@ -93,26 +92,28 @@ interface IJBTerminalStore {
     )
         external
         returns (
-            JBFundingCycle memory fundingCycle,
+            JBRuleset memory ruleset,
             uint256 reclaimAmount,
-            JBRedemptionDelegateAllocation3_1_1[] memory delegateAllocations
+            JBRedeemHookPayload[] memory hookPayloads
         );
 
-    function recordDistributionFor(
+    function recordPayoutFor(
         uint256 projectId,
         JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
-    ) external returns (JBFundingCycle memory fundingCycle, uint256 distributedAmount);
+    ) external returns (JBRuleset memory ruleset, uint256 amountPaidOut);
 
     function recordUsedAllowanceOf(
         uint256 projectId,
         JBAccountingContext calldata accountingContext,
         uint256 amount,
         uint256 currency
-    ) external returns (JBFundingCycle memory fundingCycle, uint256 withdrawnAmount);
+    ) external returns (JBRuleset memory ruleset, uint256 withdrawnAmount);
 
     function recordAddedBalanceFor(uint256 projectId, address token, uint256 amount) external;
 
-    function recordMigration(uint256 projectId, address token) external returns (uint256 balance);
+    function recordTerminalMigration(uint256 projectId, address token)
+        external
+        returns (uint256 balance);
 }

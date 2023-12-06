@@ -5,19 +5,19 @@ import {IJBProjects} from "../IJBProjects.sol";
 import {IJBDirectory} from "../IJBDirectory.sol";
 import {IJBTerminalStore} from "../IJBTerminalStore.sol";
 
-import {IJBRedemptionTerminal} from "./IJBRedemptionTerminal.sol";
+import {IJBRedeemTerminal} from "./IJBRedeemTerminal.sol";
 import {IJBPayoutTerminal} from "./IJBPayoutTerminal.sol";
-import {IJBPaymentTerminal} from "./IJBPaymentTerminal.sol";
+import {IJBTerminal} from "./IJBTerminal.sol";
 import {IJBFeeTerminal} from "./IJBFeeTerminal.sol";
-import {IJBPermitPaymentTerminal} from "./IJBPermitPaymentTerminal.sol";
-import {IJBSplitsStore} from "../IJBSplitsStore.sol";
+import {IJBPermitTerminal} from "./IJBPermitTerminal.sol";
+import {IJBSplits} from "../IJBSplits.sol";
 
 interface IJBMultiTerminal is
-    IJBPaymentTerminal,
+    IJBTerminal,
     IJBFeeTerminal,
-    IJBRedemptionTerminal,
+    IJBRedeemTerminal,
     IJBPayoutTerminal,
-    IJBPermitPaymentTerminal
+    IJBPermitTerminal
 {
     function STORE() external view returns (IJBTerminalStore);
 
@@ -25,5 +25,5 @@ interface IJBMultiTerminal is
 
     function DIRECTORY() external view returns (IJBDirectory);
 
-    function SPLITS() external view returns (IJBSplitsStore);
+    function SPLITS() external view returns (IJBSplits);
 }

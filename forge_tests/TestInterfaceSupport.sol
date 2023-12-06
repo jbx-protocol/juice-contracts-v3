@@ -7,56 +7,56 @@ import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 contract TestEIP165_Local is TestBaseWorkflow {
     bytes4 private constant _notSupportedInterface = 0xffffffff;
 
-    function testJBController3_1() public {
-        JBController3_1 _controller = jbController();
+    function testJBController() public {
+        JBController _controller = jbController();
 
-        // Should support these interfaces
+        // Should support these interfaces.
         assertTrue(_controller.supportsInterface(type(IERC165).interfaceId));
         assertTrue(_controller.supportsInterface(type(IJBMigratable).interfaceId));
-        assertTrue(_controller.supportsInterface(type(IJBOperatable).interfaceId));
-        assertTrue(_controller.supportsInterface(type(IJBController3_1).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBPermissioned).interfaceId));
+        assertTrue(_controller.supportsInterface(type(IJBController).interfaceId));
 
-        // Make sure it doesn't always return true
+        // Make sure it doesn't always return true.
         assertTrue(!_controller.supportsInterface(_notSupportedInterface));
     }
 
     function testJBMultiTerminal() public {
-        JBMultiTerminal _terminal = jbPayoutRedemptionTerminal();
+        JBMultiTerminal _terminal = jbMultiTerminal();
 
-        // Should support these interfaces
+        // Should support these interfaces.
         assertTrue(_terminal.supportsInterface(type(IJBMultiTerminal).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBPaymentTerminal).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBRedemptionTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBRedeemTerminal).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBPayoutTerminal).interfaceId));
-        assertTrue(_terminal.supportsInterface(type(IJBPermitPaymentTerminal).interfaceId));
+        assertTrue(_terminal.supportsInterface(type(IJBPermitTerminal).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IJBFeeTerminal).interfaceId));
         assertTrue(_terminal.supportsInterface(type(IERC165).interfaceId));
 
-        // Make sure it doesn't always return true
+        // Make sure it doesn't always return true.
         assertTrue(!_terminal.supportsInterface(_notSupportedInterface));
     }
 
     function testJBProjects() public {
         JBProjects _projects = jbProjects();
 
-        // Should support these interfaces
+        // Should support these interfaces.
         assertTrue(_projects.supportsInterface(type(IERC165).interfaceId));
         assertTrue(_projects.supportsInterface(type(IERC721).interfaceId));
         assertTrue(_projects.supportsInterface(type(IERC721Metadata).interfaceId));
         assertTrue(_projects.supportsInterface(type(IJBProjects).interfaceId));
 
-        // Make sure it doesn't always return true
+        // Make sure it doesn't always return true.
         assertTrue(!_projects.supportsInterface(_notSupportedInterface));
     }
 
-    function testJBReconfigurationBufferBallot() public {
-        JBReconfigurationBufferBallot _ballot = new JBReconfigurationBufferBallot(3000);
+    function testJBDeadline() public {
+        JBDeadline _approvalHook = new JBDeadline(3000);
 
-        // Should support these interfaces
-        assertTrue(_ballot.supportsInterface(type(IERC165).interfaceId));
-        assertTrue(_ballot.supportsInterface(type(IJBFundingCycleBallot).interfaceId));
+        // Should support these interfaces.
+        assertTrue(_approvalHook.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(_approvalHook.supportsInterface(type(IJBRulesetApprovalHook).interfaceId));
 
-        // Make sure it doesn't always return true
-        assertTrue(!_ballot.supportsInterface(_notSupportedInterface));
+        // Make sure it doesn't always return true.
+        assertTrue(!_approvalHook.supportsInterface(_notSupportedInterface));
     }
 }

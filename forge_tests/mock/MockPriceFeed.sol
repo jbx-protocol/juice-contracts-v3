@@ -12,7 +12,7 @@ contract MockPriceFeed is IJBPriceFeed {
         fakeDecimals = _fakeDecimals;
     }
 
-    function currentPrice(uint256 _decimals) external view override returns (uint256 _quote) {
+    function currentUnitPrice(uint256 _decimals) external view override returns (uint256 _quote) {
         if (_decimals == fakeDecimals) return fakePrice;
         else if (_decimals > fakeDecimals) return fakePrice * 10 ** (_decimals - fakeDecimals);
         else return fakePrice / 10 ** (fakeDecimals - _decimals);
