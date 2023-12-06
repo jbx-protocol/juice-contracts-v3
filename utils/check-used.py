@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-directories = ["contracts", "forge_tests", "script"]
+directories = ["src", "test", "script"]
 
 contract_names = set()
 for directory in directories:
@@ -20,4 +20,6 @@ for directory in directories:
                         found.add(name)
 
 print(f"Did not find explicit imports for: {contract_names.difference(found)}")
-print("Note: those files may be used in wildcard imports, or may be surface-level contracts. Check carefully.")
+print(
+    "Note: those files may be used in wildcard imports, or may be surface-level contracts. Check carefully."
+)

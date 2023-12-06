@@ -31,7 +31,22 @@ Some useful commands:
 | `forge build --sizes` | Get contract sizes.                                 |
 | `forge coverage`      | Generate a test coverage report.                    |
 | `foundryup`           | Update foundry. Run this periodically.              |
+| `forge clean`         | Remove the build artifacts and cache directories.   |
 
 To learn more, visit the [Foundry Book](https://book.getfoundry.sh/) docs.
 
 We recommend using [Juan Blanco's solidity extension](https://marketplace.visualstudio.com/items?itemName=JuanBlanco.solidity) for VSCode.
+
+## Utilities
+
+For convenience, several utility commands are available in `util.sh`. To see a list, run:
+
+```bash
+`bash util.sh --help`.
+```
+
+Or make the script executable and run:
+
+```bash
+./util.sh --help
+```

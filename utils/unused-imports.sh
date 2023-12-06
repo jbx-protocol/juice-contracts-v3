@@ -4,7 +4,7 @@ GREEN='\033[0;32m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-for file in $(find contracts/ forge_tests/ script/ -iname "*.sol"); do
+for file in $(find src/ test/ script/ -iname "*.sol"); do
     output=$(awk '# Build map of imports.
       /^import/ {
 

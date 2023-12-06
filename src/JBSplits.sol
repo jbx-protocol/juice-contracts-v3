@@ -10,7 +10,7 @@ import {JBConstants} from "./libraries/JBConstants.sol";
 import {JBPermissionIds} from "./libraries/JBPermissionIds.sol";
 import {JBSplitGroup} from "./structs/JBSplitGroup.sol";
 import {JBSplit} from "./structs/JBSplit.sol";
-import {JBControlled} from "contracts/abstract/JBControlled.sol";
+import {JBControlled} from "./abstract/JBControlled.sol";
 
 /// @notice Stores and manages splits for each project.
 /// @dev The domain ID is the ruleset ID that a split *should* be considered active within. This is not always the case.
