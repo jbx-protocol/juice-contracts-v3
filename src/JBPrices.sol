@@ -22,7 +22,7 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
     error PRICE_FEED_NOT_FOUND();
 
     //*********************************************************************//
-    // --------------------- internal stored constants ------------------- //
+    // ------------------------- public constants ------------------------ //
     //*********************************************************************//
 
     /// @notice The ID to store default values in.

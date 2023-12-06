@@ -134,7 +134,7 @@ contract JBSplits is JBControlled, IJBSplits {
     /// @param domainId The ID of the domain the splits should be considered active within.
     /// @param groupId The ID of the group to set the splits within.
     /// @param splits An array of splits to set.
-    function _setSplitsOf(uint256 projectId, uint256 domainId, uint256 groupId, JBSplit[] memory splits) internal {
+    function _setSplitsOf(uint256 projectId, uint256 domainId, uint256 groupId, JBSplit[] memory splits) private {
         // Get a reference to the current split structs within the project, domain, and group.
         JBSplit[] memory currentSplits = _getStructsFor(projectId, domainId, groupId);
 

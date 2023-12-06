@@ -40,6 +40,18 @@ contract JBRulesets is JBControlled, IJBRulesets {
     uint256 private constant _DECAY_MULTIPLE_CACHE_LOOKUP_THRESHOLD = 1000;
 
     //*********************************************************************//
+    // --------------------- public stored properties -------------------- //
+    //*********************************************************************//
+
+    /// @notice The ID of the ruleset with the latest start time for a specific project, whether the ruleset has been
+    /// approved or not.
+    /// @dev If a project has multiple rulesets queued, the `latestRulesetIdOf` will be the last one. This is the
+    /// "changeable" cycle.
+    /// @custom:param projectId The ID of the project to get the latest ruleset ID of.
+    /// @return latestRulesetIdOf The `rulesetId` of the project's latest ruleset.
+    mapping(uint256 projectId => uint256) public override latestRulesetIdOf;
+
+    //*********************************************************************//
     // --------------------- private stored properties ------------------- //
     //*********************************************************************//
 
@@ -60,18 +72,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
 
     /// @notice Cached weight values to derive rulesets from.
     /// @custom:param projectId The ID of the project to which the cache applies.
-    mapping(uint256 projectId => JBRulesetWeightCache) internal _weightCacheOf;
-    //*********************************************************************//
-    // --------------------- public stored properties -------------------- //
-    //*********************************************************************//
-
-    /// @notice The ID of the ruleset with the latest start time for a specific project, whether the ruleset has been
-    /// approved or not.
-    /// @dev If a project has multiple rulesets queued, the `latestRulesetIdOf` will be the last one. This is the
-    /// "changeable" cycle.
-    /// @custom:param projectId The ID of the project to get the latest ruleset ID of.
-    /// @return latestRulesetIdOf The `rulesetId` of the project's latest ruleset.
-    mapping(uint256 projectId => uint256) public override latestRulesetIdOf;
+    mapping(uint256 projectId => JBRulesetWeightCache) private _weightCacheOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

@@ -23,7 +23,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     error INVALID_SURPLUS_ALLOWANCE_CURRENCY_ORDERING();
 
     //*********************************************************************//
-    // --------------------- internal stored properties ------------------ //
+    // --------------------- private stored properties ------------------- //
     //*********************************************************************//
 
     /// @notice A list of packed payout limits for a given project, ruleset, terminal, and token.
@@ -38,7 +38,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     mapping(
         uint256 projectId
             => mapping(uint256 rulesetId => mapping(address terminal => mapping(address token => uint256[])))
-    ) internal _packedPayoutLimitsDataOf;
+    ) private _packedPayoutLimitsDataOf;
 
     /// @notice A list of packed surplus allowances for a given project, ruleset, terminal, and token.
     /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can
@@ -52,7 +52,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     mapping(
         uint256 projectId
             => mapping(uint256 rulesetId => mapping(address terminal => mapping(address token => uint256[])))
-    ) internal _packedSurplusAllowancesDataOf;
+    ) private _packedSurplusAllowancesDataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

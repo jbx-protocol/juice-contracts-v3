@@ -73,6 +73,10 @@ contract JBERC20 is ERC20Votes, ERC20Permit, Ownable, IJBToken {
         return super.nonces(owner);
     }
 
+    //*********************************************************************//
+    // ---------------------- internal transactions ---------------------- //
+    //*********************************************************************//
+
     /// @notice required override.
     function _update(address from, address to, uint256 value) internal virtual override(ERC20, ERC20Votes) {
         super._update(from, to, value);

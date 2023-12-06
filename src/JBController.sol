@@ -633,7 +633,23 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     }
 
     //*********************************************************************//
-    // ------------------------ internal functions ----------------------- //
+    // ---------------------- internal transactions ---------------------- //
+    //*********************************************************************//
+
+    /// @notice Returns the sender, prefered to use over `_msgSender()`
+    /// @return sender the sender address of this call.
+    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
+        return ERC2771Context._msgSender();
+    }
+
+    /// @notice Returns the calldata, prefered to use over `msg.data`
+    /// @return calldata the `msg.data` of this call
+    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
+        return ERC2771Context._msgData();
+    }
+
+    //*********************************************************************//
+    // ---------------------- private transactions ----------------------- //
     //*********************************************************************//
 
     /// @notice Sends pending reserved tokens to the project's reserved token splits.
@@ -646,7 +662,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         uint256 projectId,
         string memory memo
     )
-        internal
+        private
         returns (uint256 tokenCount)
     {
         // Get the current ruleset to read the reserved rate from.
@@ -690,7 +706,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         uint256 groupId,
         uint256 amount
     )
-        internal
+        private
         returns (uint256 leftoverAmount)
     {
         // Set the leftover amount to the initial amount.
@@ -753,7 +769,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         uint256 projectId,
         JBRulesetConfig[] calldata rulesetConfigurations
     )
-        internal
+        private
         returns (uint256 rulesetId)
     {
         // Keep a reference to the ruleset config being iterated on.
@@ -805,7 +821,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
     /// @notice Configure terminals for use.
     /// @param projectId The ID of the project configuring the terminals for use.
     /// @param terminalConfigs The terminal configurations to enact.
-    function _configureTerminals(uint256 projectId, JBTerminalConfig[] calldata terminalConfigs) internal {
+    function _configureTerminals(uint256 projectId, JBTerminalConfig[] calldata terminalConfigs) private {
         // Keep a reference to the number of terminals being configured.
         uint256 numberOfTerminalConfigs = terminalConfigs.length;
 
@@ -830,17 +846,5 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         if (numberOfTerminalConfigs > 0) {
             DIRECTORY.setTerminalsOf(projectId, terminals);
         }
-    }
-
-    /// @notice Returns the sender, prefered to use over `_msgSender()`
-    /// @return sender the sender address of this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
-        return ERC2771Context._msgSender();
-    }
-
-    /// @notice Returns the calldata, prefered to use over `msg.data`
-    /// @return calldata the `msg.data` of this call
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
-        return ERC2771Context._msgData();
     }
 }

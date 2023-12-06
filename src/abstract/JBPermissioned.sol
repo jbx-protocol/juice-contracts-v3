@@ -5,7 +5,7 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IJBPermissioned} from "./../interfaces/IJBPermissioned.sol";
 import {IJBPermissions} from "./../interfaces/IJBPermissions.sol";
 
-/// @notice Modifiers to allow access to functions based on which permissions the message's sender has.
+/// @notice Modifiers to allow access to transactions based on which permissions the message's sender has.
 abstract contract JBPermissioned is Context, IJBPermissioned {
     //*********************************************************************//
     // --------------------------- custom errors -------------------------- //

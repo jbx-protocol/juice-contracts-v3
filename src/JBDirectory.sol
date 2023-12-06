@@ -29,19 +29,6 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     error TOKEN_NOT_ACCEPTED();
 
     //*********************************************************************//
-    // --------------------- private stored properties ------------------- //
-    //*********************************************************************//
-
-    /// @notice For each project ID, the terminals that are currently managing its funds.
-    /// @custom:param projectId The ID of the project to get terminals of.
-    mapping(uint256 projectId => IJBTerminal[]) private _terminalsOf;
-
-    /// @notice The project's primary terminal for a given token.
-    /// @custom:param projectId The ID of the project to get the primary terminal of.
-    /// @custom:param token The token to get the project's primary terminal for.
-    mapping(uint256 projectId => mapping(address token => IJBTerminal)) private _primaryTerminalOf;
-
-    //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
@@ -60,6 +47,19 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// been vetted and verified by this contract's owner.
     /// @custom:param addr The address that is either allowed or not.
     mapping(address addr => bool) public override isAllowedToSetFirstController;
+
+    //*********************************************************************//
+    // --------------------- private stored properties ------------------- //
+    //*********************************************************************//
+
+    /// @notice For each project ID, the terminals that are currently managing its funds.
+    /// @custom:param projectId The ID of the project to get terminals of.
+    mapping(uint256 projectId => IJBTerminal[]) private _terminalsOf;
+
+    /// @notice The project's primary terminal for a given token.
+    /// @custom:param projectId The ID of the project to get the primary terminal of.
+    /// @custom:param token The token to get the project's primary terminal for.
+    mapping(uint256 projectId => mapping(address token => IJBTerminal)) private _primaryTerminalOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
