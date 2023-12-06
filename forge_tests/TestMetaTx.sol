@@ -177,7 +177,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         assertEq(address(_terminal).balance, 1 ether);
 
         // Check: Ensure the beneficiary (signer) has a balance of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
+        uint256 _beneficiaryTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_payAmount), UD60x18wrap(_WEIGHT)));
         assertEq(_tokens.totalBalanceOf(_signer, _projectId), _beneficiaryTokenBalance);
 
         // Setup 2: meta tx data for redeem

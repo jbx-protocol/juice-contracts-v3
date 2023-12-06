@@ -59,7 +59,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _nativePayoutLimit = 1 ether;
         uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // Will exceed the project's balance in the terminal.
-        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
+        uint256 _usdPayoutLimit = mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
@@ -160,7 +160,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         // Make sure the beneficiary has a balance of project tokens.
         assertEq(
             _tokens.totalBalanceOf(_beneficiary, _projectId),
-            PRBMathUD60x18.mul(_nativePayAmount, _data.weight)
+            UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)))
         );
 
         // First payout meets our native token limit.
@@ -176,13 +176,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         assertEq(
             address(__terminal).balance,
             initTerminalBalance
-                - PRBMath.mulDiv(
+                - mulDiv(
                     _payoutLimits[0].amount, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
 
         // Price for the amount (in USD) that can be paid out based on the terminal's current balance.
-        uint256 _usdAmountAvailableToPayout = PRBMath.mulDiv(
+        uint256 _usdAmountAvailableToPayout = mulDiv(
             _nativePayAmount - _nativePayoutLimit, // native token value
             10 ** 18, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
@@ -409,7 +409,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         uint256 _nativePayoutLimit = 1 ether;
         uint256 _nativePricePerUsd = 0.0005 * 10 ** 18; // 1/2000
         // Will exceed the project's balance in the terminal.
-        uint256 _usdPayoutLimit = PRBMath.mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
+        uint256 _usdPayoutLimit = mulDiv(1 ether, 10 ** 18, _nativePricePerUsd);
 
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
@@ -478,7 +478,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
 
         // Make sure beneficiary has a balance of project tokens.
-        uint256 _userTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
+        uint256 _userTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
         uint256 initTerminalBalance = address(__terminal).balance;
 
@@ -491,7 +491,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             minReturnedTokens: 0
         });
 
-        uint256 _amountPaidOut = PRBMath.mulDiv(
+        uint256 _amountPaidOut = mulDiv(
             1_800_000_000,
             10 ** 18, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
@@ -506,7 +506,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         assertEq(
             address(__terminal).balance,
             initTerminalBalance
-                - PRBMath.mulDiv(
+                - mulDiv(
                     _amountPaidOut, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
@@ -592,7 +592,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _userTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
+        uint256 _userTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _userTokenBalance);
 
         uint256 initTerminalBalance = address(__terminal).balance;
@@ -606,7 +606,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
             minReturnedTokens: 0
         });
 
-        uint256 _amountPaidOut = PRBMath.mulDiv(
+        uint256 _amountPaidOut = mulDiv(
             3_000_000_000,
             10 ** 18, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount.value`'s fidelity as possible when converting.
             _prices.pricePerUnitOf({
@@ -620,7 +620,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         assertEq(
             _projectOwner.balance,
             ownerBalanceBeforeFirst
-                + PRBMath.mulDiv(
+                + mulDiv(
                     _amountPaidOut, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
@@ -629,7 +629,7 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         assertEq(
             address(__terminal).balance,
             initTerminalBalance
-                - PRBMath.mulDiv(
+                - mulDiv(
                     _amountPaidOut, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE()
                 )
         );
@@ -649,13 +649,13 @@ contract TestMultipleAccessLimits_Local is TestBaseWorkflow {
         assertEq(
             _projectOwner.balance,
             _ownerBalanceBeforeNativeDist
-                + PRBMath.mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
+                + mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
         );
 
         assertEq(
             address(__terminal).balance,
             _balanceBeforeNativeDist
-                - PRBMath.mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
+                - mulDiv(1 ether, JBConstants.MAX_FEE, JBConstants.MAX_FEE + __terminal.FEE())
         );
     }
 }

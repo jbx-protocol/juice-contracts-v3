@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
-import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
+import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
 import {IJBPriceFeed} from "./interfaces/IJBPriceFeed.sol";
 import {IJBProjects} from "./interfaces/IJBProjects.sol";
 import {IJBPermissions} from "./interfaces/IJBPermissions.sol";
@@ -77,7 +77,7 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
         // If it exists, return the inverse of its price.
         if (_feed != IJBPriceFeed(address(0))) {
             return
-                PRBMath.mulDiv(10 ** _decimals, 10 ** _decimals, _feed.currentUnitPrice(_decimals));
+                mulDiv(10 ** _decimals, 10 ** _decimals, _feed.currentUnitPrice(_decimals));
         }
 
         // Check for a default feed (project ID 0) if not found.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
+import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
 import {JBConstants} from "./../libraries/JBConstants.sol";
 
 /// @notice Fee calculations.
@@ -14,7 +14,7 @@ library JBFees {
     function feeAmountIn(uint256 _amount, uint256 _feePercent) internal pure returns (uint256) {
         // The amount of tokens from the `_amount` to pay as a fee. If reverse, the fee taken from a payout of `_amount`.
         return _amount
-            - PRBMath.mulDiv(_amount, JBConstants.MAX_FEE, _feePercent + JBConstants.MAX_FEE);
+            - mulDiv(_amount, JBConstants.MAX_FEE, _feePercent + JBConstants.MAX_FEE);
     }
 
     /// @notice Returns the fee that would have been paid based on an `_amount` which has already had the fee subtracted from it.
@@ -24,6 +24,6 @@ library JBFees {
     /// @return The amount of the fee, as a fixed point number with the same amount of decimals as this terminal.
     function feeAmountFrom(uint256 _amount, uint256 _feePercent) internal pure returns (uint256) {
         // The amount of tokens from the `_amount` to pay as a fee. If reverse, the fee taken from a payout of `_amount`.
-        return PRBMath.mulDiv(_amount, _feePercent, JBConstants.MAX_FEE);
+        return mulDiv(_amount, _feePercent, JBConstants.MAX_FEE);
     }
 }

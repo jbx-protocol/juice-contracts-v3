@@ -79,15 +79,15 @@ import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 
-import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
+import {IPermit2, IAllowanceTransfer} from "@permit2/src/interfaces/IPermit2.sol";
+import {DeployPermit2} from "@permit2/test/utils/DeployPermit2.sol";
 
 import {MetadataResolverHelper} from "./MetadataResolverHelper.sol";
 
 import {MockERC20} from "./../mock/MockERC20.sol";
 
-import "@paulrberg/contracts/math/PRBMath.sol";
-import "@paulrberg/contracts/math/PRBMathUD60x18.sol";
+import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
+import {mul as UD60x18mul, wrap as UD60x18wrap, unwrap as UD60x18unwrap} from "@paulrberg/contracts/math/UD60x18.sol";
 
 // Base contract for Juicebox system tests.
 // Provides common functionality, such as deploying contracts on test setup.

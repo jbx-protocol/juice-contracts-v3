@@ -10,9 +10,9 @@ import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol"
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
-import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
+import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
+import {IPermit2} from "@permit2/src/interfaces/IPermit2.sol";
+import {IAllowanceTransfer} from "@permit2/src/interfaces/IPermit2.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";
@@ -1191,7 +1191,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _split = _splits[_i];
 
             // The amount to send to the split.
-            uint256 _payoutAmount = PRBMath.mulDiv(_amount, _split.percent, _leftoverPercentage);
+            uint256 _payoutAmount = mulDiv(_amount, _split.percent, _leftoverPercentage);
 
             // The final payout amount after taking out any fees.
             uint256 _netPayoutAmount = _sendPayoutToSplit(_split, _projectId, _token, _payoutAmount);

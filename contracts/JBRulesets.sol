@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {PRBMath} from "@paulrberg/contracts/math/PRBMath.sol";
+import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
 import {JBControlled} from "./abstract/JBControlled.sol";
 import {JBApprovalStatus} from "./enums/JBApprovalStatus.sol";
 import {JBConstants} from "./libraries/JBConstants.sol";
@@ -729,7 +729,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
     {
         // A subsequent ruleset to one with a duration of 0 should have the next possible weight.
         if (_baseRuleset.duration == 0) {
-            return PRBMath.mulDiv(
+            return mulDiv(
                 _baseRuleset.weight,
                 JBConstants.MAX_DECAY_RATE - _baseRuleset.decayRate,
                 JBConstants.MAX_DECAY_RATE
@@ -769,7 +769,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         for (uint256 _i; _i < _decayMultiple;) {
             // The number of times to apply the decay rate.
             // Base the new weight on the specified ruleset's weight.
-            weight = PRBMath.mulDiv(
+            weight = mulDiv(
                 weight,
                 JBConstants.MAX_DECAY_RATE - _baseRuleset.decayRate,
                 JBConstants.MAX_DECAY_RATE
