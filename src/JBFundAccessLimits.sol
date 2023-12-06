@@ -35,8 +35,10 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     /// @custom:param _rulesetId The ID of the ruleset that the packed payout limit data applies to.
     /// @custom:param _terminal The terminal the payouts are being limited in.
     /// @custom:param _token The token payouts are being limited for.
-    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[])))) internal
-        _packedPayoutLimitsDataOf;
+    mapping(
+        uint256 _projectId
+            => mapping(uint256 _rulesetId => mapping(address _terminal => mapping(address _token => uint256[])))
+    ) internal _packedPayoutLimitsDataOf;
 
     /// @notice A list of packed surplus allowances for a given project, ruleset, terminal, and token.
     /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can
@@ -47,8 +49,10 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     /// @custom:param _rulesetId The ID of the ruleset that the packed surplus allowance data applies to.
     /// @custom:param _terminal The terminal the surplus allowance comes from.
     /// @custom:param _token The token that the surplus allowance applies to.
-    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[])))) internal
-        _packedSurplusAllowancesDataOf;
+    mapping(
+        uint256 _projectId
+            => mapping(uint256 _rulesetId => mapping(address _terminal => mapping(address _token => uint256[])))
+    ) internal _packedSurplusAllowancesDataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

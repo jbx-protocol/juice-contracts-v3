@@ -72,7 +72,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @custom:param _terminal The terminal to get the project's balance within.
     /// @custom:param _projectId The ID of the project to get the balance of.
     /// @custom:param _token The token to get the balance for.
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public override balanceOf;
+    mapping(address _terminal => mapping(uint256 _projectId => mapping(address _token => uint256))) public override
+        balanceOf;
 
     /// @notice The currency-denominated amount of funds that a project has already paid out from its payout limit
     /// during the current ruleset for each terminal, in terms of the payout limit's currency.
@@ -84,9 +85,15 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @custom:param _token The token the payout limit applies to in the terminal.
     /// @custom:param _rulesetCycleNumber The cycle number of the ruleset the payout limit was used during.
     /// @custom:param _currency The currency the payout limit is in terms of.
-    mapping(address => mapping(uint256 => mapping(address => mapping(uint256 => mapping(uint256 => uint256)))))
-        public
-        override usedPayoutLimitOf;
+    mapping(
+        address _terminal
+            => mapping(
+                uint256 _projectId
+                    => mapping(
+                        address _token => mapping(uint256 _rulesetCycleNumber => mapping(uint256 _currency => uint256))
+                    )
+            )
+    ) public override usedPayoutLimitOf;
 
     /// @notice The currency-denominated amounts of funds that a project has used from its surplus allowance during the
     /// current ruleset for each terminal, in terms of the surplus allowance's currency.
@@ -98,9 +105,13 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @custom:param _token The token the surplus allowance applies to in the terminal.
     /// @custom:param _rulesetId The ID of the ruleset the surplus allowance was used during.
     /// @custom:param _currency The currency the surplus allowance is in terms of.
-    mapping(address => mapping(uint256 => mapping(address => mapping(uint256 => mapping(uint256 => uint256)))))
-        public
-        override usedSurplusAllowanceOf;
+    mapping(
+        address _terminal
+            => mapping(
+                uint256 _projectId
+                    => mapping(address _token => mapping(uint256 _rulesetId => mapping(uint256 _currency => uint256)))
+            )
+    ) public override usedSurplusAllowanceOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

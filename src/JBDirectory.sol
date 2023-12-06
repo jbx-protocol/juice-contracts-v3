@@ -33,13 +33,13 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     //*********************************************************************//
 
     /// @notice For each project ID, the terminals that are currently managing its funds.
-    /// @custom:member _projectId The ID of the project to get terminals of.
-    mapping(uint256 => IJBTerminal[]) private _terminalsOf;
+    /// @custom:param _projectId The ID of the project to get terminals of.
+    mapping(uint256 _projectId => IJBTerminal[]) private _terminalsOf;
 
     /// @notice The project's primary terminal for a given token.
-    /// @custom:member _projectId The ID of the project to get the primary terminal of.
-    /// @custom:member _token The token to get the project's primary terminal for.
-    mapping(uint256 => mapping(address => IJBTerminal)) private _primaryTerminalOf;
+    /// @custom:param _projectId The ID of the project to get the primary terminal of.
+    /// @custom:param _token The token to get the project's primary terminal for.
+    mapping(uint256 _projectId => mapping(address _token => IJBTerminal)) private _primaryTerminalOf;
 
     //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
@@ -53,13 +53,13 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     //*********************************************************************//
 
     /// @notice The controller, which dictates how terminals interact with tokens and rulesets, for a given project ID.
-    /// @custom:member _projectId The ID of the project to get the controller of.
-    mapping(uint256 => IERC165) public override controllerOf;
+    /// @custom:param _projectId The ID of the project to get the controller of.
+    mapping(uint256 _projectId => IERC165) public override controllerOf;
 
     /// @notice Addresses allowed to set a project's first controller on their behalf. These addresses/contracts have
     /// been vetted and verified by this contract's owner.
     /// @custom:param _address The address that is either allowed or not.
-    mapping(address => bool) public override isAllowedToSetFirstController;
+    mapping(address _address => bool) public override isAllowedToSetFirstController;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

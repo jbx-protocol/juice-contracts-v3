@@ -83,18 +83,18 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     /// @notice Context describing how a token is accounted for by a project.
     /// @custom:param _projectId The ID of the project that the token accounting context applies to.
     /// @custom:param _token The address of the token being accounted for.
-    mapping(uint256 => mapping(address => JBAccountingContext)) internal _accountingContextForTokenOf;
+    mapping(uint256 _projectId => mapping(address _token => JBAccountingContext)) internal _accountingContextForTokenOf;
 
     /// @notice A list of tokens accepted by each project.
     /// @custom:param _projectId The ID of the project to get a list of accepted tokens for.
-    mapping(uint256 => JBAccountingContext[]) internal _accountingContextsOf;
+    mapping(uint256 _projectId => JBAccountingContext[]) internal _accountingContextsOf;
 
     /// @notice Fees that are being held for each project.
     /// @dev Projects can temporarily hold fees and unlock them later by adding funds to the project's balance.
     /// @dev Held fees can be processed at any time by this terminal's owner.
     /// @custom:param _projectId The ID of the project that is holding fees.
     /// @custom:param _token The token that the fees are held in.
-    mapping(uint256 => mapping(address => JBFee[])) internal _heldFeesOf;
+    mapping(uint256 _projectId => mapping(address _token => JBFee[])) internal _heldFeesOf;
 
     //*********************************************************************//
     // ------------------------- public constants ------------------------ //
@@ -133,7 +133,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
     /// @dev Feeless addresses can use the surplus allowance without incurring a fee.
     /// @dev Feeless addresses can be the beneficary of redemptions without incurring a fee.
     /// @custom:param _address The address that may or may not be feeless.
-    mapping(address => bool) public override isFeelessAddress;
+    mapping(address _address => bool) public override isFeelessAddress;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
