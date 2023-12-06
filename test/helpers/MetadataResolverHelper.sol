@@ -65,7 +65,7 @@ contract MetadataResolverHelper {
      * @param _ids             The list of ids
      * @param _datas       The list of corresponding datas
      *
-     * @return _metadata       The resulting metadata
+     * @return metadata       The resulting metadata
      */
     function createMetadata(
         bytes4[] calldata _ids,
@@ -73,12 +73,12 @@ contract MetadataResolverHelper {
     )
         public
         pure
-        returns (bytes memory _metadata)
+        returns (bytes memory metadata)
     {
         if (_ids.length != _datas.length) revert LENGTH_MISMATCH();
 
         // Add a first empty 32B for the protocol reserved word
-        _metadata = abi.encodePacked(bytes32(0));
+        metadata = abi.encodePacked(bytes32(0));
 
         // First offset for the data is after the first reserved word...
         uint256 _offset = 1;
@@ -89,7 +89,7 @@ contract MetadataResolverHelper {
         // For each id, add it to the lookup table with the next free offset, then increment the offset by the data
         // length (rounded up)
         for (uint256 _i; _i < _ids.length; ++_i) {
-            _metadata = abi.encodePacked(_metadata, _ids[_i], bytes1(uint8(_offset)));
+            metadata = abi.encodePacked(metadata, _ids[_i], bytes1(uint8(_offset)));
             _offset += _datas[_i].length / JBMetadataResolver.WORD_SIZE;
 
             // Overflowing a bytes1?
@@ -97,22 +97,22 @@ contract MetadataResolverHelper {
         }
 
         // Pad the table to a multiple of 32B
-        uint256 _paddedLength = _metadata.length % JBMetadataResolver.WORD_SIZE == 0
-            ? _metadata.length
-            : (_metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
+        uint256 _paddedLength = metadata.length % JBMetadataResolver.WORD_SIZE == 0
+            ? metadata.length
+            : (metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
         assembly {
-            mstore(_metadata, _paddedLength)
+            mstore(metadata, _paddedLength)
         }
 
         // Add each metadata to the array, each padded to 32 bytes
         for (uint256 _i; _i < _datas.length; _i++) {
-            _metadata = abi.encodePacked(_metadata, _datas[_i]);
-            _paddedLength = _metadata.length % JBMetadataResolver.WORD_SIZE == 0
-                ? _metadata.length
-                : (_metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
+            metadata = abi.encodePacked(metadata, _datas[_i]);
+            _paddedLength = metadata.length % JBMetadataResolver.WORD_SIZE == 0
+                ? metadata.length
+                : (metadata.length / JBMetadataResolver.WORD_SIZE + 1) * JBMetadataResolver.WORD_SIZE;
 
             assembly {
-                mstore(_metadata, _paddedLength)
+                mstore(metadata, _paddedLength)
             }
         }
     }
@@ -120,21 +120,21 @@ contract MetadataResolverHelper {
     /**
      * @notice Add a data entry to an existing metadata
      *
-     * @param _idToAdd          The id of the hook to add
-     * @param _dataToAdd        The metadata of the hook to add
-     * @param _originalMetadata The original metadata
+     * @param idToAdd          The id of the hook to add
+     * @param dataToAdd        The metadata of the hook to add
+     * @param originalMetadata The original metadata
      *
      * @return _newMetadata    The new metadata with the hook added
      */
     function addDataToMetadata(
-        bytes4 _idToAdd,
-        bytes calldata _dataToAdd,
-        bytes calldata _originalMetadata
+        bytes4 idToAdd,
+        bytes calldata dataToAdd,
+        bytes calldata originalMetadata
     )
         public
         pure
-        returns (bytes memory _newMetadata)
+        returns (bytes memory)
     {
-        return JBMetadataResolver.addToMetadata(_idToAdd, _dataToAdd, _originalMetadata);
+        return JBMetadataResolver.addToMetadata(idToAdd, dataToAdd, originalMetadata);
     }
 }

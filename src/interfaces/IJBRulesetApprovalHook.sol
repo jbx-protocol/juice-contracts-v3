@@ -5,7 +5,7 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JBApprovalStatus} from "./../enums/JBApprovalStatus.sol";
 
 interface IJBRulesetApprovalHook is IERC165 {
-    function duration() external view returns (uint256);
+    function DURATION() external view returns (uint256);
 
     function approvalStatusOf(
         uint256 projectId,

@@ -67,17 +67,17 @@ interface IJBController is IERC165, IJBProjectMetadataRegistry, IJBDirectoryAcce
 
     event SetMetadata(uint256 indexed projectId, string metadata, address caller);
 
-    function projects() external view returns (IJBProjects);
+    function PROJECTS() external view returns (IJBProjects);
 
-    function rulesets() external view returns (IJBRulesets);
+    function DIRECTORY() external view returns (IJBDirectory);
 
-    function tokens() external view returns (IJBTokens);
+    function RULESETS() external view returns (IJBRulesets);
 
-    function splits() external view returns (IJBSplits);
+    function TOKENS() external view returns (IJBTokens);
 
-    function fundAccessLimits() external view returns (IJBFundAccessLimits);
+    function SPLITS() external view returns (IJBSplits);
 
-    function directory() external view returns (IJBDirectory);
+    function FUND_ACCESS_LIMITS() external view returns (IJBFundAccessLimits);
 
     function pendingReservedTokenBalanceOf(uint256 projectId) external view returns (uint256);
 

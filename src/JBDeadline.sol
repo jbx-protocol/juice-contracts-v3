@@ -23,61 +23,61 @@ contract JBDeadline is ERC165, IJBRulesetApprovalHook {
 
     /// @notice The minimum difference between the time a ruleset is queued and the time it starts, as a number of
     /// seconds. If the difference is greater than this number, the ruleset is `Approved`.
-    uint256 public immutable override duration;
+    uint256 public immutable override DURATION;
 
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
 
     /// @notice The approval status of a particular ruleset.
-    /// @param _projectId The ID of the project to which the ruleset being checked belongs.
-    /// @param _rulesetId The `rulesetId` of the ruleset to check the status of. The `rulesetId` is the timestamp for
+    /// @param projectId The ID of the project to which the ruleset being checked belongs.
+    /// @param rulesetId The `rulesetId` of the ruleset to check the status of. The `rulesetId` is the timestamp for
     /// when ruleset was queued.
-    /// @param _start The start timestamp of the ruleset to check the status of.
+    /// @param start The start timestamp of the ruleset to check the status of.
     /// @return The status of the approval hook.
     function approvalStatusOf(
-        uint256 _projectId,
-        uint256 _rulesetId,
-        uint256 _start
+        uint256 projectId,
+        uint256 rulesetId,
+        uint256 start
     )
         public
         view
         override
         returns (JBApprovalStatus)
     {
-        _projectId; // Prevents unused var compiler and natspec complaints.
+        projectId; // Prevents unused var compiler and natspec complaints.
 
         // If the provided rulesetId timestamp is after the start timestamp, the approval hook is Failed.
-        if (_rulesetId > _start) return JBApprovalStatus.Failed;
+        if (rulesetId > start) return JBApprovalStatus.Failed;
 
         unchecked {
             // If there was sufficient time between queuing and the start of the ruleset, it is approved. Otherwise, it
             // is failed.
             // If the approval hook hasn't yet started, its approval status is ApprovalExpected.
-            return (_start - _rulesetId < duration)
+            return (start - rulesetId < DURATION)
                 ? JBApprovalStatus.Failed
-                : (block.timestamp < _start - duration) ? JBApprovalStatus.ApprovalExpected : JBApprovalStatus.Approved;
+                : (block.timestamp < start - DURATION) ? JBApprovalStatus.ApprovalExpected : JBApprovalStatus.Approved;
         }
     }
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
-    /// @param _interfaceId The ID of the interface to check for adherance to.
+    /// @param interfaceId The ID of the interface to check for adherance to.
     /// @return A flag indicating if this contract adheres to the specified interface.
-    function supportsInterface(bytes4 _interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
-        return _interfaceId == type(IJBRulesetApprovalHook).interfaceId || super.supportsInterface(_interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return interfaceId == type(IJBRulesetApprovalHook).interfaceId || super.supportsInterface(interfaceId);
     }
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _duration The minimum number of seconds between the time a ruleset is queued and that ruleset's `start`
+    /// @param duration The minimum number of seconds between the time a ruleset is queued and that ruleset's `start`
     /// for it to be `Approved`.
-    constructor(uint256 _duration) {
+    constructor(uint256 duration) {
         // Ensure we don't underflow in `approvalStatusOf(...)`.
-        if (_duration > block.timestamp) revert DURATION_TOO_LONG();
+        if (duration > block.timestamp) revert DURATION_TOO_LONG();
 
-        duration = _duration;
+        DURATION = duration;
     }
 }

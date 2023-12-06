@@ -46,43 +46,36 @@ library JBMetadataResolver {
      *
      * @dev    Returns false and an empty bytes if no data is found
      *
-     * @param  _id             The ID to find
-     * @param  _metadata       The metadata to parse
+     * @param  id             The ID to find
+     * @param  metadata       The metadata to parse
      *
-     * @return _found          Whether the {id:data} was found
-     * @return _targetData The data for the ID (can be empty)
+     * @return found          Whether the {id:data} was found
+     * @return targetData The data for the ID (can be empty)
      */
-    function getData(
-        bytes4 _id,
-        bytes calldata _metadata
-    )
-        internal
-        pure
-        returns (bool _found, bytes memory _targetData)
-    {
+    function getData(bytes4 id, bytes calldata metadata) internal pure returns (bool found, bytes memory targetData) {
         // Either no data or empty one with only one selector (32+4+1)
-        if (_metadata.length <= MIN_METADATA_LENGTH) return (false, "");
+        if (metadata.length <= MIN_METADATA_LENGTH) return (false, "");
 
         // Get the first data offset - upcast to avoid overflow (same for other offset)
-        uint256 _firstOffset = uint8(_metadata[RESERVED_SIZE + ID_SIZE]);
+        uint256 firstOffset = uint8(metadata[RESERVED_SIZE + ID_SIZE]);
 
-        // Parse the id's to find _id, stop when next offset == 0 or current = first offset
-        for (uint256 _i = RESERVED_SIZE; _metadata[_i + ID_SIZE] != bytes1(0) && _i < _firstOffset * WORD_SIZE;) {
-            uint256 _currentOffset = uint256(uint8(_metadata[_i + ID_SIZE]));
+        // Parse the id's to find id, stop when next offset == 0 or current = first offset
+        for (uint256 i = RESERVED_SIZE; metadata[i + ID_SIZE] != bytes1(0) && i < firstOffset * WORD_SIZE;) {
+            uint256 currentOffset = uint256(uint8(metadata[i + ID_SIZE]));
 
             // _id found?
-            if (bytes4(_metadata[_i:_i + ID_SIZE]) == _id) {
+            if (bytes4(metadata[i:i + ID_SIZE]) == id) {
                 // Are we at the end of the lookup table (either at the start of data's or next offset is 0/in the
                 // padding)
                 // If not, only return until from this offset to the begining of the next offset
-                uint256 _end = (_i + NEXT_ID_OFFSET >= _firstOffset * WORD_SIZE || _metadata[_i + NEXT_ID_OFFSET] == 0)
-                    ? _metadata.length
-                    : uint256(uint8(_metadata[_i + NEXT_ID_OFFSET])) * WORD_SIZE;
+                uint256 end = (i + NEXT_ID_OFFSET >= firstOffset * WORD_SIZE || metadata[i + NEXT_ID_OFFSET] == 0)
+                    ? metadata.length
+                    : uint256(uint8(metadata[i + NEXT_ID_OFFSET])) * WORD_SIZE;
 
-                return (true, _metadata[_currentOffset * WORD_SIZE:_end]);
+                return (true, metadata[currentOffset * WORD_SIZE:end]);
             }
             unchecked {
-                _i += TOTAL_ID_SIZE;
+                i += TOTAL_ID_SIZE;
             }
         }
     }
@@ -90,103 +83,95 @@ library JBMetadataResolver {
     /**
      * @notice Add an {id: data} entry to an existing metadata. This is an append-only mechanism.
      *
-     * @param _idToAdd          The id to add
-     * @param _dataToAdd        The data to add
-     * @param _originalMetadata The original metadata
+     * @param idToAdd          The id to add
+     * @param dataToAdd        The data to add
+     * @param originalMetadata The original metadata
      *
-     * @return _newMetadata    The new metadata with the entry added
+     * @return newMetadata    The new metadata with the entry added
      */
     function addToMetadata(
-        bytes4 _idToAdd,
-        bytes calldata _dataToAdd,
-        bytes calldata _originalMetadata
+        bytes4 idToAdd,
+        bytes calldata dataToAdd,
+        bytes calldata originalMetadata
     )
         internal
         pure
-        returns (bytes memory _newMetadata)
+        returns (bytes memory newMetadata)
     {
         // Get the first data offset - upcast to avoid overflow (same for other offset)...
-        uint256 _firstOffset = uint8(_originalMetadata[RESERVED_SIZE + ID_SIZE]);
+        uint256 firstOffset = uint8(originalMetadata[RESERVED_SIZE + ID_SIZE]);
 
         // ...go back to the beginning of the previous word (ie the last word of the table, as it can be padded)
-        uint256 _lastWordOfTable = _firstOffset - 1;
+        uint256 lastWordOfTable = firstOffset - 1;
 
         // The last offset stored in the table and its index
-        uint256 _lastOffset;
+        uint256 lastOffset;
 
-        uint256 _lastOffsetIndex;
+        uint256 lastOffsetIndex;
 
         // The number of words taken by the last data stored
-        uint256 _numberOfWordslastData;
+        uint256 numberOfWordslastData;
 
-        // Iterate to find the last entry of the table, _lastOffset - we start from the end as the first value
+        // Iterate to find the last entry of the table, lastOffset - we start from the end as the first value
         // encountered
         // will be the last offset
-        for (uint256 _i = _firstOffset * WORD_SIZE - 1; _i > _lastWordOfTable * WORD_SIZE - 1;) {
+        for (uint256 i = firstOffset * WORD_SIZE - 1; i > lastWordOfTable * WORD_SIZE - 1; i--) {
             // If the byte is not 0, this is the last offset we're looking for
-            if (_originalMetadata[_i] != 0) {
-                _lastOffset = uint8(_originalMetadata[_i]);
-                _lastOffsetIndex = _i;
+            if (originalMetadata[i] != 0) {
+                lastOffset = uint8(originalMetadata[i]);
+                lastOffsetIndex = i;
 
                 // No rounding as this should be padded to 32B
-                _numberOfWordslastData = (_originalMetadata.length - _lastOffset * WORD_SIZE) / WORD_SIZE;
+                numberOfWordslastData = (originalMetadata.length - lastOffset * WORD_SIZE) / WORD_SIZE;
 
                 // Copy the reserved word and the table and remove the previous padding
-                _newMetadata = _originalMetadata[0:_lastOffsetIndex + 1];
+                newMetadata = originalMetadata[0:lastOffsetIndex + 1];
 
                 // Check if the new entry is still fitting in this word
-                if (_i + TOTAL_ID_SIZE >= _firstOffset * WORD_SIZE) {
+                if (i + TOTAL_ID_SIZE >= firstOffset * WORD_SIZE) {
                     // Increment every offset by 1 (as the table now takes one more word)
-                    for (uint256 _j = RESERVED_SIZE + ID_SIZE; _j < _lastOffsetIndex + 1; _j += TOTAL_ID_SIZE) {
-                        _newMetadata[_j] = bytes1(uint8(_originalMetadata[_j]) + 1);
+                    for (uint256 j = RESERVED_SIZE + ID_SIZE; j < lastOffsetIndex + 1; j += TOTAL_ID_SIZE) {
+                        newMetadata[j] = bytes1(uint8(originalMetadata[j]) + 1);
                     }
 
                     // Increment the last offset so the new offset will be properly set too
-                    _lastOffset++;
+                    lastOffset++;
                 }
 
                 break;
-            }
-
-            unchecked {
-                _i -= 1;
             }
         }
 
         // Add the new entry after the last entry of the table, the new offset is the last offset + the number of words
         // taken by the last data
-        _newMetadata = abi.encodePacked(_newMetadata, _idToAdd, bytes1(uint8(_lastOffset + _numberOfWordslastData)));
+        newMetadata = abi.encodePacked(newMetadata, idToAdd, bytes1(uint8(lastOffset + numberOfWordslastData)));
 
         // Pad as needed - inlined for gas saving
-        uint256 _paddedLength = _newMetadata.length % WORD_SIZE == 0
-            ? _newMetadata.length
-            : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
+        uint256 paddedLength =
+            newMetadata.length % WORD_SIZE == 0 ? newMetadata.length : (newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
         assembly {
-            mstore(_newMetadata, _paddedLength)
+            mstore(newMetadata, paddedLength)
         }
 
         // Add existing data at the end
-        _newMetadata =
-            abi.encodePacked(_newMetadata, _originalMetadata[_firstOffset * WORD_SIZE:_originalMetadata.length]);
+        newMetadata = abi.encodePacked(newMetadata, originalMetadata[firstOffset * WORD_SIZE:originalMetadata.length]);
 
         // Pad as needed
-        _paddedLength = _newMetadata.length % WORD_SIZE == 0
-            ? _newMetadata.length
-            : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
+        paddedLength =
+            newMetadata.length % WORD_SIZE == 0 ? newMetadata.length : (newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
         assembly {
-            mstore(_newMetadata, _paddedLength)
+            mstore(newMetadata, paddedLength)
         }
 
         // Append new data at the end
-        _newMetadata = abi.encodePacked(_newMetadata, _dataToAdd);
+        newMetadata = abi.encodePacked(newMetadata, dataToAdd);
 
         // Pad again again as needed
-        _paddedLength = _newMetadata.length % WORD_SIZE == 0
-            ? _newMetadata.length
-            : (_newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
+        paddedLength =
+            newMetadata.length % WORD_SIZE == 0 ? newMetadata.length : (newMetadata.length / WORD_SIZE + 1) * WORD_SIZE;
 
         assembly {
-            mstore(_newMetadata, _paddedLength)
+            mstore(newMetadata, paddedLength)
         }
     }
 }

@@ -39,40 +39,40 @@ contract JBTokens is JBControlled, IJBTokens {
     //*********************************************************************//
 
     /// @notice Each project's attached token contract.
-    /// @custom:param _projectId The ID of the project the token belongs to.
-    mapping(uint256 _projectId => IJBToken) public override tokenOf;
+    /// @custom:param projectId The ID of the project the token belongs to.
+    mapping(uint256 projectId => IJBToken) public override tokenOf;
 
     /// @notice Each token's project.
-    /// @custom:param _token The address of the token associated with the project.
-    mapping(IJBToken _token => uint256) public override projectIdOf;
+    /// @custom:param token The address of the token associated with the project.
+    mapping(IJBToken token => uint256) public override projectIdOf;
 
     /// @notice The total supply of credits for each project.
-    /// @custom:param _projectId The ID of the project to which the credits belong.
-    mapping(uint256 _projectId => uint256) public override totalCreditSupplyOf;
+    /// @custom:param projectId The ID of the project to which the credits belong.
+    mapping(uint256 projectId => uint256) public override totalCreditSupplyOf;
 
     /// @notice Each holder's credit balance for each project.
-    /// @custom:param _holder The credit holder.
-    /// @custom:param _projectId The ID of the project to which the credits belong.
-    mapping(address _holder => mapping(uint256 _projectId => uint256)) public override creditBalanceOf;
+    /// @custom:param holder The credit holder.
+    /// @custom:param projectId The ID of the project to which the credits belong.
+    mapping(address holder => mapping(uint256 projectId => uint256)) public override creditBalanceOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
     /// @notice The total balance a holder has for a specified project, including both tokens and token credits.
-    /// @param _holder The holder to get a balance for.
-    /// @param _projectId The project to get the `_holder`s balance for.
+    /// @param holder The holder to get a balance for.
+    /// @param projectId The project to get the `_holder`s balance for.
     /// @return balance The combined token and token credit balance of the `_holder
-    function totalBalanceOf(address _holder, uint256 _projectId) external view override returns (uint256 balance) {
+    function totalBalanceOf(address holder, uint256 projectId) external view override returns (uint256 balance) {
         // Get a reference to the holder's credits for the project.
-        balance = creditBalanceOf[_holder][_projectId];
+        balance = creditBalanceOf[holder][projectId];
 
         // Get a reference to the project's current token.
-        IJBToken _token = tokenOf[_projectId];
+        IJBToken token = tokenOf[projectId];
 
         // If the project has a current token, add the holder's balance to the total.
-        if (_token != IJBToken(address(0))) {
-            balance = balance + _token.balanceOf(_holder);
+        if (token != IJBToken(address(0))) {
+            balance = balance + token.balanceOf(holder);
         }
     }
 
@@ -81,18 +81,18 @@ contract JBTokens is JBControlled, IJBTokens {
     //*********************************************************************//
 
     /// @notice The total supply for a specific project, including both tokens and token credits.
-    /// @param _projectId The ID of the project to get the total supply of.
+    /// @param projectId The ID of the project to get the total supply of.
     /// @return totalSupply The total supply of the project's tokens and token credits.
-    function totalSupplyOf(uint256 _projectId) public view override returns (uint256 totalSupply) {
+    function totalSupplyOf(uint256 projectId) public view override returns (uint256 totalSupply) {
         // Get a reference to the total supply of the project's credits
-        totalSupply = totalCreditSupplyOf[_projectId];
+        totalSupply = totalCreditSupplyOf[projectId];
 
         // Get a reference to the project's current token.
-        IJBToken _token = tokenOf[_projectId];
+        IJBToken token = tokenOf[projectId];
 
         // If the project has a current token, add its total supply to the total.
-        if (_token != IJBToken(address(0))) {
-            totalSupply = totalSupply + _token.totalSupply();
+        if (token != IJBToken(address(0))) {
+            totalSupply = totalSupply + token.totalSupply();
         }
     }
 
@@ -100,8 +100,8 @@ contract JBTokens is JBControlled, IJBTokens {
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _directory A contract storing directories of terminals and controllers for each project.
-    constructor(IJBDirectory _directory) JBControlled(_directory) {}
+    /// @param directory A contract storing directories of terminals and controllers for each project.
+    constructor(IJBDirectory directory) JBControlled(directory) {}
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
@@ -110,233 +110,217 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @notice Deploys an ERC-20 token for a project. It will be used when claiming tokens.
     /// @dev Deploys a project's ERC-20 token contract.
     /// @dev Only a project's controller can deploy its token.
-    /// @param _projectId The ID of the project to deploy an ERC-20 token for.
-    /// @param _name The ERC-20's name.
-    /// @param _symbol The ERC-20's symbol.
+    /// @param projectId The ID of the project to deploy an ERC-20 token for.
+    /// @param name The ERC-20's name.
+    /// @param symbol The ERC-20's symbol.
     /// @return token The address of the token that was deployed.
     function deployERC20For(
-        uint256 _projectId,
-        string calldata _name,
-        string calldata _symbol
+        uint256 projectId,
+        string calldata name,
+        string calldata symbol
     )
         external
         override
-        onlyController(_projectId)
+        onlyController(projectId)
         returns (IJBToken token)
     {
         // There must be a name.
-        if (bytes(_name).length == 0) revert EMPTY_NAME();
+        if (bytes(name).length == 0) revert EMPTY_NAME();
 
         // There must be a symbol.
-        if (bytes(_symbol).length == 0) revert EMPTY_SYMBOL();
+        if (bytes(symbol).length == 0) revert EMPTY_SYMBOL();
 
         // The project shouldn't already have a token.
-        if (tokenOf[_projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
+        if (tokenOf[projectId] != IJBToken(address(0))) revert PROJECT_ALREADY_HAS_TOKEN();
 
         // Deploy the token contract.
-        token = new JBERC20(_name, _symbol, address(this));
+        token = new JBERC20(name, symbol, address(this));
 
         // Store the token contract.
-        tokenOf[_projectId] = token;
+        tokenOf[projectId] = token;
 
         // Store the project for the token.
-        projectIdOf[token] = _projectId;
+        projectIdOf[token] = projectId;
 
-        emit DeployERC20(_projectId, token, _name, _symbol, msg.sender);
+        emit DeployERC20(projectId, token, name, symbol, msg.sender);
     }
 
     /// @notice Set a project's token if not already set.
     /// @dev Only a project's controller can set its token.
-    /// @param _projectId The ID of the project to set the token of.
-    /// @param _token The new token's address.
-    function setTokenFor(uint256 _projectId, IJBToken _token) external override onlyController(_projectId) {
+    /// @param projectId The ID of the project to set the token of.
+    /// @param token The new token's address.
+    function setTokenFor(uint256 projectId, IJBToken token) external override onlyController(projectId) {
         // Can't set to the zero address.
-        if (_token == IJBToken(address(0))) revert EMPTY_TOKEN();
+        if (token == IJBToken(address(0))) revert EMPTY_TOKEN();
 
         // Can't set a token if the project is already associated with another token.
-        if (tokenOf[_projectId] != IJBToken(address(0))) revert TOKEN_ALREADY_SET();
+        if (tokenOf[projectId] != IJBToken(address(0))) revert TOKEN_ALREADY_SET();
 
         // Can't set a token if it's already associated with another project.
-        if (projectIdOf[_token] != 0) revert TOKEN_ALREADY_SET();
+        if (projectIdOf[token] != 0) revert TOKEN_ALREADY_SET();
 
         // Can't change to a token that doesn't use 18 decimals.
-        if (_token.decimals() != 18) revert TOKENS_MUST_HAVE_18_DECIMALS();
+        if (token.decimals() != 18) revert TOKENS_MUST_HAVE_18_DECIMALS();
 
         // Store the new token.
-        tokenOf[_projectId] = _token;
+        tokenOf[projectId] = token;
 
         // Store the project for the token.
-        projectIdOf[_token] = _projectId;
+        projectIdOf[token] = projectId;
 
-        emit SetToken(_projectId, _token, msg.sender);
+        emit SetToken(projectId, token, msg.sender);
     }
 
     /// @notice Mint (create) new tokens or credits.
     /// @dev Only a project's current controller can mint its tokens.
-    /// @param _holder The address receiving the new tokens.
-    /// @param _projectId The ID of the project to which the tokens belong.
-    /// @param _amount The amount of tokens to mint.
-    function mintFor(
-        address _holder,
-        uint256 _projectId,
-        uint256 _amount
-    )
-        external
-        override
-        onlyController(_projectId)
-    {
+    /// @param holder The address receiving the new tokens.
+    /// @param projectId The ID of the project to which the tokens belong.
+    /// @param amount The amount of tokens to mint.
+    function mintFor(address holder, uint256 projectId, uint256 amount) external override onlyController(projectId) {
         // Get a reference to the project's current token.
-        IJBToken _token = tokenOf[_projectId];
+        IJBToken token = tokenOf[projectId];
 
         // Save a reference to whether there a token exists.
-        bool _shouldClaimTokens = _token != IJBToken(address(0));
+        bool shouldClaimTokens = token != IJBToken(address(0));
 
-        if (_shouldClaimTokens) {
+        if (shouldClaimTokens) {
             // If tokens should be claimed, mint tokens into the holder's wallet.
-            _token.mint(_holder, _amount);
+            token.mint(holder, amount);
         } else {
             // Otherwise, add the tokens to their credits and the credit supply.
-            creditBalanceOf[_holder][_projectId] = creditBalanceOf[_holder][_projectId] + _amount;
-            totalCreditSupplyOf[_projectId] = totalCreditSupplyOf[_projectId] + _amount;
+            creditBalanceOf[holder][projectId] = creditBalanceOf[holder][projectId] + amount;
+            totalCreditSupplyOf[projectId] = totalCreditSupplyOf[projectId] + amount;
         }
 
         // The total supply can't exceed the maximum value storable in a uint208.
-        if (totalSupplyOf(_projectId) > type(uint208).max) revert OVERFLOW_ALERT();
+        if (totalSupplyOf(projectId) > type(uint208).max) revert OVERFLOW_ALERT();
 
-        emit Mint(_holder, _projectId, _amount, _shouldClaimTokens, msg.sender);
+        emit Mint(holder, projectId, amount, shouldClaimTokens, msg.sender);
     }
 
     /// @notice Burns (destroys) credits or tokens.
     /// @dev Credits are burned first, then tokens are burned.
     /// @dev Only a project's current controller can burn its tokens.
-    /// @param _holder The address that owns the tokens which are being burned.
-    /// @param _projectId The ID of the project to the burned tokens belong to.
-    /// @param _amount The amount of tokens to burn.
-    function burnFrom(
-        address _holder,
-        uint256 _projectId,
-        uint256 _amount
-    )
-        external
-        override
-        onlyController(_projectId)
-    {
+    /// @param holder The address that owns the tokens which are being burned.
+    /// @param projectId The ID of the project to the burned tokens belong to.
+    /// @param amount The amount of tokens to burn.
+    function burnFrom(address holder, uint256 projectId, uint256 amount) external override onlyController(projectId) {
         // Get a reference to the project's current token.
-        IJBToken _token = tokenOf[_projectId];
+        IJBToken token = tokenOf[projectId];
 
         // Get a reference to the amount of credits the holder has.
-        uint256 _creditBalance = creditBalanceOf[_holder][_projectId];
+        uint256 creditBalance = creditBalanceOf[holder][projectId];
 
         // Get a reference to the amount of the project's current token the holder has in their wallet.
-        uint256 _tokenBalance = _token == IJBToken(address(0)) ? 0 : _token.balanceOf(_holder);
+        uint256 tokenBalance = token == IJBToken(address(0)) ? 0 : token.balanceOf(holder);
 
         // There must be enough tokens to burn across the holder's combined token and credit balance.
-        if (_amount > _tokenBalance + _creditBalance) revert INSUFFICIENT_FUNDS();
+        if (amount > tokenBalance + creditBalance) revert INSUFFICIENT_FUNDS();
 
         // The amount of tokens to burn.
-        uint256 _tokensToBurn;
+        uint256 tokensToBurn;
 
         // Get a reference to how many tokens should be burned
-        if (_tokenBalance != 0) {
+        if (tokenBalance != 0) {
             // Burn credits before tokens.
             unchecked {
-                _tokensToBurn = _creditBalance < _amount ? _amount - _creditBalance : 0;
+                tokensToBurn = creditBalance < amount ? amount - creditBalance : 0;
             }
         }
 
         // The amount of credits to burn.
-        uint256 _creditsToBurn;
+        uint256 creditsToBurn;
         unchecked {
-            _creditsToBurn = _amount - _tokensToBurn;
+            creditsToBurn = amount - tokensToBurn;
         }
 
         // Subtract the burned credits from the credit balance and credit supply.
-        if (_creditsToBurn > 0) {
-            creditBalanceOf[_holder][_projectId] = creditBalanceOf[_holder][_projectId] - _creditsToBurn;
-            totalCreditSupplyOf[_projectId] = totalCreditSupplyOf[_projectId] - _creditsToBurn;
+        if (creditsToBurn > 0) {
+            creditBalanceOf[holder][projectId] = creditBalanceOf[holder][projectId] - creditsToBurn;
+            totalCreditSupplyOf[projectId] = totalCreditSupplyOf[projectId] - creditsToBurn;
         }
 
         // Burn the tokens.
-        if (_tokensToBurn > 0) _token.burn(_holder, _tokensToBurn);
+        if (tokensToBurn > 0) token.burn(holder, tokensToBurn);
 
-        emit Burn(_holder, _projectId, _amount, _creditBalance, _tokenBalance, msg.sender);
+        emit Burn(holder, projectId, amount, creditBalance, tokenBalance, msg.sender);
     }
 
     /// @notice Redeem credits to claim tokens into a holder's wallet.
     /// @dev Only a project's controller can claim that project's tokens.
-    /// @param _holder The owner of the credits being redeemed.
-    /// @param _projectId The ID of the project whose tokens are being claimed.
-    /// @param _amount The amount of tokens to claim.
-    /// @param _beneficiary The account into which the claimed tokens will go.
+    /// @param holder The owner of the credits being redeemed.
+    /// @param projectId The ID of the project whose tokens are being claimed.
+    /// @param amount The amount of tokens to claim.
+    /// @param beneficiary The account into which the claimed tokens will go.
     function claimTokensFor(
-        address _holder,
-        uint256 _projectId,
-        uint256 _amount,
-        address _beneficiary
+        address holder,
+        uint256 projectId,
+        uint256 amount,
+        address beneficiary
     )
         external
         override
-        onlyController(_projectId)
+        onlyController(projectId)
     {
         // Get a reference to the project's current token.
-        IJBToken _token = tokenOf[_projectId];
+        IJBToken token = tokenOf[projectId];
 
         // The project must have a token contract attached.
-        if (_token == IJBToken(address(0))) revert TOKEN_NOT_FOUND();
+        if (token == IJBToken(address(0))) revert TOKEN_NOT_FOUND();
 
         // Get a reference to the amount of credits the holder has.
-        uint256 _creditBalance = creditBalanceOf[_holder][_projectId];
+        uint256 creditBalance = creditBalanceOf[holder][projectId];
 
         // There must be enough credits to claim.
-        if (_creditBalance < _amount) revert INSUFFICIENT_CREDITS();
+        if (creditBalance < amount) revert INSUFFICIENT_CREDITS();
 
         unchecked {
             // Subtract the claim amount from the holder's credit balance.
-            creditBalanceOf[_holder][_projectId] = _creditBalance - _amount;
+            creditBalanceOf[holder][projectId] = creditBalance - amount;
 
             // Subtract the claim amount from the project's total credit supply.
-            totalCreditSupplyOf[_projectId] = totalCreditSupplyOf[_projectId] - _amount;
+            totalCreditSupplyOf[projectId] = totalCreditSupplyOf[projectId] - amount;
         }
 
         // Mint the equivalent amount of the project's token for the holder.
-        _token.mint(_beneficiary, _amount);
+        token.mint(beneficiary, amount);
 
-        emit ClaimTokens(_holder, _projectId, _creditBalance, _amount, _beneficiary, msg.sender);
+        emit ClaimTokens(holder, projectId, creditBalance, amount, beneficiary, msg.sender);
     }
 
     /// @notice Allows a holder to transfer credits to another account.
     /// @dev Only a project's controller can transfer credits for that project.
-    /// @param _holder The address to transfer credits from.
-    /// @param _projectId The ID of the project whose credits are being transferred.
-    /// @param _recipient The recipient of the credits.
-    /// @param _amount The amount of credits to transfer.
+    /// @param holder The address to transfer credits from.
+    /// @param projectId The ID of the project whose credits are being transferred.
+    /// @param recipient The recipient of the credits.
+    /// @param amount The amount of credits to transfer.
     function transferCreditsFrom(
-        address _holder,
-        uint256 _projectId,
-        address _recipient,
-        uint256 _amount
+        address holder,
+        uint256 projectId,
+        address recipient,
+        uint256 amount
     )
         external
         override
-        onlyController(_projectId)
+        onlyController(projectId)
     {
         // Can't transfer to the zero address.
-        if (_recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();
+        if (recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();
 
         // Get a reference to the holder's unclaimed project token balance.
-        uint256 _creditBalance = creditBalanceOf[_holder][_projectId];
+        uint256 creditBalance = creditBalanceOf[holder][projectId];
 
         // The holder must have enough unclaimed tokens to transfer.
-        if (_amount > _creditBalance) revert INSUFFICIENT_CREDITS();
+        if (amount > creditBalance) revert INSUFFICIENT_CREDITS();
 
         // Subtract from the holder's unclaimed token balance.
         unchecked {
-            creditBalanceOf[_holder][_projectId] = _creditBalance - _amount;
+            creditBalanceOf[holder][projectId] = creditBalance - amount;
         }
 
         // Add the unclaimed project tokens to the recipient's balance.
-        creditBalanceOf[_recipient][_projectId] = creditBalanceOf[_recipient][_projectId] + _amount;
+        creditBalanceOf[recipient][projectId] = creditBalanceOf[recipient][projectId] + amount;
 
-        emit TransferCredits(_holder, _projectId, _recipient, _amount, msg.sender);
+        emit TransferCredits(holder, projectId, recipient, amount, msg.sender);
     }
 }
