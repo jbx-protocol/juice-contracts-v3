@@ -1,5 +1,5 @@
 [profile.default]
-solc = '0.8.21'
+solc = '0.8.23'
 evm_version = 'paris'                   # Required for L2s (Optimism, Arbitrum, etc.)
 src = 'contracts'
 test = 'forge_tests'

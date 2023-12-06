@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity ^0.8.23;
 
 import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
 import {JBControlled} from "./abstract/JBControlled.sol";
