@@ -40,14 +40,12 @@ import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
-import {
-    IJBMultiTerminal,
-    IJBFeeTerminal,
-    IJBTerminal,
-    IJBRedeemTerminal,
-    IJBPayoutTerminal,
-    IJBPermitTerminal
-} from "./interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBMultiTerminal} from "./interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBFeeTerminal} from "./interfaces/terminal/IJBFeeTerminal.sol";
+import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
+import {IJBRedeemTerminal} from "./interfaces/terminal/IJBRedeemTerminal.sol";
+import {IJBPayoutTerminal} from "./interfaces/terminal/IJBPayoutTerminal.sol";
+import {IJBPermitTerminal} from "./interfaces/terminal/IJBPermitTerminal.sol";
 
 /// @notice Generic terminal managing inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTerminal {
