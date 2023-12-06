@@ -326,7 +326,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             // Validate all payload amounts. This needs to be done before returning the hook payloads to ensure valid
             // payload amounts.
             if (_numberOfHookPayloads != 0) {
-                for (uint256 _i; _i < _numberOfHookPayloads;) {
+                for (uint256 _i; _i < _numberOfHookPayloads; ++_i) {
                     // Get a reference to the payload amount.
                     uint256 _payloadAmount = hookPayloads[_i].amount;
 
@@ -339,10 +339,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
                         // Decrement the total amount being added to the balance.
                         _balanceDiff = _balanceDiff - _payloadAmount;
-                    }
-
-                    unchecked {
-                        ++_i;
                     }
                 }
             }
@@ -461,7 +457,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         if (hookPayloads.length != 0) {
             // Validate all payload amounts.
-            for (uint256 _i; _i < hookPayloads.length;) {
+            for (uint256 _i; _i < hookPayloads.length; ++_i) {
                 // Get a reference to the payload amount.
                 uint256 _payloadAmount = hookPayloads[_i].amount;
 
@@ -469,10 +465,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 if (_payloadAmount != 0) {
                     // Increment the total amount being subtracted from the balance.
                     _balanceDiff = _balanceDiff + _payloadAmount;
-                }
-
-                unchecked {
-                    ++_i;
                 }
             }
         }
@@ -738,16 +730,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         uint256 _numberOfTokenAccountingContexts = _accountingContexts.length;
 
         // Add payout limits from each token.
-        for (uint256 _i; _i < _numberOfTokenAccountingContexts;) {
+        for (uint256 _i; _i < _numberOfTokenAccountingContexts; ++_i) {
             uint256 _tokenSurplus = _tokenSurplusFrom(
                 _terminal, _projectId, _accountingContexts[_i], _ruleset, _targetDecimals, _targetCurrency
             );
             // Increment the surplus with any remaining balance.
             if (_tokenSurplus > 0) surplus += _tokenSurplus;
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -805,7 +793,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         uint256 _numberOfPayoutLimits = _payoutLimits.length;
 
         // Loop through each payout limit to determine the cumulative normalized payout limit remaining.
-        for (uint256 _i; _i < _numberOfPayoutLimits;) {
+        for (uint256 _i; _i < _numberOfPayoutLimits; ++_i) {
             _payoutLimit = _payoutLimits[_i];
 
             // Set the payout limit value to the amount still available to pay out during the ruleset.
@@ -834,10 +822,6 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             } else {
                 return 0;
             }
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -865,11 +849,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         uint256 _numberOfTerminals = _terminals.length;
 
         // Add the current surplus for each terminal.
-        for (uint256 _i; _i < _numberOfTerminals;) {
+        for (uint256 _i; _i < _numberOfTerminals; ++_i) {
             surplus += _terminals[_i].currentSurplusOf(_projectId, _decimals, _currency);
-            unchecked {
-                ++_i;
-            }
         }
     }
 }

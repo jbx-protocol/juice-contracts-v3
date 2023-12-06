@@ -76,17 +76,13 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
         // Keep a reference to the number of permissions being iterated on.
         uint256 _numberOfPermissions = _permissionIds.length;
 
-        for (uint256 _i; _i < _numberOfPermissions;) {
+        for (uint256 _i; _i < _numberOfPermissions; ++_i) {
             uint256 _permissionId = _permissionIds[_i];
 
             if (_permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
             if (((permissionsOf[_operator][_account][_projectId] >> _permissionId) & 1) == 0) {
                 return false;
-            }
-
-            unchecked {
-                ++_i;
             }
         }
         return true;
@@ -141,17 +137,13 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
         // Keep a reference to the number of IDs being iterated on.
         uint256 _numberOfIds = _permissionIds.length;
 
-        for (uint256 _i; _i < _numberOfIds;) {
+        for (uint256 _i; _i < _numberOfIds; ++_i) {
             uint256 _id = _permissionIds[_i];
 
             if (_id > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
             // Turn on the bit at the ID.
             packed |= 1 << _id;
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 }
