@@ -1,10 +1,6 @@
 [profile.default]
 solc = '0.8.23'
 evm_version = 'paris'                   # Required for L2s (Optimism, Arbitrum, etc.)
-src = 'contracts'
-test = 'forge_tests'
-out = 'out'
-libs = ['lib']
 match_contract = "_Local"               # Do not run fork tests
 sizes = true
 verbosity = 3                           # display errors
@@ -17,10 +13,6 @@ fs_permissions = [{ access = "read", path = "./deployments/mainnet" }] # Get the
 match_contract = "_Fork"
 
 [fmt]
-line_length = 120
-tab_width = 4
-bracket_spacing = false
 number_underscore = "thousands"
 multiline_func_header = "all"
-quote_style = "double"
 wrap_comments = true

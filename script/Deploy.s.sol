@@ -4,17 +4,17 @@ pragma solidity 0.8.23;
 import "forge-std/Script.sol";
 
 import {IPermit2} from "@permit2/src/interfaces/IPermit2.sol";
-import "../contracts/JBPermissions.sol";
-import "../contracts/JBProjects.sol";
-import "../contracts/JBPrices.sol";
-import "../contracts/JBRulesets.sol";
-import "../contracts/JBDirectory.sol";
-import "../contracts/JBTokens.sol";
-import "../contracts/JBSplits.sol";
-import "../contracts/JBFundAccessLimits.sol";
-import "../contracts/JBController.sol";
-import "../contracts/JBTerminalStore.sol";
-import "../contracts/JBMultiTerminal.sol";
+import "../src/JBPermissions.sol";
+import "../src/JBProjects.sol";
+import "../src/JBPrices.sol";
+import "../src/JBRulesets.sol";
+import "../src/JBDirectory.sol";
+import "../src/JBTokens.sol";
+import "../src/JBSplits.sol";
+import "../src/JBFundAccessLimits.sol";
+import "../src/JBController.sol";
+import "../src/JBTerminalStore.sol";
+import "../src/JBMultiTerminal.sol";
 
 contract Deploy is Script {
     IPermit2 internal constant _PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);

@@ -2,10 +2,10 @@ import os
 from pathlib import Path
 import re
 
-directories = ["contracts", "forge_tests", "script"]
+directories = ["src", "test", "script"]
 
-declare = re.compile(r'error\s+(\w+)\(')
-emit = re.compile(r'revert\s+(\w+)\(')
+declare = re.compile(r"error\s+(\w+)\(")
+emit = re.compile(r"revert\s+(\w+)\(")
 
 for directory in directories:
     for root, _, files in os.walk(Path(directory)):
@@ -22,7 +22,5 @@ for directory in directories:
                     if match_emit and match_emit.group(1) in errors:
                         errors.remove(match_emit.group(1))
 
-                if(errors):
+                if errors:
                     print(f"Unused errors in {root}/{file}: {errors}")
-
-
