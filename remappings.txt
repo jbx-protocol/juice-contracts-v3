@@ -5,3 +5,4 @@
 @permit2/=lib/permit2/
 ds-test/=lib/ds-test/src/
 forge-std/=lib/forge-std/src/
+openzeppelin-contracts/contracts/=lib/permit2/lib/openzeppelin-contracts/contracts/
