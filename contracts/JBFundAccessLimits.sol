@@ -27,32 +27,38 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     //*********************************************************************//
 
     /// @notice A list of packed payout limits for a given project, ruleset, terminal, and token.
-    /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can pay out during the applicable ruleset.
-    /// @dev bits 224-255: The currency that the payout limit is denominated in. If this currency is different from the terminal's `token`, the payout limit will vary depending on their exchange rate.
+    /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can pay
+    /// out during the applicable ruleset.
+    /// @dev bits 224-255: The currency that the payout limit is denominated in. If this currency is different from the
+    /// terminal's `token`, the payout limit will vary depending on their exchange rate.
     /// @custom:param _projectId The ID of the project to get the packed payout limit data of.
     /// @custom:param _rulesetId The ID of the ruleset that the packed payout limit data applies to.
     /// @custom:param _terminal The terminal the payouts are being limited in.
     /// @custom:param _token The token payouts are being limited for.
-    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[]))))
-        internal _packedPayoutLimitsDataOf;
+    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[])))) internal
+        _packedPayoutLimitsDataOf;
 
     /// @notice A list of packed surplus allowances for a given project, ruleset, terminal, and token.
-    /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can access from its surplus during the applicable ruleset.
-    /// @dev bits 224-255: The currency that the surplus allowance is denominated in. If this currency is different from the terminal's `token`, the surplus allowance will vary depending on their exchange rate.
+    /// @dev bits 0-223: The maximum amount (in a specific currency) of the terminal's `token`s that the project can
+    /// access from its surplus during the applicable ruleset.
+    /// @dev bits 224-255: The currency that the surplus allowance is denominated in. If this currency is different from
+    /// the terminal's `token`, the surplus allowance will vary depending on their exchange rate.
     /// @custom:param _projectId The ID of the project to get the packed surplus allowance data of.
     /// @custom:param _rulesetId The ID of the ruleset that the packed surplus allowance data applies to.
     /// @custom:param _terminal The terminal the surplus allowance comes from.
     /// @custom:param _token The token that the surplus allowance applies to.
-    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[]))))
-        internal _packedSurplusAllowancesDataOf;
+    mapping(uint256 => mapping(uint256 => mapping(address => mapping(address => uint256[])))) internal
+        _packedSurplusAllowancesDataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
     /// @notice A project's payout limits for a given ruleset, terminal, and token.
-    /// @notice The total value of `_token`s that a project can pay out from the terminal during the ruleset is dictated by a list of payout limits. Each payout limit is in terms of its own amount and currency.
-    /// @dev The fixed point `amount`s of the returned structs will have the same number of decimals as the specified terminal.
+    /// @notice The total value of `_token`s that a project can pay out from the terminal during the ruleset is dictated
+    /// by a list of payout limits. Each payout limit is in terms of its own amount and currency.
+    /// @dev The fixed point `amount`s of the returned structs will have the same number of decimals as the specified
+    /// terminal.
     /// @param _projectId The ID of the project to get the payout limits of.
     /// @param _rulesetId The ID of the ruleset the payout limits apply to.
     /// @param _terminal The terminal the payout limits apply to.
@@ -63,10 +69,14 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         uint256 _rulesetId,
         address _terminal,
         address _token
-    ) external view override returns (JBCurrencyAmount[] memory payoutLimits) {
+    )
+        external
+        view
+        override
+        returns (JBCurrencyAmount[] memory payoutLimits)
+    {
         // Get a reference to the packed data.
-        uint256[] memory _packedPayoutLimitsData =
-            _packedPayoutLimitsDataOf[_projectId][_rulesetId][_terminal][_token];
+        uint256[] memory _packedPayoutLimitsData = _packedPayoutLimitsDataOf[_projectId][_rulesetId][_terminal][_token];
 
         // Get a reference to the number of payout limits.
         uint256 _numberOfData = _packedPayoutLimitsData.length;
@@ -101,17 +111,22 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     /// @param _terminal The terminal the payout limit applies to.
     /// @param _token The token the payout limit applies to.
     /// @param _currency The currency the payout limit is denominated in.
-    /// @return payoutLimit The payout limit, as a fixed point number with the same number of decimals as the provided terminal.
+    /// @return payoutLimit The payout limit, as a fixed point number with the same number of decimals as the provided
+    /// terminal.
     function payoutLimitOf(
         uint256 _projectId,
         uint256 _rulesetId,
         address _terminal,
         address _token,
         uint256 _currency
-    ) external view override returns (uint256 payoutLimit) {
+    )
+        external
+        view
+        override
+        returns (uint256 payoutLimit)
+    {
         // Get a reference to the packed data.
-        uint256[] memory _data =
-            _packedPayoutLimitsDataOf[_projectId][_rulesetId][_terminal][_token];
+        uint256[] memory _data = _packedPayoutLimitsDataOf[_projectId][_rulesetId][_terminal][_token];
 
         // Get a reference to the number of payout limits.
         uint256 _numberOfData = _data.length;
@@ -136,7 +151,9 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     }
 
     /// @notice A project's surplus allowances for a given ruleset, terminal, and token.
-    /// @notice The total value of `_token`s that a project can pay out from its surplus in a terminal during the ruleset is dictated by a list of surplus allowances. Each surplus allowance is in terms of its own amount and currency.
+    /// @notice The total value of `_token`s that a project can pay out from its surplus in a terminal during the
+    /// ruleset is dictated by a list of surplus allowances. Each surplus allowance is in terms of its own amount and
+    /// currency.
     /// @dev The number of decimals in the returned fixed point amount is the same as that of the specified terminal.
     /// @param _projectId The ID of the project to get the surplus allowances of.
     /// @param _rulesetId The ID of the ruleset the surplus allowances applies to.
@@ -148,7 +165,12 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         uint256 _rulesetId,
         address _terminal,
         address _token
-    ) external view override returns (JBCurrencyAmount[] memory surplusAllowances) {
+    )
+        external
+        view
+        override
+        returns (JBCurrencyAmount[] memory surplusAllowances)
+    {
         // Get a reference to the packed data.
         uint256[] memory _packedSurplusAllowancesData =
             _packedSurplusAllowancesDataOf[_projectId][_rulesetId][_terminal][_token];
@@ -186,17 +208,22 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     /// @param _terminal The terminal the surplus allowance applies to.
     /// @param _token The token the surplus allowance applies to.
     /// @param _currency The currency that the surplus allowance is denominated in.
-    /// @return surplusAllowance The surplus allowance, as a fixed point number with the same number of decimals as the provided terminal.
+    /// @return surplusAllowance The surplus allowance, as a fixed point number with the same number of decimals as the
+    /// provided terminal.
     function surplusAllowanceOf(
         uint256 _projectId,
         uint256 _rulesetId,
         address _terminal,
         address _token,
         uint256 _currency
-    ) external view override returns (uint256 surplusAllowance) {
+    )
+        external
+        view
+        override
+        returns (uint256 surplusAllowance)
+    {
         // Get a reference to the packed data.
-        uint256[] memory _data =
-            _packedSurplusAllowancesDataOf[_projectId][_rulesetId][_terminal][_token];
+        uint256[] memory _data = _packedSurplusAllowancesDataOf[_projectId][_rulesetId][_terminal][_token];
 
         // Get a reference to the number of surplus allowances.
         uint256 _numberOfData = _data.length;
@@ -234,15 +261,21 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
 
     /// @notice Sets limits for the amount of funds a project can access from its terminals during a ruleset.
     /// @dev Only a project's current controller can set its fund access limits.
-    /// @dev Payout limits and surplus allowances must be specified in strictly increasing order (by currency) to prevent duplicates.
+    /// @dev Payout limits and surplus allowances must be specified in strictly increasing order (by currency) to
+    /// prevent duplicates.
     /// @param _projectId The ID of the project whose fund access limits are being set.
     /// @param _rulesetId The ID of the ruleset that the limits will apply within.
-    /// @param _fundAccessLimitGroup An array containing payout limits and surplus allowances for each payment terminal. Amounts are fixed point numbers using the same number of decimals as the accompanying terminal.
+    /// @param _fundAccessLimitGroup An array containing payout limits and surplus allowances for each payment terminal.
+    /// Amounts are fixed point numbers using the same number of decimals as the accompanying terminal.
     function setFundAccessLimitsFor(
         uint256 _projectId,
         uint256 _rulesetId,
         JBFundAccessLimitGroup[] calldata _fundAccessLimitGroup
-    ) external override onlyController(_projectId) {
+    )
+        external
+        override
+        onlyController(_projectId)
+    {
         // Save the number of limits.
         uint256 _numberOfFundAccessLimitGroups = _fundAccessLimitGroup.length;
 
@@ -282,10 +315,8 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
 
                 // Set the payout limit if there is one.
                 if (_payoutLimit.amount > 0) {
-                    _packedPayoutLimitsDataOf[_projectId][_rulesetId][_fundAccessLimitGroup[_i]
-                        .terminal][_fundAccessLimitGroup[_i].token].push(
-                        _payoutLimit.amount | (_payoutLimit.currency << 224)
-                    );
+                    _packedPayoutLimitsDataOf[_projectId][_rulesetId][_fundAccessLimitGroup[_i].terminal][_fundAccessLimitGroup[_i]
+                        .token].push(_payoutLimit.amount | (_payoutLimit.currency << 224));
                 }
 
                 unchecked {
@@ -315,17 +346,14 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
                 }
 
                 // Make sure the surplus allowances are passed in increasing order of currency to prevent duplicates.
-                if (
-                    _j != 0
-                        && _surplusAllowance.currency <= _limits.surplusAllowances[_j - 1].currency
-                ) revert INVALID_SURPLUS_ALLOWANCE_CURRENCY_ORDERING();
+                if (_j != 0 && _surplusAllowance.currency <= _limits.surplusAllowances[_j - 1].currency) {
+                    revert INVALID_SURPLUS_ALLOWANCE_CURRENCY_ORDERING();
+                }
 
                 // Set the surplus allowance if there is one.
                 if (_surplusAllowance.amount > 0) {
-                    _packedSurplusAllowancesDataOf[_projectId][_rulesetId][_fundAccessLimitGroup[_i]
-                        .terminal][_fundAccessLimitGroup[_i].token].push(
-                        _surplusAllowance.amount | (_surplusAllowance.currency << 224)
-                    );
+                    _packedSurplusAllowancesDataOf[_projectId][_rulesetId][_fundAccessLimitGroup[_i].terminal][_fundAccessLimitGroup[_i]
+                        .token].push(_surplusAllowance.amount | (_surplusAllowance.currency << 224));
                 }
 
                 unchecked {

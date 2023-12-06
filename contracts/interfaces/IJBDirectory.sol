@@ -14,10 +14,7 @@ interface IJBDirectory {
     event SetTerminals(uint256 indexed projectId, IJBTerminal[] terminals, address caller);
 
     event SetPrimaryTerminal(
-        uint256 indexed projectId,
-        address indexed token,
-        IJBTerminal indexed terminal,
-        address caller
+        uint256 indexed projectId, address indexed token, IJBTerminal indexed terminal, address caller
     );
 
     event SetIsAllowedToSetFirstController(address indexed addr, bool indexed flag, address caller);
@@ -32,17 +29,13 @@ interface IJBDirectory {
 
     function isTerminalOf(uint256 projectId, IJBTerminal terminal) external view returns (bool);
 
-    function primaryTerminalOf(uint256 projectId, address token)
-        external
-        view
-        returns (IJBTerminal);
+    function primaryTerminalOf(uint256 projectId, address token) external view returns (IJBTerminal);
 
     function setControllerOf(uint256 projectId, IERC165 controller) external;
 
     function setTerminalsOf(uint256 projectId, IJBTerminal[] calldata terminals) external;
 
-    function setPrimaryTerminalOf(uint256 projectId, address token, IJBTerminal terminal)
-        external;
+    function setPrimaryTerminalOf(uint256 projectId, address token, IJBTerminal terminal) external;
 
     function setIsAllowedToSetFirstController(address account, bool flag) external;
 }

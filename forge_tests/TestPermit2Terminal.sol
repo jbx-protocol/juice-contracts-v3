@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {PermitSignature} from "@permit2/src/test/utils/PermitSignature.sol";
+import {PermitSignature} from "@permit2/test/utils/PermitSignature.sol";
 import {MockPriceFeed} from "./mock/MockPriceFeed.sol";
 
 contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
@@ -42,12 +42,8 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         from = vm.addr(fromPrivateKey);
         DOMAIN_SEPARATOR = permit2().DOMAIN_SEPARATOR();
 
-        JBRulesetData memory _data = JBRulesetData({
-            duration: 0,
-            weight: _WEIGHT,
-            decayRate: 0,
-            hook: IJBRulesetApprovalHook(address(0))
-        });
+        JBRulesetData memory _data =
+            JBRulesetData({duration: 0, weight: _WEIGHT, decayRate: 0, hook: IJBRulesetApprovalHook(address(0))});
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
@@ -78,12 +74,9 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
-        _accountingContexts[1] =
-            JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
+        _accountingContexts[1] = JBAccountingContextConfig({token: address(_usdc), standard: JBTokenStandards.ERC20});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -132,11 +125,8 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             nonce: 0
         });
 
-        IAllowanceTransfer.PermitSingle memory permit = IAllowanceTransfer.PermitSingle({
-            details: details,
-            spender: address(_terminal),
-            sigDeadline: _deadline
-        });
+        IAllowanceTransfer.PermitSingle memory permit =
+            IAllowanceTransfer.PermitSingle({details: details, spender: address(_terminal), sigDeadline: _deadline});
 
         // Setup: sign permit details.
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
@@ -183,9 +173,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
         assertEq(_tokens.totalBalanceOf(from, _projectId), _minted);
     }
 
-    function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline)
-        public
-    {
+    function testFuzzAddToBalancePermit2(uint256 _coins, uint256 _expiration, uint256 _deadline) public {
         // Setup: set fuzz boundaries.
         _coins = bound(_coins, 0, type(uint160).max);
         _expiration = bound(_expiration, block.timestamp + 1, type(uint48).max - 1);
@@ -199,11 +187,8 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
             nonce: 0
         });
 
-        IAllowanceTransfer.PermitSingle memory permit = IAllowanceTransfer.PermitSingle({
-            details: details,
-            spender: address(_terminal),
-            sigDeadline: _deadline
-        });
+        IAllowanceTransfer.PermitSingle memory permit =
+            IAllowanceTransfer.PermitSingle({details: details, spender: address(_terminal), sigDeadline: _deadline});
 
         // Setup: sign permit details.
         bytes memory sig = getPermitSignature(permit, fromPrivateKey, DOMAIN_SEPARATOR);
@@ -232,9 +217,7 @@ contract TestPermit2Terminal_Local is TestBaseWorkflow, PermitSignature {
 
         // Test: add to balance using permit2 data, which should transfer tokens.
         vm.prank(from);
-        _terminal.addToBalanceOf(
-            _projectId, address(_usdc), _coins, false, "testing permit2", _packedData
-        );
+        _terminal.addToBalanceOf(_projectId, address(_usdc), _coins, false, "testing permit2", _packedData);
 
         // Check: that tokens were transferred.
         assertEq(_usdc.balanceOf(address(_terminal)), _coins);

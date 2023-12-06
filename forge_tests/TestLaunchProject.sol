@@ -21,12 +21,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         _controller = jbController();
         _rulesets = jbRulesets();
 
-        _data = JBRulesetData({
-            duration: 0,
-            weight: 0,
-            decayRate: 0,
-            hook: IJBRulesetApprovalHook(address(0))
-        });
+        _data = JBRulesetData({duration: 0, weight: 0, decayRate: 0, hook: IJBRulesetApprovalHook(address(0))});
 
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
@@ -48,11 +43,7 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         });
     }
 
-    function equals(JBRuleset memory queued, JBRuleset memory stored)
-        internal
-        view
-        returns (bool)
-    {
+    function equals(JBRuleset memory queued, JBRuleset memory stored) internal pure returns (bool) {
         // Just compare the output of hashing all fields packed.
         return (
             keccak256(
@@ -96,10 +87,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -154,10 +143,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -211,10 +198,8 @@ contract TestLaunchProject_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 

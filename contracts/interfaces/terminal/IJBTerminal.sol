@@ -11,27 +11,15 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 /// @notice A terminal that accepts payments and can be migrated.
 interface IJBTerminal is IERC165 {
     event MigrateTerminal(
-        uint256 indexed projectId,
-        address indexed token,
-        IJBTerminal indexed to,
-        uint256 amount,
-        address caller
+        uint256 indexed projectId, address indexed token, IJBTerminal indexed to, uint256 amount, address caller
     );
 
     event AddToBalance(
-        uint256 indexed projectId,
-        uint256 amount,
-        uint256 unlockedFees,
-        string memo,
-        bytes metadata,
-        address caller
+        uint256 indexed projectId, uint256 amount, uint256 unlockedFees, string memo, bytes metadata, address caller
     );
 
     event SetAccountingContext(
-        uint256 indexed projectId,
-        address indexed token,
-        JBAccountingContext context,
-        address caller
+        uint256 indexed projectId, address indexed token, JBAccountingContext context, address caller
     );
 
     event Pay(
@@ -47,33 +35,27 @@ interface IJBTerminal is IERC165 {
         address caller
     );
 
-    event HookDidPay(
-        IJBPayHook indexed hook, JBDidPayData data, uint256 payloadAmount, address caller
-    );
+    event HookDidPay(IJBPayHook indexed hook, JBDidPayData data, uint256 payloadAmount, address caller);
 
-    function accountingContextForTokenOf(uint256 projectId, address token)
+    function accountingContextForTokenOf(
+        uint256 projectId,
+        address token
+    )
         external
         view
         returns (JBAccountingContext memory);
 
-    function accountingContextsOf(uint256 projectId)
-        external
-        view
-        returns (JBAccountingContext[] memory);
+    function accountingContextsOf(uint256 projectId) external view returns (JBAccountingContext[] memory);
 
-    function currentSurplusOf(uint256 projectId, uint256 decimals, uint256 currency)
-        external
-        view
-        returns (uint256);
+    function currentSurplusOf(uint256 projectId, uint256 decimals, uint256 currency) external view returns (uint256);
 
-    function migrateBalanceOf(uint256 projectId, address token, IJBTerminal to)
-        external
-        returns (uint256 balance);
+    function migrateBalanceOf(uint256 projectId, address token, IJBTerminal to) external returns (uint256 balance);
 
     function addAccountingContextsFor(
         uint256 projectId,
         JBAccountingContextConfig[] calldata accountingContexts
-    ) external;
+    )
+        external;
 
     function pay(
         uint256 projectId,
@@ -83,7 +65,10 @@ interface IJBTerminal is IERC165 {
         uint256 minReturnedTokens,
         string calldata memo,
         bytes calldata metadata
-    ) external payable returns (uint256 beneficiaryTokenCount);
+    )
+        external
+        payable
+        returns (uint256 beneficiaryTokenCount);
 
     function addToBalanceOf(
         uint256 projectId,
@@ -92,5 +77,7 @@ interface IJBTerminal is IERC165 {
         bool shouldUnlockHeldFees,
         string calldata memo,
         bytes calldata metadata
-    ) external payable;
+    )
+        external
+        payable;
 }

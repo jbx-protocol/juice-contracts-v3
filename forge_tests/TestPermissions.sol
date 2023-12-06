@@ -22,12 +22,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
         _controller = jbController();
         _permissions = jbPermissions();
 
-        _data = JBRulesetData({
-            duration: 0,
-            weight: 0,
-            decayRate: 0,
-            hook: IJBRulesetApprovalHook(address(0))
-        });
+        _data = JBRulesetData({duration: 0, weight: 0, decayRate: 0, hook: IJBRulesetApprovalHook(address(0))});
 
         _metadata = JBRulesetMetadata({
             reservedRate: 0,
@@ -59,10 +54,8 @@ contract TestPermissions_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -108,11 +101,7 @@ contract TestPermissions_Local is TestBaseWorkflow {
         for (uint256 i; i < 257; i++) {
             permIds[i] = i;
 
-            permData[0] = JBPermissionsData({
-                operator: address(0),
-                projectId: _projectOne,
-                permissionIds: permIds
-            });
+            permData[0] = JBPermissionsData({operator: address(0), projectId: _projectOne, permissionIds: permIds});
 
             // Set em.
             vm.prank(_projectOwner);
@@ -130,19 +119,14 @@ contract TestPermissions_Local is TestBaseWorkflow {
         for (uint256 i; i < 256; i++) {
             permIds[i] = i;
 
-            permData[0] = JBPermissionsData({
-                operator: address(0),
-                projectId: _projectOne,
-                permissionIds: permIds
-            });
+            permData[0] = JBPermissionsData({operator: address(0), projectId: _projectOne, permissionIds: permIds});
 
             // Set em.
             vm.prank(_projectOwner);
             _permissions.setPermissionsForOperator(_projectOwner, permData[0]);
 
             // Verify.
-            bool _check =
-                _permissions.hasPermission(address(0), _projectOwner, _projectOne, permIds[i]);
+            bool _check = _permissions.hasPermission(address(0), _projectOwner, _projectOne, permIds[i]);
             assertEq(_check, true);
         }
     }

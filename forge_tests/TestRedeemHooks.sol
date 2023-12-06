@@ -26,12 +26,8 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         _terminal = jbMultiTerminal();
         _tokens = jbTokens();
 
-        JBRulesetData memory _data = JBRulesetData({
-            duration: 0,
-            weight: _WEIGHT,
-            decayRate: 0,
-            hook: IJBRulesetApprovalHook(address(0))
-        });
+        JBRulesetData memory _data =
+            JBRulesetData({duration: 0, weight: _WEIGHT, decayRate: 0, hook: IJBRulesetApprovalHook(address(0))});
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
@@ -62,10 +58,8 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -118,7 +112,8 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _WEIGHT);
+        uint256 _beneficiaryTokenBalance =
+            UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_WEIGHT)));
         assertEq(_tokens.totalBalanceOf(address(this), _projectId), _beneficiaryTokenBalance);
         assertEq(_beneficiaryTokensReceived, _beneficiaryTokenBalance);
         emit log_uint(_beneficiaryTokenBalance);
@@ -133,8 +128,7 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         // Reference payloads.
         JBRedeemHookPayload[] memory _payloads = new JBRedeemHookPayload[](1);
 
-        _payloads[0] =
-            JBRedeemHookPayload({hook: IJBRedeemHook(_redeemHook), amount: _halfPaid, metadata: ""});
+        _payloads[0] = JBRedeemHookPayload({hook: IJBRedeemHook(_redeemHook), amount: _halfPaid, metadata: ""});
 
         // Redeem Data.
         JBDidRedeemData memory _redeemData = JBDidRedeemData({
@@ -161,18 +155,10 @@ contract TestRedeemHooks_Local is TestBaseWorkflow {
         });
 
         // Mock the hook.
-        vm.mockCall(
-            _redeemHook,
-            abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector),
-            abi.encode(_redeemData)
-        );
+        vm.mockCall(_redeemHook, abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector), abi.encode(_redeemData));
 
         // Assert that the hook gets called with the expected value.
-        vm.expectCall(
-            _redeemHook,
-            _halfPaid,
-            abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector, _redeemData)
-        );
+        vm.expectCall(_redeemHook, _halfPaid, abi.encodeWithSelector(IJBRedeemHook.didRedeem.selector, _redeemData));
 
         vm.mockCall(
             _DATA_HOOK,

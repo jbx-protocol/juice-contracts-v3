@@ -3,7 +3,8 @@ pragma solidity ^0.8.6;
 
 import /* {*} from */ "./helpers/TestBaseWorkflow.sol";
 
-// Projects can issue a token, be paid to receieve claimed tokens,  burn some of the claimed tokens, redeem rest of tokens
+// Projects can issue a token, be paid to receieve claimed tokens,  burn some of the claimed tokens, redeem rest of
+// tokens
 contract TestRedeem_Local is TestBaseWorkflow {
     IJBController private _controller;
     IJBMultiTerminal private _terminal;
@@ -55,16 +56,11 @@ contract TestRedeem_Local is TestBaseWorkflow {
         _rulesetConfig[0].fundAccessLimitGroups = new JBFundAccessLimitGroup[](0);
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
-        JBAccountingContextConfig[] memory _accountingContextConfigs =
-            new JBAccountingContextConfig[](1);
-        _accountingContextConfigs[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
-        _terminalConfigurations[0] = JBTerminalConfig({
-            terminal: _terminal,
-            accountingContextConfigs: _accountingContextConfigs
-        });
+        JBAccountingContextConfig[] memory _accountingContextConfigs = new JBAccountingContextConfig[](1);
+        _accountingContextConfigs[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
+        _terminalConfigurations[0] =
+            JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContextConfigs});
 
         // Create a first project to collect fees.
         _controller.launchProjectFor({
@@ -104,7 +100,8 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         // Make sure the beneficiary has a balance of project tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_nativePayAmount, _data.weight);
+        uint256 _beneficiaryTokenBalance =
+            UD60x18unwrap(UD60x18mul(UD60x18wrap(_nativePayAmount), UD60x18wrap(_data.weight)));
         assertEq(_tokens.totalBalanceOf(_beneficiary, _projectId), _beneficiaryTokenBalance);
 
         // Make sure the native token balance in terminal is up to date.
@@ -130,10 +127,10 @@ contract TestRedeem_Local is TestBaseWorkflow {
         });
 
         // Keep a reference to the expected amount redeemed.
-        uint256 _grossRedeemed = PRBMath.mulDiv(
-            PRBMath.mulDiv(_nativeTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
+        uint256 _grossRedeemed = mulDiv(
+            mulDiv(_nativeTerminalBalance, _tokenAmountToRedeem, _beneficiaryTokenBalance),
             _metadata.redemptionRate
-                + PRBMath.mulDiv(
+                + mulDiv(
                     _tokenAmountToRedeem,
                     JBConstants.MAX_REDEMPTION_RATE - _metadata.redemptionRate,
                     _beneficiaryTokenBalance
@@ -142,8 +139,7 @@ contract TestRedeem_Local is TestBaseWorkflow {
         );
 
         // Compute the fee taken.
-        uint256 _fee = _grossRedeemed
-            - PRBMath.mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
+        uint256 _fee = _grossRedeemed - mulDiv(_grossRedeemed, 1_000_000_000, 25_000_000 + 1_000_000_000); // 2.5% fee
 
         // Compute the net amount received, still in project.
         uint256 _netReceived = _grossRedeemed - _fee;

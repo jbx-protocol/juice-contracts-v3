@@ -75,8 +75,7 @@ contract TestSplits_Local is TestBaseWorkflow {
             hook: IJBSplitHook(address(0))
         });
 
-        _splitsGroup[0] =
-            JBSplitGroup({groupId: uint32(uint160(JBConstants.NATIVE_TOKEN)), splits: _splits});
+        _splitsGroup[0] = JBSplitGroup({groupId: uint32(uint160(JBConstants.NATIVE_TOKEN)), splits: _splits});
 
         // A dummy used to check that splits groups of "0" cannot bypass payout limits.
         _splitsGroup[1] = JBSplitGroup({groupId: 0, splits: _splits});
@@ -92,20 +91,16 @@ contract TestSplits_Local is TestBaseWorkflow {
         });
 
         // Reserved rate split group.
-        _splitsGroup[2] =
-            JBSplitGroup({groupId: JBSplitGroupIds.RESERVED_TOKENS, splits: _reserveRateSplits});
+        _splitsGroup[2] = JBSplitGroup({groupId: JBSplitGroupIds.RESERVED_TOKENS, splits: _reserveRateSplits});
 
         // Package up fund access limits.
         JBFundAccessLimitGroup[] memory _fundAccessLimitGroup = new JBFundAccessLimitGroup[](1);
         JBCurrencyAmount[] memory _payoutLimits = new JBCurrencyAmount[](1);
         JBCurrencyAmount[] memory _surplusAllowances = new JBCurrencyAmount[](1);
 
-        _payoutLimits[0] = JBCurrencyAmount({
-            amount: _nativePayoutLimit,
-            currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-        });
-        _surplusAllowances[0] =
-            JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))});
+        _payoutLimits[0] =
+            JBCurrencyAmount({amount: _nativePayoutLimit, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))});
+        _surplusAllowances[0] = JBCurrencyAmount({amount: 2 ether, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))});
         _fundAccessLimitGroup[0] = JBFundAccessLimitGroup({
             terminal: address(_terminal),
             token: JBConstants.NATIVE_TOKEN,
@@ -124,10 +119,8 @@ contract TestSplits_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -175,13 +168,13 @@ contract TestSplits_Local is TestBaseWorkflow {
         });
 
         // Calculate the amount returned after fees are processed.
-        uint256 _beneficiaryNativeBalance = PRBMath.mulDiv(
-            _nativePayoutLimit, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE()
-        );
+        uint256 _beneficiaryNativeBalance =
+            mulDiv(_nativePayoutLimit, JBConstants.MAX_FEE, JBConstants.MAX_FEE + _terminal.FEE());
 
         assertEq(_splitsGuy.balance, _beneficiaryNativeBalance);
 
-        // Check that split groups of "0" don't extend the payout limit (keeping this out of a number test, for brevity).
+        // Check that split groups of "0" don't extend the payout limit (keeping this out of a number test, for
+        // brevity).
         vm.expectRevert(abi.encodeWithSignature("PAYOUT_LIMIT_EXCEEDED()"));
 
         // First payout meets our native token payout limit.
@@ -197,9 +190,8 @@ contract TestSplits_Local is TestBaseWorkflow {
         _controller.sendReservedTokensToSplitsOf(_projectId, "");
 
         // 10 native tokens paid -> 1000 per Eth, 10000 total, 50% reserve rate, 5000 tokens sent.
-        uint256 _reserveRateDistributionAmount = PRBMath.mulDiv(
-            _nativePayAmount, _data.weight, 10 ** 18
-        ) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
+        uint256 _reserveRateDistributionAmount =
+            mulDiv(_nativePayAmount, _data.weight, 10 ** 18) * _metadata.reservedRate / JBConstants.MAX_RESERVED_RATE;
 
         assertEq(_tokens.totalBalanceOf(_splitsGuy, _projectId), _reserveRateDistributionAmount);
     }
@@ -259,10 +251,8 @@ contract TestSplits_Local is TestBaseWorkflow {
         // Package up terminal configuration.
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](1);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 

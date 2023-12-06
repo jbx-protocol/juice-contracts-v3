@@ -29,7 +29,11 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         uint48 deadline,
         bytes memory data,
         address target
-    ) private view returns (ERC2771Forwarder.ForwardRequestData memory) {
+    )
+        private
+        view
+        returns (ERC2771Forwarder.ForwardRequestData memory)
+    {
         ForwardRequest memory request = ForwardRequest({
             from: _signer,
             to: address(target),
@@ -74,12 +78,8 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         // In case we need to test access control
         _projectOwner = _signer;
 
-        JBRulesetData memory _data = JBRulesetData({
-            duration: 0,
-            weight: _WEIGHT,
-            decayRate: 0,
-            hook: IJBRulesetApprovalHook(address(0))
-        });
+        JBRulesetData memory _data =
+            JBRulesetData({duration: 0, weight: _WEIGHT, decayRate: 0, hook: IJBRulesetApprovalHook(address(0))});
 
         JBRulesetMetadata memory _metadata = JBRulesetMetadata({
             reservedRate: 0,
@@ -110,10 +110,8 @@ contract TestMetaTx_Local is TestBaseWorkflow {
 
         JBTerminalConfig[] memory _terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContextConfig[] memory _accountingContexts = new JBAccountingContextConfig[](2);
-        _accountingContexts[0] = JBAccountingContextConfig({
-            token: JBConstants.NATIVE_TOKEN,
-            standard: JBTokenStandards.NATIVE
-        });
+        _accountingContexts[0] =
+            JBAccountingContextConfig({token: JBConstants.NATIVE_TOKEN, standard: JBTokenStandards.NATIVE});
         _terminalConfigurations[0] =
             JBTerminalConfig({terminal: _terminal, accountingContextConfigs: _accountingContexts});
 
@@ -177,7 +175,7 @@ contract TestMetaTx_Local is TestBaseWorkflow {
         assertEq(address(_terminal).balance, 1 ether);
 
         // Check: Ensure the beneficiary (signer) has a balance of tokens.
-        uint256 _beneficiaryTokenBalance = PRBMathUD60x18.mul(_payAmount, _WEIGHT);
+        uint256 _beneficiaryTokenBalance = UD60x18unwrap(UD60x18mul(UD60x18wrap(_payAmount), UD60x18wrap(_WEIGHT)));
         assertEq(_tokens.totalBalanceOf(_signer, _projectId), _beneficiaryTokenBalance);
 
         // Setup 2: meta tx data for redeem

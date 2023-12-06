@@ -52,11 +52,7 @@ library JBRulesetMetadataResolver {
         return ((_ruleset.metadata >> 75) & 1) == 1;
     }
 
-    function useTotalSurplusForRedemptions(JBRuleset memory _ruleset)
-        internal
-        pure
-        returns (bool)
-    {
+    function useTotalSurplusForRedemptions(JBRuleset memory _ruleset) internal pure returns (bool) {
         return ((_ruleset.metadata >> 76) & 1) == 1;
     }
 
@@ -79,11 +75,7 @@ library JBRulesetMetadataResolver {
     /// @notice Pack the funding cycle metadata.
     /// @param _metadata The metadata to validate and pack.
     /// @return packed The packed uint256 of all metadata params. The first 8 bits specify the version.
-    function packRulesetMetadata(JBRulesetMetadata memory _metadata)
-        internal
-        pure
-        returns (uint256 packed)
-    {
+    function packRulesetMetadata(JBRulesetMetadata memory _metadata) internal pure returns (uint256 packed) {
         // version 1 in the bits 0-3 (4 bits).
         packed = 1;
         // reserved rate in bits 4-19 (16 bits).
@@ -125,11 +117,7 @@ library JBRulesetMetadataResolver {
     /// @notice Expand the funding cycle metadata.
     /// @param _ruleset The funding cycle having its metadata expanded.
     /// @return metadata The metadata object.
-    function expandMetadata(JBRuleset memory _ruleset)
-        internal
-        pure
-        returns (JBRulesetMetadata memory)
-    {
+    function expandMetadata(JBRuleset memory _ruleset) internal pure returns (JBRulesetMetadata memory) {
         return JBRulesetMetadata(
             reservedRate(_ruleset),
             redemptionRate(_ruleset),
