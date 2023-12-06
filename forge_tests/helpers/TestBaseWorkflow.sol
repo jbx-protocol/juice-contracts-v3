@@ -87,7 +87,7 @@ import {MetadataResolverHelper} from "./MetadataResolverHelper.sol";
 import {MockERC20} from "./../mock/MockERC20.sol";
 
 import {mulDiv} from "@paulrberg/contracts/math/Common.sol";
-import {mul as UD60x18mul, ud as UD60x18wrap, unwrap as UD60x18unwrap} from "@paulrberg/contracts/math/UD60x18.sol";
+import {mul as UD60x18mul, wrap as UD60x18wrap, unwrap as UD60x18unwrap} from "@paulrberg/contracts/math/UD60x18.sol";
 
 // Base contract for Juicebox system tests.
 // Provides common functionality, such as deploying contracts on test setup.
