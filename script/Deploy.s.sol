@@ -32,25 +32,26 @@ contract Deploy is Script {
     JBMultiTerminal _multiTerminal;
 
     function _run(address _manager, address _trustedForwarder) internal {
-        vm.broadcast();
+        vm.startBroadcast();
         _deployContracts(_manager, _trustedForwarder);
+        vm.stopBroadcast();
     }
 
     function _deployContracts(address _manager, address _trustedForwarder) internal {
         _permissions = new JBPermissions();
         _projects = new JBProjects(_manager);
         _prices = new JBPrices(_permissions, _projects, _manager);
-        _directory = new JBDirectory(_permissions, _projects, address(this));
-        _tokens = new JBTokens(_directory);
-        _rulesets = new JBRulesets(_directory);
+        _directory = new JBDirectory(_permissions, _projects, msg.sender);
         _splits = new JBSplits(_directory);
         _fundAccessLimits = new JBFundAccessLimits(_directory);
+        _tokens = new JBTokens(_directory);
+        _rulesets = new JBRulesets(_directory);
+        _terminalStore = new JBTerminalStore(_directory, _rulesets, _prices);
         _controller = new JBController(
             _permissions, _projects, _directory, _rulesets, _tokens, _splits, _fundAccessLimits, _trustedForwarder
         );
         _directory.setIsAllowedToSetFirstController(address(_controller), true);
         _directory.transferOwnership(_manager);
-        _terminalStore = new JBTerminalStore(_directory, _rulesets, _prices);
         _multiTerminal = new JBMultiTerminal(
             _permissions, _projects, _directory, _splits, _terminalStore, _PERMIT2, _trustedForwarder, _manager
         );
@@ -83,7 +84,6 @@ contract Deploy is Script {
 // Ethereum
 contract DeployEthereumMainnet is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
     function setUp() public {}
@@ -95,7 +95,6 @@ contract DeployEthereumMainnet is Deploy {
 
 contract DeployEthereumGoerli is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
     function setUp() public {}
@@ -107,8 +106,7 @@ contract DeployEthereumGoerli is Deploy {
 
 contract DeployEthereumSepolia is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
-    address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
+    address _manager = 0x5a3aABEAAa3d7C7d86310dC769C494A9a5a730A1;
 
     function setUp() public {}
 
@@ -121,7 +119,6 @@ contract DeployEthereumSepolia is Deploy {
 
 contract DeployOptimismMainnet is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
     function setUp() public {}
@@ -133,7 +130,6 @@ contract DeployOptimismMainnet is Deploy {
 
 contract DeployOptimismTestnet is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
     function setUp() public {}
@@ -147,7 +143,6 @@ contract DeployOptimismTestnet is Deploy {
 
 contract DeployPolygonMainnet is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
     function setUp() public {}
@@ -159,7 +154,6 @@ contract DeployPolygonMainnet is Deploy {
 
 contract DeployPolygonMumbai is Deploy {
     address _trustedForwarder = 0xB2b5841DBeF766d4b521221732F9B618fCf34A87;
-
     address _manager = 0x823b92d6a4b2AED4b15675c7917c9f922ea8ADAD;
 
     function setUp() public {}
