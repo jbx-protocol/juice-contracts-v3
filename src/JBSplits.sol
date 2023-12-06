@@ -32,7 +32,8 @@ contract JBSplits is JBControlled, IJBSplits {
     /// @custom:param _projectId The ID of the project the domain applies to.
     /// @custom:param _domainId The ID of the domain that the group is specified within.
     /// @custom:param _groupId The ID of the group to count this splits of.
-    mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) private _splitCountOf;
+    mapping(uint256 _projectId => mapping(uint256 _domainId => mapping(uint256 _groupId => uint256))) private
+        _splitCountOf;
 
     /// @notice Packed split data given the split's project, domain, and group IDs, as well as the split's index within
     /// that group.
@@ -44,7 +45,10 @@ contract JBSplits is JBControlled, IJBSplits {
     /// @custom:param _index The split's index within the group (in the order that the split were set).
     /// @custom:return The split's `preferAddToBalance`, `percent`, `projectId`, and `beneficiary` packed into one
     /// `uint256`.
-    mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256)))) private _packedSplitParts1Of;
+    mapping(
+        uint256 _projectId
+            => mapping(uint256 _domainId => mapping(uint256 _groupId => mapping(uint256 _index => uint256)))
+    ) private _packedSplitParts1Of;
 
     /// @notice More packed split data given the split's project, domain, and group IDs, as well as the split's index
     /// within that group.
@@ -55,7 +59,10 @@ contract JBSplits is JBControlled, IJBSplits {
     /// @custom:param _groupId The ID of the group the split is in.
     /// @custom:param _index The split's index within the group (in the order that the split were set).
     /// @custom:return The split's `lockedUntil` and `hook` packed into one `uint256`.
-    mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256)))) private _packedSplitParts2Of;
+    mapping(
+        uint256 _projectId
+            => mapping(uint256 _domainId => mapping(uint256 _groupId => mapping(uint256 _index => uint256)))
+    ) private _packedSplitParts2Of;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

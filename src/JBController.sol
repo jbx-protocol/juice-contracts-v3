@@ -82,12 +82,12 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
     /// @notice The reserved token balance that has not yet been realized (sent out to the reserved split group) for a
     /// project.
-    /// @custom:param projectId The ID of the project to get the pending reserved token balance of.
-    mapping(uint256 => uint256) public override pendingReservedTokenBalanceOf;
+    /// @custom:param _projectId The ID of the project to get the pending reserved token balance of.
+    mapping(uint256 _projectId => uint256) public override pendingReservedTokenBalanceOf;
 
     /// @notice The metadata for each project, which can be used across several domains.
     /// @custom:param _projectId The ID of the project to which the metadata belongs.
-    mapping(uint256 => string) public override metadataOf;
+    mapping(uint256 _projectId => string) public override metadataOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

@@ -40,20 +40,20 @@ contract JBTokens is JBControlled, IJBTokens {
 
     /// @notice Each project's attached token contract.
     /// @custom:param _projectId The ID of the project the token belongs to.
-    mapping(uint256 => IJBToken) public override tokenOf;
+    mapping(uint256 _projectId => IJBToken) public override tokenOf;
 
     /// @notice Each token's project.
     /// @custom:param _token The address of the token associated with the project.
-    mapping(IJBToken => uint256) public override projectIdOf;
+    mapping(IJBToken _token => uint256) public override projectIdOf;
 
     /// @notice The total supply of credits for each project.
     /// @custom:param _projectId The ID of the project to which the credits belong.
-    mapping(uint256 => uint256) public override totalCreditSupplyOf;
+    mapping(uint256 _projectId => uint256) public override totalCreditSupplyOf;
 
     /// @notice Each holder's credit balance for each project.
     /// @custom:param _holder The credit holder.
     /// @custom:param _projectId The ID of the project to which the credits belong.
-    mapping(address => mapping(uint256 => uint256)) public override creditBalanceOf;
+    mapping(address _holder => mapping(uint256 _projectId => uint256)) public override creditBalanceOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

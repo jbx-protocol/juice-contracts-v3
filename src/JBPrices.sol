@@ -45,7 +45,9 @@ contract JBPrices is Ownable, JBPermissioned, IJBPrices {
     /// all projects.
     /// @custom:param _pricingCurrency The currency the feed's resulting price is in terms of.
     /// @custom:param _unitCurrency The currency being priced by the feed.
-    mapping(uint256 => mapping(uint256 => mapping(uint256 => IJBPriceFeed))) public override priceFeedFor;
+    mapping(uint256 _projectId => mapping(uint256 _pricingCurrency => mapping(uint256 _unitCurrency => IJBPriceFeed)))
+        public
+        override priceFeedFor;
 
     //*********************************************************************//
     // -------------------------- public views --------------------------- //

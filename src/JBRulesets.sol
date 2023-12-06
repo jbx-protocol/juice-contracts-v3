@@ -46,21 +46,21 @@ contract JBRulesets is JBControlled, IJBRulesets {
     /// @notice The user-defined properties of each ruleset, packed into one storage slot.
     /// @custom:param _projectId The ID of the project to get the user-defined properties of.
     /// @custom:param _rulesetId The ID of the ruleset to get the user-defined properties of.
-    mapping(uint256 => mapping(uint256 => uint256)) private _packedUserPropertiesOf;
+    mapping(uint256 _projectId => mapping(uint256 _rulesetId => uint256)) private _packedUserPropertiesOf;
 
     /// @notice The mechanism-added properties to manage and schedule each ruleset, packed into one storage slot.
     /// @custom:param _projectId The ID of the project to get the intrinsic properties of.
     /// @custom:param _rulesetId The ID of the ruleset to get the intrinsic properties of.
-    mapping(uint256 => mapping(uint256 => uint256)) private _packedIntrinsicPropertiesOf;
+    mapping(uint256 _projectId => mapping(uint256 _rulesetId => uint256)) private _packedIntrinsicPropertiesOf;
 
     /// @notice The metadata for each ruleset, packed into one storage slot.
     /// @custom:param _projectId The ID of the project to get metadata of.
     /// @custom:param _rulesetId The ID of the ruleset to get metadata of.
-    mapping(uint256 => mapping(uint256 => uint256)) private _metadataOf;
+    mapping(uint256 _projectId => mapping(uint256 _rulesetId => uint256)) private _metadataOf;
 
     /// @notice Cached weight values to derive rulesets from.
     /// @custom:param _projectId The ID of the project to which the cache applies.
-    mapping(uint256 => JBRulesetWeightCache) internal _weightCacheOf;
+    mapping(uint256 _projectId => JBRulesetWeightCache) internal _weightCacheOf;
     //*********************************************************************//
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
@@ -71,7 +71,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
     /// "changeable" cycle.
     /// @custom:param _projectId The ID of the project to get the latest ruleset ID of.
     /// @return latestRulesetIdOf The `rulesetId` of the project's latest ruleset.
-    mapping(uint256 => uint256) public override latestRulesetIdOf;
+    mapping(uint256 _projectId => uint256) public override latestRulesetIdOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //

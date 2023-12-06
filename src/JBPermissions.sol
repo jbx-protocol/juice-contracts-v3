@@ -28,7 +28,8 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
     /// @custom:param _account The address of the account being operated on behalf of.
     /// @custom:param _projectId The project ID the permissions are scoped to. An ID of 0 grants permissions across all
     /// projects.
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public override permissionsOf;
+    mapping(address _operator => mapping(address _account => mapping(uint256 _projectId => uint256))) public override
+        permissionsOf;
 
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
