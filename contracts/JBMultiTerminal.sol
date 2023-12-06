@@ -11,8 +11,8 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import {Common} from "@paulrberg/contracts/math/Common.sol";
-import {IPermit2} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
+import {IPermit2} from "@permit2/src/interfaces/IPermit2.sol";
+import {IAllowanceTransfer} from "@permit2/src/interfaces/IPermit2.sol";
 import {IJBController} from "./interfaces/IJBController.sol";
 import {IJBDirectory} from "./interfaces/IJBDirectory.sol";
 import {IJBSplits} from "./interfaces/IJBSplits.sol";

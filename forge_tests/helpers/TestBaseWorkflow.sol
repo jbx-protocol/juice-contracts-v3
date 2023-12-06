@@ -79,8 +79,8 @@ import {JBSplitGroupIds} from "@juicebox/libraries/JBSplitGroupIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 import {JBPermissionIds} from "@juicebox/libraries/JBPermissionIds.sol";
 
-import {IPermit2, IAllowanceTransfer} from "@permit2/src/src/interfaces/IPermit2.sol";
-import {DeployPermit2} from "@permit2/src/test/utils/DeployPermit2.sol";
+import {IPermit2, IAllowanceTransfer} from "@permit2/src/interfaces/IPermit2.sol";
+import {DeployPermit2} from "@permit2/test/utils/DeployPermit2.sol";
 
 import {MetadataResolverHelper} from "./MetadataResolverHelper.sol";
 
