@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.23;
 
 import {JBMetadataResolver} from "@juicebox/libraries/JBMetadataResolver.sol";
 
@@ -88,15 +88,12 @@ contract MetadataResolverHelper {
 
         // For each id, add it to the lookup table with the next free offset, then increment the offset by the data
         // length (rounded up)
-        for (uint256 _i; _i < _ids.length;) {
+        for (uint256 _i; _i < _ids.length; ++_i) {
             _metadata = abi.encodePacked(_metadata, _ids[_i], bytes1(uint8(_offset)));
             _offset += _datas[_i].length / JBMetadataResolver.WORD_SIZE;
 
             // Overflowing a bytes1?
             if (_offset > 2 ** 8) revert METADATA_TOO_LONG();
-            unchecked {
-                ++_i;
-            }
         }
 
         // Pad the table to a multiple of 32B

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.23;
 
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {JBControlled} from "./abstract/JBControlled.sol";
@@ -88,7 +88,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         uint256 _packedPayoutLimitData;
 
         // Iterate through the stored packed values and format the returned value.
-        for (uint256 _i; _i < _numberOfData;) {
+        for (uint256 _i; _i < _numberOfData; ++_i) {
             // Set the data being iterated on.
             _packedPayoutLimitData = _packedPayoutLimitsData[_i];
 
@@ -97,10 +97,6 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
                 currency: _packedPayoutLimitData >> 224,
                 amount: uint256(uint224(_packedPayoutLimitData))
             });
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -135,17 +131,13 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         uint256 _packedPayoutLimitData;
 
         // Iterate through the stored packed values and return the value of the matching currency.
-        for (uint256 _i; _i < _numberOfData;) {
+        for (uint256 _i; _i < _numberOfData; ++_i) {
             // Set the data being iterated on.
             _packedPayoutLimitData = _data[_i];
 
             // If the currencies match, return the value.
             if (_currency == _packedPayoutLimitData >> 224) {
                 return uint256(uint224(_packedPayoutLimitData));
-            }
-
-            unchecked {
-                ++_i;
             }
         }
     }
@@ -185,7 +177,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         uint256 _packedSurplusAllowanceData;
 
         // Iterate through the stored packed values and format the returned value.
-        for (uint256 _i; _i < _numberOfData;) {
+        for (uint256 _i; _i < _numberOfData; ++_i) {
             // Set the data being iterated on.
             _packedSurplusAllowanceData = _packedSurplusAllowancesData[_i];
 
@@ -194,10 +186,6 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
                 currency: _packedSurplusAllowanceData >> 224,
                 amount: uint256(uint224(_packedSurplusAllowanceData))
             });
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -232,17 +220,13 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         uint256 _packedSurplusAllowanceData;
 
         // Iterate through the stored packed values and format the returned value.
-        for (uint256 _i; _i < _numberOfData;) {
+        for (uint256 _i; _i < _numberOfData; ++_i) {
             // Set the data being iterated on.
             _packedSurplusAllowanceData = _data[_i];
 
             // If the currencies match, return the value.
             if (_currency == _packedSurplusAllowanceData >> 224) {
                 return uint256(uint224(_packedSurplusAllowanceData));
-            }
-
-            unchecked {
-                ++_i;
             }
         }
     }
@@ -283,7 +267,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
         JBFundAccessLimitGroup calldata _limits;
 
         // Set payout limits if there are any.
-        for (uint256 _i; _i < _numberOfFundAccessLimitGroups;) {
+        for (uint256 _i; _i < _numberOfFundAccessLimitGroups; ++_i) {
             // Set the limits being iterated on.
             _limits = _fundAccessLimitGroup[_i];
 
@@ -294,7 +278,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
             JBCurrencyAmount calldata _payoutLimit;
 
             // Iterate through each payout limit to validate and store them.
-            for (uint256 _j; _j < _numberOfPayoutLimits;) {
+            for (uint256 _j; _j < _numberOfPayoutLimits; ++_j) {
                 // Set the payout limit being iterated on.
                 _payoutLimit = _limits.payoutLimits[_j];
 
@@ -318,10 +302,6 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
                     _packedPayoutLimitsDataOf[_projectId][_rulesetId][_fundAccessLimitGroup[_i].terminal][_fundAccessLimitGroup[_i]
                         .token].push(_payoutLimit.amount | (_payoutLimit.currency << 224));
                 }
-
-                unchecked {
-                    ++_j;
-                }
             }
 
             // Keep a reference to the number of surplus allowances.
@@ -331,7 +311,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
             JBCurrencyAmount calldata _surplusAllowance;
 
             // Iterate through each surplus allowance to validate and store them.
-            for (uint256 _j; _j < _numberOfSurplusAllowances;) {
+            for (uint256 _j; _j < _numberOfSurplusAllowances; ++_j) {
                 // Set the payout limit being iterated on.
                 _surplusAllowance = _limits.surplusAllowances[_j];
 
@@ -355,17 +335,9 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
                     _packedSurplusAllowancesDataOf[_projectId][_rulesetId][_fundAccessLimitGroup[_i].terminal][_fundAccessLimitGroup[_i]
                         .token].push(_surplusAllowance.amount | (_surplusAllowance.currency << 224));
                 }
-
-                unchecked {
-                    ++_j;
-                }
             }
 
             emit SetFundAccessLimits(_rulesetId, _projectId, _limits, msg.sender);
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 }

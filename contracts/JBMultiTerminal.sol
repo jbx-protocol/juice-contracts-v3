@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -40,14 +40,12 @@ import {JBAccountingContext} from "./structs/JBAccountingContext.sol";
 import {JBAccountingContextConfig} from "./structs/JBAccountingContextConfig.sol";
 import {JBTokenAmount} from "./structs/JBTokenAmount.sol";
 import {JBPermissioned} from "./abstract/JBPermissioned.sol";
-import {
-    IJBMultiTerminal,
-    IJBFeeTerminal,
-    IJBTerminal,
-    IJBRedeemTerminal,
-    IJBPayoutTerminal,
-    IJBPermitTerminal
-} from "./interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBMultiTerminal} from "./interfaces/terminal/IJBMultiTerminal.sol";
+import {IJBFeeTerminal} from "./interfaces/terminal/IJBFeeTerminal.sol";
+import {IJBTerminal} from "./interfaces/terminal/IJBTerminal.sol";
+import {IJBRedeemTerminal} from "./interfaces/terminal/IJBRedeemTerminal.sol";
+import {IJBPayoutTerminal} from "./interfaces/terminal/IJBPayoutTerminal.sol";
+import {IJBPermitTerminal} from "./interfaces/terminal/IJBPermitTerminal.sol";
 
 /// @notice Generic terminal managing inflows and outflows of funds into the protocol ecosystem.
 contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTerminal {
@@ -510,7 +508,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         IJBTerminal _feeTerminal = DIRECTORY.primaryTerminalOf(_FEE_BENEFICIARY_PROJECT_ID, _token);
 
         // Process each fee.
-        for (uint256 _i; _i < _numberOfHeldFees;) {
+        for (uint256 _i; _i < _numberOfHeldFees; ++_i) {
             // Keep a reference to the held fee being iterated on.
             _heldFee = _heldFees[_i];
 
@@ -519,10 +517,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
 
             // Process the fee.
             _processFee(_projectId, _token, _heldFee.amount, _heldFee.beneficiary, _feeTerminal, true);
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -566,7 +560,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         JBAccountingContextConfig calldata _accountingContextConfig;
 
         // Add each accounting context.
-        for (uint256 _i; _i < _numberOfAccountingContextsConfigs;) {
+        for (uint256 _i; _i < _numberOfAccountingContextsConfigs; ++_i) {
             // Set the accounting context being iterated on.
             _accountingContextConfig = _accountingContextConfigs[_i];
 
@@ -589,10 +583,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _accountingContextsOf[_projectId].push(_accountingContext);
 
             emit SetAccountingContext(_projectId, _accountingContextConfig.token, _accountingContext, _msgSender());
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -1261,7 +1251,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         JBSplit memory _split;
 
         // Transfer between all splits.
-        for (uint256 _i; _i < _numberOfSplits;) {
+        for (uint256 _i; _i < _numberOfSplits; ++_i) {
             // Get a reference to the split being iterated on.
             _split = _splits[_i];
 
@@ -1291,10 +1281,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             emit SendPayoutToSplit(
                 _projectId, _domain, uint256(uint160(_token)), _split, _payoutAmount, _netPayoutAmount, _msgSender()
             );
-
-            unchecked {
-                ++_i;
-            }
         }
 
         return (_amount, amountEligibleForFees);
@@ -1373,7 +1359,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         JBPayHookPayload memory _payload;
 
         // Fulfill each payload.
-        for (uint256 _i; _i < _numberOfPayloads;) {
+        for (uint256 _i; _i < _numberOfPayloads; ++_i) {
             // Set the payload being iterated on.
             _payload = _payloads[_i];
 
@@ -1398,10 +1384,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _payload.hook.didPay{value: _payValue}(_data);
 
             emit HookDidPay(_payload.hook, _data, _payload.amount, _msgSender());
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -1452,7 +1434,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         // Keep a reference to the payload being iterated on.
         JBRedeemHookPayload memory _payload;
 
-        for (uint256 _i; _i < _numberOfPayloads;) {
+        for (uint256 _i; _i < _numberOfPayloads; ++_i) {
             // Set the payload being iterated on.
             _payload = _payloads[_i];
 
@@ -1486,10 +1468,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
             _payload.hook.didRedeem{value: _payValue}(_data);
 
             emit HookDidRedeem(_payload.hook, _data, _payload.amount, _payloadAmountFee, _msgSender());
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -1584,7 +1562,7 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         JBFee memory _heldFee;
 
         // Process each fee.
-        for (uint256 _i; _i < _numberOfHeldFees;) {
+        for (uint256 _i; _i < _numberOfHeldFees; ++_i) {
             // Save the fee being iterated on.
             _heldFee = _heldFees[_i];
 
@@ -1611,10 +1589,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                     }
                     leftoverAmount = 0;
                 }
-            }
-
-            unchecked {
-                ++_i;
             }
         }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.23;
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -715,7 +715,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         uint256 _numberOfSplits = _splits.length;
 
         //Transfer between all splits.
-        for (uint256 _i; _i < _numberOfSplits;) {
+        for (uint256 _i; _i < _numberOfSplits; ++_i) {
             // Get a reference to the split being iterated on.
             JBSplit memory _split = _splits[_i];
 
@@ -752,10 +752,6 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             }
 
             emit SendReservedTokensToSplit(_projectId, _domain, _groupId, _split, _tokenCount, _msgSender());
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -776,7 +772,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         // Keep a reference to the number of ruleset configurations being queued.
         uint256 _numberOfConfigurations = _rulesetConfigurations.length;
 
-        for (uint256 _i; _i < _numberOfConfigurations;) {
+        for (uint256 _i; _i < _numberOfConfigurations; ++_i) {
             // Get a reference to the ruleset config being iterated on.
             _rulesetConfig = _rulesetConfigurations[_i];
 
@@ -813,10 +809,6 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
             if (_i == _numberOfConfigurations - 1) {
                 rulesetId = _ruleset.id;
             }
-
-            unchecked {
-                ++_i;
-            }
         }
     }
 
@@ -833,7 +825,7 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
         // Keep a reference to the terminal configuration being iterated on.
         JBTerminalConfig memory _terminalConfig;
 
-        for (uint256 _i; _i < _numberOfTerminalConfigs;) {
+        for (uint256 _i; _i < _numberOfTerminalConfigs; ++_i) {
             // Set the terminal configuration being iterated on.
             _terminalConfig = _terminalConfigs[_i];
 
@@ -842,10 +834,6 @@ contract JBController is JBPermissioned, ERC2771Context, ERC165, IJBController, 
 
             // Add the terminal.
             _terminals[_i] = _terminalConfig.terminal;
-
-            unchecked {
-                ++_i;
-            }
         }
 
         // Set the terminals in the directory.
