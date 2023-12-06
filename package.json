@@ -1,13 +1,11 @@
 {
   "name": "@jbx-protocol/juice-contracts-v3",
-  "bugs": {
-    "url": "https://github.com/bananapus/juice-contracts-v4/issues"
-  },
+  "bugs": "https://github.com/bananapus/juice-contracts-v4/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/bananapus/juice-contracts-v4"
   },
-  "version": "5.0.0",
+  "version": "1.0.0",
   "license": "MIT",
   "dependencies": {
     "@chainlink/contracts": "^0.8.0",
