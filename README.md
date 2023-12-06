@@ -24,8 +24,8 @@ Some useful commands:
 
 | Command               | Description                                         |
 | --------------------- | --------------------------------------------------- |
+| `forge install`       | Install the dependencies.                           |
 | `forge build`         | Compile the contracts and write artifacts to `out`. |
-| `forge update`        | Update the dependencies.                            |
 | `forge fmt`           | Lint.                                               |
 | `forge test`          | Run the tests.                                      |
 | `forge build --sizes` | Get contract sizes.                                 |
