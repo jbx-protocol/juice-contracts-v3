@@ -25,27 +25,27 @@ contract JBERC20 is ERC20Votes, ERC20Permit, Ownable, IJBToken {
     }
 
     /// @notice An account's balance of this ERC20.
-    /// @param _account The account to get a balance of.
-    /// @return The balance of the `_account` of this ERC20, as a fixed point number with 18 decimals.
-    function balanceOf(address _account) public view override(ERC20, IJBToken) returns (uint256) {
-        return super.balanceOf(_account);
+    /// @param account The account to get a balance of.
+    /// @return The balance of the `account` of this ERC20, as a fixed point number with 18 decimals.
+    function balanceOf(address account) public view override(ERC20, IJBToken) returns (uint256) {
+        return super.balanceOf(account);
     }
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _name The name of the token.
-    /// @param _symbol The symbol that the token should be represented by.
-    /// @param _owner The owner of the token.
+    /// @param name The name of the token.
+    /// @param symbol The symbol that the token should be represented by.
+    /// @param owner The owner of the token.
     constructor(
-        string memory _name,
-        string memory _symbol,
-        address _owner
+        string memory name,
+        string memory symbol,
+        address owner
     )
-        ERC20(_name, _symbol)
-        ERC20Permit(_name)
-        Ownable(_owner)
+        ERC20(name, symbol)
+        ERC20Permit(name)
+        Ownable(owner)
     {}
 
     //*********************************************************************//
@@ -54,24 +54,28 @@ contract JBERC20 is ERC20Votes, ERC20Permit, Ownable, IJBToken {
 
     /// @notice Mints more of the token.
     /// @dev Only the owner of this contract cant mint more of it.
-    /// @param _account The account to mint the tokens for.
-    /// @param _amount The amount of tokens to mint, as a fixed point number with 18 decimals.
-    function mint(address _account, uint256 _amount) external override onlyOwner {
-        return _mint(_account, _amount);
+    /// @param account The account to mint the tokens for.
+    /// @param amount The amount of tokens to mint, as a fixed point number with 18 decimals.
+    function mint(address account, uint256 amount) external override onlyOwner {
+        return _mint(account, amount);
     }
 
     /// @notice Burn some outstanding tokens.
     /// @dev Only the owner of this contract cant burn some of its supply.
-    /// @param _account The account to burn tokens from.
-    /// @param _amount The amount of tokens to burn, as a fixed point number with 18 decimals.
-    function burn(address _account, uint256 _amount) external override onlyOwner {
-        return _burn(_account, _amount);
+    /// @param account The account to burn tokens from.
+    /// @param amount The amount of tokens to burn, as a fixed point number with 18 decimals.
+    function burn(address account, uint256 amount) external override onlyOwner {
+        return _burn(account, amount);
     }
 
     /// @notice required override.
     function nonces(address owner) public view virtual override(ERC20Permit, Nonces) returns (uint256) {
         return super.nonces(owner);
     }
+
+    //*********************************************************************//
+    // ---------------------- internal transactions ---------------------- //
+    //*********************************************************************//
 
     /// @notice required override.
     function _update(address from, address to, uint256 value) internal virtual override(ERC20, ERC20Votes) {

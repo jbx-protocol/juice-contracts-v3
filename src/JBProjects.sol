@@ -29,36 +29,36 @@ contract JBProjects is ERC721Votes, Ownable, IJBProjects {
     //*********************************************************************//
 
     /// @notice Returns the URI where the ERC-721 standard JSON of a project is hosted.
-    /// @param _projectId The ID of the project to get a URI of.
-    /// @return The token URI to use for the provided `_projectId`.
-    function tokenURI(uint256 _projectId) public view override returns (string memory) {
+    /// @param projectId The ID of the project to get a URI of.
+    /// @return The token URI to use for the provided `projectId`.
+    function tokenURI(uint256 projectId) public view override returns (string memory) {
         // Keep a reference to the resolver.
-        IJBTokenUriResolver _tokenUriResolver = tokenUriResolver;
+        IJBTokenUriResolver resolver = tokenUriResolver;
 
         // If there's no resolver, there's no URI.
-        if (_tokenUriResolver == IJBTokenUriResolver(address(0))) return "";
+        if (resolver == IJBTokenUriResolver(address(0))) return "";
 
         // Return the resolved URI.
-        return _tokenUriResolver.getUri(_projectId);
+        return resolver.getUri(projectId);
     }
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
-    /// @param _interfaceId The ID of the interface to check for adherance to.
+    /// @param interfaceId The ID of the interface to check for adherance to.
     /// @return A flag indicating if the provided interface ID is supported.
-    function supportsInterface(bytes4 _interfaceId) public view virtual override(IERC165, ERC721) returns (bool) {
-        return _interfaceId == type(IJBProjects).interfaceId || super.supportsInterface(_interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC721) returns (bool) {
+        return interfaceId == type(IJBProjects).interfaceId || super.supportsInterface(interfaceId);
     }
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @param _owner The owner of the contract who can set metadata.
-    constructor(address _owner)
+    /// @param owner The owner of the contract who can set metadata.
+    constructor(address owner)
         ERC721("Juicebox Projects", "JUICEBOX")
         EIP712("Juicebox Projects", "1")
-        Ownable(_owner)
+        Ownable(owner)
     {}
 
     //*********************************************************************//
@@ -67,24 +67,24 @@ contract JBProjects is ERC721Votes, Ownable, IJBProjects {
 
     /// @notice Create a new project for the specified owner, which mints an NFT (ERC-721) into their wallet.
     /// @dev Anyone can create a project on an owner's behalf.
-    /// @param _owner The address that will be the owner of the project.
+    /// @param owner The address that will be the owner of the project.
     /// @return projectId The token ID of the newly created project.
-    function createFor(address _owner) external override returns (uint256 projectId) {
+    function createFor(address owner) external override returns (uint256 projectId) {
         // Increment the count, which will be used as the ID.
         projectId = ++count;
 
         // Mint the project.
-        _safeMint(_owner, projectId);
+        _safeMint(owner, projectId);
 
-        emit Create(projectId, _owner, _msgSender());
+        emit Create(projectId, owner, _msgSender());
     }
 
     /// @notice Sets the address of the resolver used to retrieve the tokenURI of projects.
-    /// @param _newResolver The address of the new resolver.
-    function setTokenUriResolver(IJBTokenUriResolver _newResolver) external override onlyOwner {
+    /// @param newResolver The address of the new resolver.
+    function setTokenUriResolver(IJBTokenUriResolver newResolver) external override onlyOwner {
         // Store the new resolver.
-        tokenUriResolver = _newResolver;
+        tokenUriResolver = newResolver;
 
-        emit SetTokenUriResolver(_newResolver, _msgSender());
+        emit SetTokenUriResolver(newResolver, _msgSender());
     }
 }

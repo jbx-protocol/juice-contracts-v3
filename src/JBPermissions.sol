@@ -24,11 +24,11 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
     /// to *all* project IDs on an account's behalf. Use this with caution.
     /// @dev Permissions are stored in a packed `uint256`. Each of the 256 bits represents the on/off state of a
     /// permission. Applications can specify the significance of each permission ID.
-    /// @custom:param _operator The address of the operator.
-    /// @custom:param _account The address of the account being operated on behalf of.
-    /// @custom:param _projectId The project ID the permissions are scoped to. An ID of 0 grants permissions across all
+    /// @custom:param operator The address of the operator.
+    /// @custom:param account The address of the account being operated on behalf of.
+    /// @custom:param projectId The project ID the permissions are scoped to. An ID of 0 grants permissions across all
     /// projects.
-    mapping(address _operator => mapping(address _account => mapping(uint256 _projectId => uint256))) public override
+    mapping(address operator => mapping(address account => mapping(uint256 projectId => uint256))) public override
         permissionsOf;
 
     //*********************************************************************//
@@ -36,38 +36,38 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
     //*********************************************************************//
 
     /// @notice Check if an operator has a specific permission for a specific address and project ID.
-    /// @param _operator The operator to check.
-    /// @param _account The account being operated on behalf of.
-    /// @param _projectId The project ID that the operator has permission to operate under. 0 represents all projects.
-    /// @param _permissionId The permission ID to check for.
+    /// @param operator The operator to check.
+    /// @param account The account being operated on behalf of.
+    /// @param projectId The project ID that the operator has permission to operate under. 0 represents all projects.
+    /// @param permissionId The permission ID to check for.
     /// @return A flag indicating whether the operator has the specified permission.
     function hasPermission(
-        address _operator,
-        address _account,
-        uint256 _projectId,
-        uint256 _permissionId
+        address operator,
+        address account,
+        uint256 projectId,
+        uint256 permissionId
     )
         external
         view
         override
         returns (bool)
     {
-        if (_permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
+        if (permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
-        return (((permissionsOf[_operator][_account][_projectId] >> _permissionId) & 1) == 1);
+        return (((permissionsOf[operator][account][projectId] >> permissionId) & 1) == 1);
     }
 
     /// @notice Check if an operator has all of the specified permissions for a specific address and project ID.
-    /// @param _operator The operator to check.
-    /// @param _account The account being operated on behalf of.
-    /// @param _projectId The project ID that the operator has permission to operate under. 0 represents all projects.
-    /// @param _permissionIds An array of permission IDs to check for.
+    /// @param operator The operator to check.
+    /// @param account The account being operated on behalf of.
+    /// @param projectId The project ID that the operator has permission to operate under. 0 represents all projects.
+    /// @param permissionIds An array of permission IDs to check for.
     /// @return A flag indicating whether the operator has all specified permissions.
     function hasPermissions(
-        address _operator,
-        address _account,
-        uint256 _projectId,
-        uint256[] calldata _permissionIds
+        address operator,
+        address account,
+        uint256 projectId,
+        uint256[] calldata permissionIds
     )
         external
         view
@@ -75,14 +75,14 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
         returns (bool)
     {
         // Keep a reference to the number of permissions being iterated on.
-        uint256 _numberOfPermissions = _permissionIds.length;
+        uint256 numberOfPermissions = permissionIds.length;
 
-        for (uint256 _i; _i < _numberOfPermissions; ++_i) {
-            uint256 _permissionId = _permissionIds[_i];
+        for (uint256 i; i < numberOfPermissions; ++i) {
+            uint256 permissionId = permissionIds[i];
 
-            if (_permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
+            if (permissionId > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
-            if (((permissionsOf[_operator][_account][_projectId] >> _permissionId) & 1) == 0) {
+            if (((permissionsOf[operator][account][projectId] >> permissionId) & 1) == 0) {
                 return false;
             }
         }
@@ -101,28 +101,24 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
 
     /// @notice Sets permissions for an operator.
     /// @dev Only an address can give permissions to or revoke permissions from its operators.
-    /// @param _account The account setting its operators' permissions.
-    /// @param _permissionsData The data which specifies the permissions the operator is being given.
-    function setPermissionsForOperator(
-        address _account,
-        JBPermissionsData calldata _permissionsData
-    )
-        external
-        override
-        requirePermission(_account, _permissionsData.projectId, JBPermissionIds.ROOT)
-    {
+    /// @param account The account setting its operators' permissions.
+    /// @param permissionsData The data which specifies the permissions the operator is being given.
+    function setPermissionsForOperator(address account, JBPermissionsData calldata permissionsData) external override {
+        // Enforce permissions.
+        _requirePermission({account: account, projectId: permissionsData.projectId, permissionId: JBPermissionIds.ROOT});
+
         // Pack the permission IDs into a uint256.
-        uint256 _packed = _packedPermissions(_permissionsData.permissionIds);
+        uint256 packed = _packedPermissions(permissionsData.permissionIds);
 
         // Store the new value.
-        permissionsOf[_permissionsData.operator][_account][_permissionsData.projectId] = _packed;
+        permissionsOf[permissionsData.operator][account][permissionsData.projectId] = packed;
 
         emit OperatorPermissionsSet(
-            _permissionsData.operator,
-            _account,
-            _permissionsData.projectId,
-            _permissionsData.permissionIds,
-            _packed,
+            permissionsData.operator,
+            account,
+            permissionsData.projectId,
+            permissionsData.permissionIds,
+            packed,
             msg.sender
         );
     }
@@ -132,19 +128,19 @@ contract JBPermissions is JBPermissioned, IJBPermissions {
     //*********************************************************************//
 
     /// @notice Converts an array of permission IDs to a packed `uint256`.
-    /// @param _permissionIds The IDs of the permissions to pack.
+    /// @param permissionIds The IDs of the permissions to pack.
     /// @return packed The packed value.
-    function _packedPermissions(uint256[] calldata _permissionIds) private pure returns (uint256 packed) {
+    function _packedPermissions(uint256[] calldata permissionIds) private pure returns (uint256 packed) {
         // Keep a reference to the number of IDs being iterated on.
-        uint256 _numberOfIds = _permissionIds.length;
+        uint256 numberOfIds = permissionIds.length;
 
-        for (uint256 _i; _i < _numberOfIds; ++_i) {
-            uint256 _id = _permissionIds[_i];
+        for (uint256 i; i < numberOfIds; ++i) {
+            uint256 id = permissionIds[i];
 
-            if (_id > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
+            if (id > 255) revert PERMISSION_ID_OUT_OF_BOUNDS();
 
             // Turn on the bit at the ID.
-            packed |= 1 << _id;
+            packed |= 1 << id;
         }
     }
 }

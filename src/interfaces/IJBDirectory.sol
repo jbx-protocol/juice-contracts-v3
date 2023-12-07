@@ -18,7 +18,7 @@ interface IJBDirectory {
 
     event SetIsAllowedToSetFirstController(address indexed addr, bool indexed flag, address caller);
 
-    function projects() external view returns (IJBProjects);
+    function PROJECTS() external view returns (IJBProjects);
 
     function controllerOf(uint256 projectId) external view returns (IERC165);
 

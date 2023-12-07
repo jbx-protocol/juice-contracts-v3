@@ -80,7 +80,7 @@ contract TestTokenFlow_Local is TestBaseWorkflow {
             _controller.deployERC20For({projectId: _projectId, name: "TestName", symbol: "TestSymbol"});
         } else {
             // Create a new `IJBToken` and change it's owner to the `JBTokens` contract.
-            IJBToken _newToken = new JBERC20({_name: "NewTestName", _symbol: "NewTestSymbol", _owner: _projectOwner});
+            IJBToken _newToken = new JBERC20({name: "NewTestName", symbol: "NewTestSymbol", owner: _projectOwner});
 
             Ownable(address(_newToken)).transferOwnership(address(_tokens));
 
