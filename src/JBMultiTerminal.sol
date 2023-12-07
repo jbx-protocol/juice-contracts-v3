@@ -1288,10 +1288,6 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
         // The amount being withdrawn must be at least as much as was expected.
         if (amountPaidOut < minTokensPaidOut) revert INADEQUATE_PAYOUT_AMOUNT();
 
-        // Get a reference to the project owner.
-        // The project owner will receive tokens minted by paying the platform fee.
-        address projectOwner = PROJECTS.ownerOf(projectId);
-
         // Take a fee from the `amountPaidOut`, if needed.
         // The net amount is the final amount withdrawn after the fee has been taken.
         netAmountPaidOut = amountPaidOut
@@ -1302,7 +1298,8 @@ contract JBMultiTerminal is JBPermissioned, Ownable, ERC2771Context, IJBMultiTer
                         projectId: projectId,
                         token: token,
                         amount: amountPaidOut,
-                        beneficiary: projectOwner,
+                        // The project owner will receive tokens minted by paying the platform fee.
+                        beneficiary: PROJECTS.ownerOf(projectId),
                         shouldHoldFees: ruleset.holdFees()
                     })
             );
