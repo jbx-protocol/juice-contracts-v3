@@ -121,7 +121,7 @@ contract JBTokens is JBControlled, IJBTokens {
     )
         external
         override
-        onlyController(projectId)
+        onlyControllerOf(projectId)
         returns (IJBToken token)
     {
         // There must be a name.
@@ -149,7 +149,7 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @dev Only a project's controller can set its token.
     /// @param projectId The ID of the project to set the token of.
     /// @param token The new token's address.
-    function setTokenFor(uint256 projectId, IJBToken token) external override onlyController(projectId) {
+    function setTokenFor(uint256 projectId, IJBToken token) external override onlyControllerOf(projectId) {
         // Can't set to the zero address.
         if (token == IJBToken(address(0))) revert EMPTY_TOKEN();
 
@@ -176,7 +176,7 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param holder The address receiving the new tokens.
     /// @param projectId The ID of the project to which the tokens belong.
     /// @param amount The amount of tokens to mint.
-    function mintFor(address holder, uint256 projectId, uint256 amount) external override onlyController(projectId) {
+    function mintFor(address holder, uint256 projectId, uint256 amount) external override onlyControllerOf(projectId) {
         // Get a reference to the project's current token.
         IJBToken token = tokenOf[projectId];
 
@@ -204,7 +204,15 @@ contract JBTokens is JBControlled, IJBTokens {
     /// @param holder The address that owns the tokens which are being burned.
     /// @param projectId The ID of the project to the burned tokens belong to.
     /// @param amount The amount of tokens to burn.
-    function burnFrom(address holder, uint256 projectId, uint256 amount) external override onlyController(projectId) {
+    function burnFrom(
+        address holder,
+        uint256 projectId,
+        uint256 amount
+    )
+        external
+        override
+        onlyControllerOf(projectId)
+    {
         // Get a reference to the project's current token.
         IJBToken token = tokenOf[projectId];
 
@@ -260,7 +268,7 @@ contract JBTokens is JBControlled, IJBTokens {
     )
         external
         override
-        onlyController(projectId)
+        onlyControllerOf(projectId)
     {
         // Get a reference to the project's current token.
         IJBToken token = tokenOf[projectId];
@@ -302,7 +310,7 @@ contract JBTokens is JBControlled, IJBTokens {
     )
         external
         override
-        onlyController(projectId)
+        onlyControllerOf(projectId)
     {
         // Can't transfer to the zero address.
         if (recipient == address(0)) revert RECIPIENT_ZERO_ADDRESS();

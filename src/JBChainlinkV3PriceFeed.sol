@@ -48,7 +48,7 @@ contract JBChainlinkV3PriceFeed is IJBPriceFeed {
         uint256 feedDecimals = FEED.decimals();
 
         // Return the price, adjusted to the target decimals.
-        return uint256(price).adjustDecimals(feedDecimals, decimals);
+        return uint256(price).adjustDecimals({decimals: feedDecimals, targetDecimals: decimals});
     }
 
     //*********************************************************************//

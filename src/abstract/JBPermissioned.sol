@@ -13,36 +13,6 @@ abstract contract JBPermissioned is Context, IJBPermissioned {
     error UNAUTHORIZED();
 
     //*********************************************************************//
-    // ---------------------------- modifiers ---------------------------- //
-    //*********************************************************************//
-
-    /// @notice Restrict access to the specified account, or an operator they have given permissions to.
-    /// @param account The account to check for.
-    /// @param projectId The project ID to check permissions under.
-    /// @param permissionId The ID of the permission to check for.
-    modifier requirePermission(address account, uint256 projectId, uint256 permissionId) {
-        _requirePermission(account, projectId, permissionId);
-        _;
-    }
-
-    /// @notice If the `shouldOverride` flag is truthy, proceed. Otherwise, restrict access to the specified account,
-    /// and
-    /// operator(s) they have given permissions to.
-    /// @param account The account to check for.
-    /// @param projectId The project ID to check permissions under.
-    /// @param permissionId The ID of the permission to check for.
-    /// @param shouldOverride An override which will allow access regardless of permissions.
-    modifier requirePermissionAllowingOverride(
-        address account,
-        uint256 projectId,
-        uint256 permissionId,
-        bool shouldOverride
-    ) {
-        _requirePermissionAllowingOverride(account, projectId, permissionId, shouldOverride);
-        _;
-    }
-
-    //*********************************************************************//
     // ---------------- public immutable stored properties --------------- //
     //*********************************************************************//
 
@@ -75,24 +45,24 @@ abstract contract JBPermissioned is Context, IJBPermissioned {
         ) revert UNAUTHORIZED();
     }
 
-    /// @notice If the 'shouldOverride' condition is truthy, proceed. Otherwise, require the message sender to be the
+    /// @notice If the 'alsoGrantAccessIf' condition is truthy, proceed. Otherwise, require the message sender to be the
     /// account or
     /// have the relevant permission.
     /// @param account The account to allow.
     /// @param projectId The project ID to check the permission under.
     /// @param permissionId The required permission ID. The operator must have this permission within the specified
     /// project ID.
-    /// @param shouldOverride An override condition which will allow access regardless of permissions.
+    /// @param alsoGrantAccessIf An override condition which will allow access regardless of permissions.
     function _requirePermissionAllowingOverride(
         address account,
         uint256 projectId,
         uint256 permissionId,
-        bool shouldOverride
+        bool alsoGrantAccessIf
     )
         internal
         view
     {
-        if (shouldOverride) return;
+        if (alsoGrantAccessIf) return;
         _requirePermission(account, projectId, permissionId);
     }
 }

@@ -262,7 +262,7 @@ contract JBFundAccessLimits is JBControlled, ERC165, IJBFundAccessLimits {
     )
         external
         override
-        onlyController(projectId)
+        onlyControllerOf(projectId)
     {
         // Save the number of limits.
         uint256 numberOfFundAccessLimitGroups = fundAccessLimitGroup.length;

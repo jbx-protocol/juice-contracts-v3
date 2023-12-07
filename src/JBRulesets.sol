@@ -113,7 +113,12 @@ contract JBRulesets is JBControlled, IJBRulesets {
         ruleset = _getStructFor(projectId, rulesetId);
 
         // Resolve the approval status.
-        approvalStatus = _approvalStatusOf(projectId, ruleset.id, ruleset.start, ruleset.basedOnId);
+        approvalStatus = _approvalStatusOf({
+            projectId: projectId,
+            rulesetId: ruleset.id,
+            start: ruleset.start,
+            approvalHookRulesetId: ruleset.basedOnId
+        });
     }
 
     /// @notice The ruleset that's up next for a project.
@@ -167,7 +172,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Check to see if this ruleset's approval hook hasn't failed.
         // If so, return a ruleset based on it.
         if (approvalStatus == JBApprovalStatus.Approved || approvalStatus == JBApprovalStatus.Empty) {
-            return _simulateCycledRulesetBasedOn(ruleset, false);
+            return _simulateCycledRulesetBasedOn({baseRuleset: ruleset, allowMidRuleset: false});
         }
 
         // Get the ruleset of its base ruleset, which carries the last approved configuration.
@@ -177,7 +182,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (ruleset.duration == 0) return _getStructFor(0, 0);
 
         // Return a simulated cycled ruleset.
-        return _simulateCycledRulesetBasedOn(ruleset, false);
+        return _simulateCycledRulesetBasedOn({baseRuleset: ruleset, allowMidRuleset: false});
     }
 
     /// @notice The ruleset that is currently active for the specified project.
@@ -239,7 +244,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
         if (ruleset.duration == 0) return ruleset;
 
         // Return a simulation of the current ruleset.
-        return _simulateCycledRulesetBasedOn(ruleset, true);
+        return _simulateCycledRulesetBasedOn({baseRuleset: ruleset, allowMidRuleset: true});
     }
 
     /// @notice The current approval status of a given project's latest ruleset.
@@ -257,7 +262,12 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Resolve the struct for the latest ruleset.
         JBRuleset memory ruleset = _getStructFor(projectId, rulesetId);
 
-        return _approvalStatusOf(projectId, ruleset.id, ruleset.start, ruleset.basedOnId);
+        return _approvalStatusOf({
+            projectId: projectId,
+            rulesetId: ruleset.id,
+            start: ruleset.start,
+            approvalHookRulesetId: ruleset.basedOnId
+        });
     }
 
     //*********************************************************************//
@@ -288,7 +298,7 @@ contract JBRulesets is JBControlled, IJBRulesets {
     )
         external
         override
-        onlyController(projectId)
+        onlyControllerOf(projectId)
         returns (JBRuleset memory)
     {
         // Duration must fit in a uint32.
@@ -423,7 +433,13 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // If the project doesn't have a ruleset yet, initialize one.
         if (latestId == 0) {
             // Use an empty ruleset as the base.
-            return _initializeRulesetFor(projectId, _getStructFor(0, 0), rulesetId, mustStartAtOrAfter, weight);
+            return _initializeRulesetFor({
+                projectId: projectId,
+                baseRuleset: _getStructFor(0, 0),
+                rulesetId: rulesetId,
+                mustStartAtOrAfter: mustStartAtOrAfter,
+                weight: weight
+            });
         }
 
         // Get a reference to the latest ruleset's struct.
@@ -464,14 +480,16 @@ contract JBRulesets is JBControlled, IJBRulesets {
         uint256 timestampAfterApprovalHook =
             baseRuleset.hook == IJBRulesetApprovalHook(address(0)) ? 0 : rulesetId + baseRuleset.hook.DURATION();
 
-        _initializeRulesetFor(
-            projectId,
-            baseRuleset,
-            rulesetId,
+        _initializeRulesetFor({
+            projectId: projectId,
+            baseRuleset: baseRuleset,
+            rulesetId: rulesetId,
             // Can only start after the approval hook.
-            timestampAfterApprovalHook > mustStartAtOrAfter ? timestampAfterApprovalHook : mustStartAtOrAfter,
-            weight
-        );
+            mustStartAtOrAfter: timestampAfterApprovalHook > mustStartAtOrAfter
+                ? timestampAfterApprovalHook
+                : mustStartAtOrAfter,
+            weight: weight
+        });
     }
 
     /// @notice Initializes a ruleset with the specified properties.
@@ -492,13 +510,15 @@ contract JBRulesets is JBControlled, IJBRulesets {
     {
         // If there is no base, initialize a first ruleset.
         if (baseRuleset.cycleNumber == 0) {
-            // The first cycle number is 1.
-            uint256 rulesetCycleNumber = 1;
-
             // Set fresh intrinsic properties.
-            _packAndStoreIntrinsicPropertiesOf(
-                rulesetId, projectId, rulesetCycleNumber, weight, baseRuleset.id, mustStartAtOrAfter
-            );
+            _packAndStoreIntrinsicPropertiesOf({
+                rulesetId: rulesetId,
+                projectId: projectId,
+                rulesetCycleNumber: 1,
+                weight: weight,
+                basedOnId: baseRuleset.id,
+                start: mustStartAtOrAfter
+            });
         } else {
             // Derive the correct next start time from the base.
             uint256 start = _deriveStartFrom(baseRuleset, mustStartAtOrAfter);
@@ -512,7 +532,14 @@ contract JBRulesets is JBControlled, IJBRulesets {
             uint256 rulesetCycleNumber = _deriveCycleNumberFrom(baseRuleset, start);
 
             // Update the intrinsic properties.
-            _packAndStoreIntrinsicPropertiesOf(rulesetId, projectId, rulesetCycleNumber, weight, baseRuleset.id, start);
+            _packAndStoreIntrinsicPropertiesOf({
+                rulesetId: rulesetId,
+                projectId: projectId,
+                rulesetCycleNumber: rulesetCycleNumber,
+                weight: weight,
+                basedOnId: baseRuleset.id,
+                start: start
+            });
         }
 
         // Set the project's latest ruleset configuration.
@@ -663,17 +690,17 @@ contract JBRulesets is JBControlled, IJBRulesets {
         // Calculate what the cycle number should be.
         uint256 rulesetCycleNumber = _deriveCycleNumberFrom(baseRuleset, start);
 
-        return JBRuleset(
-            rulesetCycleNumber,
-            baseRuleset.id,
-            baseRuleset.basedOnId,
-            start,
-            baseRuleset.duration,
-            _deriveWeightFrom(baseRuleset, start),
-            baseRuleset.decayRate,
-            baseRuleset.hook,
-            baseRuleset.metadata
-        );
+        return JBRuleset({
+            cycleNumber: rulesetCycleNumber,
+            id: baseRuleset.id,
+            basedOnId: baseRuleset.basedOnId,
+            start: start,
+            duration: baseRuleset.duration,
+            weight: _deriveWeightFrom(baseRuleset, start),
+            decayRate: baseRuleset.decayRate,
+            hook: baseRuleset.hook,
+            metadata: baseRuleset.metadata
+        });
     }
 
     /// @notice The date that is the nearest multiple of the base ruleset's duration from the start of the next cycle.
@@ -789,7 +816,12 @@ contract JBRulesets is JBControlled, IJBRulesets {
     /// @param ruleset The ruleset to get an approval flag for.
     /// @return The approval status of the project's ruleset.
     function _approvalStatusOf(uint256 projectId, JBRuleset memory ruleset) private view returns (JBApprovalStatus) {
-        return _approvalStatusOf(projectId, ruleset.id, ruleset.start, ruleset.basedOnId);
+        return _approvalStatusOf({
+            projectId: projectId,
+            rulesetId: ruleset.id,
+            start: ruleset.start,
+            approvalHookRulesetId: ruleset.basedOnId
+        });
     }
 
     /// @notice The approval status of a given ruleset (ID) for a given project (ID).

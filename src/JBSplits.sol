@@ -108,7 +108,7 @@ contract JBSplits is JBControlled, IJBSplits {
     )
         external
         override
-        onlyController(projectId)
+        onlyControllerOf(projectId)
     {
         // Keep a reference to the number of split groups.
         uint256 numberOfSplitGroups = splitGroups.length;

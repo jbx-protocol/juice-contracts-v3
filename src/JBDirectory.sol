@@ -156,19 +156,14 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @dev - OR an allowedlisted address is setting a controller for a project that doesn't already have a controller.
     /// @param projectId The ID of the project to set the controller of.
     /// @param controller The address of the new controller to set for the project.
-    function setControllerOf(
-        uint256 projectId,
-        IERC165 controller
-    )
-        external
-        override
-        requirePermissionAllowingOverride(
-            PROJECTS.ownerOf(projectId),
-            projectId,
-            JBPermissionIds.SET_CONTROLLER,
-            (isAllowedToSetFirstController[msg.sender] && address(controllerOf[projectId]) == address(0))
-        )
-    {
+    function setControllerOf(uint256 projectId, IERC165 controller) external override {
+        // Enforce permissions.
+        _requirePermissionAllowingOverride({
+            account: PROJECTS.ownerOf(projectId),
+            projectId: projectId,
+            permissionId: JBPermissionIds.SET_CONTROLLER,
+            alsoGrantAccessIf: (isAllowedToSetFirstController[msg.sender] && address(controllerOf[projectId]) == address(0))
+        });
         // The project must exist.
         if (PROJECTS.count() < projectId) revert INVALID_PROJECT_ID_IN_DIRECTORY();
 
@@ -201,19 +196,15 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @dev Unless the caller is the project's controller, the project's ruleset must allow setting terminals.
     /// @param projectId The ID of the project to set terminals for.
     /// @param terminals An array of terminal addresses to set for the project.
-    function setTerminalsOf(
-        uint256 projectId,
-        IJBTerminal[] calldata terminals
-    )
-        external
-        override
-        requirePermissionAllowingOverride(
-            PROJECTS.ownerOf(projectId),
-            projectId,
-            JBPermissionIds.SET_TERMINALS,
-            msg.sender == address(controllerOf[projectId])
-        )
-    {
+    function setTerminalsOf(uint256 projectId, IJBTerminal[] calldata terminals) external override {
+        // Enforce permissions.
+        _requirePermissionAllowingOverride({
+            account: PROJECTS.ownerOf(projectId),
+            projectId: projectId,
+            permissionId: JBPermissionIds.SET_TERMINALS,
+            alsoGrantAccessIf: msg.sender == address(controllerOf[projectId])
+        });
+
         // Keep a reference to the current controller.
         IERC165 controller = controllerOf[projectId];
 
@@ -251,15 +242,14 @@ contract JBDirectory is JBPermissioned, Ownable, IJBDirectory {
     /// @param projectId The ID of the project a primary token is being set for.
     /// @param token The token to set the primary terminal for.
     /// @param terminal The terminal to make the primary terminal for the project and token.
-    function setPrimaryTerminalOf(
-        uint256 projectId,
-        address token,
-        IJBTerminal terminal
-    )
-        external
-        override
-        requirePermission(PROJECTS.ownerOf(projectId), projectId, JBPermissionIds.SET_PRIMARY_TERMINAL)
-    {
+    function setPrimaryTerminalOf(uint256 projectId, address token, IJBTerminal terminal) external override {
+        // Enforce permissions.
+        _requirePermission({
+            account: PROJECTS.ownerOf(projectId),
+            projectId: projectId,
+            permissionId: JBPermissionIds.SET_PRIMARY_TERMINAL
+        });
+
         // Can't set the primary terminal for a token if the terminal doesn't accept the token.
         if (terminal.accountingContextForTokenOf(projectId, token).token == address(0)) {
             revert TOKEN_NOT_ACCEPTED();

@@ -141,7 +141,14 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         returns (uint256)
     {
         // Return the surplus during the project's current ruleset.
-        return _surplusFrom(terminal, projectId, accountingContexts, RULESETS.currentOf(projectId), decimals, currency);
+        return _surplusFrom({
+            terminal: terminal,
+            projectId: projectId,
+            accountingContexts: accountingContexts,
+            ruleset: RULESETS.currentOf(projectId),
+            targetDecimals: decimals,
+            targetCurrency: currency
+        });
     }
 
     /// @notice Gets the current surplus amount for a specified project across all terminals.
@@ -213,7 +220,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         if (tokenCount > totalSupply) return 0;
 
         // Return the reclaimable surplus amount.
-        return _reclaimableSurplusDuring(ruleset, tokenCount, totalSupply, currentSurplus);
+        return _reclaimableSurplusDuring({
+            ruleset: ruleset,
+            tokenCount: tokenCount,
+            totalSupply: totalSupply,
+            surplus: currentSurplus
+        });
     }
 
     /// @notice The current amount of surplus tokens from a terminal that can be reclaimed by redeeming the specified
@@ -306,17 +318,18 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // If the ruleset has a data hook enabled for payments, use it to derive a weight and memo.
         if (ruleset.useDataHookForPay() && ruleset.dataHook() != address(0)) {
             // Create the params that'll be sent to the data hook.
-            JBPayParamsData memory data = JBPayParamsData(
-                msg.sender,
-                payer,
-                amount,
-                projectId,
-                ruleset.id,
-                beneficiary,
-                ruleset.weight,
-                ruleset.reservedRate(),
-                metadata
-            );
+            JBPayParamsData memory data = JBPayParamsData({
+                terminal: msg.sender,
+                payer: payer,
+                amount: amount,
+                projectId: projectId,
+                rulesetId: ruleset.id,
+                beneficiary: beneficiary,
+                weight: ruleset.weight,
+                reservedRate: ruleset.reservedRate(),
+                metadata: metadata
+            });
+
             (weight, hookPayloads) = IJBRulesetDataHook(ruleset.dataHook()).payParams(data);
         }
         // Otherwise use the ruleset's weight
@@ -371,7 +384,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // number of decimals as the `amount`.
         uint256 weightRatio = amount.currency == ruleset.baseCurrency()
             ? 10 ** amount.decimals
-            : PRICES.pricePerUnitOf(projectId, amount.currency, ruleset.baseCurrency(), amount.decimals);
+            : PRICES.pricePerUnitOf({
+                projectId: projectId,
+                pricingCurrency: amount.currency,
+                unitCurrency: ruleset.baseCurrency(),
+                decimals: amount.decimals
+            });
 
         // Find the number of tokens to mint, as a fixed point number with as many decimals as `weight` has.
         tokenCount = mulDiv(amount.value, weight, weightRatio);
@@ -384,7 +402,8 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
     /// @param holder The account that is redeeming tokens.
     /// @param projectId The ID of the project being redeemed from.
     /// @param accountingContext The accounting context of the token being reclaimed by the redemption.
-    /// @param balanceTokenContexts The token contexts whose balances should contribute to the surplus being reclaimed
+    /// @param balanceAccountingContexts The accounting contexts whose balances should contribute to the surplus being
+    /// reclaimed
     /// from.
     /// @param tokenCount The number of project tokens to redeem, as a fixed point number with 18 decimals.
     /// @param metadata Bytes to send to the data hook, if the project's current ruleset specifies one.
@@ -396,7 +415,7 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         address holder,
         uint256 projectId,
         JBAccountingContext calldata accountingContext,
-        JBAccountingContext[] calldata balanceTokenContexts,
+        JBAccountingContext[] calldata balanceAccountingContexts,
         uint256 tokenCount,
         bytes memory metadata
     )
@@ -412,10 +431,19 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // Use the local surplus if the ruleset specifies that it should be used. Otherwise, use the project's total
         // surplus across all of its terminals.
         uint256 currentSurplus = ruleset.useTotalSurplusForRedemptions()
-            ? _currentTotalSurplusOf(projectId, accountingContext.decimals, accountingContext.currency)
-            : _surplusFrom(
-                msg.sender, projectId, balanceTokenContexts, ruleset, accountingContext.decimals, accountingContext.currency
-            );
+            ? _currentTotalSurplusOf({
+                projectId: projectId,
+                decimals: accountingContext.decimals,
+                currency: accountingContext.currency
+            })
+            : _surplusFrom({
+                terminal: msg.sender,
+                projectId: projectId,
+                accountingContexts: balanceAccountingContexts,
+                ruleset: ruleset,
+                targetDecimals: accountingContext.decimals,
+                targetCurrency: accountingContext.currency
+            });
 
         // Get the total number of outstanding project tokens.
         uint256 totalSupply =
@@ -426,32 +454,40 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         if (currentSurplus != 0) {
             // Calculate reclaim amount using the current surplus amount.
-            reclaimAmount = _reclaimableSurplusDuring(ruleset, tokenCount, totalSupply, currentSurplus);
+            reclaimAmount = _reclaimableSurplusDuring({
+                ruleset: ruleset,
+                tokenCount: tokenCount,
+                totalSupply: totalSupply,
+                surplus: currentSurplus
+            });
         }
 
         // Create the struct that describes the amount being reclaimed.
-        JBTokenAmount memory reclaimedTokenAmount = JBTokenAmount(
-            accountingContext.token, reclaimAmount, accountingContext.decimals, accountingContext.currency
-        );
+        JBTokenAmount memory reclaimedTokenAmount = JBTokenAmount({
+            token: accountingContext.token,
+            value: reclaimAmount,
+            decimals: accountingContext.decimals,
+            currency: accountingContext.currency
+        });
 
         // If the ruleset has a data hook which is enabled for redemptions, use it to derive a claim amount and memo.
         if (ruleset.useDataHookForRedeem() && ruleset.dataHook() != address(0)) {
             // Yet another scoped section prevents stack too deep. `data`  only used within scope.
             {
                 // Create the params that'll be sent to the data hook.
-                JBRedeemParamsData memory data = JBRedeemParamsData(
-                    msg.sender,
-                    holder,
-                    projectId,
-                    ruleset.id,
-                    tokenCount,
-                    totalSupply,
-                    currentSurplus,
-                    reclaimedTokenAmount,
-                    ruleset.useTotalSurplusForRedemptions(),
-                    ruleset.redemptionRate(),
-                    metadata
-                );
+                JBRedeemParamsData memory data = JBRedeemParamsData({
+                    terminal: msg.sender,
+                    holder: holder,
+                    projectId: projectId,
+                    rulesetId: ruleset.id,
+                    tokenCount: tokenCount,
+                    totalSupply: totalSupply,
+                    surplus: currentSurplus,
+                    reclaimAmount: reclaimedTokenAmount,
+                    useTotalSurplus: ruleset.useTotalSurplusForRedemptions(),
+                    redemptionRate: ruleset.redemptionRate(),
+                    metadata: metadata
+                });
                 (reclaimAmount, hookPayloads) = IJBRulesetDataHook(ruleset.dataHook()).redeemParams(data);
             }
         }
@@ -515,7 +551,13 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         // Amount must be within what is still available to pay out.
         uint256 payoutLimit = IJBController(address(DIRECTORY.controllerOf(projectId))).FUND_ACCESS_LIMITS()
-            .payoutLimitOf(projectId, ruleset.id, msg.sender, accountingContext.token, currency);
+            .payoutLimitOf({
+            projectId: projectId,
+            rulesetId: ruleset.id,
+            terminal: msg.sender,
+            token: accountingContext.token,
+            currency: currency
+        });
 
         // Make sure the new used amount is within the payout limit.
         if (newUsedPayoutLimitOf > payoutLimit || payoutLimit == 0) {
@@ -529,7 +571,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `_amount`'s
                     // fidelity as possible when converting.
-                PRICES.pricePerUnitOf(projectId, currency, accountingContext.currency, _MAX_FIXED_POINT_FIDELITY)
+                PRICES.pricePerUnitOf({
+                    projectId: projectId,
+                    pricingCurrency: currency,
+                    unitCurrency: accountingContext.currency,
+                    decimals: _MAX_FIXED_POINT_FIDELITY
+                })
             );
 
         // The amount being paid out must be available.
@@ -578,7 +625,13 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         // There must be sufficient surplus allowance available.
         uint256 surplusAllowance = IJBController(address(DIRECTORY.controllerOf(projectId))).FUND_ACCESS_LIMITS()
-            .surplusAllowanceOf(projectId, ruleset.id, msg.sender, accountingContext.token, currency);
+            .surplusAllowanceOf({
+            projectId: projectId,
+            rulesetId: ruleset.id,
+            terminal: msg.sender,
+            token: accountingContext.token,
+            currency: currency
+        });
 
         // Make sure the new used amount is within the allowance.
         if (newUsedSurplusAllowanceOf > surplusAllowance || surplusAllowance == 0) {
@@ -592,7 +645,12 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 amount,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the `amount`'s
                     // fidelity as possible when converting.
-                PRICES.pricePerUnitOf(projectId, currency, accountingContext.currency, _MAX_FIXED_POINT_FIDELITY)
+                PRICES.pricePerUnitOf({
+                    projectId: projectId,
+                    pricingCurrency: currency,
+                    unitCurrency: accountingContext.currency,
+                    decimals: _MAX_FIXED_POINT_FIDELITY
+                })
             );
 
         // Set the token being used as the only one to look for surplus within.
@@ -602,14 +660,14 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // The amount being used must be available in the surplus.
         if (
             usedAmount
-                > _surplusFrom(
-                    msg.sender,
-                    projectId,
-                    accountingContexts,
-                    ruleset,
-                    accountingContext.decimals,
-                    accountingContext.currency
-                )
+                > _surplusFrom({
+                    terminal: msg.sender,
+                    projectId: projectId,
+                    accountingContexts: accountingContexts,
+                    ruleset: ruleset,
+                    targetDecimals: accountingContext.decimals,
+                    targetCurrency: accountingContext.currency
+                })
         ) revert INADEQUATE_TERMINAL_STORE_BALANCE();
 
         // Store the incremented value.
@@ -735,8 +793,14 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
 
         // Add payout limits from each token.
         for (uint256 i; i < numberOfTokenAccountingContexts; ++i) {
-            uint256 tokenSurplus =
-                _tokenSurplusFrom(terminal, projectId, accountingContexts[i], ruleset, targetDecimals, targetCurrency);
+            uint256 tokenSurplus = _tokenSurplusFrom({
+                terminal: terminal,
+                projectId: projectId,
+                accountingContext: accountingContexts[i],
+                ruleset: ruleset,
+                targetDecimals: targetDecimals,
+                targetCurrency: targetCurrency
+            });
             // Increment the surplus with any remaining balance.
             if (tokenSurplus > 0) surplus += tokenSurplus;
         }
@@ -773,7 +837,11 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
         // If needed, adjust the decimals of the fixed point number to have the correct decimals.
         surplus = accountingContext.decimals == targetDecimals
             ? surplus
-            : JBFixedPointNumber.adjustDecimals(surplus, accountingContext.decimals, targetDecimals);
+            : JBFixedPointNumber.adjustDecimals({
+                value: surplus,
+                decimals: accountingContext.decimals,
+                targetDecimals: targetDecimals
+            });
 
         // Add up all the balances.
         surplus = (surplus == 0 || accountingContext.currency == targetCurrency)
@@ -782,12 +850,22 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
                 surplus,
                 10 ** _MAX_FIXED_POINT_FIDELITY, // Use `_MAX_FIXED_POINT_FIDELITY` to keep as much of the
                     // `_payoutLimitRemaining`'s fidelity as possible when converting.
-                PRICES.pricePerUnitOf(projectId, accountingContext.currency, targetCurrency, _MAX_FIXED_POINT_FIDELITY)
+                PRICES.pricePerUnitOf({
+                    projectId: projectId,
+                    pricingCurrency: accountingContext.currency,
+                    unitCurrency: targetCurrency,
+                    decimals: _MAX_FIXED_POINT_FIDELITY
+                })
             );
 
         // Get a reference to the payout limit during the ruleset for the token.
         JBCurrencyAmount[] memory payoutLimits = IJBController(address(DIRECTORY.controllerOf(projectId)))
-            .FUND_ACCESS_LIMITS().payoutLimitsOf(projectId, ruleset.id, address(terminal), accountingContext.token);
+            .FUND_ACCESS_LIMITS().payoutLimitsOf({
+            projectId: projectId,
+            rulesetId: ruleset.id,
+            terminal: address(terminal),
+            token: accountingContext.token
+        });
 
         // Keep a reference to the payout limit being iterated on.
         JBCurrencyAmount memory payoutLimit;
@@ -806,7 +884,11 @@ contract JBTerminalStore is ReentrancyGuard, IJBTerminalStore {
             // Adjust the decimals of the fixed point number if needed to have the correct decimals.
             payoutLimit.amount = accountingContext.decimals == targetDecimals
                 ? payoutLimit.amount
-                : JBFixedPointNumber.adjustDecimals(payoutLimit.amount, accountingContext.decimals, targetDecimals);
+                : JBFixedPointNumber.adjustDecimals({
+                    value: payoutLimit.amount,
+                    decimals: accountingContext.decimals,
+                    targetDecimals: targetDecimals
+                });
 
             // Convert the `payoutLimit`'s amount to be in terms of the provided currency.
             payoutLimit.amount = payoutLimit.amount == 0 || payoutLimit.currency == targetCurrency
