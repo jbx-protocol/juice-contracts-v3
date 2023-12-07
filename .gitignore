@@ -24,3 +24,4 @@ workspace.code-workspace
 .vscode/
 
 backup/
+.secret
